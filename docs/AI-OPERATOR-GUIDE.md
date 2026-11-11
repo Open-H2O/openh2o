@@ -581,6 +581,12 @@ OpenET about, and it sends nothing. Count on at least one request for each parce
 give, and `--limit` caps the number of parcels for a small first test. The command
 stores the estimates, and `--to-ledger` also writes them to the ledger.
 
+The first fetch of a month records its crop ET with the date it was fetched, and the
+calculation and the ledger use that recorded figure. Fetching a month again keeps the
+recorded figure. When OpenET now reports a different one, the command lists those
+months, and a person who can correct records may accept the newer figure, with a
+reason, on the month's calculation page.
+
 ### Keys and the schedule
 
 USGS, CDEC (the California Data Exchange Center) and the Department of Water Resources'

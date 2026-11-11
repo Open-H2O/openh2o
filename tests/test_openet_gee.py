@@ -17,6 +17,7 @@ import pytest
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 from django.test import override_settings
+from django.utils import timezone
 
 from datasync.adapters import OpenETAdapter, get_openet_adapter
 from datasync.adapters.openet_gee import GEEOpenETAdapter
@@ -125,7 +126,7 @@ class TestSyncParcelEt:
         rows = OpenETCache.objects.filter(parcel=parcel)
         assert rows.count() == 1
         assert rows.first().et_data == [
-            {"date": "2024-06", "et": 142.23, "unit": "mm"}
+            {"date": "2024-06", "et": 142.23, "unit": "mm", "fetched": timezone.localdate().isoformat()}
         ]
 
         # The unchanged sync_openet_to_ledger must consume that row as-is.
@@ -173,7 +174,9 @@ class TestSyncParcelEt:
         assert summary["fetched"] == 1
         row = OpenETCache.objects.get(parcel=parcel)
         # Only the valid month survives; the 9999mm month is rejected.
-        assert row.et_data == [{"date": "2024-06", "et": 142.0, "unit": "mm"}]
+        assert row.et_data == [
+            {"date": "2024-06", "et": 142.0, "unit": "mm", "fetched": timezone.localdate().isoformat()}
+        ]
 
 
 # ---------------------------------------------------------------------------
@@ -252,7 +255,9 @@ class TestEnsembleSpread:
         et_rows = OpenETCache.objects.filter(parcel=parcel, variable="ET")
         assert et_rows.count() == 1
         # Value came from the ET reduce, not the spread reduce's copy of the band.
-        assert et_rows.first().et_data == [{"date": "2024-06", "et": 142.23, "unit": "mm"}]
+        assert et_rows.first().et_data == [
+            {"date": "2024-06", "et": 142.23, "unit": "mm", "fetched": timezone.localdate().isoformat()}
+        ]
 
     def test_spread_failure_leaves_et_intact(self, parcel):
         """A spread problem degrades to 'no confidence signal'. It must never

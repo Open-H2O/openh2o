@@ -151,32 +151,27 @@ def _gross_et_source():
 def months_with_et_data(first, last):
     """The ``"YYYY-MM"`` months in ``first..last`` that any parcel has gross ET for.
 
-    Reads ``datasync.OpenETCache``, the table the plan's ``et_gross`` step reads
-    (``accounting.steps._read_cache_mm``): rows of the plan's variable and model
-    whose span touches the range, and the ``et_data`` items that carry an ``et``
-    value. A month counts when at least one item is dated in it.
+    Reads the months' recorded crop ET (``datasync.CropETFigure``), the figure
+    the plan's ``et_gross`` step reads, for the plan's variable and model. A
+    month cached but never recorded (written into the cache by hand) has no
+    figure the calculation can use, so it does not count.
     """
-    from datasync.models import OpenETCache
+    from datasync.models import CropETFigure
 
     variable, model = _gross_et_source()
     wanted = set(months_in_span(first, last))
-    found = set()
-    rows = OpenETCache.objects.filter(
-        variable=variable,
-        model_name=model,
-        start_date__lte=last,
-        end_date__gte=first,
-    ).values_list("et_data", flat=True)
-    for data in rows.iterator():
-        for item in data or []:
-            if not isinstance(item, dict) or item.get("et") is None:
-                continue
-            text = str(item.get("date", ""))[:7]
-            if text in wanted:
-                found.add(text)
-        if found == wanted:
-            break
-    return found
+    days = (
+        CropETFigure.objects.current()
+        .filter(
+            variable=variable,
+            model_name=model,
+            month__gte=month_date(min(wanted)) if wanted else first,
+            month__lte=last,
+        )
+        .values_list("month", flat=True)
+        .distinct()
+    )
+    return {month_text(day) for day in days} & wanted
 
 
 def months_to_run(reporting_period=None, months=None):

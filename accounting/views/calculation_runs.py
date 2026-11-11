@@ -2,9 +2,13 @@
 """The "How was this calculated?" page: one parcel's engine run, step by step, with the plain-words sentence for each step."""
 from decimal import Decimal
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.http import Http404
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from accounting.models import CalculationRun
 from accounting.ledger_words import DELIVERY_SHARE_BY_FIXED, DELIVERY_SHARE_BY_USE
@@ -368,4 +372,90 @@ def calculation_run_detail(request, parcel_id, period):
     }
     if run.residual_disposition == "groundwater":
         context.update(_receipt_context(parcel, run, period))
+    context["crop_et"] = _crop_et_context(request.user, parcel, period)
     return render(request, "accounting/calculation_run_detail.html", context)
+
+
+def _crop_et_context(user, parcel, period):
+    """The month's recorded crop ET, any newer figure, and whether this person may accept it."""
+    from accounting.locks import period_for
+    from core.access import may_override
+    from datasync.crop_et import page_context
+
+    found = page_context(parcel, period)
+    if found is None:
+        return None
+    year = period_for(found["record"].month)
+    closed = year is not None and year.is_finalized
+    found["can_accept"] = bool(getattr(user, "can_write", False)) and (
+        not closed or may_override(user)
+    )
+    found["refusal"] = (
+        f"{year.name} is finalized. An administrator can accept a newer figure in it, with a reason."
+        if closed and not found["can_accept"] and getattr(user, "can_write", False)
+        else ""
+    )
+    return found
+
+
+@login_required
+@require_POST
+def crop_et_accept(request, parcel_id, period):
+    """Accept OpenET's newer figure for the month, or bring its ET estimate entry to the record.
+
+    Either is a recorded correction with the person's reason, and the month is
+    recalculated at once (the same request Correct this record starts). In a
+    finalized year only an administrator, through the recorded door.
+    """
+    from accounting.locks import PeriodFinalized, period_for
+    from core import corrections
+    from core.access import may_override, read_only_response
+    from core.corrections_views import _door, _recalculate
+    from datasync import crop_et
+    from datasync.models import CropETFigure
+
+    if not request.user.can_write:
+        return read_only_response(request)
+    parcel = get_object_or_404(Parcel, pk=parcel_id)
+    record = get_object_or_404(
+        CropETFigure, pk=request.POST.get("record") or 0, parcel=parcel,
+        month=crop_et.month_first(period),
+    )
+    page = reverse("accounting:calculation_run_detail", args=[parcel.pk, period])
+    reason = request.POST.get("reason", "")
+    year = period_for(record.month)
+    closed = year is not None and year.is_finalized
+    admin = may_override(request.user)
+    if closed and not admin:
+        messages.error(
+            request,
+            f"Nothing was corrected. {year.name} is finalized. "
+            "An administrator can correct or void a record in it.",
+        )
+        return redirect(page)
+    act = (
+        crop_et.bring_entry_to_record
+        if request.POST.get("action") == "entry"
+        else crop_et.accept_newer_figure
+    )
+    try:
+        with _door(reason.strip() or "Reason not given.", closed):
+            with transaction.atomic():
+                months = act(record, user=request.user, reason=reason)
+                covered = _recalculate(
+                    request, months, "record_corrected", reason.strip() if closed else ""
+                )
+    except (corrections.AlreadyVoided, corrections.AlreadyReplaced, ValueError) as exc:
+        messages.error(request, str(exc))
+        return redirect(page)
+    except PeriodFinalized as exc:
+        messages.error(request, f"Nothing was corrected. {exc}")
+        return redirect(page)
+    messages.success(request, _corrected_words(covered))
+    return redirect(page)
+
+
+def _corrected_words(covered):
+    from core.corrections_views import _corrected_sentence
+
+    return _corrected_sentence(None, covered, [])

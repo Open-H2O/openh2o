@@ -24,6 +24,7 @@ calculation does with a month that has no record.
 """
 
 import datetime as dt
+import html
 import json
 import re
 from decimal import Decimal as D
@@ -194,7 +195,7 @@ def _client(user):
 
 
 def _words(response):
-    return " ".join(response.content.decode().replace("\xa0", " ").split())
+    return " ".join(html.unescape(response.content.decode()).replace("\xa0", " ").split())
 
 
 def _page(user, parcel, month=JULY):
@@ -281,7 +282,7 @@ def test_a_test_run_of_the_calculation_writes_no_record():
     _fetched_twice(field)
     assert _count() == 3
 
-    call_command("run_calculations", "--month", JULY, "--dry-run", stdout=StringIO())
+    call_command("run_calculations", "--period", JULY, "--dry-run", stdout=StringIO())
 
     assert _count() == 3
     assert _recorded(field) == (D("91.44"), AUG_6)
@@ -473,7 +474,7 @@ def test_the_hand_entry_form_refuses_an_et_estimate_entry():
     })
 
     assert not form.is_valid()
-    assert ET_REFUSAL in str(form.errors)
+    assert ET_REFUSAL in " ".join(form.errors.get("source_type", []))
 
 
 def test_the_ledger_import_refuses_an_et_estimate_entry():
@@ -516,7 +517,7 @@ def test_the_administration_site_cannot_add_an_et_estimate_entry():
     _, _, form = _admin_form(None, _admin_data(field))
 
     assert not form.is_valid()
-    assert ET_REFUSAL in str(form.errors)
+    assert ET_REFUSAL in " ".join(form.errors.get("source_type", []))
 
 
 def test_the_administration_site_cannot_turn_another_entry_into_an_et_estimate():
@@ -525,7 +526,7 @@ def test_the_administration_site_cannot_turn_another_entry_into_an_et_estimate()
     _, _, form = _admin_form(typed, _admin_data(field, amount_acre_feet="-5"))
 
     assert not form.is_valid()
-    assert ET_REFUSAL in str(form.errors)
+    assert ET_REFUSAL in " ".join(form.errors.get("source_type", []))
 
 
 def test_the_administration_site_cannot_change_an_et_estimate_entrys_amount():

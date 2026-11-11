@@ -76,6 +76,7 @@ from decimal import Decimal
 
 from django.core.management.base import BaseCommand, CommandError
 
+from datasync import crop_et
 from datasync.models import OpenETCache
 
 DEFAULT_SOURCE_WINDOW = "2024-10-01:2025-09-30"
@@ -421,6 +422,12 @@ class Command(BaseCommand):
                 )
                 if created:
                     created_count += 1
+                if variable == "ET":
+                    # A month with no record yet is recorded at the derived figure,
+                    # with the fetch date the source items carry (none in the fixture).
+                    crop_et.record_fetched_months(
+                        source_row.parcel, crop_et.months_of(et_data), model=model_name
+                    )
 
         worst = max(
             (abs(target - actual), number)

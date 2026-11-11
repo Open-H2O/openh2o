@@ -66,6 +66,10 @@ from parcels.models import (
     ParcelLedger,
 )
 
+#: Nobody types an ET figure: an ET estimate entry is written only from the
+#: month's recorded OpenET figure (datasync/crop_et.py).
+ET_ESTIMATE_REFUSAL = "ET estimate entries come from OpenET's recorded figure."
+
 REQUIRED_COLUMNS = {
     "parcel_number",
     "effective_date",
@@ -295,6 +299,8 @@ def _check_row(
     # Source type
     if not source_type:
         row_errors.append("missing source_type")
+    elif source_type == "et_estimate":
+        row_errors.append(ET_ESTIMATE_REFUSAL)
     elif source_type not in valid_source_types:
         row_errors.append(f"invalid source_type: {source_type}")
 

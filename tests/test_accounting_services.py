@@ -885,7 +885,7 @@ class TestSyncOpenETToLedger:
         geom = parcel.geometry or MultiPolygon(
             Polygon.from_bbox((-119.3, 36.3, -119.2, 36.4)), srid=4326
         )
-        return OpenETCache.objects.create(
+        et_row = OpenETCache.objects.create(
             parcel=parcel,
             geometry=geom,
             start_date=date(2024, 1, 1),
@@ -894,6 +894,10 @@ class TestSyncOpenETToLedger:
             model_name="Ensemble",
             et_data=[{"date": month_str, "et": et_mm, "unit": "mm"}],
         )
+        from datasync.crop_et import months_of, record_fetched_months
+
+        record_fetched_months(et_row.parcel, months_of(et_row.et_data), model=et_row.model_name)
+        return et_row
 
     def test_sync_openet_creates_ledger_entries(self):
         """Running the command creates ParcelLedger entries from OpenETCache data."""

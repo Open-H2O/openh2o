@@ -86,6 +86,12 @@ urlpatterns = [
         calculation_runs.calculation_run_detail,
         name="calculation_run_detail",
     ),
+    # Accept OpenET's newer crop ET figure for the month (a correction with a reason)
+    path(
+        "calculation-run/<int:parcel_id>/<str:period>/accept/",
+        calculation_runs.crop_et_accept,
+        name="crop_et_accept",
+    ),
     # Delivery Settings (staff-only agency efficiency + year-end policy)
     path("delivery-settings/", settings_pages.delivery_settings, name="delivery_settings"),
     # Methodology Settings (staff-only self-serve methodology tuning)

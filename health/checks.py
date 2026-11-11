@@ -685,13 +685,15 @@ def check_cache_duplication():
         "use_areas": use_areas,
     }
 
-    # The engine reads the newer estimate (accounting/steps.py), so no figure is
-    # overstated; attention needed, not action required.
+    # The calculation reads each month's recorded figure, never the cache
+    # (datasync/crop_et.py), so no figure is overstated; attention needed, not
+    # action required. The newer estimate is the one a month's page offers.
     if use_areas:
         status = "yellow"
         msg = (
             "OpenH2O holds two OpenET estimates for the same months at "
-            f"{_count(use_areas, 'use area', 'use areas')}, and uses the newer one."
+            f"{_count(use_areas, 'use area', 'use areas')}. Each month uses its recorded "
+            "figure; where the newer estimate differs, the month's calculation page shows it."
         )
     else:
         status = "green"

@@ -135,7 +135,7 @@ class TestThePreviewNamesItsInches:
         parcel = Parcel.objects.create(parcel_number="R047-APN-001", area_acres=Decimal("10.00"))
         crop = CropType.objects.create(name="Crop-R047")
         UsageLocation.objects.create(parcel=parcel, name="field", crop_type=crop)
-        OpenETCache.objects.create(
+        et_row = OpenETCache.objects.create(
             parcel=parcel,
             geometry=MultiPolygon(Polygon(((-119.5, 36.5), (-119.5, 36.6), (-119.4, 36.6), (-119.4, 36.5), (-119.5, 36.5)))),
             start_date=dt.date(2024, 6, 1),
@@ -144,6 +144,9 @@ class TestThePreviewNamesItsInches:
             model_name="Ensemble",
             et_data=[{"et": 127.0, "date": "2024-06", "unit": "mm"}],
         )
+        from datasync.crop_et import months_of, record_fetched_months
+
+        record_fetched_months(et_row.parcel, months_of(et_row.et_data), model=et_row.model_name)
         user = User.objects.create_user(
             username="r047-staff", email="r047-staff@example.com",
             password="x", is_active=True, is_staff=True,

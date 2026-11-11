@@ -27,6 +27,7 @@ from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 
+from datasync import crop_et
 from datasync.adapters import get_openet_adapter
 from parcels.models import Parcel
 
@@ -117,6 +118,15 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("sync_openet_parcels complete"))
         for key, value in summary.items():
             self.stdout.write(f"  {key + ':':<16} {value}")
+
+        # A fetch never changes a month's recorded figure; it says which months
+        # OpenET now reports differently, for a person to accept on the month's page.
+        months = crop_et.months_between(start_date, end_date)
+        lines = crop_et.differing_lines(parcels, months)
+        if lines:
+            self.stdout.write("")
+            for line in lines:
+                self.stdout.write(self.style.WARNING(line) if line is lines[0] else line)
 
         if options["to_ledger"]:
             self.stdout.write("")

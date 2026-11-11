@@ -229,6 +229,16 @@
       "tolerance": 0,
       "reason": "76 parcels x 5 variables x 2 WINDOWS, loaded from the committed data/merced/openet_cache.json by load_openet_fixture. MOVED 380 -> 760 by Plan 133-01: synthesize_dry_year derives WY 2025-2026 from WY 2024-2025 offline, every value from that same parcel's own committed month, and the committed window was verified unchanged row by row (380 source rows, 0 differing). check_cache_duplication reads green with exact_duplicate_groups 0 and overlapping_span_pairs 0. Without these rows the accounting engine has no demand side and every calculation run comes out empty."
     },
+    "datasync.CropETFigure": {
+      "expected": 1824,
+      "tolerance": 0,
+      "reason": "OpenET's crop ET recorded once per use area and month: 76 use areas x 24 months (Oct 2024 to Sep 2026), each recorded by load_openet_fixture and synthesize_dry_year as the month's first figure. The demonstration's file carries no fetch dates, so every month reads Fetch date not recorded."
+    },
+    "datasync.CropETFigureEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "drinking.Analyte": {
       "expected": 178,
       "tolerance": 0,

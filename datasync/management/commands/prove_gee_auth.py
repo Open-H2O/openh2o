@@ -31,6 +31,9 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
+
+from datasync import crop_et
 
 from datasync.adapters.gee import (
     _first_of_month,
@@ -203,6 +206,7 @@ class Command(BaseCommand):
             gee_for_parcel = gee.get(parcel.pk)
             if not gee_for_parcel:
                 continue
+            et_data = crop_et.stamp(build_et_data(gee_for_parcel), timezone.localdate())
             OpenETCache.objects.create(
                 parcel=parcel,
                 geometry=parcel.geometry,
@@ -210,8 +214,9 @@ class Command(BaseCommand):
                 end_date=end,
                 variable="ET",
                 model_name="Ensemble",
-                et_data=build_et_data(gee_for_parcel),
+                et_data=et_data,
             )
+            crop_et.record_fetched_months(parcel, crop_et.months_of(et_data))
             written += 1
         self.stdout.write(
             self.style.SUCCESS(

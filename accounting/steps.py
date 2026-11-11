@@ -89,6 +89,11 @@ def _record(step_type, input_af, output_af, detail):
 def _read_cache_mm(parcel, period, variable, model, key):
     """Total OpenETCache <key> values (mm) for one parcel-month.
 
+    Rain reads this today. Crop ET does not: the calculation reads the month's
+    recorded figure (``datasync/crop_et.py``), and the cache is read only to
+    record a month's first figure and to show a newer one, both through
+    :func:`_cache_by_date`, so "newest" means the same thing everywhere.
+
     The single shared cache read behind BOTH et_gross and the precip step, so the
     two can never drift on the variable/model/key strings (the silent-zero trap: a wrong string matches zero rows and quietly zeroes the parcel).
     Matches rows whose [start_date, end_date] span covers the period, then totals the
@@ -106,6 +111,17 @@ def _read_cache_mm(parcel, period, variable, model, key):
 
     Returns (total_mm: Decimal, months_matched: int, row_count: int).
     A parcel with no matching rows returns (Decimal("0"), 0, 0).
+    """
+    by_date, row_count = _cache_by_date(parcel, period, variable, model, key)
+    total_mm = sum((v for v, _pk, _fetched in by_date.values()), Decimal("0"))
+    return total_mm, len(by_date), row_count
+
+
+def _cache_by_date(parcel, period, variable, model, key):
+    """The cache items of one parcel-month, newest row winning per item date.
+
+    Returns ``({item date: (value_mm, row pk, fetched text or None)}, row_count)``.
+    ``fetched`` is the day a writer stamped on the item when it fetched it.
     """
     import datetime as dt
 
@@ -169,10 +185,9 @@ def _read_cache_mm(parcel, period, variable, model, key):
                         prior[0],
                         variable,
                     )
-                by_date[item_date] = (Decimal(str(item[key])), row.pk)
+                by_date[item_date] = (Decimal(str(item[key])), row.pk, item.get("fetched"))
 
-    total_mm = sum((v for v, _pk in by_date.values()), Decimal("0"))
-    return total_mm, len(by_date), rows.count()
+    return by_date, rows.count()
 
 
 def et_gross(running_af, parcel, period, ctx, config):
@@ -185,12 +200,15 @@ def et_gross(running_af, parcel, period, ctx, config):
     value; we take abs). Ignores the incoming running_af — this primitive starts
     the chain.
     """
+    from datasync.crop_et import recorded_mm
+
     model = config.get("model", "Ensemble")
     variable = config.get("variable", "ET")
 
-    total_mm, matched, row_count = _read_cache_mm(
-        parcel, period, variable, model, "et"
-    )
+    # The month's recorded figure, never the cache: a later fetch changes nothing
+    # until a person accepts it (datasync/crop_et.py).
+    total_mm, matched = recorded_mm(parcel, period, variable, model)
+    row_count = matched
 
     area = parcel.area_acres or Decimal("0")
     # et_mm_to_acre_feet returns negative (usage); the chain threads positive
@@ -422,8 +440,11 @@ def subtract_effective_precip(running_af, parcel, period, ctx, config):
     """
     from accounting.precip_math import effective_precip_inches
 
+    from datasync.crop_et import recorded_mm
+
     precip_mm, _, _ = _read_cache_mm(parcel, period, "precip", "GRIDMET", "precip")
-    et_mm, _, _ = _read_cache_mm(parcel, period, "ET", "Ensemble", "et")
+    # Crop ET from the month's record, as et_gross reads it; rain still from the cache.
+    et_mm, _ = recorded_mm(parcel, period, "ET", "Ensemble")
 
     mm_per_in = Decimal("25.4")
     p_in = precip_mm / mm_per_in

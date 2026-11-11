@@ -483,6 +483,21 @@ def ledger_list(request):
     return _ledger_response(request, request.GET)
 
 
+def _mark_recorded_figure(entries):
+    """On an ET estimate entry that differs from its month's recorded OpenET figure, the recorded figure."""
+    from datasync import crop_et
+
+    for entry in entries:
+        if entry.source_type != "et_estimate" or entry.is_struck:
+            continue
+        period = crop_et.month_text(entry.effective_date)
+        record = crop_et.current_record(entry.parcel, period)
+        if record is not None and crop_et.entry_differs(entry, record):
+            figure = crop_et.acre_feet(record.depth_mm, entry.parcel.area_acres)
+            entry.recorded_line = f"OpenET's recorded figure for this month is {figure:,.2f} AF."
+            entry.recorded_period = period
+
+
 def render_ledger_results(
     request, row, *, void_key=None, void_reason="", void_error="", notice="", warning=""
 ):
@@ -543,6 +558,7 @@ def _ledger_response(
         page_obj.object_list, can_write=getattr(request, "as_of_reading", None) is None,
         finalized=corrections.finalized_ranges(), void_key=void_key,
     )
+    _mark_recorded_figure(page_obj.object_list)
     current_count = queryset.current().count()
 
     # The subtitle line names the period and the active filters

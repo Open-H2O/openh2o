@@ -290,6 +290,7 @@ class TestSyncOpenetIntraRunDedup:
     et_estimate ledger row, not two."""
 
     def test_overlapping_cache_rows_create_one_row(self):
+        from datasync.crop_et import record_fetched_months
         from datasync.models import OpenETCache
         from parcels.models import ParcelLedger
         from tests.factories import ParcelFactory, _box
@@ -324,6 +325,10 @@ class TestSyncOpenetIntraRunDedup:
             end_date=date(2024, 6, 30),
             et_data=[{"date": "2024-06", "et": 100.0, "unit": "mm"}],
         )
+
+        # As a fetch leaves them: June recorded once per parcel, whatever the cache holds.
+        record_fetched_months(parcel, {"2024-06"})
+        record_fetched_months(solo, {"2024-06"})
 
         call_command(
             "sync_openet_to_ledger",

@@ -275,6 +275,15 @@ class CsvUploadForm(forms.Form):
     dry_run = forms.BooleanField(required=False, initial=False)
 
 
+def refuse_et_estimate(source_type):
+    """The ledger kind a person chose, unless it is the ET estimate kind, which nobody types."""
+    from accounting.ledger_import import ET_ESTIMATE_REFUSAL
+
+    if source_type == "et_estimate":
+        raise forms.ValidationError(ET_ESTIMATE_REFUSAL)
+    return source_type
+
+
 class ParcelLedgerForm(forms.ModelForm):
     class Meta:
         model = ParcelLedger
@@ -316,3 +325,10 @@ class ParcelLedgerForm(forms.ModelForm):
         self.fields["parcel"].queryset = self.fields["parcel"].queryset.order_by(
             "parcel_number"
         )
+        # Nobody types an ET figure: the kind is not offered, and a post that names it is refused.
+        self.fields["source_type"].widget.choices = [
+            choice for choice in self.fields["source_type"].choices if choice[0] != "et_estimate"
+        ]
+
+    def clean_source_type(self):
+        return refuse_et_estimate(self.cleaned_data.get("source_type"))

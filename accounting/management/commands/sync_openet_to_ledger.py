@@ -100,6 +100,22 @@ def _monthly_et_totals(
     return monthly_totals
 
 
+def _recorded_totals(parcel: Parcel, monthly_totals: dict[str, Decimal]) -> dict[str, Decimal]:
+    """The months the cache names, each at its RECORDED crop ET; a month with no record is left out.
+
+    The entry is written from the month's record (``datasync/crop_et.py``), the
+    same figure the calculation reads, never from the cache, so a later fetch
+    can never put a different figure in the ledger than in the calculation.
+    """
+    from datasync.crop_et import current_record, recorded_mm
+
+    return {
+        month: recorded_mm(parcel, month)[0]
+        for month in monthly_totals
+        if current_record(parcel, month) is not None
+    }
+
+
 def _new_month_entries(
     parcel: Parcel,
     monthly_totals: dict[str, Decimal],
@@ -229,7 +245,9 @@ class Command(BaseCommand):
                 counters["skipped_no_data"] += 1
                 continue
 
-            monthly_totals = _monthly_et_totals(cache, start_date, end_date)
+            monthly_totals = _recorded_totals(
+                parcel, _monthly_et_totals(cache, start_date, end_date)
+            )
 
             if not monthly_totals:
                 counters["skipped_no_data"] += 1

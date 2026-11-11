@@ -26,6 +26,7 @@ from django.utils import timezone
 from accounting.ledger_import import import_ledger_rows
 from accounting.locks import (
     LOCK_SQLSTATE,
+    FIRST_ROW_OPEN_MODELS,
     LOCK_TRIGGER_URIS,
     LOCKED_MODELS,
     PeriodFinalized,
@@ -250,8 +251,9 @@ def test_every_locked_table_carries_the_trigger():
             "WHERE t.tgname LIKE 'pgtrigger_finalized_period_lock_%' ORDER BY c.relname"
         )
         tables = [row[0] for row in cursor.fetchall()]
-    assert tables == sorted(_table(label) for label in LOCKED_MODELS)
-    assert len(LOCK_TRIGGER_URIS) == len(LOCKED_MODELS) == 21
+    assert tables == sorted(_table(label) for label in LOCKED_MODELS + FIRST_ROW_OPEN_MODELS)
+    assert len(LOCKED_MODELS) == 21
+    assert len(LOCK_TRIGGER_URIS) == len(LOCKED_MODELS) + len(FIRST_ROW_OPEN_MODELS) == 22
 
 
 @pytest.mark.parametrize("label", UPDATABLE_LOCKED_MODELS)

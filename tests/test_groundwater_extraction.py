@@ -124,7 +124,7 @@ def _et_only_parcel(number, period, et_mm, acres="10"):
     WellIrrigatedParcelFactory(parcel=parcel)
 
     year, month = int(period[:4]), int(period[5:7])
-    OpenETCache.objects.create(
+    et_row = OpenETCache.objects.create(
         parcel=parcel,
         geometry=_square(),
         start_date=dt.date(year, month, 1),
@@ -133,6 +133,9 @@ def _et_only_parcel(number, period, et_mm, acres="10"):
         model_name="Ensemble",
         et_data=[{"et": et_mm, "date": period, "unit": "mm"}],
     )
+    from datasync.crop_et import months_of, record_fetched_months
+
+    record_fetched_months(et_row.parcel, months_of(et_row.et_data), model=et_row.model_name)
     return parcel
 
 
@@ -222,7 +225,7 @@ def test_no_well_field_has_no_extraction_estimate():
     parcel = Parcel.objects.create(parcel_number="GWX-NOWELL", area_acres=Decimal("10"))
     crop = CropType.objects.create(name="Crop-GWX-NOWELL")
     UsageLocation.objects.create(parcel=parcel, name="field", crop_type=crop)
-    OpenETCache.objects.create(
+    et_row = OpenETCache.objects.create(
         parcel=parcel,
         geometry=_square(),
         start_date=dt.date(2025, 5, 1),
@@ -231,6 +234,9 @@ def test_no_well_field_has_no_extraction_estimate():
         model_name="Ensemble",
         et_data=[{"et": ET_1_22, "date": period, "unit": "mm"}],
     )
+    from datasync.crop_et import months_of, record_fetched_months
+
+    record_fetched_months(et_row.parcel, months_of(et_row.et_data), model=et_row.model_name)
     call_command("seed_calculation_plan")
 
     call_command("run_calculations", "--period", period)

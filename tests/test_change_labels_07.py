@@ -408,6 +408,8 @@ PLAIN_WORDS = frozenset(
         "wells.WellMeter.is_current",
         "datasync.TypedReading.replaces",
         "datasync.TypedReading.voided_by",
+        "datasync.CropETFigure.replaces",
+        "datasync.CropETFigure.voided_by",
         "drinking.SampleEvent.chain_of_custody_note",
         "drinking.SampleEvent.collector",
         "drinking.SampleEvent.sample_date",

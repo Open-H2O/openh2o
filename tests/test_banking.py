@@ -86,7 +86,7 @@ def _et_cache(parcel, period="2024-06", et_mm=100.0):
     from datasync.models import OpenETCache
 
     year, month = int(period[:4]), int(period[5:7])
-    return OpenETCache.objects.create(
+    et_row = OpenETCache.objects.create(
         parcel=parcel,
         geometry=_square(),
         start_date=dt.date(year, month, 1),
@@ -95,6 +95,10 @@ def _et_cache(parcel, period="2024-06", et_mm=100.0):
         model_name="Ensemble",
         et_data=[{"et": et_mm, "date": period, "unit": "mm"}],
     )
+    from datasync.crop_et import months_of, record_fetched_months
+
+    record_fetched_months(et_row.parcel, months_of(et_row.et_data), model=et_row.model_name)
+    return et_row
 
 
 def _precip_cache(parcel, period, precip_mm):

@@ -139,10 +139,13 @@ def test_the_water_right_fallback_entry_is_stamped_with_the_site_date():  # line
 def test_the_openet_sync_stamps_its_rows_with_the_site_date():  # command line 145
     parcel = ParcelFactory(parcel_number="APN-ET")
     Parcel.objects.filter(pk=parcel.pk).update(area_acres=Decimal("100"))
-    OpenETCache.objects.create(
+    et_row = OpenETCache.objects.create(
         parcel=parcel, geometry=parcel.geometry, start_date=dt.date(2025, 1, 1), end_date=dt.date(2025, 12, 31),
         variable="ET", model_name="Ensemble", et_data=[{"date": "2025-07", "et": 30.48, "unit": "mm"}],
     )
+    from datasync.crop_et import months_of, record_fetched_months
+
+    record_fetched_months(et_row.parcel, months_of(et_row.et_data), model=et_row.model_name)
     with held_clock():
         call_command("sync_openet_to_ledger", start_date="2025-01-01", end_date="2025-12-31")
     rows = ParcelLedger.objects.filter(source_type="et_estimate", parcel=parcel)

@@ -2706,6 +2706,30 @@ checked_at = "953a3149"
 
 [[section]]
 document = "templates/help/methods.html"
+heading = "How OpenH2O keeps OpenET’s figure for a month"
+files = [
+  "datasync/crop_et.py",
+  "datasync/models.py",
+  "datasync/migrations/0016_record_crop_et_at_upgrade.py",
+  "datasync/adapters/openet.py",
+  "datasync/adapters/openet_gee.py",
+  "datasync/management/commands/sync_openet_parcels.py",
+  "datasync/management/commands/load_openet_fixture.py",
+  "accounting/steps.py",
+  "accounting/engine_run.py",
+  "accounting/views/calculation_runs.py",
+  "accounting/views/ledger.py",
+  "accounting/forms.py",
+  "accounting/ledger_import.py",
+  "accounting/locks.py",
+  "parcels/admin.py",
+  "templates/accounting/partials/_crop_et_record.html",
+]
+labels = []
+checked_at = "51f86ba0"
+
+[[section]]
+document = "templates/help/methods.html"
 heading = "How a headgate total is divided"
 files = [
   "surface/services.py",

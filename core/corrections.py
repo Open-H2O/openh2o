@@ -1056,7 +1056,7 @@ def _set_changes(new, kind, changes):
         setattr(new, name, value)
 
 
-def correct(row, *, user, reason, changes):
+def correct(row, *, user, reason, changes, recorded_figure=False):
     """Replace ``row`` with a corrected record: write the new row, mark the old, return the months.
 
     ``changes`` maps field names to new values, only names in the kind's
@@ -1076,6 +1076,11 @@ def correct(row, *, user, reason, changes):
     (``"YYYY-MM"``, oldest first, covering the old row's and the new row's).
     Inside ``accounting.locks.override`` a finalized year is written through the
     recorded door; nothing else lets a correction into one.
+
+    ``recorded_figure`` is the one named exception to the rule that the engine's
+    rows are never corrected: an ET estimate entry replaced when a person accepts
+    OpenET's newer figure for the month, or brings the entry to the recorded
+    figure (``datasync/crop_et.py``). It lets only that kind of row through.
     """
     from accounting.locks import refuse_if_finalized
 
@@ -1088,7 +1093,10 @@ def correct(row, *, user, reason, changes):
             raise AlreadyVoided("This record is already voided.")
         if _is_replaced(locked):
             raise AlreadyReplaced(ALREADY_REPLACED_SENTENCE)
-        if not kind["can_correct"](locked):
+        if recorded_figure:
+            if kind["key"] != "ledger_entry" or locked.source_type != "et_estimate":
+                raise NotCorrectable(_not_correctable_sentence(kind))
+        elif not kind["can_correct"](locked):
             raise NotCorrectable(_not_correctable_sentence(kind))
         if not REASON_MIN_LENGTH <= len(text) <= REASON_MAX_LENGTH:
             raise ValueError(REASON_SENTENCE)

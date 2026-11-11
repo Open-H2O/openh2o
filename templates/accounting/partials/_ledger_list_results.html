@@ -131,6 +131,7 @@
         </td>
         <td class="text-secondary" style="white-space: normal;">
           {{ entry.description }}
+          {% if entry.recorded_line %}<br><a href="{% url 'accounting:calculation_run_detail' entry.parcel.id entry.recorded_period %}#crop-et">{{ entry.recorded_line }}</a>{% endif %}
         </td>
         {% if user_can_write %}
         <td class="row-actions">{% if entry.menu_ok %}{% include "partials/_row_menu.html" with row=entry label=entry.effective_date|date:"M j, Y"|add:" ledger entry" target="#ledger-results" void_ok=entry.void_ok include="#ledger-filters" %}{% endif %}</td>

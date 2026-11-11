@@ -70,6 +70,7 @@
           <div class="budget-seg-label">Crop ET</div>
           <div class="budget-seg-value" title="{{ run.gross_et_af }} acre-feet">{{ run.gross_et_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
           <div class="budget-seg-caption">OpenET satellite estimate</div>
+          {% if crop_et %}<div class="budget-seg-caption"><a href="#crop-et">{{ crop_et.fetch_line }}</a></div>{% endif %}
         </div>
         <div class="budget-op">&minus;</div>
         <div class="budget-seg">
@@ -156,6 +157,7 @@
     </div>
     <div class="budget-panel-note">Methodology: {{ methodology_plan_name|blank }}{% if methodology_settings_code %}, settings {{ methodology_settings_code }}{% endif %}. Calculated {{ run.created_at|date:"F j, Y, g:i A" }}. A changed setting affects a past month only when that month is recalculated. A meter reading for {{ month_label }} would replace this estimate. Figures are rounded to two decimals. OpenH2O calculates from the unrounded values.</div>
   </div>
+  {% if crop_et %}{% include "accounting/partials/_crop_et_record.html" %}{% endif %}
 
   {% else %}
   {% comment %} The short page: a month with nothing to estimate, reached by
@@ -174,6 +176,7 @@
       {% endif %}
     </p>
   </div>
+  {% if crop_et %}{% include "accounting/partials/_crop_et_record.html" %}{% endif %}
   {% endif %}
 
 </div>

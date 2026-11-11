@@ -20,6 +20,9 @@ import logging
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 
+from django.utils import timezone
+
+from datasync import crop_et
 from datasync.adapters import register_adapter
 from datasync.adapters.gee import (
     EE_BAND_TO_VARIABLE,
@@ -196,6 +199,10 @@ class GEEOpenETAdapter(OpenETAdapter):
             # the same tuple the uniqueness constraint enforces, so the re-fetch
             # refreshes the window in place. Matches sync_precip_parcels, which has
             # always upserted.
+            # Each month item carries the site's date it was fetched; a month
+            # with no record yet is recorded at it, and a recorded month keeps
+            # its figure (datasync/crop_et.py).
+            et_data = crop_et.stamp(build_et_data(et_by_month), timezone.localdate())
             OpenETCache.objects.update_or_create(
                 parcel=parcel,
                 start_date=win_start,
@@ -204,9 +211,10 @@ class GEEOpenETAdapter(OpenETAdapter):
                 model_name="Ensemble",
                 defaults={
                     "geometry": parcel.geometry,
-                    "et_data": build_et_data(et_by_month),
+                    "et_data": et_data,
                 },
             )
+            crop_et.record_fetched_months(parcel, crop_et.months_of(et_data))
             summary["fetched"] += 1
 
         if collect_spread:

@@ -18,6 +18,8 @@ import logging
 import os
 import re
 
+from django.utils import timezone
+
 from datasync.adapters import register_adapter
 from datasync.adapters.base import BaseAdapter
 
@@ -391,14 +393,21 @@ class OpenETAdapter(BaseAdapter):
         parsed = self.parse(raw_data)
         valid, _rejected = self.validate(parsed, temporal_resolution="monthly")
 
-        et_data = [
-            {
-                "date": r.get("observation_date", ""),
-                "et": r.get("value"),
-                "unit": r.get("unit", "mm"),
-            }
-            for r in valid
-        ]
+        from datasync import crop_et
+
+        # Each month item carries the site's date it was fetched; the month's
+        # first figure is recorded from it below and never replaced by a fetch.
+        et_data = crop_et.stamp(
+            [
+                {
+                    "date": r.get("observation_date", ""),
+                    "et": r.get("value"),
+                    "unit": r.get("unit", "mm"),
+                }
+                for r in valid
+            ],
+            timezone.localdate(),
+        )
 
         # Finalize the reservation into a real cache row.
         #
@@ -419,6 +428,7 @@ class OpenETAdapter(BaseAdapter):
             reservation.model_name = "Ensemble"
             reservation.et_data = et_data
             reservation.save(update_fields=["model_name", "et_data"])
+            crop_et.record_fetched_months(parcel, crop_et.months_of(et_data))
         logger.info("OpenET cache miss, stored %d records for parcel %s", len(et_data), parcel.pk)
         return et_data
 

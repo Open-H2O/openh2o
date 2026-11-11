@@ -28,6 +28,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
+from datasync import crop_et
 from datasync.models import OpenETCache
 from parcels.models import Parcel
 
@@ -133,6 +134,13 @@ class Command(BaseCommand):
             else:
                 updated_count += 1
             per_variable[row["variable"]] = per_variable.get(row["variable"], 0) + 1
+            if row["variable"] == "ET":
+                # A month with no record yet is recorded at the loaded figure. The
+                # demonstration's file carries no fetch dates, so its months read
+                # "Fetch date not recorded"; a recorded month keeps its figure.
+                crop_et.record_fetched_months(
+                    parcel, crop_et.months_of(row["et_data"]), model=row["model_name"]
+                )
 
         self.stdout.write(
             self.style.SUCCESS(

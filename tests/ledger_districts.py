@@ -35,6 +35,7 @@ from django.core.management import call_command
 
 from accounting.models import AllocationPlan, ReportingPeriod, WaterAccount, WaterAccountParcel, WaterType
 from core.models import SiteConfig
+from datasync.crop_et import record_fetched_months
 from datasync.models import OpenETCache
 from geography.models import Boundary, ParcelZone, Zone
 from measurements.models import Meter
@@ -103,6 +104,8 @@ def add_et(parcel, months_mm):
         parcel=parcel, geometry=parcel.geometry, start_date=first, end_date=last, variable="ET",
         model_name="Ensemble", origin="fixture",
         et_data=[{"date": f"{k}-01", "et": float(months_mm[k])} for k in keys])
+    # As a site's fetch does: each month with no record yet is recorded (no fetch date).
+    record_fetched_months(parcel, keys)
 
 
 def add_field(number, acres, crop, method, zones, lon, lat, et, well=None, owner=""):

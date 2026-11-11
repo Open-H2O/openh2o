@@ -47,7 +47,7 @@
         <tbody>
           <tr>
             <td class="col-name">Crop ET</td>
-            <td>OpenH2O reads each use area&rsquo;s crop ET for the month from OpenET.</td>
+            <td>OpenH2O uses the crop ET from OpenET recorded for each use area and month. The next table says how a month&rsquo;s figure is recorded and how a newer one is accepted.</td>
           </tr>
           <tr>
             <td class="col-name">ETAW</td>
@@ -55,7 +55,7 @@
           </tr>
           <tr>
             <td class="col-name">The effective precipitation formula</td>
-            <td>The USDA-SCS method works in millimeters. With P the month&rsquo;s precipitation, ET the month&rsquo;s OpenET crop ET (the satellite figure, even in a fallow month) and D the soil storage in inches (3.0 unless the setting is changed), OpenH2O first computes a storage factor, SF = 0.531747 + 0.295164 &times; D &minus; 0.057697 &times; D&sup2; + 0.003804 &times; D&sup3;. Effective precipitation is SF &times; (1.25 &times; P<sup>0.824</sup> &minus; 2.93) &times; 10<sup>(0.000955 &times; ET)</sup>, with P<sup>0.824</sup> taken as 0 when P is 0. The result is held at or below the smaller of P and ET and at or above 0, then converted to acre-feet over the use area&rsquo;s acres. The formula is evaluated in ordinary binary floating point.</td>
+            <td>The USDA-SCS method works in millimeters. With P the month&rsquo;s precipitation, ET the month&rsquo;s recorded OpenET crop ET (the satellite figure, even in a fallow month) and D the soil storage in inches (3.0 unless the setting is changed), OpenH2O first computes a storage factor, SF = 0.531747 + 0.295164 &times; D &minus; 0.057697 &times; D&sup2; + 0.003804 &times; D&sup3;. Effective precipitation is SF &times; (1.25 &times; P<sup>0.824</sup> &minus; 2.93) &times; 10<sup>(0.000955 &times; ET)</sup>, with P<sup>0.824</sup> taken as 0 when P is 0. The result is held at or below the smaller of P and ET and at or above 0, then converted to acre-feet over the use area&rsquo;s acres. The formula is evaluated in ordinary binary floating point.</td>
           </tr>
           <tr>
             <td class="col-name">ETAW met by surface water</td>
@@ -88,6 +88,58 @@
           <tr>
             <td class="col-name">A month with no delivery</td>
             <td>When a month has no canal water, its delivery is stored as 0.0000 and its irrigation efficiency is left blank.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card-raised" id="openet-figure">
+    <h2 class="section-header">How OpenH2O keeps OpenET&rsquo;s figure for a month</h2>
+    <div class="table-scroll">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Topic</th>
+            <th>How it works</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Recorded once</td>
+            <td>The first time a use area&rsquo;s month is fetched from OpenET, OpenH2O records its crop ET with the date it was fetched. The month&rsquo;s calculation and the month&rsquo;s ET estimate entry in the ledger use that recorded figure and no other.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Why OpenET revises a month</td>
+            <td>OpenET calls a month&rsquo;s figure provisional for about 120 days after the month ends and may revise it in that time. It may also release a new version, at most once a year, that changes older months.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Provisional</td>
+            <td>The month&rsquo;s calculation page says provisional when the recorded figure was fetched 120 days or fewer after the month ended. The word describes the figure on the day it was fetched.</td>
+          </tr>
+          <tr>
+            <td class="col-name">A newer figure</td>
+            <td>Fetching a month again changes nothing. When OpenET now reports a different figure, the month&rsquo;s calculation page shows it beside the recorded one, with its own fetch date, and the fetch command lists the month.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Accepting a newer figure</td>
+            <td>A person who can correct records may accept the newer figure on the month&rsquo;s calculation page, with a reason of 10 to 500 characters. The recorded figure and the month&rsquo;s ET estimate entry are replaced as corrections: the earlier figure stays on the page, struck through, with who accepted the newer one, when and why, and OpenH2O recalculates the month at once.</td>
+          </tr>
+          <tr>
+            <td class="col-name">A finalized water year</td>
+            <td>The newer figure is shown and nothing changes. Only an administrator can accept it, with a reason, and the change is recorded as an exception to the closed year.</td>
+          </tr>
+          <tr>
+            <td class="col-name">ET estimate entries</td>
+            <td>A person cannot type an ET figure: the hand entry form, the ledger import and the administration site do not create or change ET estimate entries. Where an entry written earlier differs from its month&rsquo;s recorded figure, the ledger page and the month&rsquo;s calculation page show the entry&rsquo;s figure and the recorded one, and a person may bring the entry to the recorded figure with a reason.</td>
+          </tr>
+          <tr>
+            <td class="col-name">The upgrade to this version</td>
+            <td>OpenH2O recorded each month&rsquo;s figure from the crop ET its last calculation used, or, for a month never calculated, the newest figure fetched. No figure changed. Those months, and the months of the demonstration data, read &ldquo;Fetch date not recorded&rdquo;.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Rainfall</td>
+            <td>Rainfall from gridMET is not recorded this way. A rain month fetched again changes the month&rsquo;s next calculation.</td>
           </tr>
         </tbody>
       </table>

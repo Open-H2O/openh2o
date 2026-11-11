@@ -86,8 +86,18 @@ LOCKED_MODELS = (
     "accounting.PeriodStatementRow",
 )
 
+#: Tables locked the same way except that a FIRST row may be added inside a
+#: finalized year (an insert that replaces no row). OpenET's crop ET for a month
+#: is recorded the first time it is fetched, and a month of a closed year may be
+#: fetched for the first time; its figure then moves nothing, because a
+#: finalized year is never recalculated on its own. Replacing, changing or
+#: deleting such a row inside a finalized year is refused like any other.
+FIRST_ROW_OPEN_MODELS = ("datasync.CropETFigure",)
+
 #: What :func:`override` switches off: the lock triggers and nothing else.
-LOCK_TRIGGER_URIS = tuple(f"{label}:{LOCK_TRIGGER_NAME}" for label in LOCKED_MODELS)
+LOCK_TRIGGER_URIS = tuple(
+    f"{label}:{LOCK_TRIGGER_NAME}" for label in LOCKED_MODELS + FIRST_ROW_OPEN_MODELS
+)
 
 #: SQL: the month the site's water year starts in, read from the one site row
 #: each time the trigger runs, so changing the setting needs no new trigger.
@@ -216,7 +226,7 @@ def finalized_period_lock(*, date_column=None, month_text_column=None,
                           fallback_month_text_column=None, period_column=None,
                           water_year_column=None, datetime_column=None,
                           year_month_columns=None, fallback_date_column=None,
-                          date_subquery=None):
+                          date_subquery=None, first_row_open=False):
     """The BEFORE INSERT/UPDATE/DELETE row trigger that locks one table.
 
     Name the row's date one way: ``date_column`` (a date), ``datetime_column``
@@ -227,6 +237,8 @@ def finalized_period_lock(*, date_column=None, month_text_column=None,
     ``water_year_column`` (a water-year label). A ``fallback_month_text_column``
     or a ``fallback_date_column`` is read when ``date_column`` is empty.
     ``period_column`` is the ``reporting_period`` link, tested as well.
+    ``first_row_open`` lets an insert that replaces no row through (the tables
+    in :data:`FIRST_ROW_OPEN_MODELS`, which carry ``replaces_id``).
     """
     if date_column and fallback_month_text_column:
         date_sql = (
@@ -274,9 +286,14 @@ def finalized_period_lock(*, date_column=None, month_text_column=None,
             "END IF; "
         )
 
+    checked_new = (
+        "TG_OP = 'UPDATE' OR (TG_OP = 'INSERT' AND NEW.\"replaces_id\" IS NOT NULL)"
+        if first_row_open
+        else "TG_OP IN ('INSERT', 'UPDATE')"
+    )
     func = (
         f"IF TG_OP IN ('UPDATE', 'DELETE') THEN {check('OLD')}END IF; "
-        f"IF TG_OP IN ('INSERT', 'UPDATE') THEN {check('NEW')}END IF; "
+        f"IF {checked_new} THEN {check('NEW')}END IF; "
         "IF TG_OP = 'DELETE' THEN RETURN OLD; END IF; "
         "RETURN NEW;"
     )

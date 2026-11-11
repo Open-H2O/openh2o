@@ -748,8 +748,11 @@ MODULE_REGISTRY: dict = {
             ),
         ),
         seed_commands=("seed_data_sources",),
-        # `parcels` for OpenETCache.parcel, `core` for TypedReading.typed_by.
-        requires=("core", "geography", "parcels"),
+        # `parcels` for OpenETCache.parcel, `core` for TypedReading.typed_by,
+        # `accounting` for the upgrade that records each month's crop ET from
+        # the depth its last calculation used (a migration that reads its runs).
+        # No change in practice: `parcels` already brings `accounting` with it.
+        requires=("core", "geography", "parcels", "accounting"),
         # Optional but schema-resident (demoted model-only), same shape as
         # `wells` above. Demotion keeps the app installed, so module-scope
         # imports never break. The

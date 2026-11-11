@@ -41,7 +41,7 @@ def _et_cache(parcel, period="2024-06", et_mm=100.0, variable="ET", model="Ensem
     from datasync.models import OpenETCache
 
     year, month = int(period[:4]), int(period[5:7])
-    return OpenETCache.objects.create(
+    row = OpenETCache.objects.create(
         parcel=parcel,
         geometry=_square(),
         start_date=dt.date(year, month, 1),
@@ -50,6 +50,11 @@ def _et_cache(parcel, period="2024-06", et_mm=100.0, variable="ET", model="Ensem
         model_name=model,
         et_data=[{"et": et_mm, "date": period, "unit": "mm"}],
     )
+    if variable == "ET":
+        from datasync.crop_et import months_of, record_fetched_months
+
+        record_fetched_months(row.parcel, months_of(row.et_data), model=row.model_name)
+    return row
 
 
 def _irrigate(parcel):
@@ -102,7 +107,7 @@ def test_et_gross_picks_only_the_requested_month_from_multimonth_row():
     from datasync.models import OpenETCache
 
     parcel = _parcel("ET-MULTI", acres="10")
-    OpenETCache.objects.create(
+    et_row = OpenETCache.objects.create(
         parcel=parcel,
         geometry=_square(),
         start_date=dt.date(2024, 6, 1),
@@ -115,6 +120,9 @@ def test_et_gross_picks_only_the_requested_month_from_multimonth_row():
             {"et": 134.0, "date": "2024-08", "unit": "mm"},
         ],
     )
+    from datasync.crop_et import months_of, record_fetched_months
+
+    record_fetched_months(et_row.parcel, months_of(et_row.et_data), model=et_row.model_name)
     fn = STEP_REGISTRY["et_gross"]
     af, record = fn(Decimal("0"), parcel, "2024-07", {}, {})
     assert record["detail"]["et_mm"] == "174.0"
@@ -434,7 +442,7 @@ def test_run_calculations_skips_span_row_with_no_matched_month():
     parcel = _parcel("SPAN-NO-MATCH", acres="10")
     _irrigate(parcel)
     # Spans Jun–Aug, but carries ONLY a June item — nothing dated 2024-07.
-    OpenETCache.objects.create(
+    et_row = OpenETCache.objects.create(
         parcel=parcel,
         geometry=_square(),
         start_date=dt.date(2024, 6, 1),
@@ -443,6 +451,9 @@ def test_run_calculations_skips_span_row_with_no_matched_month():
         model_name="Ensemble",
         et_data=[{"et": 170.0, "date": "2024-06", "unit": "mm"}],
     )
+    from datasync.crop_et import months_of, record_fetched_months
+
+    record_fetched_months(et_row.parcel, months_of(et_row.et_data), model=et_row.model_name)
     call_command("seed_calculation_plan")
     call_command("run_calculations", "--period", "2024-07")
 
@@ -488,7 +499,7 @@ def test_read_cache_mm_flags_item_outside_row_span(caplog):
     from accounting.steps import _read_cache_mm
 
     parcel = _parcel("SPAN-BAD", acres="10")
-    OpenETCache.objects.create(
+    et_row = OpenETCache.objects.create(
         parcel=parcel,
         geometry=_square(),
         start_date=dt.date(2024, 6, 1),
@@ -497,6 +508,9 @@ def test_read_cache_mm_flags_item_outside_row_span(caplog):
         model_name="Ensemble",
         et_data=[{"et": 99.0, "date": "2024-07", "unit": "mm"}],  # July — out of span
     )
+    from datasync.crop_et import months_of, record_fetched_months
+
+    record_fetched_months(et_row.parcel, months_of(et_row.et_data), model=et_row.model_name)
     with caplog.at_level(logging.WARNING, logger="accounting.steps"):
         total_mm, matched, row_count = _read_cache_mm(
             parcel, "2024-06", "ET", "Ensemble", "et"

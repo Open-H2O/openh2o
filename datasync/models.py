@@ -403,3 +403,59 @@ class OpenETCache(models.Model):
                 # single place origin="api" is set.
                 origin="api",
             )
+
+
+#: The note on a month recorded when a site upgraded to the version that keeps these records.
+RECORDED_AT_UPGRADE = "Recorded at upgrade"
+
+
+@track_changes()
+class CropETFigure(CorrectableRecord):
+    """OpenET's crop ET for one use area and month, recorded the first time it is fetched.
+
+    The calculation and the ledger's ET estimate entry read this record and nothing
+    else (``datasync/crop_et.py`` holds every reader and writer). A later fetch with a
+    different figure writes no record: the month's page shows the newer figure beside
+    this one, and a person may accept it with a reason, which replaces this record as a
+    correction (``replaces``, ``change_reason``, ``replaced_at``). No form, import or
+    administration screen writes it.
+
+    The depth is in millimeters, exactly as fetched. ``fetched_on`` is the site's date
+    on the day it was fetched; it is empty when that is not known (a month recorded at
+    the upgrade, or loaded from a file that carries no fetch dates). Inside a finalized
+    water year a month may gain its first record; any other change there goes through
+    the recorded override (``accounting.locks.FIRST_ROW_OPEN_MODELS``).
+    """
+
+    parcel = models.ForeignKey(
+        "parcels.Parcel", on_delete=models.CASCADE, related_name="+", verbose_name="use area"
+    )
+    month = models.DateField(
+        "month of the figure", help_text="The first day of the month the figure is for."
+    )
+    variable = models.CharField("OpenET variable", max_length=20, default="ET")
+    model_name = models.CharField("OpenET model", max_length=50, default="Ensemble")
+    depth_mm = models.DecimalField("crop ET (mm)", max_digits=40, decimal_places=20)
+    fetched_on = models.DateField("fetched", null=True, blank=True)
+    note = models.CharField("how it was recorded", max_length=40, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+", verbose_name="accepted by",
+    )
+    created_at = models.DateTimeField("recorded", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "recorded crop ET figure"
+        verbose_name_plural = "recorded crop ET figures"
+        ordering = ["parcel_id", "month", "pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["parcel", "month", "variable", "model_name"],
+                condition=models.Q(voided_at__isnull=True, replaced_at__isnull=True),
+                name="cropetfigure_one_current_per_month",
+            ),
+        ]
+        triggers = [finalized_period_lock(date_column="month", first_row_open=True)]
+
+    def __str__(self):
+        return f"{self.parcel_id} {self.month:%Y-%m}: {self.depth_mm} mm"

@@ -46,7 +46,7 @@ from accounting.services import account_balance, parcel_water_use_months
 from core.changes import event_models
 from core.corrections import correct, void
 from core.modules import ALL_MODULE_NAMES
-from datasync.models import OpenETCache
+from datasync.models import CropETFigure
 from parcels.models import Parcel, ParcelLedger
 from surface.models import DiversionRecord
 from tests import ledger_districts as ld
@@ -161,13 +161,13 @@ def run_figure(parcel, month="2025-07"):
 
 
 def double_july_et(parcel):
-    """Change the satellite figure the July calculation reads, so a re-run moves a figure."""
-    cache = OpenETCache.objects.get(parcel=parcel)
-    cache.et_data = [
-        dict(item, et=item["et"] * 2) if item["date"].startswith("2025-07") else item
-        for item in cache.et_data
-    ]
-    cache.save()
+    """Change the satellite figure the July calculation reads, so a re-run moves a figure.
+
+    The calculation reads the month's record, not the cache, so the record is changed in place;
+    these tests are about reading past states, not about accepting a newer figure.
+    """
+    for record in CropETFigure.objects.current().filter(parcel=parcel, month=dt.date(2025, 7, 1)):
+        CropETFigure.objects.filter(pk=record.pk).update(depth_mm=record.depth_mm * 2)
 
 
 def events_after(label, moment):
