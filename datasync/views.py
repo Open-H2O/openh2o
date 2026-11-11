@@ -613,7 +613,17 @@ def _readings_card_context(
                 status="voided" if reading.voided_at is not None else "replaced",
                 typed=reading,
             ))
-        card_records.sort(key=lambda r: r.observation_date, reverse=True)
+        # Newest day first, then newest pk. A published reading's time becomes the
+        # site's local date so it sorts beside the typed readings, which have a date.
+        def _card_sort_key(rec):
+            when = rec.observation_date
+            if isinstance(rec, SimpleNamespace):
+                return (when, rec.typed.pk)
+            if isinstance(when, datetime):
+                when = timezone.localdate(when) if timezone.is_aware(when) else when.date()
+            return (when, rec.pk)
+
+        card_records.sort(key=_card_sort_key, reverse=True)
         typed += voided
     mark_actions(
         typed, can_write=True, finalized=corrections.finalized_ranges(), void_key=void_key,
