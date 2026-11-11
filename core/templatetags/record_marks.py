@@ -9,7 +9,6 @@ can land on it (``core.corrections.anchor``).
 """
 
 from decimal import Decimal
-from zoneinfo import ZoneInfo
 
 from django import template
 from django.urls import reverse
@@ -18,9 +17,6 @@ from django.utils import timezone
 from core import corrections, record_attachments
 
 register = template.Library()
-
-#: Dates on a void line are the district's day, which is Pacific here as everywhere on the pages.
-_PACIFIC = ZoneInfo("America/Los_Angeles")
 
 
 @register.filter
@@ -62,7 +58,8 @@ def void_line(row):
     """``Voided Nov 2, 2026 by J. Lopez: typed on the wrong well.``, or ``""`` for a record that counts."""
     if row.voided_at is None:
         return ""
-    day = timezone.localtime(row.voided_at, _PACIFIC)
+    # The day is the site's own (its time zone setting), read at call time.
+    day = timezone.localtime(row.voided_at, timezone.get_default_timezone())
     reason = (row.void_reason or "").strip()
     if reason and reason[-1] not in ".!?":
         reason += "."
@@ -173,7 +170,8 @@ def replaced_line(row):
         return "", None
     kind = corrections.kind_for(row)
     new = type(row).objects.filter(replaces=row).first()
-    day = timezone.localtime(row.replaced_at, _PACIFIC)
+    # The day is the site's own (its time zone setting), read at call time.
+    day = timezone.localtime(row.replaced_at, timezone.get_default_timezone())
     if new is None:
         return f"Replaced {day:%b} {day.day}, {day.year}.", None
     now = _now_words(kind["key"], row, new)
