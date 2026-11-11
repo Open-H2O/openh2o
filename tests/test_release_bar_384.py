@@ -45,5 +45,4 @@ def test_two_wells_in_one_month_both_count_in_the_year():
     context = _production_table_context(system, 2025)
 
     groundwater = next(t for t in context["totals"] if t["type_code"] == "GW")
-    assert groundwater["gallons"] == D("350")
-    assert context["grand_total_gallons"] == D("350")
+    assert (groundwater["gallons"], context["grand_total_gallons"]) == (D("350"), D("350"))

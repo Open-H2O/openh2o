@@ -109,9 +109,9 @@ def test_an_event_saved_with_no_zone_takes_nothing_from_a_zone_set_later(client,
     assert _pool(zone_a) == D("0")
 
 
-def test_an_event_the_demonstration_pooled_to_a_zone_the_site_does_not_name_is_taken_back(client, zones):
-    """The demonstration's loader pools each basin's events to the zone around it and leaves the
-    site's own zone blank, so the event's pool is not the site's zone."""
+def test_an_event_pooled_to_a_zone_the_site_does_not_name_is_taken_back(client, zones):
+    """The demonstration's loader names the pool's zone itself (the site's own zone when it has
+    one, otherwise the zone around the basin), so an event's pool need not be the site's zone."""
     from accounting.services import create_recharge_ledger_entries
 
     zone_a, _ = zones
