@@ -295,9 +295,9 @@
             {% if ef.name == "status" %}
               {% include "partials/_help_tooltip.html" with label="Status" text="Active use areas are included in your water data and reports. Inactive use areas are excluded." %}
             {% elif ef.name == "area_acres" %}
-              {% include "partials/_help_tooltip.html" with label="Area (acres)" text="Calculated from the use area's boundary when no figure is entered. OpenH2O uses the area to convert crop ET and rainfall from depth to acre-feet. No allocation is calculated from it." %}
+              {% include "partials/_help_tooltip.html" with label="Area (acres)" text="Calculated from the use area's boundary when no figure is entered. OpenH2O uses the area to convert crop ET and rainfall from depth to acre-feet. No allocation is calculated from it. A change to the area is a correction: it counts in every month of every water year that is not finalized." %}
             {% elif ef.name == "irrigation_method" %}
-              {% include "partials/_help_tooltip.html" with label="Irrigation method" text="Each irrigation method's efficiency comes from a groundwater agency's published table. For a use area with an irrigation method on file, OpenH2O uses the method's efficiency in place of the default on Delivery Settings." %}
+              {% include "partials/_help_tooltip.html" with label="Irrigation method" text="Each irrigation method's efficiency comes from a groundwater agency's published table. For a use area with an irrigation method on file, OpenH2O uses the method's efficiency in place of the default on Delivery Settings. A change of method counts from the month you choose. Months before it keep the earlier method." %}
             {% endif %}
           </div>
           <div id="field-{{ ef.name }}" class="field-row">
@@ -321,6 +321,7 @@
               &#9998;
             </button>{% endif %}
           </div>
+          {% if ef.name == "irrigation_method" %}<div id="field-irrigation_method-more">{% include "parcels/partials/_irrigation_more.html" %}</div>{% endif %}
         </div>
         {% endfor %}
 

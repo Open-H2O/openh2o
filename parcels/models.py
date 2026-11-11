@@ -280,22 +280,46 @@ class IrrigationMethod(models.Model):
 
 @track_changes()
 class ParcelIrrigationMethod(models.Model):
-    """How one use area is irrigated; no row means not set.
+    """How one use area is irrigated, from a month; no row means not set.
 
-    A row of its own rather than a ``Parcel.irrigation_method`` column; every
-    reader goes through the ``irrigation`` accessor, so the row keeps this
-    shape.
+    A use area has one row per starting month. ``start_month`` is the first
+    day of a month; an empty one means "from the start of the records". A row
+    holds from its start month until the next row's start month. An empty
+    ``method`` means "Not set": the default efficiency on Delivery Settings
+    applies from that month. Readers go through
+    ``parcels.services.irrigation_row_in_force``.
     """
 
-    parcel = models.OneToOneField(
-        Parcel, on_delete=models.CASCADE, related_name="irrigation"
+    parcel = models.ForeignKey(
+        Parcel, on_delete=models.CASCADE, related_name="irrigation_methods"
     )
+    start_month = models.DateField(null=True, blank=True, verbose_name="Starting month")
     method = models.ForeignKey(
-        IrrigationMethod, on_delete=models.PROTECT, related_name="use_areas"
+        IrrigationMethod,
+        on_delete=models.PROTECT,
+        related_name="use_areas",
+        null=True,
+        blank=True,
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["parcel", "start_month"],
+                name="irrigation_method_one_row_per_start_month",
+            ),
+            # Two empty start months are distinct to the database, so a second
+            # "from the start of the records" row needs its own rule.
+            models.UniqueConstraint(
+                fields=["parcel"],
+                condition=models.Q(start_month__isnull=True),
+                name="irrigation_method_one_row_from_the_start",
+            ),
+        ]
+
     def __str__(self):
-        return f"{self.parcel} → {self.method}"
+        start = f", from {self.start_month:%B %Y}" if self.start_month else ""
+        return f"{self.parcel} → {self.method or 'Not set'}{start}"
 
 
 class FallowPeriodQuerySet(CorrectableQuerySet):

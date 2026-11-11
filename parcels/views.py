@@ -19,11 +19,12 @@ from urllib.parse import parse_qs, urlsplit
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.core.serializers import serialize
-from django.db.models import Q
+from django.db.models import F, Q
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
+from accounting.locks import PeriodFinalized, refuse_if_finalized
 from core import corrections, pending_imports
 from core.access import public_in_open_demo
 from core.as_of_views import as_of_box, day_words, reads_as_of
@@ -93,34 +94,108 @@ def _editable_fields():
     return fields
 
 
+def _method_words(row):
+    """A row's method as the page prints it: "Sprinkler, 80%", or "not set"."""
+    return str(row.method) if row.method_id else "not set"
+
+
+def irrigation_row_context(parcel):
+    """What the Irrigation method row shows: the newest row in words, and the earlier ones.
+
+    ``value`` is the newest row's method pk ("" when it is Not set or the use area has
+    no row), ``display`` its words ("Drip, 90%, from August 2025"; "Sprinkler, 80%" when
+    it holds from the start of the records), and ``earlier`` the older rows newest first,
+    each as "Earlier: Sprinkler, 80%, until July 2025". ``has_rows`` says whether the
+    use area has any row, which makes the starting month required on the edit form.
+    """
+    rows = list(
+        ParcelIrrigationMethod.objects.filter(parcel=parcel)
+        .select_related("method")
+        .order_by(F("start_month").asc(nulls_first=True))
+    )
+    if not rows:
+        return {"value": "", "display": "", "earlier": [], "has_rows": False}
+    newest = rows[-1]
+    if newest.start_month:
+        start = f"{newest.start_month:%B %Y}"
+        if newest.method_id:
+            display = f"{newest.method}, from {start}"
+        else:
+            display = f"Not set from {start}"
+    else:
+        display = str(newest.method) if newest.method_id else ""
+    earlier = []
+    for i in range(len(rows) - 2, -1, -1):
+        until = rows[i + 1].start_month - dt.timedelta(days=1)
+        earlier.append(f"Earlier: {_method_words(rows[i])}, until {until:%B %Y}")
+    return {
+        "value": str(newest.method_id) if newest.method_id else "",
+        "display": display,
+        "earlier": earlier,
+        "has_rows": True,
+    }
+
+
 def _field_value(parcel, field):
     """``(value, display)`` for one editable field.
 
     ``value`` is what the edit form's input holds; ``display`` is what the
     page shows. They differ only for the irrigation method, whose value is the
-    method's pk and whose display is "<name>, <n>%" (blank when not set).
+    method's pk and whose display is "<name>, <n>%" with the month it counts
+    from (blank when not set).
     """
     if field == IRRIGATION_METHOD:
-        link = (
-            ParcelIrrigationMethod.objects.filter(parcel=parcel)
-            .select_related("method")
-            .first()
-        )
-        if link is None:
-            return "", ""
-        return str(link.method_id), str(link.method)
+        context = irrigation_row_context(parcel)
+        return context["value"], context["display"]
     value = getattr(parcel, field)
     return value, value
 
 
-def _save_irrigation_method(parcel, method_pk):
-    """Set the use area's method, or clear it when ``method_pk`` is blank."""
-    if method_pk:
+def _irrigation_form_context(parcel, body_params=None):
+    """What the method form adds to the select: whether the starting month is required, and what was typed."""
+    return {
+        "start_month_required": ParcelIrrigationMethod.objects.filter(parcel=parcel).exists(),
+        "start_month_value": (body_params or {}).get("start_month", [""])[0],
+        "irrigation_earlier": irrigation_row_context(parcel)["earlier"],
+    }
+
+
+def _irrigation_start(parcel, raw):
+    """``(first of the starting month or None, error)`` for what was typed on the method form.
+
+    The month is required once the use area has a method row, and it may not fall in
+    a finalized water year.
+    """
+    raw = (raw or "").strip()
+    if not raw:
+        if ParcelIrrigationMethod.objects.filter(parcel=parcel).exists():
+            return None, "Choose a day in the starting month."
+        return None, ""
+    try:
+        start = dt.date.fromisoformat(raw).replace(day=1)
+    except ValueError:
+        return None, "Choose a day in the starting month."
+    try:
+        refuse_if_finalized(start)
+    except PeriodFinalized as exc:
+        return None, str(exc)
+    return start, ""
+
+
+def _save_irrigation_method(parcel, method_pk, start_month=None):
+    """Set the use area's method from ``start_month``; a blank ``method_pk`` is Not set from then.
+
+    A month that already has a row has that row's method replaced. Without a
+    starting month the method holds from the start of the records, which only a use
+    area with no row yet may do.
+    """
+    exists = ParcelIrrigationMethod.objects.filter(parcel=parcel).exists()
+    if method_pk or exists:
         ParcelIrrigationMethod.objects.update_or_create(
-            parcel=parcel, defaults={"method_id": int(method_pk)}
+            parcel=parcel,
+            start_month=start_month,
+            defaults={"method_id": int(method_pk) if method_pk else None},
         )
-    else:
-        ParcelIrrigationMethod.objects.filter(parcel=parcel).delete()
     parcel.save(update_fields=["updated_at"])
 
 
@@ -270,6 +345,7 @@ def _parcel_detail_context(parcel, period_id=None, can_write=True):
         "over_delivery_shown_af": over_delivery_shown_af,
         "editable_fields": editable_fields,
         "editable_fields_with_values": editable_fields_with_values,
+        "irrigation_earlier": irrigation_row_context(parcel)["earlier"],
         "fallow": fallow_row_context(parcel),
         # Pass the Python object (or None); the template escapes it via
         # json_script so operator free-text can't break out of <script>.
@@ -396,7 +472,13 @@ def _efficiency_sentence(parcel, water_use):
     if efficiency is None:
         return ""
     percent = format((efficiency * 100).normalize(), "f")
-    if ParcelIrrigationMethod.objects.filter(parcel=parcel).exists():
+    from parcels.services import irrigation_row_in_force
+
+    months = [m["month"] for m in water_use["months"]]
+    if any(
+        (row := irrigation_row_in_force(parcel, month)) is not None and row.method_id
+        for month in months
+    ):
         return f"Surface water counts toward crop ET at this use area's {percent}% irrigation efficiency."
     return (
         f"Surface water counts toward crop ET at the {percent}% irrigation efficiency "
@@ -630,6 +712,8 @@ def parcel_edit_field(request, pk):
             "display": display,
             "needs_reason": field in REASON_FIELDS,
         }
+        if field == IRRIGATION_METHOD:
+            context.update(_irrigation_form_context(parcel))
         # Cancel action: return the value display instead of the edit form
         if request.GET.get("cancel"):
             return render(request, "parcels/partials/_field_value.html", context)
@@ -663,11 +747,26 @@ def parcel_edit_field(request, pk):
             "needs_reason": True,
             "reason": typed_reason,
             "error": reason_error,
+            **(_irrigation_form_context(parcel, body_params) if field == IRRIGATION_METHOD else {}),
         })
 
     if field == IRRIGATION_METHOD:
+        start_month, start_error = _irrigation_start(
+            parcel, body_params.get("start_month", [""])[0]
+        )
+        if start_error:
+            return render(request, "parcels/partials/_field_edit.html", {
+                "parcel": parcel,
+                "field": field,
+                "field_meta": field_meta,
+                "value": new_value,
+                "needs_reason": True,
+                "reason": typed_reason,
+                "error": start_error,
+                **_irrigation_form_context(parcel, body_params),
+            })
         with change_note(reason):
-            _save_irrigation_method(parcel, new_value)
+            _save_irrigation_method(parcel, new_value, start_month)
         value, display = _field_value(parcel, field)
         context = {
             "parcel": parcel,
@@ -675,6 +774,7 @@ def parcel_edit_field(request, pk):
             "field_meta": field_meta,
             "value": value,
             "display": display,
+            "irrigation_earlier": irrigation_row_context(parcel)["earlier"],
         }
         return render(request, "parcels/partials/_field_value.html", context)
 

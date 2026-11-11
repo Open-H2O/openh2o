@@ -125,9 +125,12 @@ def _link_for(parcel):
     return ParcelIrrigationMethod.objects.filter(parcel=parcel).first()
 
 
-def _patch(client, parcel, value):
+def _patch(client, parcel, value, start_month=""):
     """PATCH the inline editor the way the HTMX form does (urlencoded body)."""
-    body = urlencode({"field": "irrigation_method", "value": value, "reason": "Set from the field survey."})
+    body = urlencode({
+        "field": "irrigation_method", "value": value, "start_month": start_month,
+        "reason": "Set from the field survey.",
+    })
     return client.patch(
         reverse("parcels:edit_field", args=[parcel.pk]),
         data=body,
@@ -201,15 +204,19 @@ def test_editor_sets_the_method(auth_client):
 
 def test_editor_changes_then_clears_the_method(auth_client):
     parcel = ParcelFactory()
-    _patch(auth_client, parcel, str(_method("Basin").pk))
-    _patch(auth_client, parcel, str(_method("Surface Drip").pk))
-    assert _link_for(parcel).method.name == "Surface Drip"
+    from parcels.models import ParcelIrrigationMethod
 
-    resp = _patch(auth_client, parcel, "")
+    _patch(auth_client, parcel, str(_method("Basin").pk))
+    _patch(auth_client, parcel, str(_method("Surface Drip").pk), "2025-03-01")
+    assert ParcelIrrigationMethod.objects.get(parcel=parcel, start_month="2025-03-01").method.name == "Surface Drip"
+
+    resp = _patch(auth_client, parcel, "", "2025-06-01")
 
     assert resp.status_code == 200
-    assert _link_for(parcel) is None
-    assert "Not recorded" in resp.content.decode()
+    assert "Not set from June 2025" in resp.content.decode()
+    # Not set counts from June on; the methods before it are kept.
+    assert ParcelIrrigationMethod.objects.get(parcel=parcel, start_month="2025-06-01").method is None
+    assert ParcelIrrigationMethod.objects.filter(parcel=parcel).count() == 3
 
 
 def test_editor_refuses_a_method_that_does_not_exist(auth_client):
@@ -262,8 +269,9 @@ def test_shape_4_editor_sets_and_clears_the_method(auth_client):
     assert _patch(auth_client, parcel, str(drip.pk)).status_code == 200
     assert _link_for(parcel).method == drip
 
-    assert _patch(auth_client, parcel, "").status_code == 200
-    assert _link_for(parcel) is None
+    assert _patch(auth_client, parcel, "", "2025-06-01").status_code == 200
+    assert _link_for(parcel).method == drip
+    assert _link_for(parcel).start_month is None
 
 
 # ---------------------------------------------------------------------------

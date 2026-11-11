@@ -49,7 +49,7 @@ Invariants honored (must agree with the calc engine + the Plan-01 kernel):
 Efficiency is resolved PER PARCEL by ``parcels.services.field_efficiency``
 (in ``parcels``): a served
 parcel with a recorded ``parcels.ParcelIrrigationMethod`` is capped at
-its own method's assigned efficiency; a parcel with no method falls back to the
+its own method's assigned efficiency in the delivery's month; a parcel with no method falls back to the
 agency-wide ``SiteConfig.default_irrigation_efficiency``. An explicit
 ``efficiency=`` override on this call still wins for every served parcel, so
 the per-parcel lookup only runs when no override is given. Shared-well /
@@ -59,7 +59,7 @@ shared-POD apportionment is out of scope here.
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
@@ -99,11 +99,13 @@ logger = logging.getLogger(__name__)
 _Q = Decimal("0.0001")
 
 
-def _resolve_efficiency(efficiency: Decimal | float | None, parcel: Parcel) -> Decimal:
-    """The explicit override if given, else this parcel's own field_efficiency."""
+def _resolve_efficiency(
+    efficiency: Decimal | float | None, parcel: Parcel, month: date | None = None
+) -> Decimal:
+    """The explicit override if given, else this parcel's own field_efficiency in ``month``."""
     if efficiency is not None:
         return Decimal(str(efficiency))
-    return field_efficiency(parcel)[0]
+    return field_efficiency(parcel, month=month)[0]
 
 
 def _month_demand(parcel: Parcel, month: date) -> Decimal:
@@ -672,11 +674,17 @@ def _plan_allocation(
     served_links = _served_links(pod)
     served = [link.parcel for link in served_links]
 
-    # Per-parcel cap: each served parcel's own field_efficiency,
-    # unless the caller passed an explicit override, which wins for every
-    # parcel. Resolved once here, not per record, since the served list and
-    # each parcel's method do not change across a POD's diversion records.
-    eff_by_parcel = {p: _resolve_efficiency(efficiency, p) for p in served}
+    # Per-parcel cap: each served parcel's own field_efficiency in the
+    # delivery's month (a method can change from a month), unless the caller
+    # passed an explicit override, which wins for every parcel. Looked up per
+    # parcel and month, once each.
+    eff_cache: dict[tuple[Parcel, date], Decimal] = {}
+
+    def eff_by_parcel(parcel: Parcel, month: date) -> Decimal:
+        key = (parcel, _month_start(month))
+        if key not in eff_cache:
+            eff_cache[key] = _resolve_efficiency(efficiency, parcel, key[1])
+        return eff_cache[key]
 
     records = list(_records_for_period(pod, reporting_period, months))
     by_month: dict[date, list[DiversionRecord]] = {}
@@ -706,7 +714,7 @@ def _allocate_month(
     month: date,
     month_records: list[DiversionRecord],
     served_links: list[PointOfDiversionParcel],
-    eff_by_parcel: dict[Parcel, Decimal],
+    eff_by_parcel: Callable[[Parcel, date], Decimal],
     sw_type: WaterType | None,
     notes: list[dict[str, Any]] | None,
     to_write: list[ParcelLedger],
@@ -879,7 +887,7 @@ def _split_record(
     served: list[Parcel],
     free: list[Parcel],
     free_links: list[PointOfDiversionParcel],
-    eff_by_parcel: dict[Parcel, Decimal],
+    eff_by_parcel: Callable[[Parcel, date], Decimal],
     sw_type: WaterType | None,
     loss_fraction: Decimal,
 ) -> tuple[list[ParcelLedger], str, Decimal]:
@@ -901,7 +909,7 @@ def _split_record(
     shares = allocate_by_demand(
         delivery_total,
         demand_by_parcel,
-        {p: eff_by_parcel[p] for p in free},
+        {p: eff_by_parcel(p, record.month) for p in free},
     )
 
     if shares:

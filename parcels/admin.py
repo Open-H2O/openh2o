@@ -56,5 +56,6 @@ class IrrigationMethodAdmin(admin.ModelAdmin):
 
 @admin.register(ParcelIrrigationMethod)
 class ParcelIrrigationMethodAdmin(admin.ModelAdmin):
-    list_display = ["parcel", "method"]
+    list_display = ["parcel", "start_month", "method"]
+    fields = ["parcel", "start_month", "method"]
     raw_id_fields = ["parcel"]

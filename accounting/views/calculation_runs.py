@@ -206,12 +206,16 @@ def _breakdown_facts(run: CalculationRun) -> dict[str, object]:
     }
 
 
-def _irrigation_method_name(parcel: Parcel, irrigation_efficiency_source: object) -> str | None:
-    """The field's irrigation method name when the efficiency came from the method, else None."""
+def _irrigation_method_name(
+    parcel: Parcel, irrigation_efficiency_source: object, period: str | None = None
+) -> str | None:
+    """The name of the irrigation method in force in the run's month when the efficiency came from the method, else None."""
+    from parcels.services import irrigation_row_in_force
+
     irrigation_method_name = None
     if irrigation_efficiency_source == "method":
-        link = getattr(parcel, "irrigation", None)
-        if link is not None:
+        link = irrigation_row_in_force(parcel, period)
+        if link is not None and link.method is not None:
             irrigation_method_name = link.method.name
     return irrigation_method_name
 
@@ -260,7 +264,7 @@ def _receipt_context(parcel, run, period):
     irrigation_efficiency_source = facts["irrigation_efficiency_source"]
     precip_method = facts["precip_method"]
     floor = facts["floor"]
-    irrigation_method_name = _irrigation_method_name(parcel, irrigation_efficiency_source)
+    irrigation_method_name = _irrigation_method_name(parcel, irrigation_efficiency_source, run.period)
 
     # The field's irrigation efficiency the run stamped (a run from
     # before the stamp reads it back off final_af / gw_extracted_af).

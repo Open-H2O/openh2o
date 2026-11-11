@@ -346,7 +346,7 @@ def _persist_calculation_run(
 def _parcels_in_scope(parcel_number: str | None) -> QuerySet[Parcel]:
     """The parcels this run covers: all of them, or the one named by --parcel."""
     parcels = (
-        Parcel.objects.current().select_related("irrigation__method")
+        Parcel.objects.current().prefetch_related("irrigation_methods__method")
         .all()
         .order_by("parcel_number")
     )
@@ -939,7 +939,7 @@ def _assess_et(
     # field: ETAW met by groundwater is divided by the field's own
     # irrigation efficiency, the same lookup its canal water uses.
     gw_efficiency, gw_efficiency_source = field_efficiency(
-        parcel, config=site_config
+        parcel, config=site_config, month=period
     )
     incidental_af = _incidental_recharge_af(breakdown)
 

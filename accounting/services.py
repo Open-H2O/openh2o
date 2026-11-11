@@ -2588,8 +2588,10 @@ def groundwater_efficiency_method_name(run: CalculationRun) -> str | None:
     row's method name is: the run stamps the source, not the name."""
     if run.groundwater_efficiency_source != "method":
         return None
-    link = getattr(run.parcel, "irrigation", None)
-    return link.method.name if link is not None else None
+    from parcels.services import irrigation_row_in_force
+
+    link = irrigation_row_in_force(run.parcel, run.period)
+    return link.method.name if link is not None and link.method is not None else None
 
 
 def _subtraction_context(run: CalculationRun) -> dict[str, Any]:
@@ -2620,8 +2622,10 @@ def _subtraction_context(run: CalculationRun) -> dict[str, Any]:
 
     irrigation_method_name = None
     if irrigation_efficiency_source == "method":
-        link = getattr(run.parcel, "irrigation", None)
-        if link is not None:
+        from parcels.services import irrigation_row_in_force
+
+        link = irrigation_row_in_force(run.parcel, run.period)
+        if link is not None and link.method is not None:
             irrigation_method_name = link.method.name
 
     irrigation_efficiency_pct = (

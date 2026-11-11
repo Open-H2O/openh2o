@@ -1,0 +1,8 @@
+{% comment %}
+Under the Irrigation method row: the earlier methods, one line each, newest first, in the
+small tertiary style of the Fallow row's earlier periods.
+`irrigation_earlier` is parcels.views.irrigation_row_context()["earlier"].
+{% endcomment %}
+{% for line in irrigation_earlier %}
+<div class="text-tertiary text-xs" style="margin-top: var(--space-xs);">{{ line }}</div>
+{% endfor %}

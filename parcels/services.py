@@ -3,24 +3,57 @@
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING
+
+from django.db.models import F, Q
 
 if TYPE_CHECKING:
     from core.models import SiteConfig
     from parcels.models import Parcel
 
 
+def month_of(month: date | str | None) -> date | None:
+    """The first day of a month given as a date or a ``YYYY-MM`` period; None stays None."""
+    if month is None:
+        return None
+    if isinstance(month, str):
+        year, number = month.split("-")[:2]
+        return date(int(year), int(number), 1)
+    return month.replace(day=1)
+
+
+def irrigation_row_in_force(parcel: Parcel, month: date | str | None = None):
+    """The ``ParcelIrrigationMethod`` row in force in ``month``, or None.
+
+    The row with the latest start month on or before the month; an empty start
+    month counts as the earliest. Without a month, the row in force today.
+    The row's own ``method`` may be empty ("Not set").
+    """
+    from parcels.models import ParcelIrrigationMethod
+
+    first = month_of(month) or date.today().replace(day=1)
+    rows = ParcelIrrigationMethod.objects.filter(parcel=parcel).filter(
+        Q(start_month__isnull=True) | Q(start_month__lte=first)
+    )
+    return rows.select_related("method").order_by(F("start_month").asc(nulls_first=True)).last()
+
+
 def field_efficiency(
-    parcel: Parcel, config: SiteConfig | None = None
+    parcel: Parcel,
+    config: SiteConfig | None = None,
+    month: date | str | None = None,
 ) -> tuple[Decimal, str]:
-    """One parcel's own field efficiency, and where it came from.
+    """One parcel's own field efficiency in a month, and where it came from.
 
     Returns ``(Decimal, source)``. ``source`` is ``"method"`` when the parcel
-    carries a ``ParcelIrrigationMethod`` (a one-to-one, related_name
-    ``irrigation``), which gives the assigned efficiency off that method's
-    row. Otherwise ``"agency"``, the deployment-wide
-    ``SiteConfig.default_irrigation_efficiency``.
+    has an irrigation method in force in ``month`` (see
+    ``irrigation_row_in_force``), which gives the assigned efficiency off that
+    method's row. Otherwise ``"agency"``, the deployment-wide
+    ``SiteConfig.default_irrigation_efficiency``: a use area with no row yet,
+    or whose row in force is "Not set". ``month`` is a date in the month, or
+    a ``YYYY-MM`` period; without it, the method in force today.
 
     This is the SAME figure ``surface.services.allocate_district_delivery``'s
     per-parcel cap and ``subtract_surface_water``'s consumption math both read,
@@ -45,8 +78,8 @@ def field_efficiency(
     # Imported lazily so this module has no load-time dependency on core.
     from core.models import SiteConfig
 
-    link = getattr(parcel, "irrigation", None)
-    if link is not None:
+    link = irrigation_row_in_force(parcel, month)
+    if link is not None and link.method is not None:
         return link.method.assigned_efficiency, "method"
     if config is None:
         config = SiteConfig.objects.first() or SiteConfig()

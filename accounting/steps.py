@@ -234,8 +234,8 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
 
     Only the part of a delivery the crop could actually use is subtracted:
     ``consumed = delivery x efficiency``, where efficiency is this
-    parcel's OWN ``parcels.services.field_efficiency`` (a method's assigned
-    efficiency, or the agency-wide default). The multiplication is not a
+    parcel's OWN ``parcels.services.field_efficiency`` in the delivery's month (the
+    assigned efficiency of the method in force that month, or the agency-wide default). The multiplication is not a
     setting: a plan carrying an ``apply_efficiency`` key (on or off) or none
     behaves the same.
 
@@ -271,7 +271,7 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
         # deployment with accounting has.
         from parcels.services import field_efficiency
 
-        efficiency, efficiency_source = field_efficiency(parcel)
+        efficiency, efficiency_source = field_efficiency(parcel, month=period)
         consumed_af = (delivered_af * efficiency).quantize(quant)
 
     new_running = running_af - consumed_af

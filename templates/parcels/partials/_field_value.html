@@ -21,3 +21,4 @@ Replaces the content of #field-<fieldname>.
   onmouseout="this.style.color='var(--color-text-tertiary)'">
   &#9998;
 </button>{% endif %}
+{% if field == "irrigation_method" %}<div id="field-irrigation_method-more" hx-swap-oob="innerHTML">{% include "parcels/partials/_irrigation_more.html" %}</div>{% endif %}
