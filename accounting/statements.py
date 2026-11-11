@@ -546,7 +546,9 @@ def corrections_since(period, since, all_records=False):
 
     Found through the registry (``core.corrections.KINDS``): the rows of each
     enabled kind marked replaced or voided after ``since`` whose own date falls
-    in the year (a row with no date counts), and that touch at least one use
+    in the year (a row with no date counts, except a kind that says which years
+    it reaches: a use area reaches a year it has a ledger row or a calculation
+    in), and that touch at least one use
     area. Newest last. ``all_records=True`` also keeps the ones that touch no
     use area (a water level, a lab result), which the fingerprint's answer lists
     and the moved-figures card does not.
@@ -570,9 +572,12 @@ def corrections_since(period, since, all_records=False):
                 use_areas |= frozenset(kind["use_areas"](replacement))
             if not use_areas and not all_records:
                 continue
-            in_year = _in_period(kind["date_of"](row), period) or (
-                replacement is not None and _in_period(kind["date_of"](replacement), period)
-            )
+            if kind["in_period"] is not None:
+                in_year = kind["in_period"](row, period)
+            else:
+                in_year = _in_period(kind["date_of"](row), period) or (
+                    replacement is not None and _in_period(kind["date_of"](replacement), period)
+                )
             if not in_year:
                 continue
             url = kind["page_url"](row)

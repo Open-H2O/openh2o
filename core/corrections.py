@@ -323,6 +323,20 @@ def _fallow_period_use_areas(row):
     return {row.parcel_id}
 
 
+def _use_area_in_period(row, period):
+    """Whether the use area has a ledger row or a calculation in ``period``: the years it reaches."""
+    from accounting.models import CalculationRun
+    from parcels.models import ParcelLedger
+
+    return ParcelLedger.objects.filter(
+        parcel=row, effective_date__gte=period.start_date, effective_date__lte=period.end_date
+    ).exists() or CalculationRun.objects.filter(
+        parcel=row,
+        period_start__gte=period.start_date.replace(day=1),
+        period_start__lte=period.end_date,
+    ).exists()
+
+
 def _use_area_use_areas(row):
     return {row.pk}
 
@@ -713,6 +727,9 @@ def _kind(key, model, module, label, **hooks):
         "not_copied": (),
         # The date field whose new value re-points the row's reporting period.
         "period_field": None,
+        # For a kind with no date of its own: whether a row reaches a year (row, period).
+        # None reads the row's date, and a row with no date reaches every year.
+        "in_period": None,
     }
     entry.update(hooks)
     return Kind(entry)
@@ -755,7 +772,7 @@ KINDS = {
             "use_area", "parcels.Parcel", "parcels", "use area",
             summary=_use_area_summary, page_url=_use_area_url,
             date_of=lambda row: None, months=_use_area_months,
-            use_areas=_use_area_use_areas,
+            use_areas=_use_area_use_areas, in_period=_use_area_in_period,
             # A replacing row would orphan every ledger row, link and calculation
             # that points at the use area's own row; its acres are changed through
             # the edit screen with a reason, and Change history keeps the old value.
@@ -907,20 +924,12 @@ def can_correct(row, finalized=None, admin=False):
 def _refuse_if_use_area_in_finalized_year(row):
     """A use area is refused when any of its rows falls in a finalized year."""
     from accounting.locks import PeriodFinalized, override_open
-    from accounting.models import CalculationRun, ReportingPeriod
-    from parcels.models import ParcelLedger
+    from accounting.models import ReportingPeriod
 
     if override_open():
         return
     for period in ReportingPeriod.objects.filter(is_finalized=True).order_by("start_date"):
-        in_year = ParcelLedger.objects.filter(
-            parcel=row, effective_date__gte=period.start_date, effective_date__lte=period.end_date
-        ).exists() or CalculationRun.objects.filter(
-            parcel=row,
-            period_start__gte=period.start_date.replace(day=1),
-            period_start__lte=period.end_date,
-        ).exists()
-        if in_year:
+        if _use_area_in_period(row, period):
             raise PeriodFinalized(period)
 
 
