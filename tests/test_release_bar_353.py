@@ -1,65 +1,59 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""When OpenET revises a month, the ledger's ET estimate and the calculation agree on it.
+"""When OpenET reports a different figure for a month, nothing that month counts changes on its own.
 
-A refresh from the source replaces the month's ET in the cache. The calculation reads the cache
-when it runs; the ledger's ET estimate row for the month was written by the first sync and the
-sync skips a month that already has one. After a refresh and both runs, the two should state the
-same ET for the month.
+Ruling 134 (the plain write-up Brent approved): a month's crop ET from OpenET is recorded
+once, the first time it is fetched, with the day it was fetched. The calculation and the
+ledger's ET estimate entry use that record. A second fetch with a different figure leaves
+the record, the entry, the calculated row and the pumped figure as they were, and the
+person who ran the fetch is told which month now differs.
 
-Which of the two values is right, and whether a revision is kept as a correction from the
-source, is a question for the maintainer; the test is marked to fail until that is ruled.
+Rainfall is not covered by the ruling; its open part is the strict xfail in
+``tests/test_openet_recorded_figure.py``.
 """
 
-from io import StringIO
+from decimal import Decimal as D
 
 import pytest
-from django.core.management import call_command
 
-from accounting.models import CalculationRun
-from datasync.models import OpenETCache
-from parcels.models import ParcelLedger
+from tests.test_openet_recorded_figure import (
+    AUG_6,
+    FIRST,
+    JULY,
+    NEWER,
+    SEP_28,
+    _calculated_row,
+    _corn_field,
+    _estimate,
+    _fetch,
+    _recorded,
+    _run,
+    _sync,
+)
 from tests import ledger_districts as ld
 
 pytestmark = pytest.mark.django_db
 
-JULY = "2025-07"
+
+@pytest.fixture(autouse=True)
+def _web_service(settings):
+    settings.OPENET_MODE = "api"
 
 
-def _sync():
-    call_command(
-        "sync_openet_to_ledger", "--start-date", "2025-07-01", "--end-date", "2025-07-31",
-        stdout=StringIO(),
-    )
-
-
-def _estimate(parcel):
-    return ParcelLedger.objects.current().get(
-        parcel=parcel, source_type="et_estimate", effective_date__year=2025, effective_date__month=7,
-    ).amount_acre_feet
-
-
-def _gross(parcel):
-    return CalculationRun.objects.filter(parcel=parcel, period=JULY).order_by("-pk").first().gross_et_af
-
-
-@pytest.mark.xfail(
-    strict=True,
-    reason="Which value the ledger row and the calculation agree on when the source revises a "
-    "month, and whether the revision is kept, are for the maintainer to rule.",
-)
-def test_a_revised_month_reads_the_same_in_the_ledger_and_the_calculation():
-    ld.seed_reference()
-    field = ld.build_d1()["F4"]
-    _sync()
-    ld.run_months([JULY])
-    assert -_estimate(field) == _gross(field)
-
-    cache = OpenETCache.objects.get(parcel=field)
-    cache.et_data = [
-        {**item, "et": 121.92} if item["date"].startswith(JULY) else item for item in cache.et_data
-    ]
-    cache.save()
+def test_a_second_fetch_with_a_different_figure_changes_nothing_and_names_the_month():
+    field = _corn_field()
+    _fetch(field, FIRST, AUG_6)
     _sync()
     ld.run_months([JULY])
 
-    assert -_estimate(field) == _gross(field)
+    assert _recorded(field) == (D("91.44"), AUG_6)
+    assert -_estimate(field) == _run(field).gross_et_af == D("30.0000")
+
+    out = _fetch(field, NEWER, SEP_28)
+    _sync()
+    ld.run_months([JULY])
+
+    assert _recorded(field) == (D("91.44"), AUG_6)
+    assert -_estimate(field) == _run(field).gross_et_af == D("30.0000")
+    assert _calculated_row(field) == D("-30.0000")
+    assert _run(field).gw_extracted_af == D("37.5000")
+    assert "F4 Jul 2025" in out
