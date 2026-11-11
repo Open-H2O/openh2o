@@ -319,7 +319,8 @@ def test_finalizing_sets_the_three_fields_and_reopening_keeps_them(year, adminis
     assert year.fingerprint_at is not None
     stored = year.fingerprint_parts
     assert stored["version"] == 1
-    assert set(stored) == {"version", "parts", "columns"}
+    assert set(stored) == {"version", "parts", "columns", "water_year"}
+    assert stored["water_year"] == 2025
     assert set(stored["parts"]) == set(fp().PART_KEYS)
     assert stored["columns"]["parcels.Parcel"] == [
         "id", "parcel_number", "voided_at", "voided_by_id", "void_reason", "replaced_at",

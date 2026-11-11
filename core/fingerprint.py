@@ -29,7 +29,8 @@ closed year does not read as a changed record:
 * the Change history of those two tables is left out.
 
 **What a fingerprint remembers.** The columns it read, table by table, event
-tables included. Check recomputes over exactly those tables and columns, so a
+tables included, and the water year name Carry-over and Account credits were
+chosen by. Check recomputes over exactly those tables, columns and name, so a
 table or column a later version adds is ignored by an older fingerprint. A
 stored table or column that no longer exists cannot be read again: the part is
 reported as unreadable, never as a difference.
@@ -219,13 +220,18 @@ def _production_rule(period):
     return rule
 
 
-def rules(period):
-    """Which rows of each table are in the year: ``{label: Q}``, the lock's own rule for the table."""
+def rules(period, water_year=None):
+    """Which rows of each table are in the year: ``{label: Q}``, the lock's own rule for the table.
+
+    ``water_year`` is the name Carry-over and Account credits are chosen by. A code keeps the
+    name it was taken under and Check passes it back, so moving the site's start month later
+    does not change which of those rows the year reads. With none, today's name is used.
+    """
     span = (period.start_date, period.end_date)
     low, high = _day_range(period)
     firsts = _month_firsts(period)
     months = [f"{day.year}-{day.month:02d}" for day in firsts]
-    label = water_year_label(period)
+    label = water_year_label(period) if water_year is None else water_year
     first_month = period.start_date.replace(day=1)
     return {
         "parcels.ParcelLedger": Q(effective_date__range=span) | Q(reporting_period=period),
@@ -262,23 +268,23 @@ def _model(label):
         return None
 
 
-def selection(period, label):
+def selection(period, label, water_year=None):
     """The rows of table ``label`` that are in the year, unordered; None when the table is not installed.
 
-    The default manager, so voided and replaced rows are in.
+    The default manager, so voided and replaced rows are in. ``water_year`` as in :func:`rules`.
     """
     model = _model(label)
     if model is None:
         return None
     if label == USE_AREAS:
-        return model._default_manager.filter(pk__in=_use_area_ids(period))
-    return model._default_manager.filter(rules(period)[label])
+        return model._default_manager.filter(pk__in=_use_area_ids(period, water_year))
+    return model._default_manager.filter(rules(period, water_year)[label])
 
 
-def _use_area_ids(period):
+def _use_area_ids(period, water_year=None):
     """The use areas with a ledger row or a calculation in the year."""
     found = set()
-    rule = rules(period)
+    rule = rules(period, water_year)
     for label in ("parcels.ParcelLedger", "accounting.CalculationRun"):
         model = _model(label)
         if model is not None:
@@ -330,6 +336,8 @@ class Computed:
     columns: dict = field(default_factory=dict)
     #: Keys of the parts a stored fingerprint names that cannot be recomputed now.
     unreadable: list = field(default_factory=list)
+    #: The water year name Carry-over and Account credits were chosen by.
+    water_year: int | None = None
 
 
 def _fallow_reader(columns, period):
@@ -348,9 +356,9 @@ def _fallow_reader(columns, period):
     return read
 
 
-def _read_table(period, key, model, columns):
+def _read_table(period, key, model, columns, water_year=None):
     """``(digest, rows, primary keys)`` of the year's rows of one table."""
-    queryset = selection(period, key).order_by("pk")
+    queryset = selection(period, key, water_year).order_by("pk")
     pk_name = model._meta.pk.attname
     pk_index = columns.index(pk_name) if pk_name in columns else None
     reader = _fallow_reader(columns, period) if key == FALLOW_PERIODS else (lambda row: row)
@@ -433,7 +441,9 @@ def compute(period, stored=None):
     """
     stored_columns = None if stored is None else stored.get("columns", {})
     wanted = None if stored is None else set(stored.get("parts", {}))
-    result = Computed()
+    # A code taken before the name was kept reads today's name, as it always did.
+    kept_year = None if stored is None else stored.get("water_year")
+    result = Computed(water_year=water_year_label(period) if kept_year is None else kept_year)
     selected = {}
     broken = set()
     for key in COVERED_MODELS:
@@ -447,7 +457,7 @@ def compute(period, stored=None):
             continue
         try:
             columns = _columns_for(model, key, stored_columns)
-            digest, rows, pks = _read_table(period, key, model, columns)
+            digest, rows, pks = _read_table(period, key, model, columns, result.water_year)
         except (Unreadable, FieldError):
             result.unreadable.append(key)
             broken.add(key)

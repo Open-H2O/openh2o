@@ -56,6 +56,7 @@ def take_fingerprint(period, *, at_upgrade=False):
         "version": fingerprint.VERSION,
         "parts": computed.parts,
         "columns": computed.columns,
+        "water_year": computed.water_year,
     }
     earlier = (period.fingerprint_parts or {}).get("first")
     if earlier:
