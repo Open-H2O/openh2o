@@ -371,6 +371,7 @@ re-learned, and each holds on every page that copies these shapes:
     none), and filters to the list's pks on every swap (`OH2O.followResults`, which keeps each layer's
     own geometry filter). A typed coordinate is never rewritten under the cursor. Ruled 2026-09-13
     14:10 (A, the card) and 18:24 (the round on staging); guards `tests/test_overview_map_card.py`.
+20. **A line listed under a row is `tr.row-listed`**: its first cell is indented one `--space-xl` and its name is secondary text, and it takes its month's stripe (the stripe counts month rows only). The production year table lists a facility's record under a month whose source holds several.
 
 ## Copy rules
 

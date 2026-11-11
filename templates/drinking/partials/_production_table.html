@@ -16,6 +16,11 @@
     this record (partials/_row_menu.html). A voided or replaced record stays: where nothing counting stands in its
     place its figure prints struck, and one line under the month says when it was voided and
     why. It is in no total. The card is #production-table so a void swaps it whole.
+
+    A month and source that holds two or more records reads their sum in the cell, in gallons,
+    with how many it adds in grey and no menu (the sum is not a record). Under that month one
+    indented line per facility carries each record in the unit it was typed in, with its own
+    menu, anchor, voided lines and correction row.
   {% endcomment %}
   <div class="card-raised table-scroll" id="production-table" style="padding: 0;">
     {% if warning %}<p class="text-sm text-deficit" role="alert" style="padding: 0 var(--space-lg);">{{ warning }}</p>{% endif %}
@@ -38,6 +43,7 @@
           {% with cell=pair.cell voided_cell=pair.voided %}
           <td class="tabular-nums"{% if cell %} id="{{ cell|record_anchor }}"{% endif %}>
             {% if cell %}<span class="row-actions-inline">{{ cell.volume_as_reported|plain_decimal|intcomma }} {% if cell.unit_as_reported == "G" %}gal{% else %}{{ cell.unit_as_reported }}{% endif %}{% if user_can_write and cell.menu_ok %}{% include "partials/_row_menu.html" with row=cell label=pair.label target="#production-table" swap="outerHTML" void_ok=cell.void_ok %}{% endif %}</span>
+            {% elif pair.sum %}<span class="row-actions-inline">{{ pair.sum.gallons_whole|intcomma }} gal <span class="text-secondary">from {{ pair.sum.count }} {{ pair.sum.word }}</span></span>
             {% elif voided_cell %}<span id="{{ voided_cell|record_anchor }}" class="record-void-text">{{ voided_cell.volume_as_reported|plain_decimal|intcomma }} {% if voided_cell.unit_as_reported == "G" %}gal{% else %}{{ voided_cell.unit_as_reported }}{% endif %}</span>
             {% else %}<span class="value-empty">Not reported</span>{% endif %}
           </td>
@@ -47,6 +53,21 @@
         {% for gone in row.voided %}{% record_marks gone type_columns|length|add:1 "row" gone.get_type_code_display target="#production-table" swap="outerHTML" %}{% endfor %}
         {% for pair in row.pairs %}{% if pair.cell %}{% record_marks pair.cell type_columns|length|add:1 target="#production-table" swap="outerHTML" %}{% endif %}{% endfor %}
         {% for pair in row.pairs %}{% if pair.cell.void_open %}{% include "partials/_void_form.html" with row=pair.cell target="#production-table" swap="outerHTML" as_row=True colspan=type_columns|length|add:1 %}{% endif %}{% endfor %}
+        {% for line in row.listed %}
+        <tr class="{{ row.listed_class }}">
+          <td class="text-secondary">{{ line.name }}</td>
+          {% for pair in line.pairs %}
+          {% with cell=pair.cell %}
+          <td class="tabular-nums"{% if cell %} id="{{ cell|record_anchor }}"{% endif %}>
+            {% if cell %}<span class="row-actions-inline">{{ cell.volume_as_reported|plain_decimal|intcomma }} {% if cell.unit_as_reported == "G" %}gal{% else %}{{ cell.unit_as_reported }}{% endif %}{% if user_can_write and cell.menu_ok %}{% include "partials/_row_menu.html" with row=cell label=pair.label target="#production-table" swap="outerHTML" void_ok=cell.void_ok %}{% endif %}</span>{% endif %}
+          </td>
+          {% endwith %}
+          {% endfor %}
+        </tr>
+        {% for gone, lead in line.gone %}{% record_marks gone type_columns|length|add:1 "row" lead target="#production-table" swap="outerHTML" extra_class=row.listed_class %}{% endfor %}
+        {% for pair in line.pairs %}{% if pair.cell %}{% record_marks pair.cell type_columns|length|add:1 target="#production-table" swap="outerHTML" extra_class=row.listed_class %}{% endif %}{% endfor %}
+        {% for pair in line.pairs %}{% if pair.cell.void_open %}{% include "partials/_void_form.html" with row=pair.cell target="#production-table" swap="outerHTML" as_row=True colspan=type_columns|length|add:1 %}{% endif %}{% endfor %}
+        {% endfor %}
         {% endfor %}
       </tbody>
       <tfoot>

@@ -29,6 +29,19 @@ MONTH_CHOICES = [("", "Whole year (one figure)")] + [
 ]
 
 
+def facility_names(records):
+    """The distinct facility names of ``records`` (each with its facility loaded), in name order."""
+    names = sorted({r.facility.name or r.facility.facility_id for r in records})
+    return names
+
+
+def join_names(names):
+    """``Well 7 and Well 8``, or ``A, B and C``."""
+    if len(names) <= 1:
+        return "".join(names)
+    return ", ".join(names[:-1]) + " and " + names[-1]
+
+
 class SystemProductionForm(forms.ModelForm):
     """One month's production or delivery, by source, entered by hand.
 
@@ -99,24 +112,41 @@ class SystemProductionForm(forms.ModelForm):
         except PeriodFinalized as exc:
             self.add_error(None, str(exc))
             return cleaned
-        on_file = SystemProduction.objects.current().filter(
-            system=self._system,
-            year=year,
-            type_code=type_code,
-            facility=cleaned.get("facility"),
+        month_year = SystemProduction.objects.current().filter(
+            system=self._system, year=year, type_code=type_code,
         )
-        on_file = on_file.filter(month=month) if month else on_file.filter(month__isnull=True)
+        month_year = month_year.filter(month=month) if month else month_year.filter(month__isnull=True)
         if self.instance.pk:
-            on_file = on_file.exclude(pk=self.instance.pk)
-        if on_file.exists():
-            type_label = dict(self.fields["type_code"].choices).get(type_code, type_code)
-            if month:
-                when = f"{MONTH_CHOICES[month][1]} {year}"
-            else:
-                when = str(year)
+            month_year = month_year.exclude(pk=self.instance.pk)
+        facility = cleaned.get("facility")
+        type_label = dict(self.fields["type_code"].choices).get(type_code, type_code)
+        if month:
+            when = f"{MONTH_CHOICES[month][1]} {year}"
+        else:
+            when = str(year)
+        if month_year.filter(facility=facility).exists():
             self.add_error(
                 None, f"A figure for {type_label} in {when} is already on file."
             )
+        elif facility is not None and month_year.filter(facility__isnull=True).exists():
+            # A month and type holds one figure for the whole system or one for
+            # each facility; both together would count the same water twice.
+            self.add_error(
+                None,
+                f"A figure for the whole system for {type_label} in {when} is already on file. "
+                "A facility's figure beside it would count the same water twice. "
+                "Correct that figure to name its facility, or void it, first.",
+            )
+        elif facility is None:
+            named = month_year.filter(facility__isnull=False).select_related("facility")
+            names = facility_names(named)
+            if names:
+                self.add_error(
+                    None,
+                    f"Figures for {type_label} in {when} are already on file for {join_names(names)}. "
+                    "A figure for the whole system beside them would count the same water twice. "
+                    "Choose its facility, or void those figures, first.",
+                )
         return cleaned
 
     def save(self, commit=True):

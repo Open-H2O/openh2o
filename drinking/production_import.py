@@ -568,7 +568,9 @@ def commit_rows(built, *, system, provenance, dry_run=False):
 
     Dedup is skip-and-count, never overwrite: a candidate whose
     (system, year, month, type_code, facility) already exists is skipped.
-    ``facility`` is always None in this task -- neither layout names one.
+    ``facility`` is always None in this task -- neither layout names one -- so a
+    candidate for a month and type that already holds figures for named
+    facilities is refused: the two would add up to the same water twice.
     """
     candidates = built["candidates"]
     errors = list(built["errors"])
@@ -580,6 +582,12 @@ def commit_rows(built, *, system, provenance, dry_run=False):
         )
     )
 
+    by_facility: dict = {}
+    for year, month, type_code, name, facility_code in SystemProduction.objects.current().filter(
+        system=system, facility__isnull=False
+    ).values_list("year", "month", "type_code", "facility__name", "facility__facility_id"):
+        by_facility.setdefault((year, month, type_code), set()).add(name or facility_code)
+
     # A month inside a finalized water year is refused as a row error in plain
     # words, in the preview as on commit (the database lock refuses the same
     # rows). Empty inside accounting.locks.override().
@@ -590,6 +598,19 @@ def commit_rows(built, *, system, provenance, dry_run=False):
         key = (c["year"], c["month"], c["type_code"], None)
         if key in existing:
             skipped_duplicates += 1
+            continue
+        named = by_facility.get(key[:3])
+        if named:
+            type_label = dict(PRODUCTION_TYPE_CHOICES).get(c["type_code"], c["type_code"])
+            when = datetime(2000, c["month"], 1).strftime("%B") + f" {c['year']}" if c["month"] else str(c["year"])
+            errors.append({
+                "line": ", ".join(str(n) for n in c["source_lines"]),
+                "message": (
+                    f"{type_label} for {when} is already on file by facility ({', '.join(sorted(named))}). "
+                    "A figure from a file is for the whole system, so this one was not saved: "
+                    "it would count the same water twice."
+                ),
+            })
             continue
         locked = finalized_span_message(dt.date(c["year"], c["month"] or 1, 1), spans)
         if locked:

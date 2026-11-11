@@ -8,10 +8,10 @@
   cells are struck by app.css. The line of a replaced record reads "Replaced Nov 2, 2026 by
   J. Lopez, now 39,771.39: typed an 8 for a 7." and ends in a link to the attached file.
 {% endcomment %}
-{% if line %}{% if variant == "note" %}<div class="record-void-note" id="{{ anchor }}-line">{{ line }}{% if attachment %} <a href="{{ attachment.url }}" class="text-link">{{ attachment.word }}</a>.{% endif %}</div>{% else %}<tr class="record-void-line" id="{{ anchor }}-line">
+{% if line %}{% if variant == "note" %}<div class="record-void-note" id="{{ anchor }}-line">{{ line }}{% if attachment %} <a href="{{ attachment.url }}" class="text-link">{{ attachment.word }}</a>.{% endif %}</div>{% else %}<tr class="record-void-line{% if extra_class %} {{ extra_class }}{% endif %}" id="{{ anchor }}-line">
   <td colspan="{{ colspan }}">{{ line }}{% if attachment %} <a href="{{ attachment.url }}" class="text-link">{{ attachment.word }}</a>.{% endif %}</td>
 </tr>{% endif %}{% endif %}
-{% if done_text %}{% if variant == "note" %}<div class="record-void-note record-notice" role="status">{{ done_text }}</div>{% else %}<tr class="record-void-line record-notice">
+{% if done_text %}{% if variant == "note" %}<div class="record-void-note record-notice" role="status">{{ done_text }}</div>{% else %}<tr class="record-void-line record-notice{% if extra_class %} {{ extra_class }}{% endif %}">
   <td colspan="{{ colspan }}" role="status">{{ done_text }}</td>
 </tr>{% endif %}{% endif %}
 {% if state %}{% include "partials/_record_correct_form.html" %}{% endif %}

@@ -94,7 +94,9 @@ class TestDuplicateProductionMonth:
         assert _post(client).status_code == 302
         assert _post(client, month="4").status_code == 302
         assert _post(client, type_code="SW").status_code == 302
-        assert _post(client, facility=str(well.pk)).status_code == 302
+        # A facility's figure in March would sit beside the whole system's March figure.
+        assert _post(client, facility=str(well.pk)).status_code == 200
+        assert _post(client, month="5", facility=str(well.pk)).status_code == 302
         assert SystemProduction.objects.filter(system=site).count() == 4
 
     def test_editing_the_row_itself_unchanged_saves(self, client, site):

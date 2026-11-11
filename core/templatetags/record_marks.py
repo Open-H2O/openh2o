@@ -186,7 +186,7 @@ def replaced_line(row):
 
 
 @register.inclusion_tag("partials/_record_marks.html", takes_context=True)
-def record_marks(context, row, colspan=1, variant="row", lead="", target="", swap="innerHTML", include=""):
+def record_marks(context, row, colspan=1, variant="row", lead="", target="", swap="innerHTML", include="", extra_class=""):
     """What sits under a record: a table row spanning ``colspan`` cells, or (``variant="note"``) a plain block.
 
     The line under a voided or replaced record, the one-time response line after a
@@ -194,7 +194,8 @@ def record_marks(context, row, colspan=1, variant="row", lead="", target="", swa
     record that counts and has none of those. ``lead`` names the record when the line sits
     under a row that holds several (the production table's month): "Groundwater: Voided ...".
     ``target``, ``swap`` and ``include`` are the address the correction row's form swaps into,
-    the same ones the page's menu uses.
+    the same ones the page's menu uses. ``extra_class`` is added to the row's classes (the
+    production table's lines under a month take their indent and stripe from it).
     """
     from core.corrections_views import correct_state
 
@@ -224,5 +225,6 @@ def record_marks(context, row, colspan=1, variant="row", lead="", target="", swa
         "target": target,
         "swap": swap,
         "include": include,
+        "extra_class": extra_class,
         "csrf_token": context.get("csrf_token"),
     }

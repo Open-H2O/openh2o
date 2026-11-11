@@ -45,6 +45,9 @@ PRODUCTION_MONTH_NAMES = {
 }
 
 
+#: What a record with no facility is listed as, under a month that holds several records.
+WHOLE_SYSTEM_NAME = "Whole system"
+
 #: Water sold to another system: left out of the year's produced-or-purchased
 #: total and named on its own.
 SOLD_TYPE_CODES = frozenset({PRODUCTION_TYPE_SO, PRODUCTION_TYPE_NS})
@@ -59,7 +62,10 @@ def _selected_production_year(request: HttpRequest, years: list[int]) -> int | N
 
 
 def _production_rows(by_key: dict, type_codes: list[str], voided_by_key: dict | None = None) -> list[dict]:
-    """The table rows: one per month, plus a whole-year row when a record has no month."""
+    """The table rows: one per month, plus a whole-year row when a record has no month.
+
+    ``by_key`` maps (month, type code) to every current record of that month and source.
+    """
     # A record with month=None (the whole year reported as one figure) is
     # its own row at the foot of the table, never folded into a numbered
     # month it was never attached to.
@@ -74,12 +80,12 @@ def _production_rows(by_key: dict, type_codes: list[str], voided_by_key: dict | 
         return {
             "month": month_num,
             "label": label,
-            "cells": [by_key.get((month_num, code)) for code in type_codes],
+            "records": [by_key.get((month_num, code), []) for code in type_codes],
             "voided_cells": [
                 None if by_key.get((month_num, code)) else (voided_by_key.get((month_num, code)) or [None])[0]
                 for code in type_codes
             ],
-            "voided": [r for code in type_codes for r in voided_by_key.get((month_num, code), [])],
+            "voided_all": [voided_by_key.get((month_num, code), []) for code in type_codes],
         }
 
     rows = [row_for(month_num, PRODUCTION_MONTH_NAMES[month_num]) for month_num in range(1, 13)]
@@ -92,7 +98,7 @@ def _production_totals(by_key: dict, type_codes: list[str]) -> list[dict]:
     """One footer total per type code, in gallons, whole gallons and acre-feet."""
     totals = []
     for code in type_codes:
-        column = [record for (_month, t), record in by_key.items() if t == code]
+        column = [record for (_month, t), records in by_key.items() if t == code for record in records]
         gallons = sum((r.volume_gallons for r in column), Decimal("0"))
         totals.append(
             {
@@ -113,6 +119,57 @@ def _production_totals(by_key: dict, type_codes: list[str]) -> list[dict]:
     return totals
 
 
+def _facility_name(record) -> str:
+    """The name a record is listed under: its facility's, or "Whole system" when it has none."""
+    facility = record.facility
+    if facility is None:
+        return WHOLE_SYSTEM_NAME
+    return facility.name or facility.facility_id
+
+
+def _listed_lines(row: dict, shown: list[int], type_columns: list, year: int) -> list[dict]:
+    """The lines under a month that holds two or more records of a source, one per facility.
+
+    A facility's line carries its figure in each source column where the month holds two or
+    more records, and the lines of voided or replaced records of that facility and source.
+    """
+    multi = [i for i in range(len(shown)) if len(row["records"][shown[i]]) > 1]
+    if not multi:
+        return []
+    by_name: dict[str, dict] = {}
+    for position in multi:
+        for record in row["records"][shown[position]]:
+            name = _facility_name(record)
+            group = by_name.setdefault(name, {"name": name, "columns": {p: [] for p in multi}, "gone": []})
+            group["columns"][position].append(record)
+    for position in multi:
+        label = type_columns[position][1]
+        for record in row["voided_all"][shown[position]]:
+            name = _facility_name(record)
+            group = by_name.setdefault(name, {"name": name, "columns": {p: [] for p in multi}, "gone": []})
+            group["gone"].append((record, f"{label}, {name}"))
+    ordered = sorted(by_name.values(), key=lambda g: (g["name"] == WHOLE_SYSTEM_NAME, g["name"]))
+    lines = []
+    for group in ordered:
+        depth = max((len(records) for records in group["columns"].values()), default=0)
+        for n in range(max(depth, 1)):
+            pairs = []
+            for position, column in enumerate(type_columns):
+                records = group["columns"].get(position, [])
+                cell = records[n] if n < len(records) else None
+                pairs.append({
+                    "cell": cell,
+                    "label": f"{row['label']} {year} {column[1].lower()} record, {group['name']}",
+                })
+            lines.append({
+                "name": group["name"],
+                "pairs": pairs,
+                # The voided lines of the facility sit under its first line.
+                "gone": group["gone"] if n == 0 else [],
+            })
+    return lines
+
+
 def _shown_columns(by_key: dict, type_codes: list[str]) -> tuple[list[int], list[str]]:
     """The indexes of the type columns worth showing, and the lower-case labels of the sources among them."""
     # A source reported as zero, or not
@@ -124,7 +181,7 @@ def _shown_columns(by_key: dict, type_codes: list[str]) -> tuple[list[int], list
     shown = [
         i for i, code in enumerate(type_codes)
         if any(
-            r.volume_as_reported for (_m, t), r in by_key.items() if t == code
+            r.volume_as_reported for (_m, t), records in by_key.items() if t == code for r in records
         )
     ]
     # Named in lower case because they are read mid-sentence in the head line.
@@ -150,21 +207,24 @@ def _production_table_context(system, year, *, void_key=None, void_reason="", vo
     """
     type_codes = [code for code, _label in PRODUCTION_TYPE_CHOICES]
     records = (
-        SystemProduction.objects.current().filter(system=system, year=year)
+        SystemProduction.objects.current().filter(system=system, year=year).select_related("facility").order_by("pk")
         if year is not None
         else SystemProduction.objects.none()
     )
-    by_key = {(r.month, r.type_code): r for r in records}
+    # Every current record of a month and source counts, so each key holds a list.
+    by_key: dict = {}
+    for r in records:
+        by_key.setdefault((r.month, r.type_code), []).append(r)
     voided_by_key: dict = {}
     if year is not None:
         # Voided, or replaced by a corrected record: struck, with a line under the month.
-        voided = SystemProduction.objects.filter(system=system, year=year).filter(
+        voided = SystemProduction.objects.filter(system=system, year=year).select_related("facility").filter(
             Q(voided_at__isnull=False) | Q(replaced_at__isnull=False)
         ).order_by("-pk")
         for record in voided:
             voided_by_key.setdefault((record.month, record.type_code), []).append(record)
 
-    marked = list(by_key.values()) + [r for rows in voided_by_key.values() for r in rows]
+    marked = [r for rows in by_key.values() for r in rows] + [r for rows in voided_by_key.values() for r in rows]
     mark_actions(
         marked, can_write=True, finalized=corrections.finalized_ranges(), void_key=void_key
     )
@@ -190,19 +250,41 @@ def _production_table_context(system, year, *, void_key=None, void_reason="", vo
         if i not in shown
     ]
     type_columns = [PRODUCTION_TYPE_CHOICES[i] for i in shown]
-    for row in rows:
-        row["cells"] = [row["cells"][i] for i in shown]
-        row["voided_cells"] = [row["voided_cells"][i] for i in shown]
+    for index, row in enumerate(rows):
+        row["listed"] = _listed_lines(row, shown, type_columns, year)
+        # Records of a month and source that sit in a listed line are printed there.
+        listed_positions = {
+            position for position in range(len(shown)) if len(row["records"][shown[position]]) > 1
+        }
         # One entry per shown column for the template: the counting record, the voided
-        # one that stands in its place (or None), and the menu's name for the record.
-        row["pairs"] = [
-            {
-                "cell": cell,
-                "voided": voided_cell,
+        # one that stands in its place (or None), the month's sum when it holds several
+        # records, and the menu's name for the record.
+        row["pairs"] = []
+        for position, column in enumerate(type_columns):
+            column_records = row["records"][shown[position]]
+            pair = {
+                "cell": column_records[0] if len(column_records) == 1 else None,
+                "voided": row["voided_cells"][shown[position]],
+                "sum": None,
                 "label": f"{row['label']} {year} {column[1].lower()} record",
             }
-            for cell, voided_cell, column in zip(row["cells"], row["voided_cells"], type_columns)
+            if len(column_records) > 1:
+                gallons = sum((r.volume_gallons for r in column_records), Decimal("0"))
+                pair["sum"] = {
+                    "gallons_whole": int(gallons.to_integral_value()),
+                    "count": len(column_records),
+                    "word": "facilities" if all(r.facility_id for r in column_records) else "records",
+                }
+            row["pairs"].append(pair)
+        # The month's own voided lines: the ones whose source is not listed below it.
+        listed_indexes = {shown[position] for position in listed_positions}
+        row["voided"] = [
+            r
+            for column_index, records_gone in enumerate(row["voided_all"]) if column_index not in listed_indexes
+            for r in records_gone
         ]
+        # A listed line shares its month's stripe: the stripe counts month rows only.
+        row["listed_class"] = "row-listed row-listed-shaded" if index % 2 else "row-listed"
     totals = [totals[i] for i in shown]
 
     return {

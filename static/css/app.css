@@ -5674,10 +5674,14 @@ details[open] > summary .disclosure-mark {
 .data-table tbody tr.record-void td.td-num .text-tertiary { display: inline-block; }
 .data-table tbody tr.record-void-line td { padding-top: 0; border-top: none; font-size: 0.75rem; color: var(--color-text-secondary); }
 /* The line and the open reason row are rows of their own, so the zebra stripe counts records, not lines. */
-.data-table tbody tr:nth-child(odd of :not(.record-void-line, .record-void-form)):not(.row-group):not(.row-subtotal):not(.row-editing):not(:hover) td { background-color: transparent; }
-.data-table tbody tr:nth-child(even of :not(.record-void-line, .record-void-form)):not(.row-group):not(.row-subtotal):not(.row-editing):not(:hover) td { background-color: color-mix(in srgb, var(--color-elevated) 45%, transparent); }
-.data-table tbody tr:nth-child(odd of :not(.record-void-line, .record-void-form)) + tr.record-void-line td { background-color: transparent; }
-.data-table tbody tr:nth-child(even of :not(.record-void-line, .record-void-form)) + tr.record-void-line td { background-color: color-mix(in srgb, var(--color-elevated) 45%, transparent); }
+.data-table tbody tr:nth-child(odd of :not(.record-void-line, .record-void-form, .row-listed)):not(.row-group):not(.row-subtotal):not(.row-editing):not(:hover) td { background-color: transparent; }
+.data-table tbody tr:nth-child(even of :not(.record-void-line, .record-void-form, .row-listed)):not(.row-group):not(.row-subtotal):not(.row-editing):not(:hover) td { background-color: color-mix(in srgb, var(--color-elevated) 45%, transparent); }
+.data-table tbody tr:nth-child(odd of :not(.record-void-line, .record-void-form, .row-listed)) + tr.record-void-line td { background-color: transparent; }
+.data-table tbody tr:nth-child(even of :not(.record-void-line, .record-void-form, .row-listed)) + tr.record-void-line td { background-color: color-mix(in srgb, var(--color-elevated) 45%, transparent); }
+/* A line listed under a month (a facility's record under the month's sum): indented, and in its month's stripe, which counts month rows only. */
+.data-table tbody tr.row-listed td:first-child { padding-left: var(--space-xl); }
+.data-table tbody tr.row-listed:not(:hover) td { background-color: transparent; }
+.data-table tbody tr.row-listed.row-listed-shaded:not(:hover) td { background-color: color-mix(in srgb, var(--color-elevated) 45%, transparent); }
 .data-table tbody tr.record-void:hover + tr.record-void-line td,
 .data-table tbody tr.record-void-line:hover td,
 .data-table tbody tr.record-void:has(+ tr.record-void-line:hover) td { background-color: color-mix(in srgb, var(--color-accent) 8%, transparent); }
