@@ -70,7 +70,7 @@
           <div class="budget-seg-label">Crop ET</div>
           <div class="budget-seg-value" title="{{ run.gross_et_af }} acre-feet">{{ run.gross_et_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
           <div class="budget-seg-caption">OpenET satellite estimate</div>
-          {% if crop_et %}<div class="budget-seg-caption"><a href="#crop-et">{{ crop_et.fetch_line }}</a></div>{% endif %}
+          {% if crop_et %}<div class="budget-seg-caption">{% if crop_et.has_more %}<a href="#crop-et">{{ crop_et.fetch_line }}</a>{% else %}{{ crop_et.fetch_line }}{% endif %}</div>{% endif %}
         </div>
         <div class="budget-op">&minus;</div>
         <div class="budget-seg">
@@ -157,7 +157,7 @@
     </div>
     <div class="budget-panel-note">Methodology: {{ methodology_plan_name|blank }}{% if methodology_settings_code %}, settings {{ methodology_settings_code }}{% endif %}. Calculated {{ run.created_at|date:"F j, Y, g:i A" }}. A changed setting affects a past month only when that month is recalculated. A meter reading for {{ month_label }} would replace this estimate. Figures are rounded to two decimals. OpenH2O calculates from the unrounded values.</div>
   </div>
-  {% if crop_et %}{% include "accounting/partials/_crop_et_record.html" %}{% endif %}
+  {% if crop_et.has_more %}{% include "accounting/partials/_crop_et_record.html" %}{% endif %}
 
   {% else %}
   {% comment %} The short page: a month with nothing to estimate, reached by
@@ -166,7 +166,9 @@
   <div class="text-tertiary text-sm receipt-facts">
     {{ parcel.parcel_number }}{% if parcel.owner_name %} &middot; {{ parcel.owner_name }}{% endif %} &middot; {{ parcel.area_acres|floatformat:2 }} acres &middot; Methodology: {{ methodology_plan_name|blank }}{% if methodology_settings_code %}, settings {{ methodology_settings_code }}{% endif %}
   </div>
-  <div class="card-raised receipt receipt-short">
+  {% comment %} The two cards run the full width, as the banner above them does. {% endcomment %}
+  <div class="page-stack">
+  <div class="card-raised receipt receipt-short" style="width: auto;">
     <h2 class="receipt-headline">No groundwater extraction estimated for {{ month_label }}</h2>
     <p class="text-secondary receipt-lead">
       {% if run.residual_disposition == "metered" %}
@@ -176,7 +178,8 @@
       {% endif %}
     </p>
   </div>
-  {% if crop_et %}{% include "accounting/partials/_crop_et_record.html" %}{% endif %}
+  {% if crop_et %}{% include "accounting/partials/_crop_et_record.html" with short=True %}{% endif %}
+  </div>
   {% endif %}
 
 </div>

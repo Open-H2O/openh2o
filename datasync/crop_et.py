@@ -384,6 +384,7 @@ def page_context(parcel, period):
         earlier.append(line)
     context = {
         "record": record,
+        "recorded_words": _figure_words(record.depth_mm, acres),
         "fetch_line": fetch_line(record),
         "earlier": earlier,
         "accepted_line": "",
@@ -410,6 +411,10 @@ def page_context(parcel, period):
             f"The ledger's ET estimate entry reads {abs(entry.amount_acre_feet):,.2f} AF. "
             f"This month uses the recorded {recorded}."
         )
+    # Whether there is more to say than the fetch line the Crop ET figure carries.
+    context["has_more"] = bool(
+        context["newer_sentence"] or context["entry_sentence"] or context["earlier"]
+    )
     return context
 
 
