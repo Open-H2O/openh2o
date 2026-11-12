@@ -5690,12 +5690,12 @@ details[open] > summary .disclosure-mark {
 .record-void-note { font-size: 0.75rem; color: var(--color-text-secondary); }
 /* The Crop ET figure on the month's calculation page (_crop_et_segment.html) is a record
    inside an equation segment, not a table row. Its breakdown rows take a third track for the
-   "..." menu, so every figure lines up whether its row has a menu or not; the menu sits close
-   to its figure; a struck figure keeps the struck colour over the breakdown's bright figures;
+   "..." menu, so every figure lines up whether its row has a menu or not; the menu sits
+   against its figure (two fresh readers both called it loose at 16px); a struck figure keeps the struck colour over the breakdown's bright figures;
    the line under a replaced figure spans the rows at the reason row's measure; and the
    correction row opens under the rows. */
 .budget-seg > .budget-breakdown-group--menu { grid-template-columns: max-content max-content auto; }
-.budget-breakdown-group--menu .row-actions-inline { padding: 2px 0; margin-left: calc(-1 * var(--space-sm)); }
+.budget-breakdown-group--menu .row-actions-inline { padding: 2px 0; margin-left: calc(var(--space-xs) - var(--space-lg)); }
 .budget-breakdown-row > b.record-void-text { color: var(--color-text-secondary); }
 .budget-breakdown-group--menu > .record-void-note { grid-column: 1 / -1; max-width: 48ch; padding-bottom: 2px; }
 .budget-seg > .record-correct-form { margin-top: var(--space-sm); max-width: 48ch; }
