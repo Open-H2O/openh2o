@@ -19,7 +19,9 @@ import logging
 from datetime import datetime
 
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
 
+from datasync import crop_et
 from datasync.adapters.gee import (
     build_precip_data,
     init_earth_engine,
@@ -126,7 +128,12 @@ class Command(BaseCommand):
                 defaults={
                     "geometry": parcel.geometry,
                     "model_name": "GRIDMET",
-                    "et_data": build_precip_data(precip_by_month),
+                    # Each month carries the day it was received, and the row says
+                    # it came through Earth Engine.
+                    "et_data": crop_et.stamp(
+                        build_precip_data(precip_by_month), timezone.localdate()
+                    ),
+                    "origin": "gee",
                 },
             )
             written += 1

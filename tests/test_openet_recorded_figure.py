@@ -58,7 +58,7 @@ REASON = "OpenET revised July after the month settled"
 FINALIZED_SENTENCE = "WY 2024-2025 is finalized"
 #: The newer figure's row under the Crop ET figure, as _words prints it.
 NOTICE = (
-    '<span>Newer figure<span class="budget-breakdown-note">fetched Sep 28, 2025, not used</span></span> '
+    '<span>Newer figure<span class="budget-breakdown-note">received Sep 28, 2025, not used</span></span> '
     "<b>40.00</b>"
 )
 
@@ -310,9 +310,9 @@ def test_a_month_cached_by_hand_with_no_record_is_not_calculated():
 @pytest.mark.parametrize(
     ("fetched", "line"),
     [
-        (AUG_6, "OpenET satellite estimate, fetched Aug 6, 2025, provisional</div>"),
-        (dt.date(2025, 11, 28), "OpenET satellite estimate, fetched Nov 28, 2025, provisional</div>"),
-        (dt.date(2025, 11, 29), "OpenET satellite estimate, fetched Nov 29, 2025</div>"),
+        (AUG_6, "OpenET satellite estimate, received Aug 6, 2025, provisional</div>"),
+        (dt.date(2025, 11, 28), "OpenET satellite estimate, received Nov 28, 2025, provisional</div>"),
+        (dt.date(2025, 11, 29), "OpenET satellite estimate, received Nov 29, 2025</div>"),
     ],
 )
 def test_the_month_page_says_when_the_figure_was_fetched_and_whether_it_was_provisional(
@@ -331,7 +331,7 @@ def test_a_record_with_no_fetch_date_says_so(operator):
     ld.run_months([JULY])
 
     assert _recorded(field) == (D("91.44"), None)
-    assert "OpenET satellite estimate, fetch date not recorded</div>" in _page(operator, field)
+    assert "OpenET satellite estimate, date received not recorded</div>" in _page(operator, field)
 
 
 # ---------------------------------------------------------------- 6. the newer figure on the page
@@ -392,9 +392,9 @@ def test_after_accepting_the_page_shows_who_when_why_and_the_earlier_figure_stru
 
     page = _page(operator, field)
 
-    assert "OpenET satellite estimate, fetched Sep 28, 2025, provisional</div>" in page
+    assert "OpenET satellite estimate, received Sep 28, 2025, provisional</div>" in page
     assert f"by J. Lopez: {REASON}" in page
-    assert re.search(r'fetched Aug 6, 2025</span></span>\s*<b class="record-void-text">30\.00</b>', page)
+    assert re.search(r'received Aug 6, 2025</span></span>\s*<b class="record-void-text">30\.00</b>', page)
     assert "Newer figure" not in page
 
 
@@ -598,13 +598,16 @@ def test_the_fixture_load_records_every_month_after_a_year_is_finalized_and_chec
     fixture = tmp_path / "openet.json"
     fixture.write_text(json.dumps({"rows": [{
         "parcel_number": other.parcel_number, "start_date": "2024-10-01", "end_date": "2025-09-30",
-        "variable": "ET", "model_name": "Ensemble",
+        "variable": "ET", "model_name": "Ensemble", "source": "OpenET", "received": "2026-11-12",
         "et_data": [{"date": f"{m}", "et": v, "unit": "mm"} for m, v in FIRST.items()],
     }]}))
 
     call_command("load_openet_fixture", "--fixture", str(fixture), stdout=StringIO())
 
-    assert [_recorded(other, m) for m in FIRST] == [(D(str(v)), None) for v in FIRST.values()]
+    # Each month is recorded at its figure and the day the file says it was received.
+    assert [_recorded(other, m) for m in FIRST] == [
+        (D(str(v)), dt.date(2026, 11, 12)) for v in FIRST.values()
+    ]
     assert fingerprint.compute(year).digest == year.fingerprint
 
 

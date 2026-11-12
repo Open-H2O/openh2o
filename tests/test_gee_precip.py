@@ -24,6 +24,7 @@ import pytest
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.utils import timezone
 
 from datasync.adapters.gee import (
     EE_COLLECTION,
@@ -332,9 +333,11 @@ class TestSyncPrecipCommand:
         row = rows.first()
         assert row.model_name == "GRIDMET"
         assert row.parcel_id == parcel.pk
+        # Each month carries the day it was received.
+        today = timezone.localdate().isoformat()
         assert row.et_data == [
-            {"date": "2024-06", "precip": 12.5, "unit": "mm"},
-            {"date": "2024-07", "precip": 3.0, "unit": "mm"},
+            {"date": "2024-06", "precip": 12.5, "unit": "mm", "fetched": today},
+            {"date": "2024-07", "precip": 3.0, "unit": "mm", "fetched": today},
         ]
 
     def test_rerun_is_idempotent(self, parcel):

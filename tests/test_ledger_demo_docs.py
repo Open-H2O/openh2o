@@ -53,7 +53,7 @@ def test_each_surface_allocation_is_its_years_deliveries_plus_the_margin():
             plan = AllocationPlan.objects.get(zone=zone, water_type=sw, reporting_period=period)
             delivered = _delivered(zone, period)
             if EL_NIDO_RIGHT in zone.name and period.name == OPEN_WY:
-                # The dry year: the canal delivers nothing, the allocation was cut.
+                # The open year: the canal delivers nothing, the allocation was cut.
                 assert delivered == 0
                 prior = AllocationPlan.objects.get(
                     zone=zone, water_type=sw, reporting_period__name=PRIOR_WY

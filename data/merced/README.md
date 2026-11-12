@@ -199,18 +199,24 @@ python manage.py load_station_fixture
 
 | | |
 |---|---|
-| **What** | Every real satellite evapotranspiration draw behind the demonstration's water accounting |
-| **Measured** | 380 rows = 76 parcels × 5 variables × 1 window (WY 2024-25, `2024-10-01` → `2025-09-30`) |
-| **Variables** | `ET`, `et_mad_max`, `et_mad_min`, `model_count`, `precip` |
-| **Size** | 481,352 bytes (470 kB) on disk |
-| **Dumped from** | STAGING (`~/openh2o-staging`) on **2026-07-31**, and proven byte-identical to a dump of PRODUCTION taken the same day (sha256 `2b4b6a18…`) |
+| **What** | The crop evapotranspiration OpenET sent for each demonstration field (its ensemble value and spread), and the rainfall gridMET sent, behind the demonstration's water accounting |
+| **Measured** | 760 rows = 76 parcels × 5 variables × 2 windows (WY 2024-25, `2024-10-01` → `2025-09-30`; WY 2025-26, `2025-10-01` → `2026-09-30`) |
+| **Variables** | `ET`, `et_mad_max`, `et_mad_min`, `model_count` (source OpenET); `precip` (source gridMET) |
+| **Received** | 2026-11-12, through Google Earth Engine (OpenET's monthly ensemble, gridMET daily rainfall summed by month); each row's `received` and `source` say so |
+| **Size** | 962,089 bytes (940 kB) on disk |
 | **Used by** | `load_openet_fixture`, and therefore `scripts/rebuild-golden.sh` |
 
+**Months OpenET sent no crop ET for are absent, never filled in.** OpenET has no
+figure for 61 of the 76 fields in December 2025 and 46 in January 2026 (every
+band of those months' images is blank over those fields), so the file holds
+1,717 of the 1,824 field-months of crop ET. Rainfall is present for every month.
+OpenET may revise a month for about 120 days after it ends; the figures here
+are the ones it had on the received day.
+
 Without this file a rebuilt demonstration has two bad options: no ET at all —
-and the accounting engine then computes nothing — or spend OpenET quota
-re-fetching numbers that have not moved since WY 2024-25 closed. It is the
-reason the golden snapshot can become a build output rather than a photocopy of
-a live database.
+and the accounting engine then computes nothing — or spend OpenET quota on a
+fresh request for every rebuild. It is the reason the golden snapshot can become
+a build output rather than a photocopy of a live database.
 
 Rows are keyed by **`parcel_number`**, never by primary key, for the same
 reason `flowlines.json` uses a natural key: pks differ per deployment.
@@ -221,13 +227,18 @@ the seed. Storing it again would add roughly a megabyte of duplicate
 coordinates whose only possible future is to disagree with the parcel it claims
 to describe. `load_openet_fixture` fills the column from the parcel.
 
-**The file carries no timestamp, hostname or git hash, on purpose.**
-Re-running the dump against an unchanged database produces a byte-identical
-file, so `git diff` is an honest answer to "has the cache moved?" A
-generated-at stamp would make every regeneration look like a change and the
-diff would stop meaning anything. Reservation rows (`model_name` =
-`__PENDING__`) and ad-hoc `parcel=NULL` geometry queries are excluded — neither
-is data. Both deployments held **0** pending rows when this was taken.
+**The file carries no time of its own: no generated-at stamp, hostname or git
+hash, on purpose.** Re-running the dump against an unchanged database produces a
+byte-identical file, so `git diff` is an honest answer to "has the cache moved?"
+A generated-at stamp would make every regeneration look like a change and the
+diff would stop meaning anything. The `received` day belongs to the data, so it
+does not move between runs. Reservation rows (`model_name` = `__PENDING__`) and
+ad-hoc `parcel=NULL` geometry queries are excluded — neither is data.
+
+The dump refuses a row whose items carry no received day, or two, and writes
+nothing: it never supplies a day the site did not record. The loader refuses a
+row without `received` and `source` the same way, and gives every recorded crop
+ET month its row's received day.
 
 Regenerate it (read-only; needs a database that already holds the cache):
 

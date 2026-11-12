@@ -5,7 +5,7 @@ The capability was already built and already principled: where a field has no
 well, the engine records the leftover as ``unmet_demand_af`` with
 ``residual_disposition="unmet_demand"`` rather than inventing pumping, and the
 help pages already say so in as many words ("It is never phantom pumping").
-**Nothing displayed it.** In the dry year 47 fields carry the disposition and six
+**Nothing displayed it.** In the open year (as built 2026-09-06) 47 fields carry the disposition and six
 carry an amount.
 
 ⛔ The words are the risk and they are settled (2026-09-06): *water use
@@ -160,7 +160,7 @@ def test_a_period_with_no_unmet_disposition_says_nothing():
 
 
 def test_a_field_whose_runs_carry_zero_says_nothing():
-    """The disposition is set but the amount is zero — 41 of the 47 dry-year fields."""
+    """The disposition is set but the amount is zero — 41 of the 47 open-year fields (2026-09-06)."""
     from accounting.services import parcel_unmet_demand
 
     older, newer = _periods()

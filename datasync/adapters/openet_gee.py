@@ -212,6 +212,7 @@ class GEEOpenETAdapter(OpenETAdapter):
                 defaults={
                     "geometry": parcel.geometry,
                     "et_data": et_data,
+                    "origin": "gee",
                 },
             )
             crop_et.record_fetched_months(parcel, crop_et.months_of(et_data))
@@ -239,6 +240,7 @@ class GEEOpenETAdapter(OpenETAdapter):
         from datasync.models import OpenETCache
 
         written = 0
+        received = timezone.localdate()
         try:
             spread = reduce_et_with_spread_by_parcel(ee, parcels, win_start, win_end)
         except Exception as exc:
@@ -269,7 +271,12 @@ class GEEOpenETAdapter(OpenETAdapter):
                     end_date=win_end,
                     variable=variable,
                     model_name="Ensemble",
-                    defaults={"geometry": parcel.geometry, "et_data": values},
+                    defaults={
+                        "geometry": parcel.geometry,
+                        # Each item carries the day it was received, as the ET row's do.
+                        "et_data": crop_et.stamp(values, received),
+                        "origin": "gee",
+                    },
                 )
                 written += 1
 

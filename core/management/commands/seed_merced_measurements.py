@@ -104,7 +104,7 @@ DEMO_OPERATOR = "Halvern Irrigation District"
 # A season is a list of (date, fraction-of-capacity). A 0.30 fill ponds deeper
 # and runs the canal harder than a 0.20 fill; the readings below have to say so,
 # or the card contradicts the event history printed beside it on the same page.
-# The dry year's season is shorter AND smaller — see RECHARGE_SEASONS' comment.
+# The open year's season is shorter AND smaller — see RECHARGE_SEASONS' comment.
 FILL_SEASONS = RECHARGE_SEASONS
 
 # The span everything here is measured across: BOTH water years, as one
@@ -201,27 +201,30 @@ SERVICE_VISITS = (datetime.date(2025, 5, 14), datetime.date(2026, 5, 14))
 # It moves with the record's end, not with a literal date.
 PROVISIONAL_FROM = datetime.date(2026, 8, 16)
 
-# THE DRY YEAR'S WATER TABLE IS DERIVED FROM THIS DEMONSTRATION'S OWN
-# NUMBERS, not drawn a second time. The wet year's anchors above are a shape and
-# say so; a second hand-drawn shape would be a second unverifiable claim, and a
-# flat continuation would be worse — a water table that does not move through a
-# drought is the one thing this audience would never believe.
+# THE SECOND YEAR'S WATER TABLE REUSES THE FIRST YEAR'S SHAPE, not a second
+# hand-drawn one. The first year's anchors above are a shape and say so; a second
+# hand-drawn shape would be a second unverifiable claim, and a flat continuation
+# would be worse.
 #
-# So the second year reuses the first year's shape piece by piece, scaled by
-# the two quantities the rest of the demonstration already carries:
+# The second year reuses the first year's shape piece by piece, scaled by two
+# fixed numbers chosen on 2026-09-05, when that year's rainfall was generated as
+# a dry year at half the closed year's:
 #
-#   * winter RECOVERY is scaled by 0.50, because managed recharge halved —
-#     `RECHARGE_SEASONS` spreads 1.00x basin capacity in the wet year and 0.50x
-#     in the dry one, and ``synthesize_dry_year`` halves the rainfall that
-#     drives it (its default ``--precip-factor`` is 0.50).
-#   * summer DRAWDOWN is scaled by 1.187, because metered groundwater rose 18.7%
-#     (2,558.6 AF -> 3,037.8 AF, measured on the built demo 2026-09-05).
+#   * winter RECOVERY is scaled by 0.50, the share of basin capacity
+#     `RECHARGE_SEASONS` spreads in the open year against the closed one;
+#   * summer DRAWDOWN is scaled by 1.187, the rise in metered groundwater measured
+#     on the build of that day (2,558.6 AF -> 3,037.8 AF).
+#
+# The generated rainfall is gone: both years now carry the rainfall gridMET sent,
+# and 2025-26 was the wetter of the two. These two scales are this invented
+# record's own and claim no weather; whether they should follow the real year is
+# an open question for the maintainer, so they stay as chosen.
 #
 # The second year opens exactly where the first closed, so the record is
 # continuous across the boundary. Everything else about the shape — when the
 # season turns, how fast — is inherited rather than invented.
-DRY_RECOVERY_SCALE = Decimal("0.50")
-DRY_DRAWDOWN_SCALE = Decimal("1.187")
+OPEN_YEAR_RECOVERY_SCALE = Decimal("0.50")
+OPEN_YEAR_DRAWDOWN_SCALE = Decimal("1.187")
 
 
 def _derive_next_year_anchors(anchors, recovery_scale, drawdown_scale):
@@ -247,7 +250,7 @@ def _derive_next_year_anchors(anchors, recovery_scale, drawdown_scale):
 RECORD_ANCHORS = DEPTH_ANCHORS + [
     (day + DAYS_IN_FIRST_WY + 1, value)
     for day, value in _derive_next_year_anchors(
-        DEPTH_ANCHORS, DRY_RECOVERY_SCALE, DRY_DRAWDOWN_SCALE
+        DEPTH_ANCHORS, OPEN_YEAR_RECOVERY_SCALE, OPEN_YEAR_DRAWDOWN_SCALE
     )
 ]
 
@@ -362,9 +365,8 @@ class Command(BaseCommand):
         renders the ten most recent; at this spacing those ten reach back across a
         season rather than sampling one storm.
 
-        The dry year's two fills are instrumented the same way the wet
-        year's four are. The district did not stop reading its basins because it
-        rained less, and an event history for WY 2025-2026 sitting beside an
+        The open year's two fills are instrumented the same way the closed
+        year's four are. An event history for WY 2025-2026 sitting beside an
         empty measurements card would contradict itself.
 
         The numbers have to agree with the event history printed beside them on
@@ -440,8 +442,8 @@ class Command(BaseCommand):
                 # Percolation, on every OTHER fill: once early, once after the
                 # fines off the first storms have had time to settle out.
                 # Expressed as a parity rather than a literal (0, 2) pair, so a
-                # season of a different length (the two-storm dry
-                # winter) still gets a reading rather than falling through both
+                # season of a different length (the open year's two fills)
+                # still gets a reading rather than falling through both
                 # branches and recording nothing but depth and flow.
                 if idx % 2 == 0:
                     silting = 0.0 if idx == 0 else -0.07

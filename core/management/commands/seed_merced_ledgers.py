@@ -216,22 +216,22 @@ GSA_SUSTAINABLE_RATE = 2.0  # fallback for a GSA not named in the table below
 # GSA's demonstration parcels, keyed by zone NAME (the zones are created by
 # seed_merced_gsas before this command runs and are looked up by name elsewhere
 # in this file). A GSP's number is set by the agency; these are the
-# demonstration's, chosen 2026-09-06 from the measured groundwater use so the
-# dashboard shows a budget under pressure that the dry year crosses because
-# pumping rose, and every plan row says so in its notes.
-#   Halvern Valley GSA          4,844.7 ac × 0.58 = 2,809.93 AF against 2,518.46 AF
-#       pumped in WY 2024-2025 (+291.47 under) and 3,142.51 AF in WY 2025-2026
-#       (−332.58 over): the allocation is identical in both years and pumping
-#       is the only thing that moved. The Saddlebow growers' groundwater
-#       substitution, after the El Nido canal runs dry, is most of the rise.
-#   Verdano Island Water District GSA   365.9 ac × 2.90 = 1,061.11 AF against
-#       1,028.48 AF (+32.63) and 1,092.73 AF (−31.62): a groundwater-only GSA
-#       within 3% of its budget in the wet year and over it in the dry, with no
-#       recharge pool to carry over.
-#   Halvern Irrigation-Urban GSA   375.2 ac × 2.00 = 750.32 AF, unchanged: its
-#       demonstration parcels are canal-served and pump 137.59 / 142.14 AF, so
-#       it is the GSA that is NOT under pressure. GSA_BUDGET_FLOOR (500 AF) is
-#       above twice its pumping, so no rate could bring it within 2x.
+# demonstration's, chosen 2026-09-06 from the groundwater use measured then, when
+# the second year's rainfall was generated as a dry year: the rates were set so
+# the second year crossed the budget because pumping rose. Both years now carry
+# the crop ET and rainfall OpenET and gridMET sent, and the use measured on that
+# build (2026-11-12, the zone page's budget row) no longer tells that story:
+#   Halvern Valley GSA          4,844.7 ac × 0.58 = 2,809.93 AF against 3,500.58 AF
+#       used in WY 2024-2025 (−690.65 over) and 3,298.97 AF in WY 2025-2026
+#       (−489.05 over).
+#   Verdano Island Water District GSA   365.9 ac × 2.90 = 1,061.02 AF against
+#       1,155.79 AF (−94.76 over) and 1,052.53 AF (+8.49 under).
+#   Halvern Irrigation-Urban GSA   375.2 ac × 2.00 = 750.32 AF against 151.57 AF
+#       and 152.47 AF: the GSA that is NOT under pressure. GSA_BUDGET_FLOOR
+#       (500 AF) is above twice its use, so no rate could bring it within 2x.
+# The rates are the demonstration's and claim nothing about a real GSA. Whether
+# they should be re-chosen for the real years is an open question for the
+# maintainer; until then they stay as chosen.
 GSA_SUSTAINABLE_RATE_AF_PER_ACRE = {
     "Halvern Valley GSA": Decimal("0.58"),
     "Verdano Island Water District GSA": Decimal("2.90"),
@@ -239,7 +239,7 @@ GSA_SUSTAINABLE_RATE_AF_PER_ACRE = {
 }
 GSA_BUDGET_FLOOR = Decimal("500.0")   # a GSA with no demo parcels still gets a budget
 SURFACE_ALLOCATION_MARGIN = Decimal("0.10")  # district surface allocation = its year's deliveries + 10%
-DRY_YEAR_OPEN_FRACTION = Decimal("0.1")    # the El Nido district's current-year allocation is a tenth of its prior year's
+EL_NIDO_OPEN_YEAR_FRACTION = Decimal("0.1")    # the El Nido district's current-year allocation is a tenth of its prior year's
 
 # The El Nido canal runs dry going INTO the peak season: the last month with a
 # surface delivery is June 2025, so July–September deliver nothing and the
@@ -252,7 +252,7 @@ DRY_YEAR_OPEN_FRACTION = Decimal("0.1")    # the El Nido district's current-year
 # curtailment orders). The record of 0 says the district recorded the canal
 # as not delivering, which is different from a month with no record at all.
 # The district's allocation for that year is deliberately NOT zero
-# (`DRY_YEAR_OPEN_FRACTION` leaves it at a tenth of the prior year's): the district
+# (`EL_NIDO_OPEN_YEAR_FRACTION` leaves it at a tenth of the prior year's): the district
 # cut the allocation, and then the canal delivered nothing at all.
 EL_NIDO_LAST_DELIVERY = date(2025, 6, 30)
 # The El Nido canal's point of diversion, matched by its id prefix (the demo
@@ -694,7 +694,8 @@ class Command(BaseCommand):
         written, because the deliveries are what it is sized from. The one
         exception is the El Nido district's open year: its canal delivers
         nothing, so its allocation is the prior year's cut to
-        ``DRY_YEAR_OPEN_FRACTION`` of it, the cut the dry-year story records.
+        ``EL_NIDO_OPEN_YEAR_FRACTION`` of it: the invented district cut its
+        allocation for the year its canal delivers nothing.
         """
         sw = WaterType.objects.get(code="SW")
         prior_amount = {}
@@ -705,8 +706,11 @@ class Command(BaseCommand):
             dry = right.right_id.startswith("MER-WR-009")
             for rp in periods:
                 if dry and rp is open_wy:
-                    amount = _q(prior_amount.get(right_id, Decimal("0")) * DRY_YEAR_OPEN_FRACTION)
-                    note = "Surface allocation reduced for a dry year."
+                    amount = _q(prior_amount.get(right_id, Decimal("0")) * EL_NIDO_OPEN_YEAR_FRACTION)
+                    note = (
+                        "Surface allocation for the demonstration: a tenth of the "
+                        f"district's allocation for {periods[0].name}."
+                    )
                 else:
                     delivered = abs(
                         ParcelLedger.objects.filter(
@@ -1303,7 +1307,7 @@ class Command(BaseCommand):
 
         One ``to_storage`` record per fill month per feeding point of diversion.
         Six fill dates across the two water years and two feeding points → twelve
-        records, eight in the wet year and four in the dry.
+        records, eight in the closed year and four in the open one.
 
         EVERY NUMBER IS DERIVED, none typed:
 

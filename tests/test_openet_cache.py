@@ -381,6 +381,10 @@ class TestRowOriginIsNotCountedAsSpend:
                             "variable": "ET",
                             "model_name": "Ensemble",
                             "et_data": [{"date": "2024-06", "et": 55.0}],
+                            # The loader refuses a row that does not say where
+                            # and when it was received.
+                            "source": "OpenET",
+                            "received": "2025-01-15",
                         }
                         for number in ("MER-9001", "MER-9002")
                     ],
@@ -435,6 +439,10 @@ class TestRowOriginIsNotCountedAsSpend:
                             "variable": "ET",
                             "model_name": "Ensemble",
                             "et_data": [{"date": "2024-06", "et": 55.0}],
+                            # The loader refuses a row that does not say where
+                            # and when it was received.
+                            "source": "OpenET",
+                            "received": "2025-01-15",
                         }
                     ],
                 }

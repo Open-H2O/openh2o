@@ -46,7 +46,7 @@ Q = Decimal("0.0001")
 BASIN = "Cressey-Winton Recharge Basin"
 # Events span Dec 2024 – Mar 2025 → all water year 2025 (Oct–Sep, named by end).
 EVENT_WY = 2025
-# 133-02: the dry year's two fills land in the following water year, so they pool
+# 133-02: the open year's two fills land in the following water year, so they pool
 # to their OWN AllocationCarryover row rather than adding to the wet year's.
 DRY_EVENT_WY = 2026
 
@@ -192,12 +192,11 @@ def test_flush_leaves_engine_incidental_pool_and_rows_untouched():
 # 133-02 — the second water year's recharge: smaller, not absent
 # --------------------------------------------------------------------------
 @pytest.mark.django_db
-def test_the_dry_year_recharges_half_as_much_as_the_wet_year():
-    """Both years spread water; the dry year spreads half a basin capacity.
+def test_the_open_year_recharges_half_as_much_as_the_closed_year():
+    """Both years spread water; the open year spreads half a basin capacity.
 
-    Not "some less" — the ratio is the 0.50 rainfall multiplier 133-01 applied to
-    the satellite record, so the two halves of the demonstration agree about how
-    dry the dry year was.
+    The ratio is the invented schedule's own (RECHARGE_SEASONS), drawn when the
+    open year's rainfall was generated as a dry year; it claims no weather.
     """
     _, zone, _, _ = _fixture(capacity="100.0000")
     call_command("seed_merced_recharge_events")
@@ -211,11 +210,10 @@ def test_the_dry_year_recharges_half_as_much_as_the_wet_year():
 
 
 @pytest.mark.django_db
-def test_the_dry_year_has_fewer_storms_not_smaller_ones():
-    """Two fills in the dry winter against four in the wet one.
+def test_the_open_year_has_fewer_fills_not_smaller_ones():
+    """Two fills in the open year's winter against four in the closed year's.
 
-    A dry winter is short of storms before it is short of water in each one, and
-    the shoulder months (December, March) do not happen at all.
+    The shoulder months (December, March) have no fill in the open year.
     """
     _fixture()
     call_command("seed_merced_recharge_events")
@@ -225,8 +223,8 @@ def test_the_dry_year_has_fewer_storms_not_smaller_ones():
         for e in RechargeEvent.objects.all()
     )
     assert months == [
-        (2024, 12), (2025, 1), (2025, 2), (2025, 3),   # wet: four fills
-        (2026, 1), (2026, 2),                          # dry: two mid-winter
+        (2024, 12), (2025, 1), (2025, 2), (2025, 3),   # closed year: four fills
+        (2026, 1), (2026, 2),                          # open year: two mid-winter
     ]
 
 

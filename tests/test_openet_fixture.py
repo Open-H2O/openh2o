@@ -4,8 +4,8 @@ Tests for the OpenET cache dump/load pair.
 
 These two commands are what make the demonstration reproducible from the
 repository: without them a rebuild either has no evapotranspiration at all (and
-the accounting engine computes nothing) or spends OpenET quota re-fetching
-numbers that have not moved since WY 2024-25 closed.
+the accounting engine computes nothing) or spends OpenET quota on a fresh
+request for every rebuild.
 
 The load side's refusal is tested for TOTALITY, not just for raising. A command
 that raises after writing half its rows leaves a database that looks seeded and
@@ -34,7 +34,9 @@ def _cache_row(parcel, variable="ET", model_name="Ensemble", et_mm=100.0):
         end_date=dt.date(2025, 9, 30),
         variable=variable,
         model_name=model_name,
-        et_data=[{"et": et_mm, "date": "2024-10", "unit": "mm"}],
+        # Received on a day, as every writer stamps it: the dump refuses a row
+        # that carries no received day.
+        et_data=[{"et": et_mm, "date": "2024-10", "unit": "mm", "fetched": "2024-12-01"}],
     )
 
 

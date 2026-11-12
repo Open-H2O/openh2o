@@ -215,6 +215,7 @@ class Command(BaseCommand):
                 variable="ET",
                 model_name="Ensemble",
                 et_data=et_data,
+                origin="gee",
             )
             crop_et.record_fetched_months(parcel, crop_et.months_of(et_data))
             written += 1

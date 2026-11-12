@@ -358,11 +358,11 @@ def _day_words(day):
 
 
 def _fetched(day):
-    return f"fetched {_day_words(day)}" if day is not None else "fetch date not recorded"
+    return f"received {_day_words(day)}" if day is not None else "date received not recorded"
 
 
 def caption(record):
-    """``OpenET satellite estimate, fetched Aug 6, 2025, provisional`` (a label, so no full stop)."""
+    """``OpenET satellite estimate, received Aug 6, 2025, provisional`` (a label, so no full stop)."""
     words = f"OpenET satellite estimate, {_fetched(record.fetched_on)}"
     if is_provisional(record.fetched_on, record.month):
         words += ", provisional"

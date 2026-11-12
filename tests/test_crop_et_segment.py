@@ -12,7 +12,7 @@ Everything sits inside the page's own Crop ET figure, never in a card of its own
 * a month with nothing to estimate carries the same block inside its one card.
 
 The worked example is the 100-acre corn field of ``test_openet_recorded_figure``: July 2025
-fetched at 30.00 AF on Aug 6, 2025, and OpenET's newer 40.00 AF fetched Sep 28, 2025.
+fetched at 30.00 AF on Aug 6, 2025, and OpenET's newer 40.00 AF received Sep 28, 2025.
 """
 
 import re
@@ -79,7 +79,7 @@ def test_one_caption_says_the_source_and_the_fetch_day(operator):
 
     page = _html(operator, field)
 
-    assert '<div class="budget-seg-caption">OpenET satellite estimate, fetched Aug 6, 2025, provisional</div>' in page
+    assert '<div class="budget-seg-caption">OpenET satellite estimate, received Aug 6, 2025, provisional</div>' in page
     assert page.count('class="budget-seg-caption">OpenET') == 1
 
 
@@ -90,7 +90,7 @@ def test_a_newer_figure_is_a_row_of_the_crop_et_figure(operator):
     segment = _segment(_html(operator, field))
 
     assert re.search(
-        r"<span>Newer figure<span class=\"budget-breakdown-note\">fetched Sep 28, 2025, not used</span></span>\s*<b>40\.00</b>",
+        r"<span>Newer figure<span class=\"budget-breakdown-note\">received Sep 28, 2025, not used</span></span>\s*<b>40\.00</b>",
         segment,
     )
 
@@ -188,9 +188,9 @@ def test_after_accepting_the_earlier_figure_is_struck_with_who_when_and_why(oper
 
     segment = _segment(_html(operator, field))
 
-    assert '<div class="budget-seg-caption">OpenET satellite estimate, fetched Sep 28, 2025, provisional</div>' in segment
+    assert '<div class="budget-seg-caption">OpenET satellite estimate, received Sep 28, 2025, provisional</div>' in segment
     assert re.search(
-        r"<span>Earlier figure<span class=\"budget-breakdown-note\">fetched Aug 6, 2025</span></span>\s*"
+        r"<span>Earlier figure<span class=\"budget-breakdown-note\">received Aug 6, 2025</span></span>\s*"
         r"<b class=\"record-void-text\">30\.00</b>",
         segment,
     )

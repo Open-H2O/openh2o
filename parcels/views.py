@@ -543,9 +543,9 @@ def _balance_period(
     #      pane, not an error page.
     #   2. The most recent period this parcel has a CalculationRun for. A run
     #      with demand and no supply is exactly the state this pane should show:
-    #      the six curtailed Merced fields have their finding in the dry year,
-    #      and step 3 could not see it because the dry year carries no delivery
-    #      row of their own.
+    #      the six Merced fields on the El Nido canal have their finding in the
+    #      open year, and step 3 could not see it because that year carries no
+    #      delivery row of their own (the canal delivers nothing).
     #   3. The old default: the most recent period with REAL (non-allocation)
     #      ledger activity. Still right for a surface-only field the engine has
     #      never run.

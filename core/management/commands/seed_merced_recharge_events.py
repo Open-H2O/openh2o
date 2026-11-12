@@ -47,15 +47,13 @@ from parcels.models import ParcelLedger
 # the number of basin-fulls spread that year, so the list says in one line how
 # wet the winter was.
 #
-# THE DRY YEAR'S RECHARGE IS SMALLER, NOT ABSENT, AND HERE IS WHY.
-# A dry year genuinely has less storm water to spread, so copying the wet year's
-# schedule would be a lie. Seeding nothing would be a different lie: the basins
-# and their canal intake are still there, and a winter with half the rain still
-# produces storms worth diverting. The dry season below is scaled to 0.50 — the
-# same rainfall multiplier ``synthesize_dry_year`` applies to the satellite record, and it arrives as TWO mid-winter storms rather
-# than a four-month season, because a dry winter is short of storms before it is
-# short of water in each one. December and March, the shoulder fills, do not
-# happen at all.
+# The schedule is invented, like the basins it fills, and reads no weather. The
+# open year's two fills (0.50x capacity, January and February) were drawn when
+# that year's rainfall was generated as a dry year at half the closed year's.
+# That rainfall is gone: both years now carry the rainfall gridMET sent, and
+# 2025-26 was the wetter of the two. Whether this invented schedule should follow
+# the real year is an open question for the maintainer; until then it stays as
+# drawn and nothing here claims the year was dry.
 #
 # ⚠ This is the MANAGED spreading-basin schedule only. The high-flow storm
 # diversion is written by ``seed_merced_ledgers`` and must not be built here.

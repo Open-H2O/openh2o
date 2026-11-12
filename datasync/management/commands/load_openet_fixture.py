@@ -4,7 +4,15 @@ Load the committed OpenET cache fixture back into an empty database.
 
 The other half of ``dump_openet_fixture``. Together they are what lets the
 demonstration be rebuilt from the repository without spending OpenET quota on
-numbers that have not moved since WY 2024-25 closed.
+every rebuild. The figures are the ones OpenET and gridMET sent, each row with
+the day the site received them.
+
+**Each row must say where it came from and when it arrived** (``source`` and
+``received``, written by the dump). A row without them, with a source that does
+not belong to its model, or received before its last month ended, is refused
+with nothing written, the same as a missing parcel. Each item is stamped with
+the row's received day as a fetch stamps it, so a recorded crop ET month carries
+that day.
 
 **It resolves every parcel BEFORE it writes a single row.** If the fixture names
 a parcel the database does not have, the command raises ``CommandError`` naming
@@ -23,17 +31,37 @@ Usage:
     python manage.py load_openet_fixture --fixture /tmp/openet_cache.json
 """
 
+import datetime as dt
 import json
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
 from datasync import crop_et
+from datasync.management.commands.dump_openet_fixture import SOURCE_OF_MODEL
 from datasync.models import OpenETCache
 from parcels.models import Parcel
 
 DEFAULT_FIXTURE = "data/merced/openet_cache.json"
 DEFAULT_PREFIX = "MER-"
+
+
+def _provenance_problem(row):
+    """Why ``row`` cannot be loaded as a figure its source sent, or None."""
+    label = f"{row.get('parcel_number')} {row.get('variable')} from {row.get('start_date')}"
+    source, received = row.get("source"), row.get("received")
+    if not source or not received:
+        return f"{label}: no source or received day"
+    if SOURCE_OF_MODEL.get(row.get("model_name")) != source:
+        return f"{label}: source {source!r} does not belong to model {row.get('model_name')!r}"
+    try:
+        day = dt.date.fromisoformat(received)
+    except ValueError:
+        return f"{label}: received {received!r} is not a day"
+    months = [crop_et.month_first(str(item.get("date", ""))[:7]) for item in row.get("et_data") or []]
+    if months and day <= crop_et.last_day(max(months)):
+        return f"{label}: received {received} before its last month ended"
+    return None
 
 
 class Command(BaseCommand):
@@ -65,6 +93,17 @@ class Command(BaseCommand):
 
         payload = json.loads(fixture.read_text())
         rows = payload["rows"]
+
+        # --- Every row's provenance first. Nothing below this block writes. ---
+        unproven = [problem for problem in map(_provenance_problem, rows) if problem]
+        if unproven:
+            raise CommandError(
+                f"{len(unproven)} row(s) in {fixture} do not say where or when "
+                f"they were received: " + "; ".join(unproven[:5])
+                + (" …" if len(unproven) > 5 else "")
+                + "\n  Nothing was written. Regenerate the file with:\n"
+                "    python manage.py dump_openet_fixture"
+            )
 
         # --- Resolve everything first. Nothing below this block writes. ---
         wanted = {row["parcel_number"] for row in rows}
@@ -121,7 +160,9 @@ class Command(BaseCommand):
                 model_name=row["model_name"],
                 defaults={
                     "geometry": parcel.geometry,
-                    "et_data": row["et_data"],
+                    "et_data": crop_et.stamp(
+                        row["et_data"], dt.date.fromisoformat(row["received"])
+                    ),
                     # Loading the fixture spends no OpenET request, so these rows
                     # must not count toward the monthly allowance. Because this is
                     # an upsert on the uniqueness tuple, a re-run also corrects
@@ -135,9 +176,8 @@ class Command(BaseCommand):
                 updated_count += 1
             per_variable[row["variable"]] = per_variable.get(row["variable"], 0) + 1
             if row["variable"] == "ET":
-                # A month with no record yet is recorded at the loaded figure. The
-                # demonstration's file carries no fetch dates, so its months read
-                # "Fetch date not recorded"; a recorded month keeps its figure.
+                # A month with no record yet is recorded at the loaded figure and
+                # the day it was received; a recorded month keeps its figure.
                 crop_et.record_fetched_months(
                     parcel, crop_et.months_of(row["et_data"]), model=row["model_name"]
                 )

@@ -447,6 +447,7 @@ class OpenETAdapter(BaseAdapter):
         """
         from django.db import transaction
 
+        from datasync import crop_et
         from datasync.models import OpenETCache
 
         if variable not in SPREAD_VARIABLES:
@@ -513,7 +514,8 @@ class OpenETAdapter(BaseAdapter):
                 model_name="Ensemble",
             ).exclude(pk=reservation.pk).delete()
             reservation.model_name = "Ensemble"
-            reservation.et_data = values
+            # Each item carries the day it was received, as the ET row's do.
+            reservation.et_data = crop_et.stamp(values, timezone.localdate())
             reservation.save(update_fields=["model_name", "et_data"])
 
         logger.info(

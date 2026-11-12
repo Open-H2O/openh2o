@@ -6,19 +6,29 @@ Until this command existed, the only copy of the Merced demo's satellite
 evapotranspiration draws lived inside two running databases on the server. A
 rebuild of the demonstration from the repository had two bad options: produce a
 database with no ET at all (the accounting engine then computes nothing), or
-spend OpenET quota re-fetching numbers that have not moved since WY 2024-25
-closed. That gap is the reason the golden snapshot has always had to be a
-photocopy of a live database rather than a build output.
+spend OpenET quota on a fresh request for every rebuild. That gap is the reason
+the golden snapshot has always had to be a photocopy of a live database rather
+than a build output.
 
 The fixture is keyed by ``parcel_number`` — never by primary key. Parcel pks
 differ between deployments, and a pk-keyed fixture would silently attach ET to
 the wrong parcels. ``load_openet_fixture`` resolves the numbers back to rows.
 
-**The output is deliberately unstamped.** No timestamp, no hostname, no git
-hash appears anywhere in the file. That buys a real test: re-running this dump
-against an unchanged database produces a byte-identical file, so ``git diff`` is
-an honest answer to "has the cache moved?" A generated-at stamp would make every
-regeneration look like a change and the diff would stop meaning anything.
+**Every row says where it came from and when it arrived.** ``source`` names the
+service that sent the figures (OpenET for the ensemble's crop ET and its spread,
+gridMET for rainfall), read from the row's model. ``received`` is the day the site
+received them, read from the day each writer stamps on every item. A row whose
+items carry no day, or two, is refused with nothing written: the dump never
+supplies a day the site did not record, because a figure in this file is shown
+on every page under its source's name. The per-item stamps are folded into the
+row's one ``received`` day; ``load_openet_fixture`` puts them back.
+
+**The output carries no time of its own.** No generated-at stamp, no hostname,
+no git hash appears anywhere in the file. That buys a real test: re-running this
+dump against an unchanged database produces a byte-identical file, so ``git
+diff`` is an honest answer to "has the cache moved?" A generated-at stamp would
+make every regeneration look like a change and the diff would stop meaning
+anything. ``received`` is a property of the data, so it is the same on every run.
 
 **``geometry`` is deliberately not stored.** It is ``parcel.geometry`` — the same
 polygon, already committed in ``data/merced/selected_parcels.geojson`` and
@@ -35,12 +45,38 @@ Usage:
 import json
 from pathlib import Path
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from datasync.models import OpenETCache
 
 DEFAULT_FIXTURE = "data/merced/openet_cache.json"
 DEFAULT_PREFIX = "MER-"
+
+#: The service that sent a row's figures, by the row's model.
+SOURCE_OF_MODEL = {"Ensemble": "OpenET", "GRIDMET": "gridMET"}
+
+
+def _row_label(row):
+    return f"{row.parcel.parcel_number} {row.variable} {row.start_date} to {row.end_date}"
+
+
+def provenance(row):
+    """``(source, received day text, items without their day)`` or a refusal reason."""
+    source = SOURCE_OF_MODEL.get(row.model_name)
+    if source is None:
+        return f"{_row_label(row)}: no known source for model {row.model_name!r}"
+    items = row.et_data or []
+    days = {item.get("fetched") for item in items if isinstance(item, dict)}
+    if not items or days == {None}:
+        return f"{_row_label(row)}: no received day on its items"
+    if len(days) != 1 or None in days:
+        return f"{_row_label(row)}: its items carry {len(days)} different received days"
+    received = str(days.pop())[:10]
+    stripped = [
+        {key: value for key, value in item.items() if key != "fetched"}
+        for item in items
+    ]
+    return source, received, stripped
 
 
 class Command(BaseCommand):
@@ -75,17 +111,33 @@ class Command(BaseCommand):
             .select_related("parcel")
         )
 
-        rows = [
-            {
-                "parcel_number": row.parcel.parcel_number,
-                "start_date": row.start_date.isoformat(),
-                "end_date": row.end_date.isoformat(),
-                "variable": row.variable,
-                "model_name": row.model_name,
-                "et_data": row.et_data,
-            }
-            for row in queryset
-        ]
+        rows, refused = [], []
+        for row in queryset:
+            found = provenance(row)
+            if isinstance(found, str):
+                refused.append(found)
+                continue
+            source, received, items = found
+            rows.append(
+                {
+                    "parcel_number": row.parcel.parcel_number,
+                    "start_date": row.start_date.isoformat(),
+                    "end_date": row.end_date.isoformat(),
+                    "variable": row.variable,
+                    "model_name": row.model_name,
+                    "source": source,
+                    "received": received,
+                    "et_data": items,
+                }
+            )
+        if refused:
+            refused.sort()
+            raise CommandError(
+                f"{len(refused)} row(s) cannot say where or when they were received, "
+                f"so nothing was written to {output}:\n  "
+                + "\n  ".join(refused[:5])
+                + ("\n  ..." if len(refused) > 5 else "")
+            )
         rows.sort(key=lambda r: (r["parcel_number"], r["variable"], r["start_date"]))
 
         meta = {

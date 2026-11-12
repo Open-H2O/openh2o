@@ -4,7 +4,7 @@
 ISS-147. The pane's period was resolved from the LEDGER — the most recent period
 carrying a non-allocation row — so a field whose newer year has a calculation but
 no delivery of its own opened on the older year, and there was no control to move
-it. The six El Nido Merced fields (a canal dry after June 2025) are exactly that shape: the dry year is the
+it. The six El Nido Merced fields (a canal dry after June 2025) are exactly that shape: the open year is the
 year with the finding, and it was the year the pane would not show.
 
 The fixture here is that shape, hermetically: one parcel with NO well, a real

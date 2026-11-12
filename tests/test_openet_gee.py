@@ -234,8 +234,9 @@ class TestEnsembleSpread:
         assert summary["spread"]["written"] == 3
         by_var = {r.variable: r for r in OpenETCache.objects.filter(parcel=parcel)}
         assert set(by_var) == {"ET", "et_mad_min", "et_mad_max", "model_count"}
+        # Each item carries the day it was received, as the ET row's do.
         assert by_var["et_mad_min"].et_data == [
-            {"date": "2024-06", "et_mad_min": 118.40, "unit": "mm"}
+            {"date": "2024-06", "et_mad_min": 118.40, "unit": "mm", "fetched": timezone.localdate().isoformat()}
         ]
         # The tally counts models, not millimetres of water.
         assert by_var["model_count"].et_data[0]["unit"] == "count"

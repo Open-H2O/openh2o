@@ -380,12 +380,13 @@ def test_the_water_level_record_spans_both_water_years(demo):
 
 
 @pytest.mark.django_db
-def test_the_dry_year_draws_the_water_table_down(demo):
+def test_the_open_year_draws_the_water_table_down(demo):
     """The second year ends deeper than it began, and deeper than the first year.
 
     Depth is feet BELOW land surface, so a larger number is a lower water table.
-    The shape is derived from this demonstration's own numbers — half the managed
-    recharge, 18.7% more metered pumping — not drawn a second time.
+    The shape reuses the first year's, scaled by the invented record's two fixed
+    numbers (OPEN_YEAR_RECOVERY_SCALE, OPEN_YEAR_DRAWDOWN_SCALE), not drawn a
+    second time.
     """
     call_command("seed_merced_measurements")
 
@@ -400,8 +401,8 @@ def test_the_dry_year_draws_the_water_table_down(demo):
     dry_close = depth_on(date(2026, 9, 30))
 
     assert wet_close > wet_open, "the committed year already ends in overdraft"
-    assert dry_close > wet_close, "the dry year should end deeper still"
-    # The dry year's decline is the larger of the two by a wide margin — a
+    assert dry_close > wet_close, "the open year should end deeper still"
+    # The open year's decline is the larger of the two by a wide margin — a
     # district under pressure, not a district ticking along.
     assert (dry_close - wet_close) > 3 * (wet_close - wet_open)
 

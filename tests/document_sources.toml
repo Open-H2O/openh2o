@@ -2461,7 +2461,7 @@ files = [
   "core/management/commands/seed_merced_measurements.py",
   "core/management/commands/seed_merced_basins_from_selection.py",
   "accounting/management/commands/run_calculations.py",
-  "datasync/management/commands/synthesize_dry_year.py",
+  "datasync/management/commands/load_openet_fixture.py",
 ]
 labels = [
   { text = "Use Ledger", where = "core/modules.py" },

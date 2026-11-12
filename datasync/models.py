@@ -277,11 +277,14 @@ class OpenETCache(models.Model):
     # API call charged through reserve_query_slot, and a bulk load from the
     # committed fixture that spends nothing. Recorded at the moment it is known
     # rather than inferred later — inferring it from row timing is exactly what
-    # made a freshly-seeded demonstration read as 380 requests spent.
+    # made a freshly-seeded demonstration read as 380 requests spent. Rows the
+    # Earth Engine tier writes (OpenET's ensemble and gridMET rainfall) say "gee";
+    # they still count toward the allowance, as "unknown" rows did.
     origin = models.CharField(
         max_length=10,
         choices=[
             ("api", "OpenET API call"),
+            ("gee", "Received through Google Earth Engine"),
             ("fixture", "Loaded from a committed fixture"),
             ("unknown", "Origin not recorded"),
         ],

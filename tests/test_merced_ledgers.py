@@ -451,7 +451,7 @@ def test_each_surface_district_zone_has_a_surface_budget_in_both_periods(seeded)
 
 @pytest.mark.django_db
 def test_el_nido_district_open_year_surface_budget_is_reduced(seeded):
-    """The El Nido district's CURRENT-year surface budget is cut for the dry year."""
+    """The El Nido district's CURRENT-year surface budget is cut: its canal delivers nothing."""
     sw = WaterType.objects.get(code="SW")
     prior = ReportingPeriod.objects.get(name=PRIOR_WY)
     open_wy = ReportingPeriod.objects.get(name=OPEN_WY)
@@ -463,7 +463,11 @@ def test_el_nido_district_open_year_surface_budget_is_reduced(seeded):
     open_budget = AllocationPlan.objects.get(zone=zone, water_type=sw, reporting_period=open_wy)
     assert open_budget.allocation_acre_feet < prior_budget.allocation_acre_feet, (
         "El Nido district's open-year surface budget should be reduced vs the prior year")
-    assert open_budget.notes == "Surface allocation reduced for a dry year."
+    # Ruling 141: the note states the cut and claims no weather.
+    assert open_budget.notes == (
+        "Surface allocation for the demonstration: a tenth of the district's "
+        "allocation for WY 2024-2025."
+    )
 
 
 # --------------------------------------------------------------------------
@@ -913,7 +917,7 @@ def test_el_nido_district_delivers_nothing_in_the_open_year(seeded):
     open_budget = AllocationPlan.objects.filter(
         reporting_period=open_wy,
         zone__name__startswith="MER Surface Service Area",
-        notes__startswith="Surface allocation reduced",
+        notes__contains="a tenth of the district's allocation",
     ).aggregate(s=Sum("allocation_acre_feet"))["s"] or Decimal("0")
     assert open_budget > 0, (
         "the collapsed open-year allocation should still be a positive tenth of "
@@ -1034,9 +1038,9 @@ def _to_storage():
 
 @pytest.mark.django_db
 def test_every_managed_fill_has_a_to_storage_diversion_behind_it(seeded_with_basins):
-    """Six fill dates x two feeding intakes = twelve records, 8 wet + 4 dry.
+    """Six fill dates x two feeding intakes = twelve records, 8 + 4.
 
-    The wet year spreads four storms, the dry year two (RECHARGE_SEASONS), so the
+    The closed year spreads four fills, the open year two (RECHARGE_SEASONS), so the
     split is not symmetric and a test that only counted twelve would pass on a
     seed that wrote both years into one.
     """
@@ -1046,7 +1050,7 @@ def test_every_managed_fill_has_a_to_storage_diversion_behind_it(seeded_with_bas
 
     assert _to_storage().count() == 12, "expected one record per fill date per intake"
     assert by_period["WY 2024-2025"] == 8, "four wet-year storms across two intakes"
-    assert by_period["WY 2025-2026"] == 4, "two dry-year storms across two intakes"
+    assert by_period["WY 2025-2026"] == 4, "two open-year fills across two intakes"
 
 
 @pytest.mark.django_db
