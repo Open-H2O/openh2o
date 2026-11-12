@@ -49,7 +49,8 @@ pytestmark = pytest.mark.django_db
 
 JULY = "2025-07"
 MONTHS = ["2025-07", "2025-08", "2025-09"]
-NOTICE_HEAD = "OpenET now reports 40.00 AF (4.80 in)"
+#: The newer figure's row under the month page's Crop ET figure, as _words prints it.
+NOTICE_HEAD = '<span>Newer figure<span class="budget-breakdown-note">'
 
 
 def _upgrade():
@@ -132,8 +133,13 @@ def test_an_entry_typed_by_hand_never_becomes_the_record_and_both_figures_are_sh
 
     assert _recorded(f4) == (D("91.44"), None)
     assert counts["entries_differ"] == 1
-    sentence = "The ledger's ET estimate entry reads 33.00 AF. This month uses the recorded 30.00 AF (3.60 in)."
-    assert sentence in _page(operator, f4)
+    row = (
+        '<span>Ledger entry<span class="budget-breakdown-note">differs from the recorded figure</span></span> '
+        "<b>33.00</b>"
+    )
+    page = _page(operator, f4)
+    assert row in page
+    assert '<div class="budget-seg-value" title="30.0000 acre-feet">30.00' in page
     ledger_page = _words(_client(operator).get(reverse("accounting:ledger_list")))
     assert "OpenET's recorded figure for this month is 30.00 AF." in ledger_page
 

@@ -372,12 +372,18 @@ def calculation_run_detail(request, parcel_id, period):
     }
     if run.residual_disposition == "groundwater":
         context.update(_receipt_context(parcel, run, period))
-    context["crop_et"] = _crop_et_context(request.user, parcel, period)
+    context["crop_et"] = _crop_et_context(request.user, parcel, period, request.GET.get("open", ""))
     return render(request, "accounting/calculation_run_detail.html", context)
 
 
-def _crop_et_context(user, parcel, period):
-    """The month's recorded crop ET, any newer figure, and whether this person may accept it."""
+def _crop_et_context(user, parcel, period, open_action=""):
+    """The month's recorded crop ET, its rows, and which rows this person may act on.
+
+    A row's three-dot menu follows the site's rule for correcting records: a person who
+    can write, and in a finalized year an administrator only. ``open_action`` (the
+    ``open`` query value the menu item sends) opens that row's correction row instead of
+    its menu; for anyone who may not act it opens nothing.
+    """
     from accounting.locks import period_for
     from core.access import may_override
     from datasync.crop_et import page_context
@@ -387,14 +393,13 @@ def _crop_et_context(user, parcel, period):
         return None
     year = period_for(found["record"].month)
     closed = year is not None and year.is_finalized
-    found["can_accept"] = bool(getattr(user, "can_write", False)) and (
-        not closed or may_override(user)
-    )
-    found["refusal"] = (
-        f"{year.name} is finalized. An administrator can accept a newer figure in it, with a reason."
-        if closed and not found["can_accept"] and getattr(user, "can_write", False)
-        else ""
-    )
+    can_act = bool(getattr(user, "can_write", False)) and (not closed or may_override(user))
+    found["open"] = None
+    for row in found["rows"]:
+        action = row.get("action")
+        row["menu"] = bool(can_act and action and action != open_action)
+        if can_act and action and action == open_action:
+            found["open"] = row
     return found
 
 

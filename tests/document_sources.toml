@@ -2723,7 +2723,7 @@ files = [
   "accounting/ledger_import.py",
   "accounting/locks.py",
   "parcels/admin.py",
-  "templates/accounting/partials/_crop_et_record.html",
+  "templates/accounting/partials/_crop_et_segment.html",
 ]
 labels = []
 checked_at = "51f86ba0"

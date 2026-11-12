@@ -35,8 +35,6 @@ NO_NEWER_SENTENCE = "OpenET reports no other figure for this month. Nothing was 
 #: The sentence for bringing an entry into line when it already agrees.
 ENTRY_AGREES_SENTENCE = "The ET estimate entry already agrees with the recorded figure. Nothing was changed."
 
-MM_PER_INCH = Decimal("25.4")
-
 
 @dataclass(frozen=True)
 class Fetched:
@@ -345,77 +343,92 @@ def bring_entry_to_record(record, *, user, reason):
 
 
 # -- What the month's page shows ----------------------------------------------------------------
+#
+# The month's calculation page shows the record inside its own Crop ET figure: the figure's
+# value, one caption, and the figure's breakdown rows (templates/accounting/partials/
+# _crop_et_segment.html). Every word the page prints about the record is made here.
 
 
-def _figure_words(mm, acres):
-    return f"{acre_feet(mm, acres):,.2f} AF ({Decimal(mm) / MM_PER_INCH:,.2f} in)"
+def _af(mm, acres):
+    return f"{acre_feet(mm, acres):,.2f}"
 
 
 def _day_words(day):
     return f"{day:%b} {day.day}, {day.year}"
 
 
-def fetch_line(record):
-    """``OpenET, fetched Aug 6, 2025, provisional.`` or ``Fetch date not recorded``."""
-    if record.fetched_on is None:
-        return "Fetch date not recorded"
-    words = f"OpenET, fetched {_day_words(record.fetched_on)}"
+def _fetched(day):
+    return f"fetched {_day_words(day)}" if day is not None else "fetch date not recorded"
+
+
+def caption(record):
+    """``OpenET satellite estimate, fetched Aug 6, 2025, provisional`` (a label, so no full stop)."""
+    words = f"OpenET satellite estimate, {_fetched(record.fetched_on)}"
     if is_provisional(record.fetched_on, record.month):
         words += ", provisional"
-    return words + "."
+    return words
+
+
+def _replaced_words(earlier, by):
+    """``Replaced Sep 30, 2025 by J. Lopez: the reason.``, the site's line under a replaced record."""
+    day = timezone.localtime(earlier.replaced_at or by.created_at, timezone.get_default_timezone())
+    reason = (by.change_reason or "").strip()
+    if reason and reason[-1] not in ".!?":
+        reason += "."
+    head = f"Replaced {_day_words(day)} by {_who(by.created_by)}"
+    return f"{head}: {reason}" if reason else f"{head}."
 
 
 def page_context(parcel, period):
-    """What the month's calculation page shows about its crop ET; None when nothing is recorded."""
+    """What the month's page shows about its crop ET; None when nothing is recorded.
+
+    ``rows`` are the Crop ET figure's breakdown rows, in order: a newer figure OpenET now
+    reports, the ledger's ET estimate entry when it differs from the record, then each
+    earlier figure an acceptance replaced, struck, with the line that says who, when and why.
+    A row with an ``action`` gets the three-dot menu when the person may correct records.
+    """
     from datasync.models import CropETFigure
 
     record = current_record(parcel, period)
     if record is None:
         return None
     acres = parcel.area_acres
+    rows = []
     newer = newer_figure(record)
-    earlier = []
-    step = record
-    while step.replaces_id:
-        step = CropETFigure.objects.get(pk=step.replaces_id)
-        line = _figure_words(step.depth_mm, acres)
-        if step.fetched_on is not None:
-            line += f", fetched {_day_words(step.fetched_on)}"
-        earlier.append(line)
-    context = {
-        "record": record,
-        "recorded_words": _figure_words(record.depth_mm, acres),
-        "fetch_line": fetch_line(record),
-        "earlier": earlier,
-        "accepted_line": "",
-        "newer_sentence": "",
-        "entry_sentence": "",
-    }
-    if record.replaces_id:
-        when = timezone.localtime(record.created_at).date()
-        who = _who(record.created_by)
-        context["accepted_line"] = f"Accepted {_day_words(when)} by {who}: {record.change_reason}"
-    recorded = _figure_words(record.depth_mm, acres)
     if newer is not None:
-        when = (
-            f"fetched {_day_words(newer.fetched_on)}" if newer.fetched_on else "fetch date not recorded"
-        )
-        context["newer_sentence"] = (
-            f"OpenET now reports {_figure_words(newer.mm, acres)}, {when}. "
-            f"This month uses the recorded {recorded}."
-        )
+        rows.append({
+            "label": "Newer figure",
+            "note": f"{_fetched(newer.fetched_on)}, not used",
+            "figure": _af(newer.mm, acres),
+            "action": "accept",
+            "item": "Accept newer figure",
+        })
     entry = current_estimate_entry(parcel, period)
     if entry is not None and entry_differs(entry, record):
-        context["entry"] = entry
-        context["entry_sentence"] = (
-            f"The ledger's ET estimate entry reads {abs(entry.amount_acre_feet):,.2f} AF. "
-            f"This month uses the recorded {recorded}."
-        )
-    # Whether there is more to say than the fetch line the Crop ET figure carries.
-    context["has_more"] = bool(
-        context["newer_sentence"] or context["entry_sentence"] or context["earlier"]
-    )
-    return context
+        rows.append({
+            "label": "Ledger entry",
+            "note": "differs from the recorded figure",
+            "figure": f"{abs(entry.amount_acre_feet):,.2f}",
+            "action": "entry",
+            "item": "Bring to the recorded figure",
+        })
+    later = record
+    while later.replaces_id:
+        earlier = CropETFigure.objects.get(pk=later.replaces_id)
+        rows.append({
+            "label": "Earlier figure",
+            "note": _fetched(earlier.fetched_on),
+            "figure": _af(earlier.depth_mm, acres),
+            "struck": True,
+            "line": _replaced_words(earlier, later),
+        })
+        later = earlier
+    return {
+        "record": record,
+        "figure": _af(record.depth_mm, acres),
+        "caption": caption(record),
+        "rows": rows,
+    }
 
 
 def _who(user):

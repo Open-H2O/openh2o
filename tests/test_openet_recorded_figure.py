@@ -56,9 +56,10 @@ FIRST = {"2025-07": 91.44, "2025-08": 15.24, "2025-09": 15.24}
 NEWER = {**FIRST, "2025-07": 121.92}
 REASON = "OpenET revised July after the month settled"
 FINALIZED_SENTENCE = "WY 2024-2025 is finalized"
+#: The newer figure's row under the Crop ET figure, as _words prints it.
 NOTICE = (
-    "OpenET now reports 40.00 AF (4.80 in), fetched Sep 28, 2025. "
-    "This month uses the recorded 30.00 AF (3.60 in)."
+    '<span>Newer figure<span class="budget-breakdown-note">fetched Sep 28, 2025, not used</span></span> '
+    "<b>40.00</b>"
 )
 
 
@@ -309,9 +310,9 @@ def test_a_month_cached_by_hand_with_no_record_is_not_calculated():
 @pytest.mark.parametrize(
     ("fetched", "line"),
     [
-        (AUG_6, "OpenET, fetched Aug 6, 2025, provisional."),
-        (dt.date(2025, 11, 28), "OpenET, fetched Nov 28, 2025, provisional."),
-        (dt.date(2025, 11, 29), "OpenET, fetched Nov 29, 2025."),
+        (AUG_6, "OpenET satellite estimate, fetched Aug 6, 2025, provisional</div>"),
+        (dt.date(2025, 11, 28), "OpenET satellite estimate, fetched Nov 28, 2025, provisional</div>"),
+        (dt.date(2025, 11, 29), "OpenET satellite estimate, fetched Nov 29, 2025</div>"),
     ],
 )
 def test_the_month_page_says_when_the_figure_was_fetched_and_whether_it_was_provisional(
@@ -330,7 +331,7 @@ def test_a_record_with_no_fetch_date_says_so(operator):
     ld.run_months([JULY])
 
     assert _recorded(field) == (D("91.44"), None)
-    assert "Fetch date not recorded" in _page(operator, field)
+    assert "OpenET satellite estimate, fetch date not recorded</div>" in _page(operator, field)
 
 
 # ---------------------------------------------------------------- 6. the newer figure on the page
@@ -344,7 +345,11 @@ def test_a_newer_figure_is_shown_beside_the_recorded_one_with_accept_for_a_write
 
     assert NOTICE in page
     assert "Accept newer figure" in page
-    assert 'name="reason"' in page
+    assert 'name="reason"' in _words(
+        _client(operator).get(
+            reverse("accounting:calculation_run_detail", args=[field.pk, JULY]), {"open": "accept"}
+        )
+    )
 
 
 def test_a_viewer_sees_the_newer_figure_and_no_accept(viewer):
@@ -387,10 +392,10 @@ def test_after_accepting_the_page_shows_who_when_why_and_the_earlier_figure_stru
 
     page = _page(operator, field)
 
-    assert "OpenET, fetched Sep 28, 2025, provisional." in page
+    assert "OpenET satellite estimate, fetched Sep 28, 2025, provisional</div>" in page
     assert f"by J. Lopez: {REASON}" in page
-    assert re.search(r"<s[^>]*>\s*30\.00 AF \(3\.60 in\), fetched Aug 6, 2025", page)
-    assert "OpenET now reports" not in page
+    assert re.search(r'fetched Aug 6, 2025</span></span>\s*<b class="record-void-text">30\.00</b>', page)
+    assert "Newer figure" not in page
 
 
 def test_a_viewers_accept_writes_nothing(viewer):

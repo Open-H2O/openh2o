@@ -1,0 +1,51 @@
+{% comment %}
+  The Crop ET figure of the month's calculation page: the receipt's first segment, and the
+  same block inside the short page's one card (short=True). Include with value (the figure,
+  formatted), value_title (the stored value, optional) and crop_et
+  (accounting.views.calculation_runs._crop_et_context, words from datasync/crop_et.py
+  page_context; None when no figure is recorded).
+
+  The recorded figure is the value. One caption says where it came from and when it was
+  fetched. A newer figure, a ledger entry that differs and each earlier figure an acceptance
+  replaced are the figure's own breakdown rows; an earlier one is struck, with the site's
+  line under a replaced record. A row that can be acted on carries the site's three-dot
+  menu (static/js/row-menu.js); its item fetches this page with ?open= and swaps this block
+  for the one with the correction row open (the row of templates/partials/
+  _record_correct_form.html: Reason, then Accept and Cancel). Nothing changes until Accept.
+{% endcomment %}
+<div class="budget-seg" id="crop-et">
+  <div class="budget-seg-label">Crop ET</div>
+  <div class="budget-seg-value"{% if value_title %} title="{{ value_title }} acre-feet"{% endif %}>{{ value }}<span class="budget-seg-unit">AF</span></div>
+  <div class="budget-seg-caption">{% if crop_et %}{{ crop_et.caption }}{% else %}OpenET satellite estimate{% endif %}</div>
+  {% if crop_et.rows %}
+  <div class="budget-breakdown-group budget-breakdown-group--menu">
+    {% for row in crop_et.rows %}
+    <div class="budget-breakdown-row"><span>{{ row.label }}<span class="budget-breakdown-note">{{ row.note }}</span></span>
+      <b{% if row.struck %} class="record-void-text"{% endif %}>{{ row.figure }}</b>
+      <span class="row-actions-inline">{% if row.menu %}<button type="button" class="row-actions-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Actions for the {{ row.label|lower }}" popovertarget="menu-crop-et-{{ row.action }}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
+        <div id="menu-crop-et-{{ row.action }}" class="row-menu" popover="auto" role="menu" aria-label="Actions for the {{ row.label|lower }}">
+          <button type="button" role="menuitem" class="row-menu-item" hx-get="{{ request.path }}?open={{ row.action }}" hx-target="#crop-et" hx-select="#crop-et" hx-swap="outerHTML">{{ row.item }}</button>
+        </div>{% endif %}</span>
+    </div>
+    {% if row.line %}<div class="record-void-note">{{ row.line }}</div>{% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if crop_et.open %}
+  <div class="record-correct-form">
+    <form method="post" action="{% url 'accounting:crop_et_accept' parcel.pk period %}">
+      {% csrf_token %}
+      <input type="hidden" name="record" value="{{ crop_et.record.pk }}">
+      <input type="hidden" name="action" value="{{ crop_et.open.action }}">
+      <div class="correct-item correct-reason">
+        <label class="field-label" for="crop-et-reason">Reason</label>
+        <input type="text" name="reason" id="crop-et-reason" class="form-input" minlength="10" maxlength="500" required autofocus>
+      </div>
+      <div class="correct-actions">
+        <button type="submit" class="btn-primary btn-sm">Accept</button>
+        <button type="button" class="btn-secondary btn-sm" hx-get="{{ request.path }}" hx-target="#crop-et" hx-select="#crop-et" hx-swap="outerHTML">Cancel</button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+</div>
