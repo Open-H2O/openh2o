@@ -311,8 +311,14 @@ class OpenETAdapter(BaseAdapter):
         """Fetch a monthly OpenET timeseries for a polygon.
 
         Synchronous single POST. OpenET wants the polygon ring as a flat
-        coordinate list [lon, lat, lon, lat, ...]. Falls back to the centroid
-        point if the polygon request is rejected.
+        coordinate list [lon, lat, lon, lat, ...] and a ``reducer``, how the
+        field's pixels become one figure; it refuses a request without one.
+        The site asks for the field's mean.
+
+        A refused or failed request raises. It is never asked again for the
+        field's centre point: one pixel's figure recorded under the field's
+        name reads on every page as the field's. The caller counts the field
+        as failed and records nothing for it.
 
         ``variable`` is one of ET (the ensemble value) or a member of
         SPREAD_VARIABLES. The API takes exactly ONE variable and ONE model per
@@ -331,22 +337,13 @@ class OpenETAdapter(BaseAdapter):
             "model": "Ensemble",
             "variable": variable,
             "reference_et": "gridMET",
+            "reducer": "mean",
             "units": "mm",
             "file_format": "JSON",
         }
-        try:
-            resp = self._request(
-                "POST", POLYGON_URL, json=payload, headers=self._headers()
-            )
-        except Exception as exc:
-            logger.warning(
-                "OpenET polygon endpoint failed (%s), falling back to centroid", exc
-            )
-            centroid = geometry.centroid
-            payload["geometry"] = [centroid.x, centroid.y]
-            resp = self._request(
-                "POST", POINT_URL, json=payload, headers=self._headers()
-            )
+        resp = self._request(
+            "POST", POLYGON_URL, json=payload, headers=self._headers()
+        )
         return resp.json()
 
     def sync_with_cache(self, parcel, start_date, end_date):

@@ -202,14 +202,27 @@ python manage.py load_station_fixture
 | **What** | The crop evapotranspiration OpenET sent for each demonstration field (its ensemble value and spread), and the rainfall gridMET sent, behind the demonstration's water accounting |
 | **Measured** | 760 rows = 76 parcels × 5 variables × 2 windows (WY 2024-25, `2024-10-01` → `2025-09-30`; WY 2025-26, `2025-10-01` → `2026-09-30`) |
 | **Variables** | `ET`, `et_mad_max`, `et_mad_min`, `model_count` (source OpenET); `precip` (source gridMET) |
-| **Received** | 2026-11-12, through Google Earth Engine (OpenET's monthly ensemble, gridMET daily rainfall summed by month); each row's `received` and `source` say so |
-| **Size** | 962,089 bytes (940 kB) on disk |
+| **Received** | 2026-11-12, through Google Earth Engine (OpenET's monthly ensemble, gridMET daily rainfall summed by month), and for the 107 cloud-covered field-months below, from OpenET's own service the same day; each row's `received` and `source` say so |
+| **Size** | 969,992 bytes (947 kB) on disk |
 | **Used by** | `load_openet_fixture`, and therefore `scripts/rebuild-golden.sh` |
 
-**Months OpenET sent no crop ET for are absent, never filled in.** OpenET has no
-figure for 61 of the 76 fields in December 2025 and 46 in January 2026 (every
-band of those months' images is blank over those fields), so the file holds
-1,717 of the 1,824 field-months of crop ET. Rainfall is present for every month.
+**Every field-month has crop ET, each a figure OpenET sent; nothing is filled in
+here.** Through Earth Engine, OpenET has no figure for 61 of the 76 fields in
+December 2025 and 46 in January 2026 (every band of those months' images is blank
+over those fields: cloud). OpenET's own service
+(`https://openet-api.org/raster/timeseries/polygon`, monthly Ensemble ET, gridMET
+reference, mm, the field's mean) does send a figure for those 107 field-months.
+They were requested on 2026-11-12 between 16:02 and 16:34 Pacific, one request per
+field for November 2025 to February 2026, and only the months the Earth Engine
+record lacks were added, to the field's WY 2025-26 row; November, February and
+the other fields' January keep the Earth Engine figures. OpenET's answer does not
+say which months it filled, but every one of these 107 lies on a straight line
+between the field's November and February, so they are OpenET's interpolation
+across the cloudy months, not a satellite reading. In the 15 fields where the
+satellite did see December, December sits 6 to 12 mm below the midpoint of
+November and January. The file now holds all 1,824 field-months of crop ET.
+Rainfall is present for every month; the ensemble spread rows (`et_mad_min`,
+`et_mad_max`, `model_count`) have no figure for the 107 months.
 OpenET may revise a month for about 120 days after it ends; the figures here
 are the ones it had on the received day.
 
