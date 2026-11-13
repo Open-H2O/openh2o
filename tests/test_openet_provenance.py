@@ -138,6 +138,65 @@ def test_no_two_use_areas_share_one_open_year_shape(variable):
     assert repeats == 0, f"{repeats} use areas share an open-year shape with a different field"
 
 
+DEMONSTRATION_MONTHS = [
+    f"{2024 + (month + 9) // 12}-{(month + 9) % 12 + 1:02d}" for month in range(24)
+]
+
+
+def test_every_use_area_has_crop_et_for_all_24_months():
+    """October 2024 to September 2026, every month of every use area.
+
+    Earth Engine's record had no crop ET for 61 use areas in December 2025 and 46
+    in January 2026 (cloud). OpenET's own service sends a figure for those months
+    (ruling 146), so no month of the demonstration is without one.
+    """
+    monthly = _monthly("ET")
+    assert len(monthly) == 76
+    absent = [
+        (area, month)
+        for area, months in sorted(monthly.items())
+        for month in DEMONSTRATION_MONTHS
+        if month not in months
+    ]
+    assert absent == [], f"{len(absent)} use-area months have no crop ET, first {absent[:5]}"
+
+
+def test_the_cloud_months_are_openets_received_nov_12_2026_in_the_years_own_row():
+    """Each use area's December 2025 and January 2026 crop ET sits in its one row for
+    WY 2025-26, which names OpenET and the day it was received.
+
+    One row per use area and water year: a second row over the same months would
+    read on Site Health as two OpenET estimates for one month.
+    """
+    found = defaultdict(list)
+    for row in _committed_rows():
+        if row["variable"] != "ET":
+            continue
+        for item in row["et_data"]:
+            if item["date"] in ("2025-12", "2026-01") and item.get("et") is not None:
+                found[(row["parcel_number"], item["date"])].append(
+                    (row["start_date"], row["end_date"], row["source"], row["received"], item["unit"])
+                )
+    areas = {row["parcel_number"] for row in _committed_rows()}
+    expected = {(area, month) for area in areas for month in ("2025-12", "2026-01")}
+    assert set(found) == expected, f"{len(expected - set(found))} cloud months have no figure"
+    wrong = {
+        key: places
+        for key, places in found.items()
+        if places != [("2025-10-01", "2026-09-30", "OpenET", "2026-11-12", "mm")]
+    }
+    assert wrong == {}, f"{len(wrong)} cloud months sit elsewhere, first {list(wrong.items())[:3]}"
+
+
+def test_the_cloud_months_are_the_figures_openets_service_sent():
+    """Two fields, as OpenET's service answered them on 2026-11-12 (mm, three decimals)."""
+    monthly = _monthly("ET")
+    assert monthly["MER-APN-001"]["2025-12"] == 37.142
+    assert monthly["MER-APN-001"]["2026-01"] == 35.834
+    assert monthly["MER-APN-003"]["2025-12"] == 27.803
+    assert monthly["MER-APN-003"]["2026-01"] == 40.467
+
+
 def test_the_command_that_derived_a_year_is_gone():
     name = "synthesize_dry_year"
     assert importlib.util.find_spec(f"datasync.management.commands.{name}") is None
