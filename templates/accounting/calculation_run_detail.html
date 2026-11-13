@@ -64,6 +64,7 @@
       <span class="budget-panel-period">{{ month_label }}</span>
     </div>
     <div class="budget-panel-body">
+      {% include "accounting/partials/_crop_et_bands.html" with in_receipt=True %}
 
       <div class="budget-panel-row">
         {% include "accounting/partials/_crop_et_segment.html" with value=run.gross_et_af|floatformat:2|intcomma value_title=run.gross_et_af %}
@@ -74,7 +75,7 @@
           {% if run.effective_precip_af is None %}
           <div class="budget-seg-caption">not in the calculation plan</div>
           {% else %}
-          <div class="budget-seg-caption">gridMET rainfall</div>
+          <div class="budget-seg-caption">estimated from gridMET rainfall</div>
           <div class="budget-breakdown-group">
             {% if rainfall_af is not None %}<div class="budget-breakdown-row"><span>Rainfall</span><b title="{{ rainfall_af }} acre-feet">{{ rainfall_af|floatformat:2|intcomma }}</b></div>{% endif %}
             {% if precip_method_label %}<div class="budget-breakdown-row"><span>Method<span class="budget-breakdown-note">Methodology Settings</span></span><b>{{ precip_method_label }}</b></div>{% endif %}
@@ -153,6 +154,27 @@
     <div class="budget-panel-note">Methodology: {{ methodology_plan_name|blank }}{% if methodology_settings_code %}, settings {{ methodology_settings_code }}{% endif %}. Calculated {{ run.created_at|date:"F j, Y, g:i A" }}. A changed setting affects a past month only when that month is recalculated. A meter reading for {{ month_label }} would replace this estimate. Figures are rounded to two decimals. OpenH2O calculates from the unrounded values.</div>
   </div>
 
+  {% elif no_figure %}
+  {% comment %} A month OpenET was asked about and sent no crop ET for: no
+     calculation, so the one card names the month and lists the month's ledger supplies,
+     each with the site's How measured pills. Nothing is estimated in its place. {% endcomment %}
+  <div class="text-tertiary text-sm receipt-facts">
+    {{ parcel.parcel_number }}{% if parcel.owner_name %} &middot; {{ parcel.owner_name }}{% endif %} &middot; {{ parcel.area_acres|floatformat:2 }} acres
+  </div>
+  <div class="card-raised receipt receipt-short">
+    <h2 class="receipt-headline">{{ no_figure.headline }}</h2>
+    <p class="text-secondary receipt-lead">{{ no_figure.lines }}</p>
+    {% if no_figure.supplies %}
+    <div class="crop-et-supplies">
+      {% for supply in no_figure.supplies %}
+      <div class="budget-seg">
+        <div class="budget-seg-label">{{ supply.label }}</div>
+        <div class="budget-seg-value"><span title="{{ supply.title }} acre-feet">{{ supply.figure }}<span class="budget-seg-unit">AF</span></span>{% for line in supply.pills %} <span class="kind-pill kind-pill--{{ line.pill_class }}">{{ line.pill }}</span>{% endfor %}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
   {% else %}
   {% comment %} The short page: a month with nothing to estimate, reached by
      a direct URL (the field page links only estimated months). Not a 404,
@@ -171,7 +193,7 @@
       This use area has no well on record, so there is no groundwater extraction to estimate.
       {% endif %}
     </p>
-    {% if crop_et %}{% include "accounting/partials/_crop_et_segment.html" with value=crop_et.figure %}{% endif %}
+    {% if crop_et %}{% include "accounting/partials/_crop_et_segment.html" with value=crop_et.figure %}{% include "accounting/partials/_crop_et_bands.html" %}{% endif %}
   </div>
   {% endif %}
 

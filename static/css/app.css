@@ -2924,6 +2924,18 @@ html { color-scheme: dark; }
     background: color-mix(in srgb, var(--color-muted) 14%, transparent);
     border-color: color-mix(in srgb, var(--color-muted) 30%, transparent);
 }
+/* Provisional and Final on OpenET's crop ET figure: the same pill as How measured, the
+   Estimated amber for a figure OpenET may still revise, the Metered green for its final one. */
+.kind-pill--provisional {
+    color: var(--color-warning);
+    background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+    border-color: color-mix(in srgb, var(--color-warning) 35%, transparent);
+}
+.kind-pill--final {
+    color: var(--color-supply);
+    background: color-mix(in srgb, var(--color-supply) 14%, transparent);
+    border-color: color-mix(in srgb, var(--color-supply) 35%, transparent);
+}
 /* The use area's lead figure: "How measured" and its pills sit on their own line
    under the figure, above the link note. Two kinds in one year sit side by side. */
 .statement-lead .figure-kind {
@@ -5689,16 +5701,11 @@ details[open] > summary .disclosure-mark {
 .record-void-text { text-decoration: line-through; color: var(--color-text-secondary); }
 .record-void-note { font-size: 0.75rem; color: var(--color-text-secondary); }
 /* The Crop ET figure on the month's calculation page (_crop_et_segment.html) is a record
-   inside an equation segment, not a table row. Its breakdown rows take a third track for the
-   "..." menu, so every figure lines up whether its row has a menu or not; the menu sits
-   against its figure (two fresh readers both called it loose at 16px); a struck figure keeps the struck colour over the breakdown's bright figures;
-   the line under a replaced figure spans the rows at the reason row's measure; and the
-   correction row opens under the rows. */
-.budget-seg > .budget-breakdown-group--menu { grid-template-columns: max-content max-content auto; }
-.budget-breakdown-group--menu .row-actions-inline { padding: 2px 0; margin-left: calc(var(--space-xs) - var(--space-lg)); }
+   inside an equation segment, not a table row. A struck earlier figure keeps the struck colour
+   over the breakdown's bright figures, and the line under a replaced figure spans the rows at
+   the reason row's measure. */
 .budget-breakdown-row > b.record-void-text { color: var(--color-text-secondary); }
-.budget-breakdown-group--menu > .record-void-note { grid-column: 1 / -1; max-width: 48ch; padding-bottom: 2px; }
-.budget-seg > .record-correct-form { margin-top: var(--space-sm); max-width: 48ch; }
+.budget-seg > .budget-breakdown-group > .record-void-note { grid-column: 1 / -1; max-width: 48ch; padding-bottom: 2px; }
 /* A month with nothing to estimate carries the same Crop ET figure inside its one card,
    ruled off under the card's sentence. */
 .receipt-short > .budget-seg { margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--color-border); }
@@ -5791,3 +5798,52 @@ details[open] > summary .disclosure-mark {
 .ledger-card-head.as-of-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-md); }
 .ledger-card-head.as-of-head > :first-child { flex: 1 1 60ch; min-width: 0; }
 .ledger-card-head.as-of-head .as-of { margin-left: auto; }
+
+
+/* -- The month page's Crop ET block ------------------------------------------------------
+   The caption carries its pill at the site's pill size (12px, as on a use area's How
+   measured line), not at the caption's 0.72rem. A newer figure and a ledger entry that
+   differs are bands: on the receipt across the top of the panel body, ruled off from the
+   equation rows and lined up with their columns; on the short page under the Crop ET figure.
+   The band's sentences start where the receipt's second column starts and run 75ch. */
+.crop-et-caption { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.crop-et-caption .kind-pill { font-size: 0.75rem; }
+/* On the receipt the band is one of the panel's rows: its figure in the first column, a hidden
+   operator holding the second, its sentences from the third column on. The 3% margin puts the
+   sentences where the second figure's label starts (each centred block stands 6% of its cell
+   in, and a cell is about half of the span). */
+.receipt-panel .crop-et-band-op { visibility: hidden; }
+.receipt-panel .crop-et-band-words { grid-column: 3 / -1; margin-left: calc(3% - 1.5px); }
+.receipt-panel .crop-et-band--words .crop-et-band-words { grid-column: 1 / -1; margin-left: 0; }
+.crop-et-band-figure { min-width: 0; }
+.crop-et-band-words { max-width: 75ch; font-size: 0.875rem; line-height: 1.55; color: var(--color-text-secondary); }
+.crop-et-band-words p { margin: 0; }
+.crop-et-band-action { margin-top: var(--space-sm); }
+.receipt-short .crop-et-band {
+    display: grid;
+    align-items: start;
+    grid-template-columns: max-content minmax(0, 46ch);
+    column-gap: 40px;
+    padding: var(--space-lg) 0 0;
+    margin: var(--space-lg) 0 0;
+    border-bottom: 0;
+    border-top: 1px solid var(--color-border);
+}
+.receipt-short .crop-et-band--words { grid-template-columns: minmax(0, 46ch); }
+/* The correction row on one line: the Reason box, then Accept and Cancel aligned with it. */
+.record-correct-form--line { margin-top: var(--space-sm); }
+.record-correct-form--line form { grid-template-columns: minmax(0, 1fr) max-content; }
+.record-correct-form--line .correct-reason { grid-column: 1; max-width: none; }
+.record-correct-form--line .correct-actions { grid-column: 2; }
+/* A month OpenET sent no crop ET for: the month's ledger supplies side by side, each figure
+   with its How measured pills. */
+.crop-et-supplies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-lg) 72px;
+    margin-top: var(--space-lg);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--color-border);
+}
+.crop-et-supplies .budget-seg-value { display: flex; align-items: center; gap: 10px; }
+.crop-et-supplies .kind-pill { font-size: 0.75rem; }

@@ -205,14 +205,57 @@ def recorded_mm(parcel, period, variable="ET", model="Ensemble"):
     return _tidy(record.depth_mm), 1
 
 
+def differs_as_printed(a_mm, b_mm, acres):
+    """Whether two depths differ in acre-feet as the pages print them (two decimals).
+
+    A field with no area on file falls back to the depth itself, 0.01 mm apart.
+    """
+    if not acres:
+        return abs(Decimal(a_mm) - Decimal(b_mm)) >= DIFFERENT_MM
+    return f"{acre_feet(a_mm, acres):.2f}" != f"{acre_feet(b_mm, acres):.2f}"
+
+
 def newer_figure(record):
-    """The month's newest fetched figure when it differs from ``record`` by 0.01 mm or more."""
+    """The month's newest fetched figure when it differs from ``record`` as the page prints it.
+
+    Two figures that match to the hundredth of an acre-foot are the same figure: a newer one
+    that prints the same as the recorded one would show two equal figures and an Accept.
+    """
     newest = newest_fetched(
         record.parcel, month_text(record.month), record.variable, record.model_name
     )
-    if newest is None or abs(newest.mm - record.depth_mm) < DIFFERENT_MM:
+    if newest is None or not differs_as_printed(newest.mm, record.depth_mm, record.parcel.area_acres):
         return None
     return newest
+
+
+def mark_for_day(received_on, first):
+    """``"Final"`` or ``"Provisional"`` for a figure received on ``received_on``; None with no day."""
+    if received_on is None:
+        return None
+    return "Provisional" if is_provisional(received_on, first) else "Final"
+
+
+def mark(record):
+    """The recorded figure's pill: Final, Provisional or None.
+
+    Final when OpenET sent the recorded figure more than 120 days after the month ended, or
+    has since sent the same figure (as the page prints it) more than 120 days after. With no
+    received day and nothing confirming it, no mark.
+    """
+    own = mark_for_day(record.fetched_on, record.month)
+    if own == "Final":
+        return own
+    newest = newest_fetched(
+        record.parcel, month_text(record.month), record.variable, record.model_name
+    )
+    if (
+        newest is not None
+        and mark_for_day(newest.fetched_on, record.month) == "Final"
+        and not differs_as_printed(newest.mm, record.depth_mm, record.parcel.area_acres)
+    ):
+        return "Final"
+    return own
 
 
 def acre_feet(mm, acres):
@@ -362,11 +405,25 @@ def _fetched(day):
 
 
 def caption(record):
-    """``OpenET satellite estimate, received Aug 6, 2025, provisional`` (a label, so no full stop)."""
-    words = f"OpenET satellite estimate, {_fetched(record.fetched_on)}"
-    if is_provisional(record.fetched_on, record.month):
-        words += ", provisional"
-    return words
+    """``OpenET satellite estimate, received Aug 6, 2025`` (a label, so no full stop).
+
+    Provisional or Final is the figure's pill (:func:`mark`), not a word in the caption.
+    """
+    return f"OpenET satellite estimate, {_fetched(record.fetched_on)}"
+
+
+def _pill(label):
+    return {"label": label, "kind": label.lower()} if label else None
+
+
+NEWER_WORDS = (
+    "OpenET now reports a different figure for this month. "
+    "OpenH2O calculates the month from the recorded {recorded} AF until a person accepts the newer figure. "
+    "Accepting it replaces the recorded figure and recalculates the month at once."
+)
+ENTRY_READS = "The ledger's ET estimate entry for this month reads {entry} AF."
+ENTRY_CALCULATES = "OpenH2O calculates the month from the recorded {recorded} AF."
+ENTRY_CORRECTING = "Correcting the entry to {recorded} AF recalculates the month."
 
 
 def _replaced_words(earlier, by):
@@ -382,10 +439,12 @@ def _replaced_words(earlier, by):
 def page_context(parcel, period):
     """What the month's page shows about its crop ET; None when nothing is recorded.
 
-    ``rows`` are the Crop ET figure's breakdown rows, in order: a newer figure OpenET now
-    reports, the ledger's ET estimate entry when it differs from the record, then each
-    earlier figure an acceptance replaced, struck, with the line that says who, when and why.
-    A row with an ``action`` gets the three-dot menu when the person may correct records.
+    ``figure``, ``caption`` and ``pill`` are the Crop ET figure's value, caption and mark.
+    ``earlier`` are its struck rows, one per figure an acceptance replaced, each with the
+    site's line under a replaced record. ``newer`` is the band for a newer figure OpenET now
+    sends (its figure, received day, pill and sentences); ``entry`` the band for an ET
+    estimate entry that differs from the record. Each band's ``action`` is what its button
+    opens; the view decides who sees the button.
     """
     from datasync.models import CropETFigure
 
@@ -393,42 +452,109 @@ def page_context(parcel, period):
     if record is None:
         return None
     acres = parcel.area_acres
-    rows = []
+    recorded = _af(record.depth_mm, acres)
     newer = newer_figure(record)
+    newer_band = None
     if newer is not None:
-        rows.append({
-            "label": "Newer figure",
-            "note": f"{_fetched(newer.fetched_on)}, not used",
+        newer_band = {
             "figure": _af(newer.mm, acres),
+            "received": _fetched(newer.fetched_on),
+            "pill": _pill(mark_for_day(newer.fetched_on, record.month)),
+            "words": NEWER_WORDS.format(recorded=recorded),
+            "button": "Accept the newer figure",
             "action": "accept",
-            "item": "Accept newer figure",
-        })
+        }
     entry = current_estimate_entry(parcel, period)
+    entry_band = None
     if entry is not None and entry_differs(entry, record):
-        rows.append({
-            "label": "Ledger entry",
-            "note": "differs from the recorded figure",
-            "figure": f"{abs(entry.amount_acre_feet):,.2f}",
+        words = [ENTRY_READS.format(entry=f"{abs(entry.amount_acre_feet):,.2f}")]
+        if newer_band is None:
+            words.append(ENTRY_CALCULATES.format(recorded=recorded))
+        words.append(ENTRY_CORRECTING.format(recorded=recorded))
+        entry_band = {
+            "words": " ".join(words),
+            "button": f"Correct the entry to {recorded} AF",
             "action": "entry",
-            "item": "Bring to the recorded figure",
-        })
+        }
+    earlier_rows = []
     later = record
     while later.replaces_id:
         earlier = CropETFigure.objects.get(pk=later.replaces_id)
-        rows.append({
+        earlier_rows.append({
             "label": "Earlier figure",
             "note": _fetched(earlier.fetched_on),
             "figure": _af(earlier.depth_mm, acres),
-            "struck": True,
             "line": _replaced_words(earlier, later),
         })
         later = earlier
     return {
         "record": record,
-        "figure": _af(record.depth_mm, acres),
+        "figure": recorded,
         "caption": caption(record),
-        "rows": rows,
+        "pill": _pill(mark(record)),
+        "earlier": earlier_rows,
+        "newer": newer_band,
+        "entry": entry_band,
     }
+
+
+# -- A month OpenET sent nothing for --------------------------------------------------------
+
+
+def asked_and_none_sent(parcel, period, variable="ET", model="Ensemble"):
+    """Whether OpenET was asked about the month and sent no figure for it.
+
+    True when a cached answer covers the whole month and carries no figure for it. A month no
+    cached answer covers was never asked about.
+    """
+    from datasync.models import OpenETCache
+
+    first = month_first(period)
+    rows = OpenETCache.objects.filter(
+        parcel=parcel, variable=variable, model_name=model,
+        start_date__lte=first, end_date__gte=last_day(first),
+    )
+    return rows.exists() and not any(period in months_of(row.et_data) for row in rows)
+
+
+NO_FIGURE_LINES = "OpenH2O calculates a month from its crop ET. It has not calculated this month."
+NO_FIGURE_ENTRIES = "The month's ledger entries are below."
+
+
+def no_figure_context(parcel, period):
+    """The page of a month OpenET was asked about and sent no crop ET for; None otherwise.
+
+    It names the month and lists the month's ledger supplies as figures, each with the site's
+    How measured pills. Nothing is calculated or estimated for the month.
+    """
+    from accounting.services import (
+        billable_ledger, groundwater_kind_terms, supply_kind_lines, surface_kind_terms,
+    )
+    from parcels.models import ParcelLedger
+
+    if current_record(parcel, period) is not None or not asked_and_none_sent(parcel, period):
+        return None
+    first = month_first(period)
+    billable = billable_ledger(
+        ParcelLedger.objects.current().filter(
+            parcel=parcel, effective_date__year=first.year, effective_date__month=first.month
+        )
+    )
+    supplies = []
+    for label, terms in (
+        ("Surface water delivered", surface_kind_terms(billable)),
+        ("Groundwater extraction", groundwater_kind_terms(billable)),
+    ):
+        total = sum((abs(amount) for _kind, amount in terms), Decimal("0"))
+        if total:
+            supplies.append({
+                "label": label,
+                "figure": f"{total:,.2f}",
+                "title": total,
+                "pills": supply_kind_lines([(kind, abs(amount)) for kind, amount in terms]),
+            })
+    lines = NO_FIGURE_LINES + (" " + NO_FIGURE_ENTRIES if supplies else "")
+    return {"headline": f"No crop ET from OpenET for {first:%B %Y}", "lines": lines, "supplies": supplies}
 
 
 def _who(user):

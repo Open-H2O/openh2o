@@ -107,39 +107,39 @@
         <tbody>
           <tr>
             <td class="col-name">Recorded once</td>
-            <td>The first time a use area&rsquo;s month is fetched from OpenET, OpenH2O records its crop ET with the date it was fetched. The month&rsquo;s calculation and the month&rsquo;s ET estimate entry in the ledger use that recorded figure and no other.</td>
+            <td>OpenH2O records the first crop ET figure OpenET sends for each use area and month. It also records the day the figure was received. The month&rsquo;s calculation and its ET estimate entry use that recorded figure and no other.</td>
           </tr>
           <tr>
             <td class="col-name">Why OpenET revises a month</td>
-            <td>OpenET calls a month&rsquo;s figure provisional for about 120 days after the month ends and may revise it in that time. It may also release a new version, at most once a year, that changes older months.</td>
+            <td>OpenET may revise a month&rsquo;s figure for about 120 days after the month ends. It may also release a new version that changes older months. It releases at most one new version a year.</td>
           </tr>
           <tr>
-            <td class="col-name">Provisional</td>
-            <td>The month&rsquo;s calculation page says provisional when the recorded figure was fetched 120 days or fewer after the month ended. The word describes the figure on the day it was fetched.</td>
+            <td class="col-name">Provisional and Final</td>
+            <td>A recorded figure is Provisional when OpenET sent it within 120 days of the month&rsquo;s end. It is Final when OpenET sent it later. OpenH2O leaves a figure unmarked if the day it was received is unknown. A Provisional or unmarked figure becomes Final when OpenET sends the same figure after the 120 days.</td>
           </tr>
           <tr>
             <td class="col-name">A newer figure</td>
-            <td>Fetching a month again changes nothing. When OpenET now reports a different figure, the month&rsquo;s calculation page shows it beside the recorded one, with its own fetch date, and the fetch command lists the month.</td>
+            <td>Asking OpenET for a month again does not change the recorded figure. The month&rsquo;s calculation page shows any different figure OpenET sends beside the recorded one. OpenH2O treats figures that match to the hundredth of an acre-foot as the same. The OpenET sync command lists every month with a different figure.</td>
           </tr>
           <tr>
             <td class="col-name">Accepting a newer figure</td>
-            <td>A person who can correct records may accept the newer figure on the month&rsquo;s calculation page, with a reason of 10 to 500 characters. The recorded figure and the month&rsquo;s ET estimate entry are replaced as corrections: the earlier figure stays on the page, struck through, with who accepted the newer one, when and why, and OpenH2O recalculates the month at once.</td>
+            <td>A person who can correct records may accept the newer figure on the month&rsquo;s calculation page. Acceptance takes a reason of 10 to 500 characters. OpenH2O replaces the recorded figure and the month&rsquo;s ET estimate entry as corrections. The page keeps the earlier figure struck through with the day, the person and the reason. OpenH2O recalculates the month at once.</td>
           </tr>
           <tr>
             <td class="col-name">A finalized water year</td>
-            <td>The newer figure is shown and nothing changes. Only an administrator can accept it, with a reason, and the change is recorded as an exception to the closed year.</td>
+            <td>In a finalized water year the newer figure is shown and nothing changes. Only an administrator can accept it. The acceptance needs a reason and is recorded as an exception to the closed year.</td>
           </tr>
           <tr>
             <td class="col-name">ET estimate entries</td>
-            <td>A person cannot type an ET figure: the hand entry form, the ledger import and the administration site do not create or change ET estimate entries. Where an entry written earlier differs from its month&rsquo;s recorded figure, the ledger page and the month&rsquo;s calculation page show the entry&rsquo;s figure and the recorded one, and a person may bring the entry to the recorded figure with a reason.</td>
+            <td>A person cannot type an ET figure. The hand entry form, the ledger import and the administration site cannot create or change one. An entry written before this version can differ from the recorded figure. The ledger and the month&rsquo;s calculation page then show both. A person who can correct records may correct the entry with a reason.</td>
           </tr>
           <tr>
             <td class="col-name">The upgrade to this version</td>
-            <td>OpenH2O recorded each month&rsquo;s figure from the crop ET its last calculation used, or, for a month never calculated, the newest figure fetched. No figure changed. Those months, and the months of the demonstration data, read &ldquo;Fetch date not recorded&rdquo;.</td>
+            <td>The upgrade recorded each month&rsquo;s figure from the crop ET its last calculation used. It recorded the newest figure OpenET had sent for any month never calculated. No figure changed. These months read &ldquo;date received not recorded&rdquo; on the calculation page.</td>
           </tr>
           <tr>
             <td class="col-name">Rainfall</td>
-            <td>Rainfall from gridMET is not recorded this way. A rain month fetched again changes the month&rsquo;s next calculation.</td>
+            <td>OpenH2O does not record gridMET rainfall this way. A new gridMET figure for a month changes that month&rsquo;s next calculation.</td>
           </tr>
         </tbody>
       </table>

@@ -439,7 +439,7 @@ class CropETFigure(CorrectableRecord):
     variable = models.CharField("OpenET variable", max_length=20, default="ET")
     model_name = models.CharField("OpenET model", max_length=50, default="Ensemble")
     depth_mm = models.DecimalField("crop ET (mm)", max_digits=40, decimal_places=20)
-    fetched_on = models.DateField("fetched", null=True, blank=True)
+    fetched_on = models.DateField("date received", null=True, blank=True)
     note = models.CharField("how it was recorded", max_length=40, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,

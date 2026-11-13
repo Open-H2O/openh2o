@@ -1,0 +1,25 @@
+{% comment %}
+  One band's action: its button, or, once pressed, the site's correction row on one line
+  (Reason, then Accept and Cancel, aligned with the box). Include with band and target (the
+  band's id). The button fetches this page with ?open= and swaps the band for the one with
+  the correction row open.
+{% endcomment %}
+{% if band.open %}
+<div class="record-correct-form record-correct-form--line">
+  <form method="post" action="{% url 'accounting:crop_et_accept' parcel.pk period %}">
+    {% csrf_token %}
+    <input type="hidden" name="record" value="{{ crop_et.record.pk }}">
+    <input type="hidden" name="action" value="{{ band.action }}">
+    <div class="correct-item correct-reason">
+      <label class="field-label" for="{{ target }}-reason">Reason</label>
+      <input type="text" name="reason" id="{{ target }}-reason" class="form-input" minlength="10" maxlength="500" required autofocus>
+    </div>
+    <div class="correct-actions">
+      <button type="submit" class="btn-primary btn-sm">Accept</button>
+      <button type="button" class="btn-secondary btn-sm" hx-get="{{ request.path }}" hx-target="#{{ target }}" hx-select="#{{ target }}" hx-swap="outerHTML">Cancel</button>
+    </div>
+  </form>
+</div>
+{% elif band.can_act %}
+<p class="crop-et-band-action"><button type="button" class="btn-secondary" hx-get="{{ request.path }}?open={{ band.action }}" hx-target="#{{ target }}" hx-select="#{{ target }}" hx-swap="outerHTML">{{ band.button }}</button></p>
+{% endif %}

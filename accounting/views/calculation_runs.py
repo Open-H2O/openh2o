@@ -353,7 +353,7 @@ def calculation_run_detail(request, parcel_id, period):
         .first()
     )
     if run is None:
-        raise Http404("No calculation run for this parcel and period.")
+        return _no_figure_page(request, parcel, period)
 
     context = {
         "parcel": parcel,
@@ -376,13 +376,40 @@ def calculation_run_detail(request, parcel_id, period):
     return render(request, "accounting/calculation_run_detail.html", context)
 
 
-def _crop_et_context(user, parcel, period, open_action=""):
-    """The month's recorded crop ET, its rows, and which rows this person may act on.
+def _no_figure_page(request, parcel, period):
+    """The page of a month OpenET was asked about and sent no crop ET for; Not found otherwise.
 
-    A row's three-dot menu follows the site's rule for correcting records: a person who
-    can write, and in a finalized year an administrator only. ``open_action`` (the
-    ``open`` query value the menu item sends) opens that row's correction row instead of
-    its menu; for anyone who may not act it opens nothing.
+    The month has no calculation, so the page names the month and lists its ledger supplies.
+    A month OpenET was never asked about stays Not found.
+    """
+    from datasync.crop_et import month_first, no_figure_context
+
+    try:
+        first = month_first(period)
+    except (TypeError, ValueError):
+        raise Http404("No calculation run for this parcel and period.") from None
+    found = no_figure_context(parcel, period)
+    if found is None:
+        raise Http404("No calculation run for this parcel and period.")
+    context = {
+        "parcel": parcel,
+        "period": period,
+        "run": None,
+        "month_label": first.strftime("%B %Y"),
+        "receipt": False,
+        "no_figure": found,
+        "crop_et": None,
+    }
+    return render(request, "accounting/calculation_run_detail.html", context)
+
+
+def _crop_et_context(user, parcel, period, open_action=""):
+    """The month's recorded crop ET, its bands, and whether this person sees their buttons.
+
+    A band's button follows the site's rule for correcting records: a person who can
+    write, and in a finalized year an administrator only. ``open_action`` (the ``open``
+    query value the button sends) opens that band's correction row in place of the
+    button; for anyone who may not act it opens nothing.
     """
     from accounting.locks import period_for
     from core.access import may_override
@@ -394,12 +421,11 @@ def _crop_et_context(user, parcel, period, open_action=""):
     year = period_for(found["record"].month)
     closed = year is not None and year.is_finalized
     can_act = bool(getattr(user, "can_write", False)) and (not closed or may_override(user))
-    found["open"] = None
-    for row in found["rows"]:
-        action = row.get("action")
-        row["menu"] = bool(can_act and action and action != open_action)
-        if can_act and action and action == open_action:
-            found["open"] = row
+    for band in (found["newer"], found["entry"]):
+        if band is None:
+            continue
+        band["can_act"] = can_act
+        band["open"] = bool(can_act and band["action"] == open_action)
     return found
 
 

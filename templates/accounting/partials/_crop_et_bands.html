@@ -1,0 +1,35 @@
+{% comment %}
+  The bands of the month's Crop ET figure: on the
+  receipt across the top of the panel, above the equation rows; on the short page under the
+  Crop ET figure inside the one card. Include with crop_et (_crop_et_context) and, on the receipt,
+  in_receipt=True: the band is then one of the panel's rows, its figure in the first column and
+  its sentences from the second column on, under the rule between rows.
+
+  The newer figure's band holds the figure OpenET now reports (label, value, received day,
+  pill) beside three sentences and one visible button. A ledger entry that differs gets a
+  band of sentences and a button. A button opens the site's correction row on one line
+  (Reason, Accept, Cancel) in place of the button; nothing changes until Accept. Who sees a
+  button follows the site's rule for correcting records (band.can_act).
+{% endcomment %}
+{% if crop_et.newer %}{% with band=crop_et.newer %}
+<div class="{% if in_receipt %}budget-panel-row {% endif %}crop-et-band" id="crop-et-newer">
+  <div class="{% if in_receipt %}budget-seg {% endif %}crop-et-band-figure">
+    <div class="budget-seg-label">Newer crop ET from OpenET</div>
+    <div class="budget-seg-value">{{ band.figure }}<span class="budget-seg-unit">AF</span></div>
+    <div class="budget-seg-caption crop-et-caption"><span>{{ band.received }}</span>{% if band.pill %} <span class="kind-pill kind-pill--{{ band.pill.kind }}">{{ band.pill.label }}</span>{% endif %}</div>
+  </div>
+  {% if in_receipt %}<div class="budget-op crop-et-band-op" aria-hidden="true">&minus;</div>{% endif %}
+  <div class="crop-et-band-words">
+    <p>{{ band.words }}</p>
+    {% include "accounting/partials/_crop_et_band_action.html" with band=band target="crop-et-newer" %}
+  </div>
+</div>
+{% endwith %}{% endif %}
+{% if crop_et.entry %}{% with band=crop_et.entry %}
+<div class="{% if in_receipt %}budget-panel-row {% endif %}crop-et-band crop-et-band--words" id="crop-et-entry">
+  <div class="crop-et-band-words">
+    <p>{{ band.words }}</p>
+    {% include "accounting/partials/_crop_et_band_action.html" with band=band target="crop-et-entry" %}
+  </div>
+</div>
+{% endwith %}{% endif %}

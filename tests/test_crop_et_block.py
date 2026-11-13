@@ -169,7 +169,7 @@ def test_a_month_openet_sent_no_crop_et_for_has_a_page_that_says_so(operator):
         "OpenH2O calculates a month from its crop ET. It has not calculated this month. "
         "The month's ledger entries are below."
     ) in main
-    assert re.search(r'<div class="budget-seg-label">Surface water delivered</div>\s*<div class="budget-seg-value">4\.80', main)
+    assert re.search(r'<div class="budget-seg-label">Surface water delivered</div>\s*<div class="budget-seg-value"><span[^>]*>4\.80', main)
     assert re.search(r'<span class="kind-pill kind-pill--unknown">Unknown</span>', main)
     assert 'id="crop-et"' not in main
 
@@ -180,7 +180,7 @@ def test_a_metered_month_with_no_crop_et_shows_its_meter_reading_with_its_pill(o
 
     main = _main(_page(operator, field))
 
-    assert re.search(r'<div class="budget-seg-label">Groundwater extraction</div>\s*<div class="budget-seg-value">5\.07', main)
+    assert re.search(r'<div class="budget-seg-label">Groundwater extraction</div>\s*<div class="budget-seg-value"><span[^>]*>5\.07', main)
     assert '<span class="kind-pill kind-pill--metered">Metered</span>' in main
 
 
@@ -204,7 +204,7 @@ def test_a_month_openet_was_never_asked_about_stays_not_found(operator):
 
 METHODS_SENTENCES = [
     "OpenH2O records the first crop ET figure OpenET sends for each use area and month.",
-    "A recorded figure is Provisional when OpenET sent it within 120 days of the month's end.",
+    "A recorded figure is Provisional when OpenET sent it within 120 days of the month’s end.",
     "OpenH2O leaves a figure unmarked if the day it was received is unknown.",
     "A Provisional or unmarked figure becomes Final when OpenET sends the same figure after the 120 days.",
     "OpenH2O treats figures that match to the hundredth of an acre-foot as the same.",
@@ -212,7 +212,7 @@ METHODS_SENTENCES = [
     "Acceptance takes a reason of 10 to 500 characters.",
     "A person who can correct records may correct the entry with a reason.",
     "These months read “date received not recorded” on the calculation page.",
-    "A new gridMET figure for a month changes that month's next calculation.",
+    "A new gridMET figure for a month changes that month’s next calculation.",
 ]
 
 
@@ -223,7 +223,7 @@ def test_the_methods_section_carries_the_approved_sentences_and_no_fetch(operato
 
     for sentence in METHODS_SENTENCES:
         assert sentence in section, sentence
-    assert ">Provisional and Final</td>" in section
+    assert ">Provisional and Final</td>" in section  # the page prints curly apostrophes (&rsquo;)
     assert "fetch" not in section.lower()
 
 
@@ -260,4 +260,4 @@ def test_no_figure_month_rounds_like_the_ledger(operator):
     field = _no_figure_field()
     ld.ledger(field, dt.date(2025, 7, 15), D("-3.2956"), "surface_diversion", "SW")
 
-    assert re.search(r"Surface water delivered</div>\s*<div class=\"budget-seg-value\">3\.30", _main(_page(operator, field)))
+    assert re.search(r"Surface water delivered</div>\s*<div class=\"budget-seg-value\"><span[^>]*>3\.30", _main(_page(operator, field)))

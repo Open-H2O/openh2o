@@ -207,6 +207,12 @@ the same idea always looks the same. All live in `static/css/app.css`.
   the balance equation (supplies − use = balance) with a supply breakdown foot.
   It is one summary view among many data surfaces, not the product's centerpiece.
   Used on the dashboard, period detail and account detail.
+- `.crop-et-band`: the month's calculation page, when OpenET now reports a different crop ET
+  figure (or an ET estimate entry differs): the newer figure (label, value, received day and a
+  `.kind-pill--provisional` or `--final` pill) beside the sentences that say which figure the
+  month is calculated from and a visible button. On the receipt it is the panel's first row,
+  its sentences from the second column on; on the short page it sits under the Crop ET figure.
+  The button opens `.record-correct-form--line` (Reason, Accept and Cancel on one line).
 - `.statement-*`: the use area page's Water use card: the water year's figures
   lead (`.statement-lead`), one line for each thing that is off and only when it
   applies (`.statement-notes`), then the months in a `.data-table` whose foot is the
