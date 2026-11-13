@@ -1,18 +1,19 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""How the month's calculation page shows OpenET's crop ET (the drawing Brent approved).
+"""How the month's calculation page shows OpenET's crop ET (the drawing and words Brent approved).
 
-Everything sits inside the page's own Crop ET figure, never in a card of its own:
-
-* the recorded figure is the figure's value, and one caption says where it came from and
-  when it was fetched;
-* a newer figure, an earlier figure an acceptance replaced, and a ledger entry that differs
-  are the figure's own breakdown rows;
-* the action is the site's three-dot menu, whose item opens the site's correction row
-  (Reason, Accept, Cancel); the menu follows who may correct records, as everywhere else;
-* a month with nothing to estimate carries the same block inside its one card.
+* The recorded figure is the Crop ET figure's value. One caption says where it came from and
+  the day it was received, and a pill says Provisional or Final (the site's ``.kind-pill``).
+* A newer figure OpenET sends sits in a band of its own: on the receipt across the top of the
+  panel, on the short page under the Crop ET figure. The band carries the newer figure (its
+  label, value, received day and pill) beside three sentences that say which figure the month
+  is calculated from and what accepting does, and a visible button, never the three-dot menu.
+* The button opens the site's correction row (Reason, Accept, Cancel) on one line.
+* A ledger entry that differs from the recorded figure gets a band of sentences and a button.
+* An earlier figure an acceptance replaced stays a struck row of the Crop ET figure, with the
+  site's line under a replaced record.
 
 The worked example is the 100-acre corn field of ``test_openet_recorded_figure``: July 2025
-fetched at 30.00 AF on Aug 6, 2025, and OpenET's newer 40.00 AF received Sep 28, 2025.
+received at 30.00 AF on Aug 6, 2025, and OpenET's newer 40.00 AF received Sep 28, 2025.
 """
 
 import re
@@ -43,20 +44,34 @@ from tests.test_openet_recorded_figure import (  # noqa: F401  (fixtures)
 
 pytestmark = pytest.mark.django_db
 
+NEWER_WORDS = (
+    "OpenET now reports a different figure for this month. OpenH2O calculates the month from the "
+    "recorded 30.00 AF until a person accepts the newer figure. Accepting it replaces the recorded "
+    "figure and recalculates the month at once."
+)
+
 
 def _html(user, parcel, **query):
     url = reverse("accounting:calculation_run_detail", args=[parcel.pk, JULY])
     return _words(_client(user).get(url, query))
 
 
-def _segment(page):
-    """The element that carries id="crop-et", from its opening tag to the next equation operator or card end."""
-    start = page.index('id="crop-et"')
-    opening = page.rindex("<", 0, start)
-    return page[opening:]
+def _element(page, element_id):
+    """The element with ``id``, from its opening tag to the end of the page."""
+    start = page.index(f'id="{element_id}"')
+    return page[page.rindex("<", 0, start):]
 
 
-# ---------------------------------------------------------------- one place on the page
+def _band(page, element_id="crop-et-newer"):
+    """The band's markup up to the first equation row or the card's end."""
+    band = _element(page, element_id)
+    for stop in ('<div class="budget-panel-row">', "</main>"):
+        if stop in band:
+            band = band[: band.index(stop)]
+    return band
+
+
+# ---------------------------------------------------------------- the recorded figure
 
 
 def test_the_crop_et_figure_carries_the_anchor_and_there_is_no_second_card(operator):
@@ -68,95 +83,107 @@ def test_the_crop_et_figure_carries_the_anchor_and_there_is_no_second_card(opera
     assert page.count('id="crop-et"') == 1
     assert re.search(r'<div class="budget-seg" id="crop-et">\s*<div class="budget-seg-label">Crop ET</div>', page)
     assert "Crop ET for" not in page
-    assert "OpenET now reports" not in page
-    assert "This month uses the recorded" not in page
 
 
-def test_one_caption_says_the_source_and_the_fetch_day(operator):
+def test_one_caption_says_the_source_and_the_received_day_and_a_pill_says_provisional(operator):
     field = _corn_field()
     _fetch(field, FIRST, AUG_6)
     ld.run_months([JULY])
 
-    page = _html(operator, field)
-
-    assert '<div class="budget-seg-caption">OpenET satellite estimate, received Aug 6, 2025, provisional</div>' in page
-    assert page.count('class="budget-seg-caption">OpenET') == 1
-
-
-def test_a_newer_figure_is_a_row_of_the_crop_et_figure(operator):
-    field = _corn_field()
-    _fetched_twice(field)
-
-    segment = _segment(_html(operator, field))
+    segment = _element(_html(operator, field), "crop-et")
 
     assert re.search(
-        r"<span>Newer figure<span class=\"budget-breakdown-note\">received Sep 28, 2025, not used</span></span>\s*<b>40\.00</b>",
+        r'<div class="budget-seg-caption crop-et-caption"><span>OpenET satellite estimate, received Aug 6, 2025</span>\s*'
+        r'<span class="kind-pill kind-pill--provisional">Provisional</span></div>',
         segment,
     )
+    assert ", provisional" not in segment
 
 
-# ---------------------------------------------------------------- the menu follows who may correct
+# ---------------------------------------------------------------- the newer figure's band
 
 
-def test_a_writer_gets_the_menu_with_accept_newer_figure(operator):
+def test_the_newer_figure_sits_in_its_own_band_above_the_receipts_rows(operator):
     field = _corn_field()
     _fetched_twice(field)
 
-    segment = _segment(_html(operator, field))
+    page = _html(operator, field)
+    band = _band(page)
 
-    assert 'class="row-actions-btn"' in segment
-    assert ">Accept newer figure</button>" in segment
-    assert 'name="reason"' not in segment
+    assert page.index('id="crop-et-newer"') < page.index('<div class="budget-panel-row">')
+    assert '<div class="budget-seg-label">Newer crop ET from OpenET</div>' in band
+    assert re.search(r'<div class="budget-seg-value">40\.00<span class="budget-seg-unit">AF</span></div>', band)
+    assert re.search(
+        r"<span>received Sep 28, 2025</span>\s*<span class=\"kind-pill kind-pill--provisional\">Provisional</span>",
+        band,
+    )
+    assert NEWER_WORDS in band
+    assert "Newer figure<span" not in page
+    assert "not used" not in page
 
 
-def test_a_viewer_sees_the_row_and_no_menu(viewer):
+def test_a_writer_gets_a_visible_button_and_no_three_dot_menu(operator):
+    field = _corn_field()
+    _fetched_twice(field)
+
+    page = _html(operator, field)
+    band = _band(page)
+
+    assert ">Accept the newer figure</button>" in band
+    assert 'hx-target="#crop-et-newer"' in band and 'hx-select="#crop-et-newer"' in band
+    assert "?open=accept" in band
+    assert "row-actions-btn" not in page
+    assert 'name="reason"' not in band
+
+
+def test_a_viewer_reads_the_band_and_gets_no_button(viewer):
     field = _corn_field()
     _fetched_twice(field)
 
     page = _html(viewer, field)
 
-    assert "Newer figure" in page
-    assert "row-actions-btn" not in page
-    assert "Accept newer figure" not in page
+    assert NEWER_WORDS in page
+    assert "Accept the newer figure" not in page
 
 
-def test_in_a_finalized_year_an_operator_gets_no_menu_and_no_sentence(operator):
+def test_in_a_finalized_year_an_operator_gets_no_button_and_no_sentence(operator):
     field = _corn_field()
     _fetched_twice(field)
     _finalize()
 
     page = _html(operator, field)
 
-    assert "Newer figure" in page
-    assert "Accept newer figure" not in page
+    assert NEWER_WORDS in page
+    assert "Accept the newer figure" not in page
     assert "is finalized" not in page
 
 
-def test_in_a_finalized_year_an_administrator_gets_the_menu(boss):
+def test_in_a_finalized_year_an_administrator_gets_the_button(boss):
     field = _corn_field()
     _fetched_twice(field)
     _finalize()
 
-    assert "Accept newer figure" in _html(boss, field)
+    assert ">Accept the newer figure</button>" in _html(boss, field)
 
 
 # ---------------------------------------------------------------- the correction row
 
 
-def test_the_menu_item_opens_the_correction_row_in_the_crop_et_figure(operator):
+def test_the_button_opens_the_correction_row_on_one_line_in_the_band(operator):
     field = _corn_field()
     _fetched_twice(field)
 
-    segment = _segment(_html(operator, field, open="accept"))
+    band = _band(_html(operator, field, open="accept"))
     accept = reverse("accounting:crop_et_accept", args=[field.pk, JULY])
 
-    assert 'class="record-correct-form"' in segment
-    assert f'action="{accept}"' in segment
-    assert '<input type="hidden" name="action" value="accept">' in segment
-    assert 'name="reason"' in segment and 'required' in segment
-    assert '<button type="submit" class="btn-primary btn-sm">Accept</button>' in segment
-    assert ">Cancel</button>" in segment
-    assert 'class="row-actions-btn"' not in segment
+    assert 'class="record-correct-form record-correct-form--line"' in band
+    assert f'action="{accept}"' in band
+    assert '<input type="hidden" name="action" value="accept">' in band
+    assert 'name="reason"' in band and "required" in band
+    assert '<button type="submit" class="btn-primary btn-sm">Accept</button>' in band
+    assert ">Cancel</button>" in band
+    assert "Accept the newer figure</button>" not in band
+    assert NEWER_WORDS in band
 
 
 def test_a_viewer_cannot_open_the_correction_row(viewer):
@@ -164,18 +191,6 @@ def test_a_viewer_cannot_open_the_correction_row(viewer):
     _fetched_twice(field)
 
     assert 'name="reason"' not in _html(viewer, field, open="accept")
-
-
-def test_the_item_fetches_the_page_into_the_crop_et_figure(operator):
-    field = _corn_field()
-    _fetched_twice(field)
-
-    segment = _segment(_html(operator, field))
-
-    assert 'hx-target="#crop-et"' in segment
-    assert 'hx-select="#crop-et"' in segment
-    assert 'hx-swap="outerHTML"' in segment
-    assert "?open=accept" in segment
 
 
 # ---------------------------------------------------------------- after an acceptance
@@ -186,9 +201,10 @@ def test_after_accepting_the_earlier_figure_is_struck_with_who_when_and_why(oper
     _fetched_twice(field)
     _accept(operator, field)
 
-    segment = _segment(_html(operator, field))
+    page = _html(operator, field)
+    segment = _element(page, "crop-et")
 
-    assert '<div class="budget-seg-caption">OpenET satellite estimate, received Sep 28, 2025, provisional</div>' in segment
+    assert "<span>OpenET satellite estimate, received Sep 28, 2025</span>" in segment
     assert re.search(
         r"<span>Earlier figure<span class=\"budget-breakdown-note\">received Aug 6, 2025</span></span>\s*"
         r"<b class=\"record-void-text\">30\.00</b>",
@@ -199,13 +215,13 @@ def test_after_accepting_the_earlier_figure_is_struck_with_who_when_and_why(oper
         + re.escape(REASON) + r"\.</div>",
         segment,
     )
-    assert "Newer figure" not in segment
+    assert 'id="crop-et-newer"' not in page
 
 
 # ---------------------------------------------------------------- the ledger entry that differs
 
 
-def test_a_ledger_entry_that_differs_is_a_row_with_its_own_menu_item(operator):
+def test_a_ledger_entry_that_differs_gets_its_sentences_and_a_correct_button(operator):
     field = _corn_field()
     _fetch(field, FIRST, AUG_6)
     _sync()
@@ -214,21 +230,22 @@ def test_a_ledger_entry_that_differs_is_a_row_with_its_own_menu_item(operator):
         amount_acre_feet=-35
     )
 
-    segment = _segment(_html(operator, field))
+    band = _band(_html(operator, field), "crop-et-entry")
 
-    assert re.search(
-        r"<span>Ledger entry<span class=\"budget-breakdown-note\">differs from the recorded figure</span></span>\s*<b>35\.00</b>",
-        segment,
-    )
-    assert ">Bring to the recorded figure</button>" in segment
-    opened = _segment(_html(operator, field, open="entry"))
+    assert (
+        "The ledger's ET estimate entry for this month reads 35.00 AF. OpenH2O calculates the month "
+        "from the recorded 30.00 AF. Correcting the entry to 30.00 AF recalculates the month."
+    ) in band
+    assert ">Correct the entry to 30.00 AF</button>" in band
+    assert "Bring to the recorded figure" not in band
+    opened = _band(_html(operator, field, open="entry"), "crop-et-entry")
     assert '<input type="hidden" name="action" value="entry">' in opened
 
 
 # ---------------------------------------------------------------- a month with nothing to estimate
 
 
-def test_the_short_page_carries_the_same_block_inside_its_one_card(operator):
+def test_the_short_page_carries_the_figure_and_the_band_inside_its_one_card(operator):
     field = _corn_field(number="F9", well=False)
     _fetch(field, FIRST, AUG_6)
     ld.run_months([JULY])
@@ -240,5 +257,6 @@ def test_the_short_page_carries_the_same_block_inside_its_one_card(operator):
     card = page[page.index("receipt-short"):]
     assert re.search(r'<div class="budget-seg" id="crop-et">\s*<div class="budget-seg-label">Crop ET</div>', card)
     assert re.search(r'<div class="budget-seg-value">30\.00<span class="budget-seg-unit">AF</span></div>', card)
-    assert "Newer figure" in card
+    assert card.index('id="crop-et"') < card.index('id="crop-et-newer"')
+    assert NEWER_WORDS in card
     assert page.count("receipt-headline") == 1

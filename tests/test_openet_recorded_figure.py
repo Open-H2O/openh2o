@@ -56,11 +56,11 @@ FIRST = {"2025-07": 91.44, "2025-08": 15.24, "2025-09": 15.24}
 NEWER = {**FIRST, "2025-07": 121.92}
 REASON = "OpenET revised July after the month settled"
 FINALIZED_SENTENCE = "WY 2024-2025 is finalized"
-#: The newer figure's row under the Crop ET figure, as _words prints it.
-NOTICE = (
-    '<span>Newer figure<span class="budget-breakdown-note">received Sep 28, 2025, not used</span></span> '
-    "<b>40.00</b>"
-)
+#: The newer figure's band on the month page, as _words prints its figure and first sentence.
+NOTICE = '<div class="budget-seg-value">40.00<span class="budget-seg-unit">AF</span></div>'
+NOTICE_WORDS = "OpenET now reports a different figure for this month."
+PILL = '<span class="kind-pill kind-pill--{0}">{1}</span>'
+
 
 
 # ---------------------------------------------------------------- the site's pieces
@@ -213,7 +213,7 @@ def _accept_url(parcel, month=JULY):
 
 
 def _accept(user, parcel, reason=REASON, record=None):
-    """Press Accept newer figure; returns the page that follows."""
+    """Press Accept the newer figure; returns the page that follows."""
     if record is None:
         current = [r for r in _figures(parcel) if r.replaced_at is None and r.voided_at is None]
         record = current[0] if current else None
@@ -310,9 +310,9 @@ def test_a_month_cached_by_hand_with_no_record_is_not_calculated():
 @pytest.mark.parametrize(
     ("fetched", "line"),
     [
-        (AUG_6, "OpenET satellite estimate, received Aug 6, 2025, provisional</div>"),
-        (dt.date(2025, 11, 28), "OpenET satellite estimate, received Nov 28, 2025, provisional</div>"),
-        (dt.date(2025, 11, 29), "OpenET satellite estimate, received Nov 29, 2025</div>"),
+        (AUG_6, "<span>OpenET satellite estimate, received Aug 6, 2025</span> " + PILL.format("provisional", "Provisional")),
+        (dt.date(2025, 11, 28), "<span>OpenET satellite estimate, received Nov 28, 2025</span> " + PILL.format("provisional", "Provisional")),
+        (dt.date(2025, 11, 29), "<span>OpenET satellite estimate, received Nov 29, 2025</span> " + PILL.format("final", "Final")),
     ],
 )
 def test_the_month_page_says_when_the_figure_was_fetched_and_whether_it_was_provisional(
@@ -331,7 +331,7 @@ def test_a_record_with_no_fetch_date_says_so(operator):
     ld.run_months([JULY])
 
     assert _recorded(field) == (D("91.44"), None)
-    assert "OpenET satellite estimate, date received not recorded</div>" in _page(operator, field)
+    assert "<span>OpenET satellite estimate, date received not recorded</span></div>" in _page(operator, field)
 
 
 # ---------------------------------------------------------------- 6. the newer figure on the page
@@ -343,8 +343,8 @@ def test_a_newer_figure_is_shown_beside_the_recorded_one_with_accept_for_a_write
 
     page = _page(operator, field)
 
-    assert NOTICE in page
-    assert "Accept newer figure" in page
+    assert NOTICE in page and NOTICE_WORDS in page
+    assert "Accept the newer figure" in page
     assert 'name="reason"' in _words(
         _client(operator).get(
             reverse("accounting:calculation_run_detail", args=[field.pk, JULY]), {"open": "accept"}
@@ -358,8 +358,8 @@ def test_a_viewer_sees_the_newer_figure_and_no_accept(viewer):
 
     page = _page(viewer, field)
 
-    assert NOTICE in page
-    assert "Accept newer figure" not in page
+    assert NOTICE in page and NOTICE_WORDS in page
+    assert "Accept the newer figure" not in page
 
 
 # ---------------------------------------------------------------- 7. accepting
@@ -392,10 +392,10 @@ def test_after_accepting_the_page_shows_who_when_why_and_the_earlier_figure_stru
 
     page = _page(operator, field)
 
-    assert "OpenET satellite estimate, received Sep 28, 2025, provisional</div>" in page
+    assert "<span>OpenET satellite estimate, received Sep 28, 2025</span> " + PILL.format("provisional", "Provisional") in page
     assert f"by J. Lopez: {REASON}" in page
     assert re.search(r'received Aug 6, 2025</span></span>\s*<b class="record-void-text">30\.00</b>', page)
-    assert "Newer figure" not in page
+    assert 'id="crop-et-newer"' not in page
 
 
 def test_a_viewers_accept_writes_nothing(viewer):
