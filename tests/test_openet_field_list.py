@@ -721,3 +721,111 @@ def test_a_field_with_no_outline_in_the_file_loads_with_none(tmp_path):
     path = _fields_file(tmp_path, None)
     call_command("load_openet_fields_fixture", "--fixture", str(path), stdout=io.StringIO())
     assert OpenETField.objects.get(field_id=MADE_UP_A).geometry is None
+
+
+# ---------------------------------------------------------------- the run stamps its fields
+
+
+def _stamped(record):
+    """The per-field list the et_gross step stamped, or None."""
+    return record["detail"].get("fields")
+
+
+def _sixty_thirty_july(et_a=500, et_b=400, pr_a=40, pr_b=20):
+    from datasync import crop_et
+    from datasync.field_list import compute_shares
+
+    parcel = _use_area()
+    a, b = _sixty_thirty()
+    compute_shares(parcel)
+    _month(a, et_mm=et_a, pr_mm=pr_a)
+    _month(b, et_mm=et_b, pr_mm=pr_b)
+    crop_et.record_fetched_months(parcel, [JULY])
+    return parcel, a, b
+
+
+def test_et_gross_stamps_each_field_its_acres_crop_et_and_rainfall():
+    from accounting.steps import et_gross
+
+    parcel, a, b = _sixty_thirty_july()
+    af, record = et_gross(D("0"), parcel, JULY, {}, {})
+    rows = _stamped(record)
+    # Largest share first.
+    assert [r["field_id"] for r in rows] == [MADE_UP_A, MADE_UP_B]
+    assert [D(r["acres"]) for r in rows] == [D("60.00"), D("30.00")]
+    crop = [D(r["crop_et_af"]) for r in rows]
+    rain = [D(r["rainfall_af"]) for r in rows]
+    # 500 x 60 / 304.8 and 400 x 30 / 304.8; rain 40 x 60 / 304.8 and 20 x 30 / 304.8.
+    assert [c.quantize(D("0.01")) for c in crop] == [D("98.43"), D("39.37")]
+    assert [r.quantize(D("0.01")) for r in rain] == [D("7.87"), D("1.97")]
+    # The parts add to the figure the step booked.
+    assert abs(sum(crop) - af) < D("0.0001")
+    # 100 acres of outline, 90 in the two fields.
+    assert D(record["detail"]["outside_acres"]) == D("10.00")
+
+
+def test_the_stamped_rainfall_adds_to_the_rain_the_precip_step_counts():
+    from accounting.steps import et_gross, subtract_effective_precip
+
+    parcel, a, b = _sixty_thirty_july()
+    _, gross = et_gross(D("0"), parcel, JULY, {}, {})
+    _, rain = subtract_effective_precip(D("0"), parcel, JULY, {}, {"method": "usda_scs"})
+    stamped = sum(D(r["rainfall_af"]) for r in _stamped(gross))
+    # The receipt's Rainfall row: the step's precip_mm over the use area's acres.
+    rainfall_af = D(rain["detail"]["precip_mm"]) * D(gross["detail"]["area_acres"]) / D("304.8")
+    assert abs(stamped - rainfall_af) < D("0.0001")
+
+
+def test_no_stamp_when_a_newer_figure_has_not_been_accepted():
+    """The fields' figures as now held no longer add to the recorded figure: no list."""
+    from accounting.steps import et_gross
+
+    parcel, a, b = _sixty_thirty_july()
+    _month(a, et_mm=550, pr_mm=40, received_on=LATER)
+    _, record = et_gross(D("0"), parcel, JULY, {}, {})
+    assert _stamped(record) is None
+
+
+def test_no_stamp_for_a_use_area_with_no_share():
+    from accounting.steps import et_gross
+
+    parcel = _use_area()
+    _, record = et_gross(D("0"), parcel, JULY, {}, {})
+    assert _stamped(record) is None
+
+
+def test_no_stamp_in_a_fallow_month():
+    from accounting.steps import et_gross
+    from parcels.models import FallowPeriod
+
+    parcel, a, b = _sixty_thirty_july()
+    FallowPeriod.objects.create(parcel=parcel, start_month=JULY_1)
+    af, record = et_gross(D("0"), parcel, JULY, {}, {})
+    assert af == 0
+    assert _stamped(record) is None
+
+
+def test_outside_acres_come_from_the_outline_never_the_typed_acres():
+    """A typed acreage below the overlaps never prints a negative outside figure."""
+    from accounting.steps import et_gross
+
+    parcel, a, b = _sixty_thirty_july()
+    Parcel.objects.filter(pk=parcel.pk).update(area_acres=D("50.00"), area_override=True)
+    parcel.refresh_from_db()
+    _, record = et_gross(D("0"), parcel, JULY, {}, {})
+    assert D(record["detail"]["outside_acres"]) == D("10.00")
+
+
+def test_outside_acres_never_go_below_zero():
+    """A use area wholly inside one field: the overlaps' rounding can pass the outline's acres."""
+    from accounting.steps import et_gross
+    from datasync import crop_et
+    from datasync.field_list import compute_shares
+
+    parcel = _use_area()
+    whole = _field(MADE_UP_C, _albers_rect(-500, -500, SIDE + 500, SIDE + 500))
+    compute_shares(parcel)
+    _month(whole, et_mm=300, pr_mm=10)
+    crop_et.record_fetched_months(parcel, [JULY])
+    _, record = et_gross(D("0"), parcel, JULY, {}, {})
+    assert D(record["detail"]["outside_acres"]) >= 0
