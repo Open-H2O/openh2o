@@ -81,7 +81,9 @@ def test_the_crop_et_figure_carries_the_anchor_and_there_is_no_second_card(opera
     page = _html(operator, field)
 
     assert page.count('id="crop-et"') == 1
-    assert re.search(r'<div class="budget-seg" id="crop-et">\s*<div class="budget-seg-label">Crop ET</div>', page)
+    assert re.search(
+        r'<div class="budget-seg" id="crop-et">\s*<div class="crop-et-figure">\s*<div class="budget-seg-label">Crop ET</div>', page
+    )
     assert "Crop ET for" not in page
 
 
@@ -255,7 +257,7 @@ def test_the_short_page_carries_the_figure_and_the_band_inside_its_one_card(oper
 
     assert "No groundwater extraction estimated for July 2025" in page
     card = page[page.index("receipt-short"):]
-    assert re.search(r'<div class="budget-seg" id="crop-et">\s*<div class="budget-seg-label">Crop ET</div>', card)
+    assert re.search(r'<div class="budget-seg" id="crop-et">\s*<div class="crop-et-figure">\s*<div class="budget-seg-label">Crop ET</div>', card)
     assert re.search(r'<div class="budget-seg-value">30\.00<span class="budget-seg-unit">AF</span></div>', card)
     assert card.index('id="crop-et"') < card.index('id="crop-et-newer"')
     assert NEWER_WORDS in card

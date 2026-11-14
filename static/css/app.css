@@ -5830,6 +5830,9 @@ details[open] > summary .disclosure-mark {
     border-top: 1px solid var(--color-border);
 }
 .receipt-short .crop-et-band--words { grid-template-columns: minmax(0, 46ch); }
+/* The Crop ET figure's label, value and caption, kept together so the short page can set
+   the OpenET fields list beside them. In the receipt's cell it adds nothing to the layout. */
+.crop-et-figure { min-width: 0; }
 /* The OpenET fields a month's crop ET came from: the Crop ET figure's parts, in its own cell
    (the panel's idiom, like Rainfall and Method under Effective precipitation). Three
    content-sized tracks at the house gap: the field, its acres inside the use area, its crop
@@ -5871,7 +5874,7 @@ details[open] > summary .disclosure-mark {
 }
 .receipt-short > .budget-seg--fields > .budget-breakdown-group--fields {
     grid-column: 2;
-    grid-row: 1 / span 3;
+    grid-row: 1 / span 2;
     margin-top: 0;
     padding-left: var(--space-xl);
     border-left: 1px solid var(--color-border);

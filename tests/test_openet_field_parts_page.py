@@ -86,7 +86,7 @@ def _list(page):
 
 
 def _figure(page):
-    return re.search(r'id="crop-et">\s*<div class="budget-seg-label">Crop ET</div>\s*'
+    return re.search(r'id="crop-et">\s*<div class="crop-et-figure">\s*<div class="budget-seg-label">Crop ET</div>\s*'
                      r'<div class="budget-seg-value"[^>]*>([\d,.]+)<', page).group(1)
 
 
