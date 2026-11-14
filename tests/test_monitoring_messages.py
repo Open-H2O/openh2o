@@ -11,7 +11,9 @@ on Add station (it was a server error).
 
 Station and source names are fictional (`Probe ...`).
 """
+import re
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from django.contrib.gis.geos import MultiPolygon, Point, Polygon
@@ -20,7 +22,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from core.models import User
-from datasync.models import DataSource, MonitoredStation
+from datasync.models import DataSource, DataSyncLog, MonitoredStation, OpenETRequest
 from geography.models import Boundary
 
 pytestmark = pytest.mark.django_db
@@ -87,7 +89,10 @@ def test_card_shows_the_source_name_and_freshness_words(auth_client):
 def test_source_lines(auth_client):
     from datasync import freshness
 
-    assert freshness.status_label("no_data") == "None up to date"
+    assert freshness.status_label("healthy") == "Up to date"
+    assert freshness.status_label("behind") == "Slightly behind"
+    assert freshness.status_label("dormant") == "Dormant"
+    assert freshness.status_label("needs_key") == "Needs API key"
     assert freshness.source_blurb("dwr_sgma") == (
         "Department of Water Resources SGMA Portal: groundwater monitoring reported "
         "under the Sustainable Groundwater Management Act."
@@ -200,3 +205,102 @@ def test_add_station_already_on_file(auth_client):
     assert resp.status_code == 200
     assert "<div>Probe Dup Source station BSD is already on file.</div>" in resp.content.decode()
     assert MonitoredStation.objects.count() == before
+
+
+# --- the OpenET line and the source chips (153.2-02 Task 7, ruling 167) ------
+
+_PROVIDER_ANSWERED = {"source": "provider", "limit": 100, "used": 82, "tier": 1, "reason": ""}
+_PROVIDER_SILENT = {
+    "source": "fallback", "limit": 100, "used": None, "tier": None,
+    "reason": "OpenET could not be reached",
+}
+
+
+def _source_line(client, status):
+    with patch("datasync.adapters.openet.OpenETAdapter.account_status", return_value=status):
+        resp = client.get(reverse("datasync:monitoring_dashboard"))
+    body = resp.content.decode().replace("&#x27;", "'")
+    para = body.split("Satellite estimates of crop water use", 1)[1].split("</p>", 1)[0]
+    text = re.sub(r"<[^>]+>", "", para)
+    return resp, " ".join(text.split())
+
+
+def test_the_line_gives_both_counts_when_openet_answers(auth_client):
+    resp, text = _source_line(auth_client, _PROVIDER_ANSWERED)
+    assert resp.context["openet_site_used"] == 0
+    assert text == (
+        "come from OpenET, which is not a station source. "
+        "By OpenET's count, this site's OpenET account has used 82 of its 100 requests "
+        "this month. By OpenH2O's own record, this site has used 0 requests this month. "
+        "OpenH2O's count starts again at 00:00 UTC on the 1st of each month."
+    )
+
+
+def test_the_line_counts_the_sites_own_requests(auth_client):
+    for _ in range(3):
+        OpenETRequest.objects.create(kind="figures", answered=True)
+    OpenETRequest.objects.create(kind="figures", answered=False)
+    resp, text = _source_line(auth_client, _PROVIDER_ANSWERED)
+    assert resp.context["openet_site_used"] == 3
+    assert "By OpenH2O's own record, this site has used 3 requests this month." in text
+
+
+def test_the_line_keeps_its_two_sentences_when_openet_is_silent(auth_client):
+    OpenETRequest.objects.create(kind="figures", answered=True)
+    resp, text = _source_line(auth_client, _PROVIDER_SILENT)
+    assert resp.context["openet_site_used"] == 1
+    assert text == (
+        "come from OpenET, which is not a station source. "
+        "This site has used 1 of its 100 OpenET requests this month. "
+        "The figure is OpenH2O's own count, because OpenET could not be reached. "
+        "OpenH2O's count starts again at 00:00 UTC on the 1st of each month."
+    )
+
+
+def _chip(client, source_name):
+    _, body = _body(client)
+    card = body.split(f">{source_name}</h3>", 1)[1][:700]
+    return re.search(r'<span class="badge[^"]*">([^<]*)</span>', card).group(1)
+
+
+def _source_with(code, name, hours_old):
+    """A synced source whose active stations last reported hours_old hours ago."""
+    src = DataSource.objects.create(code=code, name=name, is_active=True)
+    for i, hours in enumerate(hours_old):
+        MonitoredStation.objects.create(
+            data_source=src, external_station_id=f"{code}-{i}", station_name=f"{name} {i}",
+            location=Point(-120.5, 37.3, srid=4326), is_active=True,
+            last_data_at=timezone.now() - timedelta(hours=hours),
+        )
+    DataSyncLog.objects.create(data_source=src, status="success")
+    return src
+
+
+def test_chip_reads_up_to_date_when_every_station_is(auth_client):
+    _source_with("probe_chip_a", "Probe Chip A", [1] * 15)
+    assert _chip(auth_client, "Probe Chip A") == "Up to date"
+
+
+def test_chip_reads_up_to_date_with_one_up_to_date_and_two_dormant(auth_client):
+    _source_with("probe_chip_b", "Probe Chip B", [1, 1000, 1000])
+    assert _chip(auth_client, "Probe Chip B") == "Up to date"
+
+
+def test_chip_reads_slightly_behind_when_none_is_up_to_date_and_some_are_behind(auth_client):
+    _source_with("probe_chip_c", "Probe Chip C", [72] * 17)
+    assert _chip(auth_client, "Probe Chip C") == "Slightly behind"
+
+
+def test_chip_reads_dormant_when_none_is_up_to_date_or_behind(auth_client):
+    _source_with("probe_chip_d", "Probe Chip D", [1000, 1000])
+    assert _chip(auth_client, "Probe Chip D") == "Dormant"
+
+
+def test_chips_carry_the_pill_class_and_the_map_keys_tones(auth_client):
+    _source_with("probe_chip_e", "Probe Chip E", [1000, 1000])
+    _source_with("probe_chip_f", "Probe Chip F", [72])
+    _, body = _body(auth_client)
+    dormant = body.split(">Probe Chip E</h3>", 1)[1][:700]
+    behind = body.split(">Probe Chip F</h3>", 1)[1][:700]
+    assert '<span class="badge badge-pill badge-dot badge-grey">Dormant</span>' in dormant
+    assert '<span class="badge badge-pill badge-dot badge-amber">Slightly behind</span>' in behind

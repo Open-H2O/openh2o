@@ -29,14 +29,14 @@
     {% comment %}{% endcomment %}
     <p class="text-secondary text-base mb-md">
       {{ n_sources }} station sources. Satellite estimates of crop water use come from
-      OpenET, which is not a station source. {% if openet_source == "provider" %}By OpenET's count, this site's OpenET account has used <span{% if openet_low %} class="text-deficit"{% endif %}>{{ openet_used }}</span> of its {{ openet_limit }} requests this month.{% else %}This site has used <span{% if openet_low %} class="text-deficit"{% endif %}>{{ openet_used }}</span> of its {{ openet_limit }} OpenET requests this month.{% endif %}
-      {% if openet_source != "provider" %}The figure is OpenH2O's own count, because {{ openet_fallback_reason }}. {% endif %}The count resets on the 1st of each month.
+      OpenET, which is not a station source. {% if openet_source == "provider" %}By OpenET's count, this site's OpenET account has used <span{% if openet_low %} class="text-deficit"{% endif %}>{{ openet_used }}</span> of its {{ openet_limit }} requests this month. By OpenH2O's own record, this site has used {{ openet_site_used }} requests this month.{% else %}This site has used <span{% if openet_low %} class="text-deficit"{% endif %}>{{ openet_used }}</span> of its {{ openet_limit }} OpenET requests this month. The figure is OpenH2O's own count, because {{ openet_fallback_reason }}.{% endif %}
+      OpenH2O's count starts again at 00:00 UTC on the 1st of each month.
     </p>
     {% if source_status_list %}
     <div class="health-grid">
       {% for info in source_status_list %}
       <div class="card-raised">
-        <div class="row-between mb-sm">
+        <div class="row-between source-card-head mb-sm">
           <h3 class="section-header-flush">{{ info.source.name }}</h3>
           {% include "datasync/partials/_status_pill.html" with tone=info.status_tone label=info.status_label %}
         </div>

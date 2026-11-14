@@ -120,7 +120,7 @@ def _build_source_status(boundary, now):
             .first()
         )
         status_code = freshness.classify_source_status(
-            src.code, active, log, fresh, total_stations=total
+            src.code, active, log, fresh, total_stations=total, stale_count=stale
         )
         result.append({
             "source": src,
@@ -1093,6 +1093,8 @@ def _openet_allowance_context() -> dict:
         openet_limit = local_limit
     return {
         "openet_used": openet_used,
+        # The requests this site's own record holds for the month, in every case.
+        "openet_site_used": OpenETCache.monthly_query_count(),
         "openet_limit": openet_limit,
         "openet_source": openet_status["source"],
         "openet_tier": openet_status["tier"],

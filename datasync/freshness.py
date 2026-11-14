@@ -77,7 +77,7 @@ SOURCE_DISPLAY = {
 
 # Human-readable status label + the freshness colour family each status maps to.
 STATUS_META = {
-    "healthy": {"label": "Healthy", "tone": "fresh"},
+    "healthy": {"label": "Up to date", "tone": "fresh"},
     "needs_key": {"label": "Needs API key", "tone": "info"},
     "no_stations": {"label": "No stations", "tone": "neutral"},
     # Distinct from "no_stations" and the distinction matters.
@@ -87,7 +87,12 @@ STATUS_META = {
     # `discover_stations.py` creates rows with is_active=False, so following the
     # advice changes nothing at all.
     "none_activated": {"label": "Syncing off", "tone": "neutral"},
-    "no_data": {"label": "None up to date", "tone": "stale"},
+    # The syncs ran and no switched-on station is up to date: the chip takes the
+    # monitoring page's map-key words for the freshest state any station reached
+    # (ruling 167). "dormant" has its own tone because the map key's dormant
+    # colour is `--color-dormant`, not the stale amber.
+    "behind": {"label": "Slightly behind", "tone": "stale"},
+    "dormant": {"label": "Dormant", "tone": "dormant"},
     "running": {"label": "Syncing…", "tone": "stale"},
     "failed": {"label": "Last sync failed", "tone": "dead"},
     "never": {"label": "Not yet synced", "tone": "neutral"},
@@ -183,7 +188,8 @@ def classify_freshness(source_code, last_data_at, now=None):
 
 
 def classify_source_status(
-    source_code, active_stations, last_log, fresh_count, total_stations=None
+    source_code, active_stations, last_log, fresh_count, total_stations=None,
+    stale_count=0,
 ):
     """
     Roll per-station state up into one honest per-source status code.
@@ -198,6 +204,11 @@ def classify_source_status(
     operator to run discovery sends them round a loop that cannot terminate.
     It defaults to None only so an older three-argument call still classifies;
     without it the two cases are indistinguishable and the old wording stands.
+
+    ``stale_count`` is the source's count of switched-on stations that are
+    slightly behind. When the syncs ran and no station is up to date, it picks
+    the chip: "behind" when any station is slightly behind, "dormant" otherwise.
+    It defaults to 0 so an older call still classifies.
     """
     if credential_missing(source_code):
         return "needs_key"
@@ -219,7 +230,9 @@ def classify_source_status(
         return "running"
     if last_log.status == "failed":
         return "failed"
-    return "no_data"
+    if stale_count > 0:
+        return "behind"
+    return "dormant"
 
 
 def status_label(status_code):

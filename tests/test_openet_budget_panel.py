@@ -79,7 +79,7 @@ class TestTheCardSaysWhereTheNumberCameFrom:
 
     def test_it_says_when_the_allowance_resets(self, client_logged_in):
         body = _dashboard(client_logged_in, PROVIDER_ANSWERED).content.decode()
-        assert "resets on the 1st" in body
+        assert "starts again at 00:00 UTC on the 1st of each month" in body
 
 
 @pytest.mark.django_db

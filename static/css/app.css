@@ -2402,6 +2402,10 @@ html { color-scheme: dark; }
     border-radius: var(--radius-pill);
     padding: 2px 10px;
     border: 1px solid transparent;
+    /* A chip is one line and keeps its width: a long label in a narrow card
+       wraps the title, never the chip. */
+    white-space: nowrap;
+    flex: none;
 }
 
 .badge-pill.badge-green {
@@ -3952,6 +3956,24 @@ details[open] > summary .disclosure-mark {
    .badge-{green,amber,red}` above. */
 
 /* -- Health grid --------------------------------------------------------- */
+
+/* The source card's head: the title may run to two lines, so the head aligns
+   to the top and the chip sits centred on the title's FIRST line, never pulled
+   down by the second. The title's line is 1.5rem; the chip is 1rem of text plus
+   2px padding and 1px border each side, so it is 1rem + 6px tall and its top
+   margin is half the difference. */
+.source-card-head {
+    align-items: flex-start;
+}
+
+.source-card-head > .section-header-flush {
+    line-height: 1.5rem;
+}
+
+.source-card-head > .badge-pill {
+    line-height: 1rem;
+    margin-top: calc((1.5rem - (1rem + 6px)) / 2);
+}
 
 .health-grid {
     display: grid;
