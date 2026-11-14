@@ -146,7 +146,9 @@
    button size, not the layer panel's row. */
 .tb-group > .tb-btn.layer-toggle {
     margin: 0;
-    padding: 9px 15px;
+    /* No vertical padding: the checkbox would make the bar taller than the Dark and
+       Aerial buttons; the group stretches to their height instead. */
+    padding: 0 15px;
     border-radius: 0;
     font-size: 12px;
     gap: 8px;
