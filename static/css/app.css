@@ -5830,6 +5830,52 @@ details[open] > summary .disclosure-mark {
     border-top: 1px solid var(--color-border);
 }
 .receipt-short .crop-et-band--words { grid-template-columns: minmax(0, 46ch); }
+/* The OpenET fields a month's crop ET came from: the Crop ET figure's parts, in its own cell
+   (the panel's idiom, like Rainfall and Method under Effective precipitation). Three
+   content-sized tracks at the house gap: the field, its acres inside the use area, its crop
+   ET. A header line names the columns in tertiary text; figures bold, right-aligned, in
+   tabular figures. Sizes are in em so the group scales with the panel's container range. */
+.budget-seg > .budget-breakdown-group.budget-breakdown-group--fields {
+    grid-template-columns: max-content max-content max-content;
+}
+.budget-breakdown-group--fields > .budget-breakdown-head > span {
+    padding: 0;
+    font-size: 0.893em;
+    color: var(--color-text-tertiary);
+}
+.budget-breakdown-group--fields > .budget-breakdown-head > span + span {
+    text-align: right;
+}
+/* Each field's rainfall listed under the Rainfall row (table rule 20): indented one
+   --space-md, secondary text, smaller, its figure right-aligned in the figures' column. */
+.budget-breakdown-row--listed > span {
+    font-size: 0.929em;
+}
+.budget-breakdown-row--listed > span:first-child {
+    padding-left: var(--space-md);
+}
+.budget-breakdown-row--listed > span + span {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+/* On the short page the list sits beside the figure, ruled off by the panel's divider; the
+   rule above both stays as it is (.receipt-short > .budget-seg). */
+.receipt-short > .budget-seg.budget-seg--fields {
+    display: grid;
+    grid-template-columns: max-content max-content;
+    column-gap: var(--space-xl);
+    align-items: start;
+}
+.receipt-short > .budget-seg--fields > * {
+    grid-column: 1;
+}
+.receipt-short > .budget-seg--fields > .budget-breakdown-group--fields {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    margin-top: 0;
+    padding-left: var(--space-xl);
+    border-left: 1px solid var(--color-border);
+}
 /* The correction row on one line: the Reason box, then Accept and Cancel aligned with it. */
 .record-correct-form--line { margin-top: var(--space-sm); }
 .record-correct-form--line form { grid-template-columns: minmax(0, 1fr) max-content; }

@@ -78,6 +78,7 @@
           <div class="budget-seg-caption">estimated from gridMET rainfall</div>
           <div class="budget-breakdown-group">
             {% if rainfall_af is not None %}<div class="budget-breakdown-row"><span>Rainfall</span><b title="{{ rainfall_af }} acre-feet">{{ rainfall_af|floatformat:2|intcomma }}</b></div>{% endif %}
+            {% if rainfall_af is not None and field_list.has_rainfall %}{% for row in field_list.rows %}<div class="budget-breakdown-row budget-breakdown-row--listed"><span>{{ row.field_id }}</span><span>{{ row.rainfall_af|floatformat:2|intcomma }}</span></div>{% endfor %}{% endif %}
             {% if precip_method_label %}<div class="budget-breakdown-row"><span>Method<span class="budget-breakdown-note">Methodology Settings</span></span><b>{{ precip_method_label }}</b></div>{% endif %}
           </div>
           {% endif %}

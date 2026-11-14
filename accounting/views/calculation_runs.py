@@ -239,6 +239,65 @@ def _rainfall_acre_feet(rainfall_mm: object, area_acres: object) -> Decimal | No
     return rainfall_af
 
 
+def _parts_adding_to(parts: list[Decimal], figure: Decimal) -> list[Decimal]:
+    """``parts`` rounded to two places so they add exactly to ``figure`` as the page prints it.
+
+    The parts were stamped by the step that booked ``figure`` and add to it to within a few
+    ten-thousandths (the column stores four places); the largest part takes that difference
+    before the column is rounded, so the column and the figure above it agree to the cent.
+    """
+    from accounting.services import round_to_total
+
+    exact = list(parts)
+    largest = max(range(len(exact)), key=lambda i: exact[i])
+    exact[largest] += figure - sum(exact, Decimal("0"))
+    return round_to_total(exact)
+
+
+def _field_list(
+    run: CalculationRun, crop_et_af: Decimal | None, rainfall_af: Decimal | None
+) -> dict[str, object] | None:
+    """The OpenET fields the month was figured from, read ONLY from the run's own stamp.
+
+    Never read live: a figure OpenET revises later must not change what a past month's page
+    says it was made of. None when the run carries no stamp (an older run, a use area with no
+    OpenET field, a fallow month, or a month whose fields no longer added to its crop ET).
+    Each column adds to the figure above it: crop ET to the run's crop ET, rainfall to the
+    receipt's Rainfall row. ``crop_et_af`` is the Crop ET figure the page prints; the parts
+    are listed only when it is the run's own crop ET to the cent. The outside row prints only
+    when it rounds to 0.01 acres or more.
+    """
+    detail = next(
+        (step.get("detail") or {} for step in run.breakdown or [] if step.get("step_type") == "et_gross"),
+        {},
+    )
+    stamped = detail.get("fields")
+    if not stamped or run.gross_et_af is None or crop_et_af is None:
+        return None
+    if abs(crop_et_af - run.gross_et_af) > Decimal("0.005"):
+        return None
+    crop = _parts_adding_to([Decimal(r["crop_et_af"]) for r in stamped], crop_et_af)
+    rain = None
+    if rainfall_af is not None and all(r.get("rainfall_af") is not None for r in stamped):
+        rain = _parts_adding_to([Decimal(r["rainfall_af"]) for r in stamped], rainfall_af)
+    rows = [
+        {
+            "field_id": r["field_id"],
+            "acres": Decimal(r["acres"]),
+            "crop_et_af": crop[i],
+            "rainfall_af": None if rain is None else rain[i],
+        }
+        for i, r in enumerate(stamped)
+    ]
+    outside = detail.get("outside_acres")
+    outside = Decimal(outside).quantize(Decimal("0.01")) if outside is not None else None
+    return {
+        "rows": rows,
+        "outside_acres": outside if outside is not None and outside >= Decimal("0.01") else None,
+        "has_rainfall": rain is not None,
+    }
+
+
 def _receipt_context(parcel, run, period):
     """The equation panel's figures for one run with a well and no meter reading.
 
@@ -373,6 +432,14 @@ def calculation_run_detail(request, parcel_id, period):
     if run.residual_disposition == "groundwater":
         context.update(_receipt_context(parcel, run, period))
     context["crop_et"] = _crop_et_context(request.user, parcel, period, request.GET.get("open", ""))
+    # The receipt prints the run's crop ET; the short page prints the recorded figure.
+    if context["receipt"]:
+        printed = run.gross_et_af
+    elif context["crop_et"] is not None:
+        printed = Decimal(str(context["crop_et"]["figure"]).replace(",", ""))
+    else:
+        printed = None
+    context["field_list"] = _field_list(run, printed, context.get("rainfall_af"))
     return render(request, "accounting/calculation_run_detail.html", context)
 
 

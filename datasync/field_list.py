@@ -45,6 +45,8 @@ FIGURES_PATH = "/geodatabase/timeseries"
 STATUS_PATH = "/account/status"
 
 ACRE_M2 = Decimal("4046.8564224")
+#: Millimetre-acres in one acre-foot (1 mm over 1 acre is 1/304.8 acre-foot).
+MM_ACRES_PER_AF = Decimal("304.8")
 CENT = Decimal("0.01")
 
 #: Rectangles lying within this many metres of each other become one lookup.
@@ -402,3 +404,52 @@ def field_share_mm(parcel, period, variable):
             total += Decimal(depth) * Decimal(share.overlap_acres)
             days.append(row.received_on)
         return Fetched(mm=total / Decimal(acres), fetched_on=max(days))
+
+
+def field_parts(parcel, period):
+    """Each OpenET field's part of the use area's month, largest share first, or None.
+
+    ``[{"field_id", "acres", "crop_et_af", "rainfall_af"}]``: the field's acres inside the use
+    area, and its crop ET and rain over those acres in acre-feet (depth x acres / 304.8), at
+    full precision. ``rainfall_af`` is None on every row when any field's rain is missing (the
+    month then counts no rain). None when the use area has no share, or any field has no crop
+    ET for the month.
+    """
+    from datasync.models import OpenETFieldMonth, OpenETFieldShare
+
+    shares = list(OpenETFieldShare.objects.filter(parcel=parcel).select_related("field"))
+    if not shares:
+        return None
+    month = _first(int(period[:4]), int(period[5:7]))
+    rows = {
+        row.field_id: row
+        for row in OpenETFieldMonth.objects.filter(field_id__in=[s.field_id for s in shares], month=month)
+    }
+    if any(rows.get(s.field_id) is None or rows[s.field_id].et_mm is None for s in shares):
+        return None
+    with_rain = all(rows[s.field_id].pr_mm is not None for s in shares)
+    shares.sort(key=lambda s: (-s.overlap_acres, s.field.field_id))
+    parts = []
+    with localcontext() as context:
+        context.prec = 60
+        for share in shares:
+            row, acres = rows[share.field_id], Decimal(share.overlap_acres)
+            parts.append({
+                "field_id": share.field.field_id,
+                "acres": acres,
+                "crop_et_af": Decimal(row.et_mm) * acres / MM_ACRES_PER_AF,
+                "rainfall_af": Decimal(row.pr_mm) * acres / MM_ACRES_PER_AF if with_rain else None,
+            })
+    return parts
+
+
+def outside_acres(parcel, parts):
+    """The use area's acres in no OpenET field: its outline's acres less the fields' (never below 0).
+
+    Measured from the outline in California Albers, the way the overlaps are; never from the
+    acres on file, which a person may have typed below the overlaps. None with no outline.
+    """
+    if parcel.geometry is None:
+        return None
+    left = outline_acres(parcel.geometry) - sum((p["acres"] for p in parts), Decimal("0"))
+    return max(left, Decimal("0"))

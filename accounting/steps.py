@@ -240,7 +240,45 @@ def et_gross(running_af, parcel, period, ctx, config):
     if fallow:
         detail["fallow"] = True
         detail["satellite_et_af"] = str(satellite_af)
+    else:
+        detail.update(_field_stamp(parcel, period, af))
     return af, _record("et_gross", running_af, af, detail)
+
+
+#: How far the fields' crop ET may sit from the booked figure and still be its parts (AF).
+FIELD_PARTS_TOLERANCE_AF = Decimal("0.005")
+
+
+def _field_stamp(parcel, period, af):
+    """The OpenET fields the month was figured from, for the month's page to list.
+
+    ``{"fields": [...], "outside_acres": "..."}`` with each field's number, its acres inside
+    the use area, and its crop ET and rainfall in acre-feet, as strings at full precision.
+    Empty when the use area has no OpenET field, a field has no figure for the month, or the
+    fields' figures as now held do not add to the booked crop ET (a newer figure OpenET sent
+    and nobody accepted): the page then lists nothing rather than parts of another figure.
+    """
+    from datasync import field_list
+
+    parts = field_list.field_parts(parcel, period)
+    if not parts or af <= 0:
+        return {}
+    total = sum((p["crop_et_af"] for p in parts), Decimal("0"))
+    if abs(total - af) > FIELD_PARTS_TOLERANCE_AF:
+        return {}
+    outside = field_list.outside_acres(parcel, parts)
+    return {
+        "fields": [
+            {
+                "field_id": p["field_id"],
+                "acres": str(p["acres"]),
+                "crop_et_af": str(p["crop_et_af"]),
+                "rainfall_af": None if p["rainfall_af"] is None else str(p["rainfall_af"]),
+            }
+            for p in parts
+        ],
+        "outside_acres": None if outside is None else str(outside),
+    }
 
 
 def subtract_surface_water(running_af, parcel, period, ctx, config):

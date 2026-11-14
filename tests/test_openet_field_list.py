@@ -808,11 +808,19 @@ def test_no_stamp_in_a_fallow_month():
 def test_outside_acres_come_from_the_outline_never_the_typed_acres():
     """A typed acreage below the overlaps never prints a negative outside figure."""
     from accounting.steps import et_gross
+    from datasync import crop_et
+    from datasync.field_list import compute_shares
 
-    parcel, a, b = _sixty_thirty_july()
+    parcel = _use_area()
     Parcel.objects.filter(pk=parcel.pk).update(area_acres=D("50.00"), area_override=True)
     parcel.refresh_from_db()
+    a, b = _sixty_thirty()
+    compute_shares(parcel)
+    _month(a, et_mm=500, pr_mm=40)
+    _month(b, et_mm=400, pr_mm=20)
+    crop_et.record_fetched_months(parcel, [JULY])
     _, record = et_gross(D("0"), parcel, JULY, {}, {})
+    assert record["detail"]["fields"]
     assert D(record["detail"]["outside_acres"]) == D("10.00")
 
 
