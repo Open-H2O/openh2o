@@ -2772,6 +2772,15 @@ html { color-scheme: dark; }
         font-size: clamp(0.7rem, 1.4cqi, 0.84rem);
         column-gap: var(--space-sm);
     }
+    /* A figure's two-column parts give way on the label side: at 1,153 the
+       receipt's "USDA-SCS (TR-21)" ran 19px across the divider into ETAW, and the
+       per-field rain figures listed under Rainfall with it (sweep, 2026-11-14).
+       The figure keeps its one line; the label's track may shrink, so a long note
+       under a label ("Methodology Settings") wraps and nothing crosses. Letting
+       the figure's track shrink instead broke the method name at its hyphen. */
+    .budget-panel-body .budget-seg > .budget-breakdown-group:not(.budget-breakdown-group--kinds):not(.budget-breakdown-group--fields) {
+        grid-template-columns: minmax(0, max-content) max-content;
+    }
     .budget-panel-body .budget-op {
         padding-top: clamp(1.1rem, 2.6cqi, 1.55rem);
     }
@@ -5887,7 +5896,9 @@ details[open] > summary .disclosure-mark {
    rule above both stays as it is (.receipt-short > .budget-seg). */
 .receipt-short > .budget-seg.budget-seg--fields {
     display: grid;
-    grid-template-columns: max-content max-content;
+    /* The list keeps its width; on a narrow card the figure's caption wraps instead
+       (at 1,024 the list's AF column ran past the card's edge). */
+    grid-template-columns: minmax(0, max-content) max-content;
     column-gap: var(--space-xl);
     align-items: start;
 }
