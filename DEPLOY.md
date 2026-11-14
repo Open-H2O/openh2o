@@ -1326,8 +1326,9 @@ Two terms in the tables need explaining:
 | `OPENET_API_KEY` | For OpenET | empty | OpenET's key (section 11) |
 | `USGS_API_KEY` | No | empty | USGS's free key. USGS accepts more requests an hour from a site that sends it (section 11) |
 | `OPENET_MONTHLY_BUDGET` <!-- defines: openet_budget --> | No | `100` | OpenH2O stops sending OpenET requests when the month's count reaches this number. Raise it to the account's allowance |
+| `OPENET_FIELDS_PER_REQUEST` | No | `100` | How many OpenET field numbers one request carries. 100 is OpenET's first tier; an OpenET account linked to a Google Cloud project takes 400. OpenET's account status names the account's figure as "Max Field IDS" |
 | `OPENET_CACHE_DAYS` | No | `30` | How long OpenH2O keeps an OpenET estimate before asking again |
-| `OPENET_MODE` | No | `api` | `api` fetches ET from OpenET's service. <!-- defines: google_earth_engine -->`gee` fetches the same data from Google Earth Engine, Google's service for analysing satellite imagery, as [docs/earth-engine-tier-setup.md](docs/earth-engine-tier-setup.md) describes |
+| `OPENET_MODE` | No | `fields` | `fields` asks OpenET's field list for the crop ET and rain of OpenET's own fields, and each use area takes its share of the fields it overlaps. `api` asks OpenET's service for crop ET one use area at a time. <!-- defines: google_earth_engine -->`gee` asks Google Earth Engine, Google's service for analysing satellite imagery, for the same data, as [docs/earth-engine-tier-setup.md](docs/earth-engine-tier-setup.md) describes |
 | `GEE_PROJECT`, `GEE_SERVICE_ACCOUNT_EMAIL`, `GEE_SERVICE_ACCOUNT_KEY_FILE` | With `OPENET_MODE=gee` | empty | The Google Earth Engine project, its service account and the path to the account's key file. The compose file makes the `secrets/` folder readable inside the container at `/run/secrets` |
 | `DATASYNC_MOCK_MODE` | No | `False` | Use sample data in place of the live public services |
 | `HEALTH_DEMO_MODE` | No | `False` | Reports the data freshness check as passing, for a demonstration site restored from a stored copy every night. Keep it `False` on a site that keeps real records |

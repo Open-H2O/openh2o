@@ -37,12 +37,11 @@
 25 1 * * * $OPENH2O_DIR/scripts/backup.sh
 
 # Daily 2:00 AM: slower periodic sources: groundwater (DWR WDL/SGMA), climate (NOAA) and
-# CIMIS. CIMIS is fetched when its key (CIMIS_API_KEY) is set; with no key it is skipped
+# CIMIS. CIMIS is asked for when its key (CIMIS_API_KEY) is set; with no key it is skipped
 # in one line. One source failing does not stop the others, run-sync.sh goes on to the next.
 # CNRFC is switched off in OpenH2O's list of data sources (it publishes forecasts, not
-# readings), so the schedule does not fetch it. OpenET is not a station source: its figures
-# are fetched by `sync_openet_parcels`, which nothing here schedules, so run it by hand
-# when you want figures for new months.
+# readings), so the schedule does not ask it for anything. OpenET is not a station source:
+# its monthly figures are scheduled on their own line below.
 0 2 * * * $OPENH2O_DIR/scripts/run-sync.sh dwr_wdl dwr_sgma noaa cimis
 
 # Daily 3:30 AM: calculate every open reporting period, after the 2:00 AM sync has
@@ -52,6 +51,11 @@
 
 # Health checks every 6 hours
 0 */6 * * * cd $OPENH2O_DIR && docker compose exec -T web python manage.py run_health_checks >> $OPENH2O_LOG_DIR/health.log 2>&1
+
+# Monthly on the 8th at 4:15 AM: OpenET's figures for a month usually appear in the first week of the
+# next month. One run a month asks for every OpenET field that overlaps a use area, with the last six
+# months asked again, in batches of OPENET_FIELDS_PER_REQUEST field numbers.
+15 4 8 * * cd $OPENH2O_DIR && docker compose exec -T web python manage.py sync_openet_parcels >> $OPENH2O_LOG_DIR/openet.log 2>&1
 
 # Monthly data pruning on the 1st at 3:00 AM (--confirm required; default is dry-run)
 0 3 1 * * cd $OPENH2O_DIR && docker compose exec -T web python manage.py prune_old_data --confirm >> $OPENH2O_LOG_DIR/prune.log 2>&1

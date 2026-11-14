@@ -90,6 +90,12 @@ FIELD_WORD_KEPT: dict = {
     # "Field outlines": the outlines in the person's own file, before any of
     # them is a use area (the heading Brent approved on the drawing, ruling 70).
     "templates/parcels/use_area_import.html": 1,
+    # "OpenET field": OpenET's own record of a piece of land and its number, a name in
+    # OpenET's data and not a use area. Measured 2026-11-14 on the field-list route.
+    "core/demonstration.py": 6,
+    "datasync/adapters/openet_fields.py": 1,
+    "datasync/crop_et.py": 1,
+    "datasync/models.py": 13,
 }
 
 #: Titles that start "New " or "Create " and are not a new record, one reason

@@ -70,6 +70,35 @@ def _cache_records_in_range(start_date: date, end_date: date) -> QuerySet[OpenET
     ).select_related("parcel").order_by("parcel_id", "start_date")
 
 
+def _field_route_months(start_date: date, end_date: date) -> dict[Parcel, dict[str, Decimal]]:
+    """Each use area with OpenET field shares and a current recorded figure in the range.
+
+    The months are those with a current crop ET record whose first day lies in the
+    range; the value is the recorded depth, read the same way ``_recorded_totals`` reads it.
+    """
+    from datasync.crop_et import recorded_mm
+    from datasync.models import CropETFigure, OpenETFieldShare
+
+    shared = OpenETFieldShare.objects.values("parcel_id")
+    figures = (
+        CropETFigure.objects.current()
+        .filter(
+            variable="ET",
+            model_name="Ensemble",
+            month__gte=start_date.replace(day=1),
+            month__lte=end_date,
+            parcel_id__in=shared,
+        )
+        .select_related("parcel")
+        .order_by("parcel_id", "month")
+    )
+    found: dict[Parcel, dict[str, Decimal]] = {}
+    for figure in figures:
+        month_key = f"{figure.month:%Y-%m}"
+        found.setdefault(figure.parcel, {})[month_key] = recorded_mm(figure.parcel, month_key)[0]
+    return found
+
+
 def _monthly_et_totals(
     cache: OpenETCache, start_date: date, end_date: date
 ) -> dict[str, Decimal]:
@@ -256,6 +285,23 @@ class Command(BaseCommand):
             entries_to_create.extend(
                 _new_month_entries(parcel, monthly_totals, seen, counters)
             )
+
+        # Use areas on OpenET's field list may have no cache row at all: their months
+        # come from the recorded figures, and take the same path to the entry.
+        for parcel, months in _field_route_months(start_date, end_date).items():
+            if not parcel.area_acres:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  SKIP parcel {parcel.parcel_number}: no area_acres set"
+                    )
+                )
+                counters["skipped_no_area"] += 1
+                continue
+
+            months = {m: mm for m, mm in months.items() if (parcel.id, m) not in seen}
+            if not months:
+                continue
+            entries_to_create.extend(_new_month_entries(parcel, months, seen, counters))
 
         # Write to database in batches
         if not dry_run and entries_to_create:

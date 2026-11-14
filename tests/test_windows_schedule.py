@@ -35,6 +35,7 @@ TASK_TIMING = {
     "30 3 * * *": ("03:30", "daily", "none"),
     "0 */6 * * *": ("00:00", "daily", "PT6H"),
     "0 3 1 * *": ("03:00", "monthly day 1", "none"),
+    "15 4 8 * *": ("04:15", "monthly day 8", "none"),
 }
 
 
@@ -61,10 +62,10 @@ def _windows_plan(*args):
     return result, rows
 
 
-def test_crontab_holds_the_six_jobs_the_windows_tests_know():
+def test_crontab_holds_the_seven_jobs_the_windows_tests_know():
     # A new timing in crontab.txt needs its Task Scheduler form added above.
     timings = [timing for timing, _ in _cron_jobs()]
-    assert len(timings) == 6
+    assert len(timings) == 7
     assert set(timings) <= set(TASK_TIMING)
 
 

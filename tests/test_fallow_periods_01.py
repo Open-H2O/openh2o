@@ -304,8 +304,10 @@ def test_migrating_forward_from_the_old_column_keeps_the_mark_as_an_open_period(
             f.name == "fallow" for f in new.get_model("parcels", "Parcel")._meta.get_fields()
         )
     finally:
+        # Every app's leaf, not only parcels': migrating parcels back also unapplied the
+        # datasync migration that depends on it, and the delete below needs its table.
         executor = MigrationExecutor(connection)
-        executor.migrate([n for n in executor.loader.graph.leaf_nodes() if n[0] == "parcels"])
+        executor.migrate(list(executor.loader.graph.leaf_nodes()))
         Parcel.objects.filter(parcel_number__in=("MIG-A", "MIG-B")).delete()
 
 

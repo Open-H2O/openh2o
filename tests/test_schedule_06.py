@@ -246,7 +246,7 @@ def test_the_shipped_crontab_fetches_cimis_and_says_why_not_cnrfc(settings):
     assert "Merced" not in text
     assert (
         "CNRFC is switched off in OpenH2O's list of data sources (it publishes "
-        "forecasts, not readings), so the schedule does not fetch it." in " ".join(
+        "forecasts, not readings), so the schedule does not ask it for anything." in " ".join(
             line.lstrip("# ").rstrip() for line in text.splitlines()
         )
     )
