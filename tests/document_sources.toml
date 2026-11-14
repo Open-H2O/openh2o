@@ -2122,7 +2122,8 @@ labels = [
   { text = "Needs API key", where = "datasync/freshness.py" },
   { text = "No stations", where = "datasync/freshness.py" },
   { text = "Syncing off", where = "datasync/freshness.py" },
-  { text = "None up to date", where = "datasync/freshness.py" },
+  { text = "Slightly behind", where = "datasync/freshness.py" },
+  { text = "Dormant", where = "datasync/freshness.py" },
   { text = "OpenH2O is temporarily unavailable", where = "error-pages/503.html" },
 ]
 checked_at = "59b5fce9"

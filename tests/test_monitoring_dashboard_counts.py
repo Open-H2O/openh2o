@@ -65,7 +65,7 @@ class TestSourceCardsShareOneCountShape:
         resp = auth_client.get(reverse("datasync:monitoring_dashboard"))
         body = resp.content.decode()
         assert resp.status_code == 200
-        assert '<span class="badge badge-grey">Not yet synced</span>' in body
+        assert '<span class="badge badge-pill badge-grey">Not yet synced</span>' in body
         assert (
             "OpenH2O has not synced Probe Never-Synced Source on this site yet." in body
         )
