@@ -60,7 +60,7 @@ def _cache_row(parcel, geometry, et_data, start=date(2024, 1, 1), end=date(2024,
 
 
 # ---------------------------------------------------------------------------
-# 1. _months_needing_fetch — pure skip logic (finalization is deterministic)
+# 1. _months_to_ask — pure skip logic (finalization is deterministic)
 # ---------------------------------------------------------------------------
 
 
@@ -72,7 +72,7 @@ class TestMonthsNeedingFetch:
 
     def test_no_cache_returns_all_months(self, parcel):
         adapter = GEEOpenETAdapter()
-        needs = adapter._months_needing_fetch(
+        needs = adapter._months_to_ask(
             [parcel], date(2024, 6, 1), date(2024, 8, 31), self.TODAY
         )
         assert needs[parcel.pk] == ["2024-06", "2024-07", "2024-08"]
@@ -88,7 +88,7 @@ class TestMonthsNeedingFetch:
             ],
         )
         adapter = GEEOpenETAdapter()
-        needs = adapter._months_needing_fetch(
+        needs = adapter._months_to_ask(
             [parcel], date(2024, 6, 1), date(2024, 8, 31), self.TODAY
         )
         # June: cached + finalized -> permanent skip.

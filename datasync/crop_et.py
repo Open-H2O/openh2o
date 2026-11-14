@@ -113,6 +113,10 @@ def months_of(items, key="et"):
 def newest_fetched(parcel, period, variable="ET", model="Ensemble"):
     """The month's newest fetched figure, read the way the calculation read the cache; None when none."""
     from accounting.steps import _cache_by_date
+    from datasync import field_list
+
+    if variable == "ET" and model == "Ensemble" and field_list.has_shares(parcel):
+        return field_list.field_share_mm(parcel, period, "et")
 
     by_date, _rows = _cache_by_date(parcel, period, variable, model, "et")
     if not by_date:
@@ -139,8 +143,11 @@ def record_fetched_months(parcel, months, variable="ET", model="Ensemble"):
     Called by every crop ET writer right after it writes the cache. A month that
     already has a record is left exactly as it is. Returns the records written.
     """
+    from datasync import field_list
     from datasync.models import CropETFigure
 
+    from_fields = variable == "ET" and model == "Ensemble" and field_list.has_shares(parcel)
+    note = _fields_note(parcel) if from_fields else ""
     written = []
     for period in sorted(months):
         if current_record(parcel, period, variable, model) is not None:
@@ -156,9 +163,23 @@ def record_fetched_months(parcel, months, variable="ET", model="Ensemble"):
                 model_name=model,
                 depth_mm=newest.mm,
                 fetched_on=newest.fetched_on,
+                note=note,
             )
         )
     return written
+
+
+#: The same function under the name the field-list route reads in its own words.
+record_received_months = record_fetched_months
+
+
+def _fields_note(parcel):
+    """``From OpenET's fields: 21106403648 (176.60 acres); ...``, the fields a figure is made from."""
+    from datasync.models import OpenETFieldShare
+
+    shares = OpenETFieldShare.objects.filter(parcel=parcel).order_by("field__field_id")
+    parts = [f"{share.field.field_id} ({share.overlap_acres:.2f} acres)" for share in shares.select_related("field")]
+    return "From OpenET's fields: " + "; ".join(parts)
 
 
 def differing_months(parcels, months):

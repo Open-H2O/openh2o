@@ -23,18 +23,20 @@ def get_adapter(source_code):
 
 
 def get_openet_adapter():
-    """Return the OpenET adapter for the active tier.
+    """Return the OpenET adapter for the active route.
 
-    This is the ONE place OPENET_MODE decides the faucet: "gee" routes the live
-    sync through the batched Earth Engine adapter; anything else (default "api")
-    keeps the REST tier. REST stays the committed default — GEE is opt-in via a
-    deploy's gitignored .env.
+    This is the ONE place OPENET_MODE decides the route: "fields" (the default, also when
+    the setting is absent) takes OpenET's field list; "api" sends one request per use area
+    (REST); "gee" routes the live sync through the batched Earth Engine adapter.
     """
     from django.conf import settings
 
-    if getattr(settings, "OPENET_MODE", "api") == "gee":
+    mode = getattr(settings, "OPENET_MODE", "fields")
+    if mode == "gee":
         return GEEOpenETAdapter()
-    return OpenETAdapter()
+    if mode == "api":
+        return OpenETAdapter()
+    return FieldListOpenETAdapter()
 
 
 # Import all concrete adapters to auto-populate the registry.
@@ -46,6 +48,7 @@ from datasync.adapters.dwr_sgma import DWRSGMAAdapter  # noqa: F401
 from datasync.adapters.dwr_wdl import DWRWDLAdapter  # noqa: F401
 from datasync.adapters.noaa import NOAAAdapter  # noqa: F401
 from datasync.adapters.openet import OpenETAdapter  # noqa: F401,E402
+from datasync.adapters.openet_fields import FieldListOpenETAdapter  # noqa: F401,E402
 from datasync.adapters.openet_gee import GEEOpenETAdapter  # noqa: F401,E402
 from datasync.adapters.usgs import USGSAdapter  # noqa: F401
 

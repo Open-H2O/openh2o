@@ -99,7 +99,7 @@ class GEEOpenETAdapter(OpenETAdapter):
                 cached[row.parcel_id].add(raw_date[:7])
         return cached
 
-    def _months_needing_fetch(self, parcels, start, end, today):
+    def _months_to_ask(self, parcels, start, end, today):
         """Pure skip-logic core: which parcel-months still need a fetch.
 
         For each parcel, a month needs fetching when it is either (a) missing
@@ -145,7 +145,7 @@ class GEEOpenETAdapter(OpenETAdapter):
             today = date.today()
 
         window_months = _iter_months(start_date, end_date)
-        needs = self._months_needing_fetch(parcels, start_date, end_date, today)
+        needs = self._months_to_ask(parcels, start_date, end_date, today)
 
         summary = {"fetched": 0, "cached": 0, "failed": 0, "skipped_final": 0}
         for parcel in parcels:
