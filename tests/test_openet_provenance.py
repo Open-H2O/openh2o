@@ -5,8 +5,9 @@ The demonstration's figures are labelled OpenET on every page that shows them, s
 figure in ``data/merced/openet_fields.json`` must be one OpenET's field list sent. These
 tests hold four things:
 
-* the committed file names its source, carries no outline, and every field and month row
-  carries the day it was received, after the month ended;
+* the committed file names its source, carries each field's outline as OpenET's field list
+  sent it (ruling 166), and every field and month row carries the day it was received,
+  after the month ended;
 * every use area takes its crop ET and rain from at least one OpenET field, and every such
   field has crop ET and rain for all 24 months, figures as OpenET's field list sent them;
 * no water year in it is derived from the other (a copy, a multiple, or the same shape bent
@@ -59,16 +60,43 @@ def test_the_earth_engine_file_is_gone():
     assert not OLD_FIXTURE.exists()
 
 
-def test_the_file_names_openets_field_list_and_carries_no_outline():
+def test_the_file_names_openets_field_list_and_carries_no_stamp():
     payload = _committed()
     assert payload["meta"]["source"] == "OpenET's field list (https://etdata.org)"
     assert payload["meta"]["received"] == FIELD_LIST_RECEIVED
     raw = FIXTURE.read_text()
-    for outline_word in ("coordinates", "Polygon", "geometry"):
-        assert outline_word not in raw
     # No stamp of any kind, or every regeneration reads as a change.
     for banned in ("generated_at", "timestamp", "hostname", "git_hash"):
         assert banned not in raw
+
+
+def test_every_field_carries_its_outline_and_its_acres_are_the_outlines():
+    """78 of 78 fields carry OpenET's outline; each field's acres are its outline's, to 0.5%."""
+    from django.contrib.gis.geos import GEOSGeometry
+
+    from datasync.field_list import outline_acres
+
+    payload = _committed()
+    assert len(payload["fields"]) == 78
+    off = []
+    for row in payload["fields"]:
+        outline = row["outline"]
+        assert outline["type"] in ("Polygon", "MultiPolygon")
+        geometry = GEOSGeometry(json.dumps(outline), srid=4326)
+        measured = outline_acres(geometry)
+        stored = Decimal(row["area_acres"])
+        if abs(measured - stored) > stored * Decimal("0.005"):
+            off.append((row["field_id"], stored, measured))
+    assert off == []
+
+
+def test_the_outlines_keep_openets_six_decimals():
+    """Coordinates as OpenET sent them: none carries more than six decimals."""
+    import re
+
+    for row in _committed()["fields"]:
+        text = json.dumps(row["outline"])
+        assert max(len(d) for d in re.findall(r"\.(\d+)", text)) <= 6, row["field_id"]
 
 
 def test_every_row_carries_the_day_it_was_received_after_its_month_ended():

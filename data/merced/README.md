@@ -199,9 +199,10 @@ python manage.py load_station_fixture
 
 | | |
 |---|---|
-| **What** | The OpenET fields that overlap the demonstration's 76 use areas: each field's number and acres, each use area's acres inside each field, and each field's monthly crop ET and rain as OpenET's field list sent them |
+| **What** | The OpenET fields that overlap the demonstration's 76 use areas: each field's number, acres and outline, each use area's acres inside each field, and each field's monthly crop ET and rain as OpenET's field list sent them |
 | **Measured** | 78 fields, 84 overlaps, 1,872 field-months (78 fields × 24 months, October 2024 to September 2026) |
 | **Figures** | Crop ET is OpenET's ensemble; rain is gridMET's, as OpenET's field list sends it. Both in millimetres, exactly as sent |
+| **Source** | OpenET (https://etdata.org): the outlines, crop ET and rain are OpenET's data |
 | **Received** | 2026-11-14 (Pacific), from OpenET's field list (https://etdata.org) |
 | **Used by** | `load_openet_fields_fixture`, and therefore `scripts/rebuild-golden.sh` |
 
@@ -220,10 +221,15 @@ field counts no crop use and no rain. In this file, 69 use areas overlap one fie
 OpenET may revise a month for about 120 days after it ends; the figures here are the
 ones it had on the received day.
 
-**The outlines are not in this file.** Each field's acres, and its acres inside each
-use area, were measured from OpenET's outlines in California Albers (EPSG 3310) after
-any crossed edge was repaired. A site that sets up on OpenET's field list keeps the
-outlines in its own database.
+**Each field's outline is OpenET's, as its field list sent it** (GeoJSON, longitude
+and latitude to six decimals). OpenET's terms ask that OpenET be named as the source
+"in all instances" its data is shown or shared: anything that shows or passes on
+these outlines names OpenET (https://etdata.org) as the source. The demonstration's
+map draws them as a layer that is off until a person turns it on, with OpenET named
+on the map while it shows. Each field's acres, and its acres inside each use area,
+were measured from these outlines in California Albers (EPSG 3310) after any crossed
+edge was repaired. The loader stores each outline as the field's geometry and keeps
+the overlaps as this file states them; it does not work them out again.
 
 Rows are keyed by `parcel_number` and OpenET's `field_id`, never by primary key,
 because primary keys differ between sites.

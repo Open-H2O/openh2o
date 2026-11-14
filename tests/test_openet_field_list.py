@@ -661,3 +661,63 @@ def test_the_route_records_each_use_areas_month_from_its_fields(openet_key, no_w
     for number in ("MADEUP-GROUP-NEAR", "MADEUP-GROUP-FAR"):
         parcel = Parcel.objects.get(parcel_number=number)
         assert crop_et.current_record(parcel, JULY) is not None
+
+
+# ---------------------------------------------------------------- the fields file's outlines
+
+
+def _fields_file(tmp_path, outline):
+    """A made-up fields file: one made-up field with ``outline``, one made-up use area's share."""
+    Parcel.objects.create(
+        parcel_number="MADEUP-OUTLINE-LOAD",
+        geometry=MultiPolygon(Polygon.from_bbox((-120.5, 37.2, -120.4, 37.3)), srid=4326),
+        area_acres=10,
+        status="active",
+    )
+    field = {"field_id": MADE_UP_A, "area_acres": "10.00", "received_on": "2025-12-01"}
+    if outline is not None:
+        field["outline"] = outline
+    payload = {
+        "meta": {"source": "made up for this test"},
+        "fields": [field],
+        # Deliberately not the outline's overlap: the load keeps the share the file states.
+        "shares": [{"parcel_number": "MADEUP-OUTLINE-LOAD", "field_id": MADE_UP_A, "overlap_acres": "3.21"}],
+        "months": [{"field_id": MADE_UP_A, "month": "2025-10", "et_mm": "30.48", "pr_mm": "1.0",
+                    "received_on": "2025-12-01"}],
+    }
+    path = tmp_path / "made_up_fields.json"
+    path.write_text(json.dumps(payload))
+    return path
+
+
+MADE_UP_RING = [[-120.46, 37.24], [-120.45, 37.24], [-120.45, 37.25], [-120.46, 37.25], [-120.46, 37.24]]
+
+
+def test_the_fields_load_stores_each_outline_as_a_multipolygon(tmp_path):
+    from datasync.models import OpenETField, OpenETFieldShare
+
+    path = _fields_file(tmp_path, {"type": "Polygon", "coordinates": [MADE_UP_RING]})
+    call_command("load_openet_fields_fixture", "--fixture", str(path), stdout=io.StringIO())
+    field = OpenETField.objects.get(field_id=MADE_UP_A)
+    assert field.geometry.geom_type == "MultiPolygon"
+    assert field.geometry.srid == 4326
+    assert field.geometry[0].exterior_ring.coords[0] == (-120.46, 37.24)
+    # The outline is stored; the share stays as the file states it.
+    (share,) = OpenETFieldShare.objects.filter(field=field)
+    assert share.overlap_acres == D("3.21")
+
+
+def test_the_fields_load_keeps_a_multipolygon_outline(tmp_path):
+    from datasync.models import OpenETField
+
+    path = _fields_file(tmp_path, {"type": "MultiPolygon", "coordinates": [[MADE_UP_RING]]})
+    call_command("load_openet_fields_fixture", "--fixture", str(path), stdout=io.StringIO())
+    assert OpenETField.objects.get(field_id=MADE_UP_A).geometry.num_geom == 1
+
+
+def test_a_field_with_no_outline_in_the_file_loads_with_none(tmp_path):
+    from datasync.models import OpenETField
+
+    path = _fields_file(tmp_path, None)
+    call_command("load_openet_fields_fixture", "--fixture", str(path), stdout=io.StringIO())
+    assert OpenETField.objects.get(field_id=MADE_UP_A).geometry is None

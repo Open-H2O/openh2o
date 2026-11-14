@@ -4,8 +4,11 @@ Load the demonstration's figures from OpenET's field list into an empty database
 
 The file (``data/merced/openet_fields.json``) holds what OpenET's field list sent for the
 OpenET fields that overlap the demonstration's use areas: each field's number and acres,
-each use area's acres inside each field, and each field's monthly crop ET and rain in
-millimetres, exactly as sent, with the day they were received. It carries no outlines.
+each field's outline, each use area's acres inside each field, and each field's monthly crop
+ET and rain in millimetres, exactly as sent, with the day they were received. An outline is
+stored as the field's geometry (a polygon is kept as a one-part multipolygon); a field the
+file gives no outline keeps none. The shares are stored as the file states them and are not
+worked out again from the outlines.
 
 **Every row must say when it was received.** A field or month without a received day, a
 month received before it ended, an overlap naming a use area this database does not have,
@@ -26,6 +29,7 @@ import json
 from decimal import Decimal
 from pathlib import Path
 
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
@@ -73,6 +77,16 @@ def _problems(payload):
                 "the field is not listed in the file"
             )
     return problems
+
+
+def _outline(value):
+    """A field's outline from the file as a multipolygon in longitude and latitude, or None."""
+    if not value:
+        return None
+    geometry = GEOSGeometry(json.dumps(value), srid=4326)
+    if geometry.geom_type == "Polygon":
+        geometry = MultiPolygon(geometry, srid=4326)
+    return geometry
 
 
 def _depth(value):
@@ -125,6 +139,7 @@ class Command(BaseCommand):
                     field_id=row["field_id"],
                     defaults={
                         "area_acres": _depth(row.get("area_acres")),
+                        "geometry": _outline(row.get("outline")),
                         "received_on": _day(row["received_on"]),
                     },
                 )
