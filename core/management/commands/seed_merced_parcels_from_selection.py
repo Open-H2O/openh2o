@@ -202,6 +202,12 @@ class Command(BaseCommand):
                 defaults={
                     "owner_name": owner,
                     "geometry": geom,
+                    # seed_merced_operations laid this number down as a
+                    # placeholder square, and the post-save signal filled its acres
+                    # from the square. Clearing them here lets the same signal refill
+                    # them from the outline laid down now. A real site's acreage on
+                    # file is never cleared: this command seeds the demonstration only.
+                    "area_acres": None,
                     "status": "active",
                     "notes": note,
                 },
