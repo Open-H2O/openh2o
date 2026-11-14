@@ -408,10 +408,16 @@ OPENET_CACHE_DAYS = int(os.environ.get("OPENET_CACHE_DAYS", "30"))
 # `/account/status`, not from memory.
 OPENET_MONTHLY_BUDGET = int(os.environ.get("OPENET_MONTHLY_BUDGET", "100"))
 
-# OpenET source selection: "api" = OpenET REST API (default, the live path);
+# Field numbers OpenET takes in one request. 100 is OpenET's published first
+# tier; an account linked to a Google Cloud project gets 400. Set it from the
+# account's own status ("Max Field IDS"), not from memory.
+OPENET_FIELDS_PER_REQUEST = int(os.environ.get("OPENET_FIELDS_PER_REQUEST", "100"))
+
+# OpenET source selection: "fields" = OpenET's field list (crop ET and rain
+# for OpenET's own fields, the default); "api" = one request per use area;
 # "gee" = pull the same OpenET Ensemble collection directly from Google Earth
 # Engine (opt-in, for large districts). See docs/earth-engine-tier-setup.md.
-OPENET_MODE = env("OPENET_MODE", default="api")
+OPENET_MODE = env("OPENET_MODE", default="fields")
 GEE_PROJECT = env("GEE_PROJECT", default="")
 GEE_SERVICE_ACCOUNT_EMAIL = env("GEE_SERVICE_ACCOUNT_EMAIL", default="")
 

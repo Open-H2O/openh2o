@@ -170,6 +170,9 @@ CONTENT_LABELS = [
     "datasync.DataSyncLog",
     "datasync.OpenETCache",
     "datasync.CropETFigure",
+    "datasync.OpenETField",
+    "datasync.OpenETFieldShare",
+    "datasync.OpenETFieldMonth",
     "drinking.WaterSystem",
     "drinking.SystemFacility",
     "drinking.SystemProduction",
@@ -206,6 +209,7 @@ KEPT_LABELS = [
     "health.HealthCheckResult",
     "feedback.Feedback",
     "feedback.FeedbackAttachment",
+    "datasync.OpenETRequest",
 ]
 
 #: Apps that are not OpenH2O's own: sign-in, sessions, sites, permissions, the
@@ -295,6 +299,9 @@ SCREEN_NAMES = {
     "datasync.DataSyncLog": ("sync log entry", "sync log entries"),
     "datasync.OpenETCache": ("OpenET record", "OpenET records"),
     "datasync.CropETFigure": ("recorded crop ET figure", "recorded crop ET figures"),
+    "datasync.OpenETField": ("OpenET field", "OpenET fields"),
+    "datasync.OpenETFieldShare": ("OpenET field overlap", "OpenET field overlaps"),
+    "datasync.OpenETFieldMonth": ("OpenET field month", "OpenET field months"),
     "drinking.WaterSystem": ("water system", "water systems"),
     "drinking.SystemFacility": ("system facility", "system facilities"),
     "drinking.SystemProduction": ("system production record", "system production records"),

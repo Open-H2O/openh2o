@@ -78,15 +78,25 @@ class TestOpenETCacheModel:
         assert cache_entry.is_stale(max_age_days=10) is False
 
     def test_monthly_query_count(self, cache_entry):
+        from datasync.models import OpenETRequest
+
+        assert OpenETCache.monthly_query_count() == 0  # a stored row spent nothing
+        OpenETRequest.objects.create(kind="figures", ids_count=100, answered=True)
         assert OpenETCache.monthly_query_count() == 1
 
     def test_budget_check_under(self, cache_entry):
+        from datasync.models import OpenETRequest
+
+        OpenETRequest.objects.create(kind="figures", ids_count=100, answered=True)
         ok, used, limit = OpenETCache.check_budget(budget=10)
         assert ok is True
         assert used == 1
         assert limit == 10
 
     def test_budget_check_over(self, cache_entry):
+        from datasync.models import OpenETRequest
+
+        OpenETRequest.objects.create(kind="figures", ids_count=100, answered=True)
         ok, used, limit = OpenETCache.check_budget(budget=1)
         assert ok is False
         assert used == 1
@@ -314,14 +324,19 @@ class TestRowOriginIsNotCountedAsSpend:
         assert OpenETCache.objects.count() == 5
         assert OpenETCache.monthly_query_count() == 0
 
-    def test_api_rows_count(self, parcel, sample_geometry):
+    def test_api_rows_count_only_through_their_request(self, parcel, sample_geometry):
+        """A stored row spent nothing; the request written down beside it did."""
+        from datasync.models import OpenETRequest
+
         self._row(parcel, sample_geometry, "api", 1)
+        assert OpenETCache.monthly_query_count() == 0
+        OpenETRequest.objects.create(kind="point_or_polygon", ids_count=1, answered=True)
         assert OpenETCache.monthly_query_count() == 1
 
-    def test_unknown_rows_still_count(self, parcel, sample_geometry):
-        """Pre-existing rows count. A guard must err toward LESS allowance."""
+    def test_unknown_rows_count_nothing(self, parcel, sample_geometry):
+        """The allowance counts requests sent, so a stored row of unknown origin counts nothing."""
         self._row(parcel, sample_geometry, "unknown", 1)
-        assert OpenETCache.monthly_query_count() == 1
+        assert OpenETCache.monthly_query_count() == 0
 
     def test_default_origin_is_unknown(self, cache_entry):
         assert cache_entry.origin == "unknown"
@@ -331,6 +346,10 @@ class TestRowOriginIsNotCountedAsSpend:
             self._row(parcel, sample_geometry, "fixture", day)
         self._row(parcel, sample_geometry, "api", 10)
         self._row(parcel, sample_geometry, "unknown", 11)
+        from datasync.models import OpenETRequest
+
+        for answered in (True, True, False):
+            OpenETRequest.objects.create(kind="figures", ids_count=1, answered=answered)
         assert OpenETCache.objects.count() == 5
         assert OpenETCache.monthly_query_count() == 2
 
@@ -424,7 +443,7 @@ class TestRowOriginIsNotCountedAsSpend:
             et_data=[],
             origin="unknown",
         )
-        assert OpenETCache.monthly_query_count() == 1
+        assert OpenETCache.monthly_query_count() == 0
 
         fixture = tmp_path / "openet_cache.json"
         fixture.write_text(

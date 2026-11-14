@@ -383,7 +383,7 @@ class OpenETAdapter(BaseAdapter):
             raw_data = self.fetch_polygon(parcel.geometry, start_date, end_date)
         except Exception as exc:
             # Release the slot: a failed call should not count against the budget.
-            reservation.delete()
+            reservation.release()
             logger.error("OpenET fetch failed for parcel %s: %s", parcel.pk, exc)
             return None
 
@@ -426,6 +426,7 @@ class OpenETAdapter(BaseAdapter):
             reservation.et_data = et_data
             reservation.save(update_fields=["model_name", "et_data"])
             crop_et.record_fetched_months(parcel, crop_et.months_of(et_data))
+        reservation.mark_answered()
         logger.info("OpenET cache miss, stored %d records for parcel %s", len(et_data), parcel.pk)
         return et_data
 
@@ -478,7 +479,7 @@ class OpenETAdapter(BaseAdapter):
                 parcel.geometry, start_date, end_date, variable=variable
             )
         except Exception as exc:
-            reservation.delete()
+            reservation.release()
             logger.error(
                 "OpenET %s fetch failed for parcel %s: %s", variable, parcel.pk, exc
             )
@@ -514,6 +515,7 @@ class OpenETAdapter(BaseAdapter):
             # Each item carries the day it was received, as the ET row's do.
             reservation.et_data = crop_et.stamp(values, timezone.localdate())
             reservation.save(update_fields=["model_name", "et_data"])
+        reservation.mark_answered()
 
         logger.info(
             "OpenET %s stored %d records for parcel %s", variable, len(values), parcel.pk

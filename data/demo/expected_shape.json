@@ -234,6 +234,31 @@
       "tolerance": 0,
       "reason": "MOVED 1717 -> 1824 by Plan 153-06 (2026-11-12), read off a candidate built from the working tree: 76 use areas x 24 months (Oct 2024 to Sep 2026), every one recorded. The 107 months Earth Engine had no figure for (61 in December 2025, 46 in January 2026) carry the figure OpenET's own service sent, received 2026-11-12 (ruling 146); nothing is filled in by OpenH2O. Before that: OpenET's crop ET recorded once per use area and month by load_openet_fixture, at the figure and the day the file says it was received (2026-11-12). MOVED 1824 -> 1717 by Plan 153-05, read off a candidate built from the working tree: 76 use areas x 24 months (Oct 2024 to Sep 2026), less the 107 use-area months OpenET sent no crop ET for (61 in December 2025, 46 in January 2026). Those months have no record and are never filled in (ruling 140)."
     },
+    "datasync.OpenETField": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "OpenET's own fields. Zero until the golden build fills it (Plan 153.2-01): the demonstration carries no outlines."
+    },
+    "datasync.OpenETFieldShare": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Overlap of each use area with OpenET's fields. Zero until the golden build fills it (Plan 153.2-01)."
+    },
+    "datasync.OpenETFieldMonth": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "OpenET's crop ET and rain per OpenET field and month. Zero until the golden build fills it (Plan 153.2-01)."
+    },
+    "datasync.OpenETFieldMonthEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
+    "datasync.OpenETRequest": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "One row per request the site sent to OpenET. Zero because the build sends none."
+    },
     "datasync.CropETFigureEvent": {
       "expected": 0,
       "tolerance": 0,

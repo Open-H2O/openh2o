@@ -9,6 +9,8 @@ pipeline that lands raw readings (DataRecordStaging), records each pull
 (OpenETCache). These supply the observed inputs the accounting layer reconciles;
 OpenET evapotranspiration is the consumptive-use spine, not a supply.
 """
+import datetime
+
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.urls import reverse
@@ -272,14 +274,11 @@ class OpenETCache(models.Model):
     model_name = models.CharField(max_length=50, default="Ensemble")
     et_data = models.JSONField(help_text="Monthly ET values from API response")
     queried_at = models.DateTimeField(auto_now_add=True)
-    # How this row came to exist. monthly_query_count() is the monthly-allowance
-    # figure the budget guard compares against, and rows arrive two ways: a real
-    # API call charged through reserve_query_slot, and a bulk load from the
-    # committed fixture that spends nothing. Recorded at the moment it is known
-    # rather than inferred later — inferring it from row timing is exactly what
-    # made a freshly-seeded demonstration read as 380 requests spent. Rows the
-    # Earth Engine tier writes (OpenET's ensemble and gridMET rainfall) say "gee";
-    # they still count toward the allowance, as "unknown" rows did.
+    # How this row came to exist. The allowance counts OpenETRequest rows, not
+    # these, so the origin is a record of where the figures came from: a real
+    # API call charged through reserve_query_slot, a bulk load from the
+    # committed fixture, or the Earth Engine tier (OpenET's ensemble and gridMET
+    # rainfall). Recorded at the moment it is known rather than inferred later.
     origin = models.CharField(
         max_length=10,
         choices=[
@@ -289,7 +288,7 @@ class OpenETCache(models.Model):
             ("unknown", "Origin not recorded"),
         ],
         default="unknown",
-        help_text="Whether this row cost an OpenET request",
+        help_text="Where this row came from",
     )
 
     class Meta:
@@ -332,27 +331,19 @@ class OpenETCache(models.Model):
 
     @classmethod
     def monthly_query_count(cls):
-        """Rows written this calendar month that actually cost an OpenET request.
+        """Requests sent to OpenET and answered since 00:00 UTC on the 1st of this month.
 
-        Fixture rows are excluded and NOTHING ELSE IS. "unknown" — every row
-        predating the origin field — still counts, so the guard stays
-        conservative on a database whose history we cannot see. Back-filling
-        those to "fixture" would fabricate history in the direction that
-        UNDER-reports spend, which is the dangerous direction for a guard.
-        load_openet_fixture upserts on the uniqueness tuple, so its next run
-        stamps origin="fixture" on exactly the rows it owns, pre-existing ones
-        included, and a demonstration corrects itself.
+        The allowance counts requests, as OpenET counts them, and OpenET's month
+        turns over at 00:00 UTC on the 1st. Nothing else counts: a stored row of
+        any origin (Earth Engine, a committed file, an older record) spent no
+        request, and a request OpenET refused spent none either. Every request
+        the site sends is written down as an ``OpenETRequest``.
         """
         from django.utils import timezone
 
-        month_start = timezone.now().replace(
-            day=1, hour=0, minute=0, second=0, microsecond=0
-        )
-        return (
-            cls.objects.filter(queried_at__gte=month_start)
-            .exclude(origin="fixture")
-            .count()
-        )
+        now = timezone.now().astimezone(datetime.timezone.utc)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        return OpenETRequest.objects.filter(answered=True, sent_at__gte=month_start).count()
 
     @classmethod
     def check_budget(cls, budget=None):
@@ -394,7 +385,7 @@ class OpenETCache(models.Model):
             can_query, _used, _limit = cls.check_budget(budget=budget)
             if not can_query:
                 return None
-            return cls.objects.create(
+            reservation = cls.objects.create(
                 parcel=parcel,
                 geometry=geometry,
                 start_date=start_date,
@@ -406,6 +397,132 @@ class OpenETCache(models.Model):
                 # single place origin="api" is set.
                 origin="api",
             )
+            # The request is written down in the same locked transaction, so an
+            # in-flight request counts at once.
+            reservation.request_row = OpenETRequest.objects.create(
+                kind="point_or_polygon", ids_count=1, answered=True
+            )
+            return reservation
+
+    def release(self):
+        """Give the slot back after a failed call: delete the pending row and its request."""
+        request_row = getattr(self, "request_row", None)
+        if request_row is not None:
+            request_row.delete()
+        self.delete()
+
+    def mark_answered(self):
+        """Note on the request row that OpenET answered (HTTP 200)."""
+        request_row = getattr(self, "request_row", None)
+        if request_row is not None:
+            request_row.http_status = 200
+            request_row.save(update_fields=["http_status"])
+
+
+class OpenETField(models.Model):
+    """One of OpenET's own fields, the outline and number OpenET keeps for a piece of land.
+
+    A site keeps the outline OpenET sent; the demonstration does not carry outlines.
+    """
+
+    field_id = models.BigIntegerField("OpenET field number", unique=True,
+                                      help_text="OpenET's 11-digit number for the field.")
+    geometry = models.MultiPolygonField("outline", srid=4326, null=True, blank=True)
+    area_acres = models.DecimalField("area (acres)", max_digits=12, decimal_places=2,
+                                     null=True, blank=True)
+    received_on = models.DateField("date received")
+    created_at = models.DateTimeField("recorded", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "OpenET field"
+        verbose_name_plural = "OpenET fields"
+        ordering = ["field_id"]
+
+    def __str__(self):
+        return str(self.field_id)
+
+
+class OpenETFieldShare(models.Model):
+    """How much of one OpenET field lies inside one use area, in acres."""
+
+    parcel = models.ForeignKey("parcels.Parcel", on_delete=models.CASCADE,
+                               related_name="+", verbose_name="use area")
+    field = models.ForeignKey(OpenETField, on_delete=models.CASCADE, related_name="shares",
+                              verbose_name="OpenET field")
+    overlap_acres = models.DecimalField("overlap (acres)", max_digits=12, decimal_places=2)
+    computed_at = models.DateTimeField("worked out", auto_now=True)
+
+    class Meta:
+        verbose_name = "OpenET field overlap"
+        verbose_name_plural = "OpenET field overlaps"
+        constraints = [
+            models.UniqueConstraint(fields=["parcel", "field"],
+                                    name="openetfieldshare_one_per_parcel_field"),
+        ]
+
+    def __str__(self):
+        return f"{self.parcel_id} / {self.field_id}: {self.overlap_acres} acres"
+
+
+@track_changes()
+class OpenETFieldMonth(models.Model):
+    """OpenET's crop ET and rain for one OpenET field and month, in millimeters.
+
+    A month OpenET later revises is written down, so the earlier figure is kept.
+    """
+
+    field = models.ForeignKey(OpenETField, on_delete=models.CASCADE, related_name="months",
+                              verbose_name="OpenET field")
+    month = models.DateField("month of the figures", help_text="The first day of the month.")
+    et_mm = models.DecimalField("crop ET (mm)", max_digits=40, decimal_places=20,
+                                null=True, blank=True)
+    pr_mm = models.DecimalField("rain (mm)", max_digits=40, decimal_places=20,
+                                null=True, blank=True)
+    received_on = models.DateField("date received")
+
+    class Meta:
+        verbose_name = "OpenET field month"
+        verbose_name_plural = "OpenET field months"
+        ordering = ["field_id", "month"]
+        constraints = [
+            models.UniqueConstraint(fields=["field", "month"],
+                                    name="openetfieldmonth_one_per_field_month"),
+        ]
+
+    def __str__(self):
+        return f"{self.field_id} {self.month:%Y-%m}"
+
+
+class OpenETRequest(models.Model):
+    """One request the site sent to OpenET, written down when it was sent.
+
+    The monthly allowance counts the answered ones. This record is kept as it is
+    and is not part of any demonstration.
+    """
+
+    KIND_CHOICES = [
+        ("lookup", "Field lookup"),
+        ("outlines", "Field outlines"),
+        ("figures", "Monthly figures"),
+        ("point_or_polygon", "One use area"),
+    ]
+
+    sent_at = models.DateTimeField("sent", auto_now_add=True)
+    kind = models.CharField("kind of request", max_length=20, choices=KIND_CHOICES)
+    ids_count = models.PositiveIntegerField("field numbers sent", default=0)
+    answered = models.BooleanField("answered by OpenET", default=False)
+    http_status = models.PositiveSmallIntegerField("HTTP status", null=True, blank=True)
+    provider_used = models.PositiveIntegerField(
+        "OpenET's own count after the call", null=True, blank=True)
+    note = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        verbose_name = "OpenET request"
+        verbose_name_plural = "OpenET requests"
+        indexes = [models.Index(fields=["sent_at"])]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} {self.sent_at:%Y-%m-%d %H:%M}"
 
 
 #: The note on a month recorded when a site upgraded to the version that keeps these records.
@@ -440,7 +557,7 @@ class CropETFigure(CorrectableRecord):
     model_name = models.CharField("OpenET model", max_length=50, default="Ensemble")
     depth_mm = models.DecimalField("crop ET (mm)", max_digits=40, decimal_places=20)
     fetched_on = models.DateField("date received", null=True, blank=True)
-    note = models.CharField("how it was recorded", max_length=40, blank=True)
+    note = models.TextField("how it was recorded", blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="+", verbose_name="accepted by",
