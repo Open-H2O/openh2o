@@ -37,7 +37,7 @@ document = "README.md"
 heading = "OpenH2O (Open Water Accounting Platform)"
 files = ["core/modules.py", "datasync/adapters/openet.py"]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "6419a322"
 
 [[section]]
 document = "README.md"
@@ -51,7 +51,7 @@ document = "README.md"
 heading = "A note on terms"
 files = ["accounting/steps.py"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "6419a322"
 
 [[section]]
 document = "README.md"
@@ -89,7 +89,7 @@ files = [
   "datasync/management/commands/sync_openet_parcels.py",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "README.md"
@@ -109,7 +109,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "bf4a79a9"
+checked_at = "6419a322"
 
 [[section]]
 document = "README.md"
@@ -184,7 +184,7 @@ files = [
   "templates/partials/_feedback_widget.html",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "6419a322"
 
 [[section]]
 document = "README.md"
@@ -198,7 +198,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "README.md"
@@ -215,7 +215,7 @@ files = [
   "static/js/map-core.js",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "6419a322"
 
 [[section]]
 document = "README.md"
@@ -247,14 +247,14 @@ files = [
   "static/js/map-core.js",
 ]
 labels = []
-checked_at = "953a3149"
+checked_at = "6419a322"
 
 [[section]]
 document = "README.md"
 heading = "Cost to run"
 files = ["config/settings/base.py", "datasync/adapters/__init__.py", "datasync/adapters/openet_gee.py"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "6419a322"
 
 [[section]]
 document = "README.md"
@@ -329,7 +329,7 @@ files = [
   "static/css/tokens.css",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "CONTRIBUTING.md"
@@ -341,7 +341,7 @@ files = [
   "standards/management/commands/seed_observed_properties.py",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "CONTRIBUTING.md"
@@ -359,7 +359,7 @@ labels = [
   { text = "Send feedback", where = "templates/partials/_sidebar.html" },
   { text = "Data looks wrong", where = "templates/partials/_feedback_widget.html" },
 ]
-checked_at = "3a340c75"
+checked_at = "6419a322"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -374,7 +374,7 @@ document = "ARCHITECTURE.md"
 heading = "What OpenH2O is"
 files = ["docker-compose.yml", "Dockerfile", "config/settings/base.py"]
 labels = []
-checked_at = "3a340c75"
+checked_at = "6419a322"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -389,7 +389,7 @@ files = [
   "core/models.py",
 ]
 labels = []
-checked_at = "953a3149"
+checked_at = "6419a322"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -408,7 +408,7 @@ files = [
   "templates/base.html",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "6419a322"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -420,7 +420,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "6419a322"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -443,7 +443,7 @@ files = [
   "core/forms.py",
 ]
 labels = []
-checked_at = "953a3149"
+checked_at = "6419a322"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -456,7 +456,7 @@ files = [
   "config/urls.py",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "6419a322"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -473,7 +473,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "6419a322"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -489,7 +489,7 @@ files = [
   "templates/partials/_map_card_head.html",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "6419a322"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -570,14 +570,14 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "bf4a79a9"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "2. Clone the Repository"
 files = ["crontab.txt"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -590,7 +590,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -662,7 +662,7 @@ labels = [
   { text = "Change email", where = "templates/core/users_list.html" },
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -708,7 +708,7 @@ files = [
   "config/settings/base.py",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -778,7 +778,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -824,7 +824,7 @@ files = [
 labels = [
   { text = "Site health", where = "templates/health/dashboard.html" },
 ]
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -842,7 +842,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -858,7 +858,7 @@ labels = [
   { text = "Aerial", where = "static/js/map-core.js" },
   { text = "Dark", where = "static/js/map-core.js" },
 ]
-checked_at = "953a3149"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -875,7 +875,7 @@ labels = [
   { text = "Change password", where = "templates/core/profile.html" },
   { text = "Forgot password?", where = "templates/account/login.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -890,7 +890,7 @@ files = [
 labels = [
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "8a99d70d"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -921,7 +921,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -949,7 +949,7 @@ files = [
   "feedback/models.py",
 ]
 labels = []
-checked_at = "953a3149"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -981,7 +981,7 @@ document = "DEPLOY.md"
 heading = "12. Environment Variables Reference"
 files = ["config/wsgi.py", "entrypoint.sh", "config/settings/base.py"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1000,21 +1000,21 @@ files = [
   "entrypoint.sh",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "The database"
 files = ["docker-compose.yml", "config/settings/production.py", "config/settings/base.py"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Email"
 files = ["config/settings/base.py", "config/settings/production.py", "config/settings/local.py"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1031,7 +1031,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1058,7 +1058,7 @@ labels = [
   { text = "Continue with Google", where = "templates/account/signup.html" },
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "953a3149"
+checked_at = "6419a322"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1073,14 +1073,14 @@ files = [
   "core/checks.py",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/README.md"
 heading = "docs/"
 files = ["standards/management/commands/check_conformance.py", "static/css/tokens.css"]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/ROADMAP.md"
@@ -1114,7 +1114,7 @@ files = [
 labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
 ]
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/ROADMAP.md"
@@ -1214,7 +1214,7 @@ document = "docs/DATA-IMPORT.md"
 heading = "Use areas: the Import use areas screen, or `import_parcels`"
 files = ["parcels/management/commands/import_parcels.py", "parcels/models.py", "infrastructure/views.py", "parcels/use_area_import.py", "parcels/views.py", "templates/parcels/use_area_import.html", "templates/parcels/partials/_use_area_import_preview.html", "core/geofiles.py"]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1520,7 +1520,7 @@ files = [
   "datasync/models.py",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1582,7 +1582,7 @@ labels = [
   { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
   { text = "USDA-SCS (TR-21)", where = "accounting/precip_math.py" },
 ]
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1637,7 +1637,7 @@ labels = [
   { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
   { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/water-budget-terms.md"
@@ -1658,7 +1658,7 @@ files = [
   "datasync/adapters/gee.py",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
@@ -1709,14 +1709,14 @@ files = [
   "datasync/management/commands/prove_gee_auth.py",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
 heading = "5. Get ET for every parcel"
 files = ["datasync/management/commands/sync_openet_parcels.py", "datasync/adapters/__init__.py", "accounting/management/commands/sync_openet_to_ledger.py"]
 labels = []
-checked_at = "3a340c75"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
@@ -1747,7 +1747,7 @@ files = [
   "config/settings/production.py",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1786,7 +1786,7 @@ files = [
   "core/management/commands/seed_data.py",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1805,14 +1805,14 @@ files = [
   "config/urls.py",
 ]
 labels = []
-checked_at = "bf4a79a9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
 heading = "Phase 3: Load data"
 files = ["core/management/commands/seed_merced.py", "core/demonstration.py", "setup/views.py"]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1963,7 +1963,7 @@ files = [
 labels = [
   { text = "Load the default calculation plan", where = "templates/accounting/methodology_settings.html" },
 ]
-checked_at = "b25f935a"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1980,7 +1980,7 @@ files = [
   "accounting/management/commands/sync_openet_to_ledger.py",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2009,7 +2009,7 @@ files = [
 labels = [
   { text = "Needs API key", where = "datasync/freshness.py" },
 ]
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2029,7 +2029,7 @@ labels = [
   { text = "Enable all", where = "templates/setup/partials/_station_review.html" },
   { text = "Setup Wizard", where = "core/modules.py" },
 ]
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2060,7 +2060,7 @@ labels = [
   { text = "Viewer", where = "templates/core/users_list.html" },
   { text = "+ Add user", where = "templates/core/users_list.html" },
 ]
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2101,7 +2101,7 @@ labels = [
   { text = "ET / Meter Agreement", where = "health/models.py" },
   { text = "Needs API key", where = "datasync/freshness.py" },
 ]
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2126,7 +2126,7 @@ labels = [
   { text = "Dormant", where = "datasync/freshness.py" },
   { text = "OpenH2O is temporarily unavailable", where = "error-pages/503.html" },
 ]
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2146,7 +2146,7 @@ files = [
 labels = [
   { text = "Source code", where = "templates/base.html" },
 ]
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2196,7 +2196,7 @@ files = [
   "config/settings/base.py",
 ]
 labels = []
-checked_at = "bf4a79a9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2232,7 +2232,7 @@ document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "6. Build the site's styling"
 files = ["static/css/input.css", "config/settings/base.py"]
 labels = []
-checked_at = "3a340c75"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2247,7 +2247,7 @@ files = [
   "Dockerfile",
 ]
 labels = []
-checked_at = "bf4a79a9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2276,7 +2276,7 @@ files = [
   "core/management/commands/seed_merced.py",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2289,7 +2289,7 @@ files = [
   "requirements.lock",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2306,14 +2306,14 @@ files = [
   "health/management/commands/prune_old_data.py",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "9. Who can reach it"
 files = ["config/settings/production.py", "config/settings/base.py"]
 labels = []
-checked_at = "3a340c75"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2325,14 +2325,14 @@ files = [
   "core/adapters.py",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "10. The access log"
 files = ["config/settings/production.py", "config/settings/base.py"]
 labels = []
-checked_at = "3a340c75"
+checked_at = "6419a322"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2354,7 +2354,7 @@ document = "templates/about.html"
 heading = "(top)"
 files = ["config/views.py", "core/templatetags/prose.py"]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/about.html"
@@ -2370,14 +2370,14 @@ files = [
   "recharge/models.py",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/about.html"
 heading = "Where OpenH2O comes from"
 files = ["datasync/adapters/openet.py", "datasync/adapters/cdec.py", "datasync/adapters/usgs.py"]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/about.html"
@@ -2407,7 +2407,7 @@ labels = [
   { text = "Glossary", where = "templates/help/glossary.html" },
   { text = "How water balances work", where = "templates/help/water_balances.html" },
 ]
-checked_at = "953a3149"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2429,7 +2429,7 @@ files = [
   "drinking/management/commands/seed_merced_drinking.py",
 ]
 labels = []
-checked_at = "a5905879"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2446,7 +2446,7 @@ files = [
   "drinking/provenance.py",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2467,7 +2467,7 @@ files = [
 labels = [
   { text = "Use Ledger", where = "core/modules.py" },
 ]
-checked_at = "8a99d70d"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2549,7 +2549,7 @@ labels = [
   { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
   { text = "Run the calculation", where = "templates/accounting/period_detail.html" },
 ]
-checked_at = "953a3149"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/help/getting_started.html"
@@ -2627,7 +2627,7 @@ labels = [
   { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
   { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "a5905879"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/help/water_balances.html"
@@ -2669,7 +2669,7 @@ files = [
   "parcels/views.py",
 ]
 labels = []
-checked_at = "4c41acdf"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/help/water_balances.html"
@@ -2703,7 +2703,7 @@ files = [
   "templates/accounting/partials/_dashboard_content.html",
 ]
 labels = []
-checked_at = "953a3149"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/help/methods.html"
@@ -2727,7 +2727,7 @@ files = [
   "templates/accounting/partials/_crop_et_segment.html",
 ]
 labels = []
-checked_at = "51f86ba0"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/help/methods.html"
@@ -2789,7 +2789,7 @@ labels = [
   { text = "Soil storage (in)", where = "templates/accounting/partials/_methodology_steps.html" },
   { text = "Floor (AF)", where = "templates/accounting/partials/_methodology_steps.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/help/settings_explained.html"
@@ -2821,7 +2821,7 @@ labels = [
   { text = "Which months does a reporting year cover?", where = "core/forms.py" },
   { text = "Where your record addresses are published", where = "core/forms.py" },
 ]
-checked_at = "953a3149"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/help/settings_explained.html"
@@ -2833,7 +2833,7 @@ files = [
   "accounting/views/settings_pages.py",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/help/settings_explained.html"
@@ -2961,7 +2961,7 @@ labels = [
   { text = "Monitoring Stations", where = "core/modules.py" },
   { text = "Site Health", where = "core/modules.py" },
 ]
-checked_at = "8a99d70d"
+checked_at = "6419a322"
 
 [[section]]
 document = "templates/help/glossary.html"
