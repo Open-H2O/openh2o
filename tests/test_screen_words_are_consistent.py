@@ -96,6 +96,11 @@ FIELD_WORD_KEPT: dict = {
     "datasync/adapters/openet_fields.py": 1,
     "datasync/crop_et.py": 1,
     "datasync/models.py": 13,
+    # The month page's list of the OpenET fields a crop ET figure came from, and the use
+    # area page's acres in OpenET fields, its explainer and its no-field sentence
+    # (153.2-02, ruling 168). Measured 2026-11-14.
+    "templates/accounting/partials/_crop_et_segment.html": 2,
+    "templates/parcels/partials/_detail_pane.html": 6,
 }
 
 #: Titles that start "New " or "Create " and are not a new record, one reason

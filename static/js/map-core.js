@@ -35,7 +35,10 @@ OH2O.colors = {
     // against the muted translucent green GSA zone fills.
     river: '#45d0e8', canal: '#7ee8a0',
     // Dark casing drawn beneath the mint canal so it lifts off green farm fields.
-    hydroCasing: '#06140e'
+    hydroCasing: '#06140e',
+    // OpenET's field outlines: a dashed line in the primary text colour, so it reads over the
+    // aerial and the dark basemap and never as one of the site's own entities.
+    openet: '#E7EEF2'
 };
 
 OH2O.FONT = ['Noto Sans Regular'];
@@ -352,7 +355,8 @@ OH2O.mountBasemapToggle = function (map, mode) {
     var host = map.getContainer();
     if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
     var bar = document.createElement('div');
-    bar.style.cssText = 'position:absolute;top:10px;left:10px;z-index:5;';
+    // A flex row, so a second group (OH2O.mountOpenETFieldsToggle) sits beside this one.
+    bar.style.cssText = 'position:absolute;top:10px;left:10px;z-index:5;display:flex;gap:8px;';
     var group = document.createElement('div');
     group.className = 'tb-group';
     var bDark = document.createElement('button');
@@ -370,6 +374,65 @@ OH2O.mountBasemapToggle = function (map, mode) {
         OH2O.switchBasemap(map, 'aerial'); bAerial.classList.add('active'); bDark.classList.remove('active');
     });
     return bar;
+};
+
+/* ── OpenET's fields on a detail map, off until a person ticks the box ──
+   Ruling 166: the outlines show only when asked for, and OpenET is named on the map
+   whenever they show. Adds a second group to the map's Dark/Aerial bar holding one
+   checkbox ("OpenET fields", with a dashed swatch), a dashed line layer, and a credit
+   chip at the map's bottom-left. The box is unticked on every call: nothing is
+   remembered between pages or panes. Called again on the same map (a pane swapped in
+   place), it takes the new outlines, or hides the group when there are none. No fill
+   (it would hide the use area's own fill and label) and no label per field. */
+OH2O.mountOpenETFieldsToggle = function (map, fc) {
+    var has = !!(fc && fc.features && fc.features.length);
+    var state = map.__openetFields;
+    if (!state) {
+        if (!has) return null;
+        var host = map.getContainer();
+        var first = host.querySelector('.tb-group');
+        if (!first) return null;
+        var bar = first.parentElement;
+        var group = document.createElement('div');
+        group.className = 'tb-group';
+        var label = document.createElement('label');
+        label.className = 'tb-btn layer-toggle';
+        var box = document.createElement('input');
+        box.type = 'checkbox';
+        box.checked = false;
+        var swatch = document.createElement('span');
+        swatch.className = 'layer-swatch-dashed';
+        swatch.style.borderTopColor = OH2O.colors.openet;
+        var name = document.createElement('span');
+        name.textContent = 'OpenET fields';
+        label.appendChild(box); label.appendChild(swatch); label.appendChild(name);
+        group.appendChild(label);
+        bar.appendChild(group);
+        var credit = document.createElement('div');
+        credit.className = 'map-credit-chip';
+        credit.textContent = 'OpenET field outlines';
+        host.appendChild(credit);
+        map.addSource('openet-fields', { type: 'geojson', data: fc });
+        map.addLayer({
+            id: 'openet-fields-outline', type: 'line', source: 'openet-fields',
+            layout: { visibility: 'none' },
+            paint: { 'line-color': OH2O.colors.openet, 'line-width': 2, 'line-dasharray': [2, 1.5] }
+        }, map.getLayer('parcel-label') ? 'parcel-label' : undefined);
+        state = map.__openetFields = {
+            group: group,
+            set: function (on) {
+                box.checked = on;
+                map.setLayoutProperty('openet-fields-outline', 'visibility', on ? 'visible' : 'none');
+                credit.hidden = !on;
+            }
+        };
+        box.addEventListener('change', function () { state.set(box.checked); });
+    } else if (has) {
+        map.getSource('openet-fields').setData(fc);
+    }
+    state.group.hidden = !has;
+    state.set(false);
+    return state.group;
 };
 
 /* ── Frame a map on the agency boundary ───────────────────────────

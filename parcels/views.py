@@ -350,6 +350,7 @@ def _parcel_detail_context(parcel, period_id=None, can_write=True):
         # Pass the Python object (or None); the template escapes it via
         # json_script so operator free-text can't break out of <script>.
         "geojson": geojson,
+        **_openet_context(parcel),
     }
     return context
 
@@ -609,6 +610,53 @@ def _recent_ledger(parcel: Parcel, balance_period: ReportingPeriod | None) -> An
         recent_ledger = recent_ledger.filter(reporting_period=balance_period)
     recent_ledger = recent_ledger.order_by("-effective_date", "-created_at")[:10]
     return recent_ledger
+
+
+#: How far past the use area's own box the map's OpenET fields reach, as a share of its width
+#: and height: the drawing showed the use area's own fields and the neighbouring ones in frame.
+OPENET_FRAME_MARGIN = 0.25
+
+
+def _openet_context(parcel: Parcel) -> dict[str, Any]:
+    """What the page says about OpenET's fields on this use area.
+
+    ``openet_acres``: the acres of OpenET fields inside the use area (its overlaps, added),
+    or None when it has none. ``openet_no_field``: True when the site keeps OpenET's fields
+    and none is on record for this use area. ``openet_outlines``: the outlines of the OpenET
+    fields that reach into the use area's box, widened by a quarter each way, for the map's
+    layer; None when no outline is stored there.
+    """
+    found: dict[str, Any] = {"openet_acres": None, "openet_no_field": False, "openet_outlines": None}
+    if not is_enabled("datasync"):
+        return found
+    from django.contrib.gis.geos import Polygon
+    from django.db.models import Sum
+
+    from datasync.models import OpenETField, OpenETFieldShare
+
+    total = OpenETFieldShare.objects.filter(parcel=parcel).aggregate(acres=Sum("overlap_acres"))["acres"]
+    if total is None:
+        found["openet_no_field"] = True
+    else:
+        found["openet_acres"] = total
+    if parcel.geometry is None or parcel.voided_at is not None:
+        return found
+    minx, miny, maxx, maxy = parcel.geometry.extent
+    dx, dy = (maxx - minx) * OPENET_FRAME_MARGIN, (maxy - miny) * OPENET_FRAME_MARGIN
+    frame = Polygon.from_bbox((minx - dx, miny - dy, maxx + dx, maxy + dy))
+    frame.srid = 4326
+    fields = OpenETField.objects.filter(geometry__isnull=False, geometry__intersects=frame).order_by("field_id")
+    features = [
+        {
+            "type": "Feature",
+            "properties": {"field_id": field.field_id},
+            "geometry": json.loads(field.geometry.geojson),
+        }
+        for field in fields
+    ]
+    if features:
+        found["openet_outlines"] = {"type": "FeatureCollection", "features": features}
+    return found
 
 
 def _parcel_geojson(parcel: Parcel) -> dict[str, Any] | None:

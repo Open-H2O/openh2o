@@ -198,6 +198,8 @@
     --color-entity-river: #45d0e8;     /* Natural channels */
     --color-entity-canal: #7ee8a0;     /* Man-made canals */
     --color-entity-hydro-casing: #06140e;  /* Dark casing under the canal */
+    /* OpenET's field outlines (a dashed line), the primary text colour. */
+    --color-entity-openet: #E7EEF2;
 
     /* -- Border radius --------------------------------------------------- */
     /* Squared, chosen after comparing three scales

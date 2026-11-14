@@ -142,6 +142,33 @@
     content:'\2713'; position:absolute; top:-2px; left:2px;
     font-size:12px; color:var(--color-base, #040608); font-weight:bold;
 }
+/* A layer checkbox inside a map's toolbar bar (OH2O.mountOpenETFieldsToggle): the bar's
+   button size, not the layer panel's row. */
+.tb-group > .tb-btn.layer-toggle {
+    margin: 0;
+    padding: 9px 15px;
+    border-radius: 0;
+    font-size: 12px;
+    gap: 8px;
+}
+/* A dashed-line swatch; the script sets its colour from OH2O.colors. */
+.layer-swatch-dashed {
+    display: inline-block;
+    width: 16px;
+    border-top: 2px dashed currentColor;
+}
+/* Names a layer's source on the map while the layer shows (bottom-left). */
+.map-credit-chip {
+    position: absolute; left: 10px; bottom: 10px; z-index: 5;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    background: color-mix(in oklch, var(--color-card) 88%, transparent);
+    border: 1px solid var(--color-border-hover);
+    border-radius: var(--radius-sm);
+}
+.map-credit-chip[hidden] { display: none; }
+.tb-group[hidden] { display: none; }
 /* Feature-count badge */
 .layer-count {
     font-family:var(--font-mono, monospace); font-size:10px; font-weight:600;

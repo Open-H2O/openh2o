@@ -64,6 +64,9 @@
             <div class="budget-seg-label">Crop ET</div>
             <div class="budget-seg-value">{{ water_use.totals.et|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
             <p class="statement-lead-note">{{ parcel.area_acres|floatformat:2|intcomma }} acres</p>
+            {% if openet_acres is not None %}
+            <p class="statement-lead-note">{{ openet_acres|floatformat:2|intcomma }} acres in OpenET fields{% include "partials/_explainer_popout.html" with title="OpenET fields" text="OpenET sends crop ET and gridMET rainfall for each OpenET field. OpenH2O counts both on the acres of each OpenET field that lie inside this use area. OpenH2O does not count crop ET or rainfall on acres outside the OpenET fields." link=methods_help_url link_label="Methods behind the numbers" %}</p>
+            {% endif %}
           </div>
           {% if 'surface' in enabled_modules %}
           <div>
@@ -176,7 +179,7 @@
         </div>
         {% else %}
         <div class="alert-warning">
-          OpenH2O has not calculated crop ET for this use area in this water year. Recorded supplies:
+          OpenH2O has not calculated crop ET for this use area in this water year.{% if openet_no_field %} No OpenET field is on record for this use area.{% endif %} Recorded supplies:
           <span class="text-supply">surface {{ consumptive_balance.supplies.surface|floatformat:2 }}</span> &middot;
           <span class="text-supply">groundwater {{ consumptive_balance.supplies.groundwater|floatformat:2 }}</span> AF.
         </div>
@@ -391,6 +394,7 @@
   this page has no map host (e.g. a parcel with no geometry hides the card).
 {% endcomment %}
 {{ geojson|json_script:"parcel-geojson-data" }}
+{% if openet_outlines %}{{ openet_outlines|json_script:"openet-fields-data" }}{% endif %}
 <script>
 (function () {
   function boot() {
@@ -405,6 +409,12 @@
     card.style.display = '';
 
     var geojson = JSON.parse(dataEl.textContent);
+    // The OpenET fields in frame, read afresh on every render so a swapped pane
+    // brings its own (or none).
+    function openetFields() {
+      var el = document.getElementById('openet-fields-data');
+      return el ? JSON.parse(el.textContent) : null;
+    }
 
     function frame() {
       return { padding: 32, maxZoom: 16, duration: 0 };
@@ -432,6 +442,7 @@
     if (map && map.__oh2oReady) {
       // UPDATE the existing map in place — no rebuild, no flash.
       map.getSource('parcel').setData(geojson);
+      OH2O.mountOpenETFieldsToggle(map, openetFields());
       map.resize();  // card may have been display:none (zeroes the canvas)
       window._parcelPaneBounds = bounds;
       if (bounds) map.fitBounds(bounds, frame());
@@ -472,6 +483,8 @@
         paint: { 'line-color': OH2O.colors.blue, 'line-width': 2 }
       });
       OH2O.addDetailLabel(map, 'parcel', 'parcel', { id: 'parcel-label', anchor: 'center', offset: [0, 0] });
+      // OpenET's fields, off until the person ticks the box (ruling 166).
+      OH2O.mountOpenETFieldsToggle(map, openetFields());
       OH2O.attachPopup(map, 'parcel-fill', function (p) {
         return '<strong>' + (p.parcel_number || 'Parcel') + '</strong><br>' +
                'Owner: ' + (p.owner_name || '—');
