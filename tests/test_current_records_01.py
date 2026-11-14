@@ -628,6 +628,8 @@ ALLOWED_READS = {
         "parcel numbers for use areas already chosen: display of ids, not a figure",
     ("datasync/management/commands/load_openet_fixture.py", "handle"):
         "pairs the frozen satellite ET file to use areas by number; the file is a cache of a public source, not a figure",
+    ("datasync/management/commands/load_openet_fields_fixture.py", "handle"):
+        "pairs the demonstration's OpenET field file to use areas by number; the file holds a public source's figures, not a calculation",
     ("datasync/management/commands/prove_gee_auth.py", "_select_parcels"):
         "picks sample use areas to prove the satellite ET login works; no figure is written",
     ("datasync/management/commands/sync_openet_parcels.py", "handle"):

@@ -23,7 +23,6 @@ from datasync.models import OpenETCache
 from parcels.models import Parcel
 from tests.factories import ParcelFactory
 
-FIXTURE_PATH = "data/merced/openet_cache.json"
 
 
 def _cache_row(parcel, variable="ET", model_name="Ensemble", et_mm=100.0):
@@ -168,59 +167,3 @@ def test_loading_twice_creates_nothing_the_second_time(seeded_cache, tmp_path):
 
     call_command("load_openet_fixture", fixture=str(out))
     assert OpenETCache.objects.count() == after_first
-
-
-def test_committed_fixture_is_internally_consistent():
-    """Read the real committed file — a lost variable breaks the arithmetic.
-
-    Asserting only "not empty" would pass a fixture that had silently lost 90%
-    of itself, which is the failure this whole plan exists to make impossible.
-    """
-    payload = json.loads(open(FIXTURE_PATH).read())
-    meta, rows = payload["meta"], payload["rows"]
-
-    assert meta["row_count"] == len(rows)
-    assert meta["parcel_count"] == len({row["parcel_number"] for row in rows})
-    assert sorted(meta["variables"]) == sorted({row["variable"] for row in rows})
-    assert meta["row_count"] == (
-        meta["parcel_count"] * len(meta["variables"]) * len(meta["windows"])
-    )
-
-    # No stamp of any kind may appear, or every regeneration reads as a change.
-    raw = open(FIXTURE_PATH).read()
-    for banned in ("generated_at", "timestamp", "hostname", "git_hash"):
-        assert banned not in raw
-
-
-def test_committed_fixture_carries_two_adjacent_non_overlapping_windows():
-    """The property the whole two-water-year demonstration rests on.
-
-    ``_read_cache_mm`` selects a cache row by ``start_date <= period_first <=
-    end_date``, so two windows that TOUCH resolve cleanly to one row each, and
-    two that OVERLAP put the same parcel-month in two rows — the doubling
-    ``health/checks.py::check_cache_duplication`` exists to catch (F-math-08).
-    Adjacency is therefore not cosmetic: it is what lets the open water year
-    coexist with the closed one instead of corrupting it.
-
-    Asserted against the COMMITTED file rather than a hand-built one, because a
-    hand-built pair would only prove the test author can write adjacent dates.
-    """
-    payload = json.loads(open(FIXTURE_PATH).read())
-    windows = sorted(
-        (dt.date.fromisoformat(start), dt.date.fromisoformat(end))
-        for start, end in payload["meta"]["windows"]
-    )
-
-    assert len(windows) == 2, f"expected two windows, found {len(windows)}"
-
-    (first_start, first_end), (second_start, second_end) = windows
-    # Adjacent: the second window opens the day after the first one closes.
-    assert second_start == first_end + dt.timedelta(days=1)
-    # Non-overlapping, stated as check_cache_duplication itself states it.
-    assert not (first_start <= second_end and second_start <= first_end)
-
-    # And every row belongs to one of the two declared windows — a row outside
-    # them would be invisible to meta and to anything reading meta.
-    declared = {tuple(window) for window in payload["meta"]["windows"]}
-    for row in payload["rows"]:
-        assert (row["start_date"], row["end_date"]) in declared

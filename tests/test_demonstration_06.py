@@ -129,7 +129,7 @@ EXPECTED_STEPS = [
     "seed_merced",
     "load_station_fixture",
     "load_reading_fixture",
-    "load_openet_fixture",
+    "load_openet_fields_fixture",
     "seed_calculation_plan",
     "refresh_merced_accounting",
     "seed_merced_measurements",

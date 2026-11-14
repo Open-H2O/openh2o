@@ -89,7 +89,7 @@ STEPS = [
     ("seed_merced", ["--skip-auto-populate", "--allow-prod-clobber"]),
     ("load_station_fixture", ["--fixture", str(_DATA / "merced" / "stations.json")]),
     ("load_reading_fixture", ["--fixture", str(_DATA / "merced" / "readings.json")]),
-    ("load_openet_fixture", ["--fixture", str(_DATA / "merced" / "openet_cache.json")]),
+    ("load_openet_fields_fixture", ["--fixture", str(_DATA / "merced" / "openet_fields.json")]),
     ("seed_calculation_plan", []),
     # Both water years in one invocation: the command rebuilds the ledger on
     # each run, so a second invocation would wipe the first year's rows.

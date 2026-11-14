@@ -1,24 +1,24 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Where the demonstration's crop ET and rainfall come from, and when they arrived.
+"""Where the demonstration's crop ET and rain come from, and when they arrived.
 
-The demonstration's figures are labelled OpenET and gridMET on every page that
-shows them, so every figure in ``data/merced/openet_cache.json`` must be one
-those services sent. These tests hold four things:
+The demonstration's figures are labelled OpenET on every page that shows them, so every
+figure in ``data/merced/openet_fields.json`` must be one OpenET's field list sent. These
+tests hold four things:
 
-* every row of the committed file names its source and the day it was received;
-* no water year in it is derived from the other (a copy, a multiple, or the same
-  shape bent the same way across fields), and the command that derived one is
-  gone;
-* the dump writes the received day and the source, and refuses a row that does
-  not carry a received day rather than inventing one;
-* the load gives each item, and so each recorded crop ET month, that day, and
-  every writer of these rows marks how it came to exist.
+* the committed file names its source, carries no outline, and every field and month row
+  carries the day it was received, after the month ended;
+* every use area takes its crop ET and rain from at least one OpenET field, and every such
+  field has crop ET and rain for all 24 months, figures as OpenET's field list sent them;
+* no water year in it is derived from the other (a copy, a multiple, or the same shape bent
+  the same way across fields), and the command that derived one is gone;
+* the older routes' dump and load still write and keep the received day and the source.
 """
 
 import datetime as dt
 import importlib.util
 import json
 from collections import defaultdict
+from decimal import Decimal
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -30,14 +30,19 @@ from django.utils import timezone
 
 from datasync.models import CropETFigure, OpenETCache
 
-FIXTURE = Path("data/merced/openet_cache.json")
-SOURCE_OF_MODEL = {"Ensemble": "OpenET", "GRIDMET": "gridMET"}
-VALUE_KEY = {"ET": "et", "precip": "precip"}
+FIXTURE = Path("data/merced/openet_fields.json")
+OLD_FIXTURE = Path("data/merced/openet_cache.json")
+#: The day OpenET's field list answered the demonstration's figures request (Pacific).
+FIELD_LIST_RECEIVED = "2026-11-14"
 RECEIVED = dt.date(2026, 11, 12)
 
+DEMONSTRATION_MONTHS = [
+    f"{2024 + (month + 9) // 12}-{(month + 9) % 12 + 1:02d}" for month in range(24)
+]
 
-def _committed_rows():
-    return json.loads(FIXTURE.read_text())["rows"]
+
+def _committed():
+    return json.loads(FIXTURE.read_text())
 
 
 def _month_end(month):
@@ -49,36 +54,80 @@ def _month_end(month):
 # -- The committed file --------------------------------------------------------------------
 
 
-def test_every_committed_row_names_its_source_and_the_day_it_was_received():
-    rows = _committed_rows()
-    assert rows
-    missing = [
-        (row["parcel_number"], row["variable"], row["start_date"])
-        for row in rows
-        if "received" not in row or "source" not in row
+def test_the_earth_engine_file_is_gone():
+    """The demonstration no longer loads Earth Engine's figures; git history keeps the file."""
+    assert not OLD_FIXTURE.exists()
+
+
+def test_the_file_names_openets_field_list_and_carries_no_outline():
+    payload = _committed()
+    assert payload["meta"]["source"] == "OpenET's field list (https://etdata.org)"
+    assert payload["meta"]["received"] == FIELD_LIST_RECEIVED
+    raw = FIXTURE.read_text()
+    for outline_word in ("coordinates", "Polygon", "geometry"):
+        assert outline_word not in raw
+    # No stamp of any kind, or every regeneration reads as a change.
+    for banned in ("generated_at", "timestamp", "hostname", "git_hash"):
+        assert banned not in raw
+
+
+def test_every_row_carries_the_day_it_was_received_after_its_month_ended():
+    payload = _committed()
+    assert all(row["received_on"] == FIELD_LIST_RECEIVED for row in payload["fields"])
+    late = [
+        (row["field_id"], row["month"])
+        for row in payload["months"]
+        if dt.date.fromisoformat(row["received_on"]) <= _month_end(row["month"][:7])
     ]
-    assert missing == [], f"{len(missing)} rows carry no received day or source, first {missing[:3]}"
-
-    for row in rows:
-        assert row["source"] == SOURCE_OF_MODEL[row["model_name"]], row["parcel_number"]
-        received = dt.date.fromisoformat(row["received"])
-        last_month = max(item["date"] for item in row["et_data"])
-        # A figure cannot arrive before the month it describes has ended.
-        assert received > _month_end(last_month), (row["parcel_number"], row["variable"], last_month)
-        # One day per row, stated once: no item carries a day of its own.
-        assert all("fetched" not in item for item in row["et_data"])
+    assert late == []
 
 
-def _monthly(variable):
-    """``{use area: {"YYYY-MM": value}}`` for one variable of the committed file."""
-    key = VALUE_KEY[variable]
+def test_the_counts_the_file_states_are_the_rows_it_holds():
+    payload = _committed()
+    meta = payload["meta"]
+    assert meta["field_count"] == len(payload["fields"]) == 78
+    assert meta["share_count"] == len(payload["shares"]) == 84
+    assert meta["month_count"] == len(payload["months"]) == 78 * 24
+
+
+def test_every_use_area_takes_its_figures_from_at_least_one_openet_field():
+    payload = _committed()
+    areas = {row["parcel_number"] for row in payload["shares"]}
+    assert len(areas) == 76
+    listed = {row["field_id"] for row in payload["fields"]}
+    assert {row["field_id"] for row in payload["shares"]} == listed
+    assert all(Decimal(row["overlap_acres"]) > 0 for row in payload["shares"])
+
+
+def test_every_field_has_crop_et_and_rain_for_all_24_months():
+    payload = _committed()
+    have = defaultdict(set)
+    for row in payload["months"]:
+        if row["et_mm"] is not None and row["pr_mm"] is not None:
+            have[row["field_id"]].add(row["month"][:7])
+    absent = [
+        (row["field_id"], month)
+        for row in payload["fields"]
+        for month in DEMONSTRATION_MONTHS
+        if month not in have[row["field_id"]]
+    ]
+    assert absent == [], f"{len(absent)} field-months have no figure, first {absent[:5]}"
+
+
+def test_figures_are_as_openets_field_list_sent_them():
+    """Three of OpenET's answers, character for character (mm)."""
+    months = {(row["field_id"], row["month"][:7]): row for row in _committed()["months"]}
+    assert months[(21106403648, "2025-12")]["et_mm"] == "25.967"
+    assert months[(21106403648, "2025-12")]["pr_mm"] == "48.359"
+    assert months[(21106398638, "2025-12")]["et_mm"] == "22.408285714285714"
+
+
+def _monthly(key):
+    """``{field: {"YYYY-MM": value}}`` for crop ET ("et_mm") or rain ("pr_mm")."""
     values = defaultdict(dict)
-    for row in _committed_rows():
-        if row["variable"] != variable:
-            continue
-        for item in row["et_data"]:
-            if item.get(key) is not None:
-                values[row["parcel_number"]][item["date"]] = float(item[key])
+    for row in _committed()["months"]:
+        if row[key] is not None:
+            values[row["field_id"]][row["month"][:7]] = float(row[key])
     return values
 
 
@@ -94,39 +143,39 @@ def _open_to_closed(months):
     return ratios
 
 
-@pytest.mark.parametrize("variable", ["ET", "precip"])
-def test_no_open_year_month_is_a_copy_of_the_closed_year(variable):
+@pytest.mark.parametrize("key", ["et_mm", "pr_mm"])
+def test_no_open_year_month_is_a_copy_of_the_closed_year(key):
     copies = []
-    for area, months in _monthly(variable).items():
+    for field, months in _monthly(key).items():
         for month, value in months.items():
             if month < "2025-10" or not value:
                 continue
             prior = months.get(f"{int(month[:4]) - 1}-{month[5:]}")
             if prior is not None and abs(value - prior) <= 1e-6:
-                copies.append((area, month))
+                copies.append((field, month))
     assert copies == [], f"{len(copies)} open-year months copy the closed year, first {copies[:5]}"
 
 
-@pytest.mark.parametrize("variable", ["ET", "precip"])
-def test_no_open_year_is_a_multiple_of_the_closed_year(variable):
+@pytest.mark.parametrize("key", ["et_mm", "pr_mm"])
+def test_no_open_year_is_a_multiple_of_the_closed_year(key):
     scaled = []
-    for area, months in _monthly(variable).items():
+    for field, months in _monthly(key).items():
         ratios = list(_open_to_closed(months).values())
         if len(ratios) > 1 and max(ratios) - min(ratios) <= 1e-6:
-            scaled.append(area)
-    assert scaled == [], f"{len(scaled)} use areas' open year is a multiple of the closed year: {scaled[:5]}"
+            scaled.append(field)
+    assert scaled == [], f"{len(scaled)} fields' open year is a multiple of the closed year: {scaled[:5]}"
 
 
-@pytest.mark.parametrize("variable", ["ET", "precip"])
-def test_no_two_use_areas_share_one_open_year_shape(variable):
+@pytest.mark.parametrize("key", ["et_mm", "pr_mm"])
+def test_no_two_fields_share_one_open_year_shape(key):
     """Fields with different closed years cannot bend into the same open year.
 
-    gridMET's grid gives neighbouring fields the same rainfall, so fields whose
-    closed years are identical are left out of the comparison: only a shape that
-    repeats across DIFFERENT closed years is the mark of a rule applied to them.
+    gridMET's grid gives neighbouring fields the same rainfall, so fields whose closed
+    years are identical are left out of the comparison: only a shape that repeats across
+    DIFFERENT closed years is the mark of a rule applied to them.
     """
     shapes = defaultdict(dict)
-    for months in _monthly(variable).values():
+    for months in _monthly(key).values():
         ratios = _open_to_closed(months)
         if len(ratios) < 2:
             continue
@@ -135,72 +184,59 @@ def test_no_two_use_areas_share_one_open_year_shape(variable):
         shape = tuple(round(ratios[m] / mean, 6) for m in sorted(ratios))
         shapes[tuple(sorted(ratios))][closed] = shape
     repeats = sum(len(group) - len(set(group.values())) for group in shapes.values())
-    assert repeats == 0, f"{repeats} use areas share an open-year shape with a different field"
-
-
-DEMONSTRATION_MONTHS = [
-    f"{2024 + (month + 9) // 12}-{(month + 9) % 12 + 1:02d}" for month in range(24)
-]
-
-
-def test_every_use_area_has_crop_et_for_all_24_months():
-    """October 2024 to September 2026, every month of every use area.
-
-    Earth Engine's record had no crop ET for 61 use areas in December 2025 and 46
-    in January 2026 (cloud). OpenET's own service sends a figure for those months
-    (ruling 146), so no month of the demonstration is without one.
-    """
-    monthly = _monthly("ET")
-    assert len(monthly) == 76
-    absent = [
-        (area, month)
-        for area, months in sorted(monthly.items())
-        for month in DEMONSTRATION_MONTHS
-        if month not in months
-    ]
-    assert absent == [], f"{len(absent)} use-area months have no crop ET, first {absent[:5]}"
-
-
-def test_the_cloud_months_are_openets_received_nov_12_2026_in_the_years_own_row():
-    """Each use area's December 2025 and January 2026 crop ET sits in its one row for
-    WY 2025-26, which names OpenET and the day it was received.
-
-    One row per use area and water year: a second row over the same months would
-    read on Site Health as two OpenET estimates for one month.
-    """
-    found = defaultdict(list)
-    for row in _committed_rows():
-        if row["variable"] != "ET":
-            continue
-        for item in row["et_data"]:
-            if item["date"] in ("2025-12", "2026-01") and item.get("et") is not None:
-                found[(row["parcel_number"], item["date"])].append(
-                    (row["start_date"], row["end_date"], row["source"], row["received"], item["unit"])
-                )
-    areas = {row["parcel_number"] for row in _committed_rows()}
-    expected = {(area, month) for area in areas for month in ("2025-12", "2026-01")}
-    assert set(found) == expected, f"{len(expected - set(found))} cloud months have no figure"
-    wrong = {
-        key: places
-        for key, places in found.items()
-        if places != [("2025-10-01", "2026-09-30", "OpenET", "2026-11-12", "mm")]
-    }
-    assert wrong == {}, f"{len(wrong)} cloud months sit elsewhere, first {list(wrong.items())[:3]}"
-
-
-def test_the_cloud_months_are_the_figures_openets_service_sent():
-    """Two fields, as OpenET's service answered them on 2026-11-12 (mm, three decimals)."""
-    monthly = _monthly("ET")
-    assert monthly["MER-APN-001"]["2025-12"] == 37.142
-    assert monthly["MER-APN-001"]["2026-01"] == 35.834
-    assert monthly["MER-APN-003"]["2025-12"] == 27.803
-    assert monthly["MER-APN-003"]["2026-01"] == 40.467
+    assert repeats == 0, f"{repeats} fields share an open-year shape with a different field"
 
 
 def test_the_command_that_derived_a_year_is_gone():
     name = "synthesize_dry_year"
     assert importlib.util.find_spec(f"datasync.management.commands.{name}") is None
     assert name not in get_commands()
+
+
+def test_the_load_records_each_use_areas_months_on_the_day_received(db, tmp_path):
+    """A made-up use area and a made-up field (99000000021): the loader records the months."""
+    from parcels.models import Parcel
+
+    Parcel.objects.create(
+        parcel_number="MADEUP-PROV-LOAD",
+        geometry=MultiPolygon(Polygon.from_bbox((-120.5, 37.2, -120.4, 37.3)), srid=4326),
+        area_acres=10,
+        status="active",
+    )
+    made_up = {
+        "meta": {"source": "made up for this test"},
+        "fields": [{"field_id": 99000000021, "area_acres": "10.00", "received_on": "2025-12-01"}],
+        "shares": [{"parcel_number": "MADEUP-PROV-LOAD", "field_id": 99000000021, "overlap_acres": "10.00"}],
+        "months": [{"field_id": 99000000021, "month": "2025-10", "et_mm": "30.48", "pr_mm": "1.0",
+                    "received_on": "2025-12-01"}],
+    }
+    path = tmp_path / "made_up_fields.json"
+    path.write_text(json.dumps(made_up))
+    call_command("load_openet_fields_fixture", "--fixture", str(path), stdout=None)
+    (figure,) = CropETFigure.objects.filter(parcel__parcel_number="MADEUP-PROV-LOAD")
+    assert figure.month == dt.date(2025, 10, 1)
+    assert figure.depth_mm == Decimal("30.48")
+    assert figure.fetched_on == dt.date(2025, 12, 1)
+
+
+@pytest.mark.parametrize("broken", ["no_day", "early", "unknown_area"])
+def test_the_fields_load_refuses_a_row_it_cannot_prove_and_writes_nothing(db, tmp_path, broken):
+    from datasync.models import OpenETField
+    from parcels.models import Parcel
+
+    Parcel.objects.create(parcel_number="MADEUP-PROV-HERE", area_acres=10, status="active")
+    area = "MADEUP-NOT-HERE" if broken == "unknown_area" else "MADEUP-PROV-HERE"
+    made_up = {
+        "fields": [{"field_id": 99000000022, "area_acres": "10.00", "received_on": "2025-12-01"}],
+        "shares": [{"parcel_number": area, "field_id": 99000000022, "overlap_acres": "1.00"}],
+        "months": [{"field_id": 99000000022, "month": "2025-10", "et_mm": "1", "pr_mm": "1",
+                    "received_on": {"no_day": None, "early": "2025-10-15", "unknown_area": "2025-12-01"}[broken]}],
+    }
+    path = tmp_path / "made_up_fields.json"
+    path.write_text(json.dumps(made_up))
+    with pytest.raises(CommandError):
+        call_command("load_openet_fields_fixture", "--fixture", str(path))
+    assert not OpenETField.objects.exists()
 
 
 # -- The dump --------------------------------------------------------------------------------

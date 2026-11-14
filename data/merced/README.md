@@ -195,76 +195,52 @@ Load it (the data sources must exist first — `seed_data` creates them):
 python manage.py load_station_fixture
 ```
 
-## The frozen OpenET cache (`openet_cache.json`)
+## OpenET's field list (`openet_fields.json`)
 
 | | |
 |---|---|
-| **What** | The crop evapotranspiration OpenET sent for each demonstration field (its ensemble value and spread), and the rainfall gridMET sent, behind the demonstration's water accounting |
-| **Measured** | 760 rows = 76 parcels × 5 variables × 2 windows (WY 2024-25, `2024-10-01` → `2025-09-30`; WY 2025-26, `2025-10-01` → `2026-09-30`) |
-| **Variables** | `ET`, `et_mad_max`, `et_mad_min`, `model_count` (source OpenET); `precip` (source gridMET) |
-| **Received** | 2026-11-12, through Google Earth Engine (OpenET's monthly ensemble, gridMET daily rainfall summed by month), and for the 107 cloud-covered field-months below, from OpenET's own service the same day; each row's `received` and `source` say so |
-| **Size** | 969,992 bytes (947 kB) on disk |
-| **Used by** | `load_openet_fixture`, and therefore `scripts/rebuild-golden.sh` |
+| **What** | The OpenET fields that overlap the demonstration's 76 use areas: each field's number and acres, each use area's acres inside each field, and each field's monthly crop ET and rain as OpenET's field list sent them |
+| **Measured** | 78 fields, 84 overlaps, 1,872 field-months (78 fields × 24 months, October 2024 to September 2026) |
+| **Figures** | Crop ET is OpenET's ensemble; rain is gridMET's, as OpenET's field list sends it. Both in millimetres, exactly as sent |
+| **Received** | 2026-11-14 (Pacific), from OpenET's field list (https://etdata.org) |
+| **Used by** | `load_openet_fields_fixture`, and therefore `scripts/rebuild-golden.sh` |
 
-**Every field-month has crop ET, each a figure OpenET sent; nothing is filled in
-here.** Through Earth Engine, OpenET has no figure for 61 of the 76 fields in
-December 2025 and 46 in January 2026 (every band of those months' images is blank
-over those fields: cloud). OpenET's own service
-(`https://openet-api.org/raster/timeseries/polygon`, monthly Ensemble ET, gridMET
-reference, mm, the field's mean) does send a figure for those 107 field-months.
-They were requested on 2026-11-12 between 16:02 and 16:34 Pacific, one request per
-field for November 2025 to February 2026, and only the months the Earth Engine
-record lacks were added, to the field's WY 2025-26 row; November, February and
-the other fields' January keep the Earth Engine figures. OpenET's answer does not
-say which months it filled, but every one of these 107 lies on a straight line
-between the field's November and February, so they are OpenET's interpolation
-across the cloudy months, not a satellite reading. In the 15 fields where the
-satellite did see December, December sits 6 to 12 mm below the midpoint of
-November and January. The file now holds all 1,824 field-months of crop ET.
-Rainfall is present for every month; the ensemble spread rows (`et_mad_min`,
-`et_mad_max`, `model_count`) have no figure for the 107 months.
-OpenET may revise a month for about 120 days after it ends; the figures here
-are the ones it had on the received day.
+OpenH2O asked OpenET's field list for these figures on 2026-11-14 in nine requests.
+Seven asked which OpenET fields lie in the seven rectangles that hold the use areas.
+One asked for the 187 fields' outlines. One asked for the monthly crop ET and rain of
+the 78 fields that overlap a use area.
 
-Without this file a rebuilt demonstration has two bad options: no ET at all —
-and the accounting engine then computes nothing — or spend OpenET quota on a
-fresh request for every rebuild. It is the reason the golden snapshot can become
-a build output rather than a photocopy of a live database.
+**Each use area keeps its own outline.** Its crop use for a month is each overlapping
+field's crop ET over that field's acres inside the use area, added up. Rain is
+figured field by field the same way. Land inside a use area that lies in no OpenET
+field counts no crop use and no rain. In this file, 69 use areas overlap one field,
+6 overlap two and one overlaps three.
 
-Rows are keyed by **`parcel_number`**, never by primary key, for the same
-reason `flowlines.json` uses a natural key: pks differ per deployment.
+**Every field has crop ET and rain for all 24 months.** Nothing is filled in here.
+OpenET may revise a month for about 120 days after it ends; the figures here are the
+ones it had on the received day.
 
-**`geometry` is deliberately absent.** It is `parcel.geometry` — the same
-polygon, already committed in `selected_parcels.geojson` and already loaded by
-the seed. Storing it again would add roughly a megabyte of duplicate
-coordinates whose only possible future is to disagree with the parcel it claims
-to describe. `load_openet_fixture` fills the column from the parcel.
+**The outlines are not in this file.** Each field's acres, and its acres inside each
+use area, were measured from OpenET's outlines in California Albers (EPSG 3310) after
+any crossed edge was repaired. A site that sets up on OpenET's field list keeps the
+outlines in its own database.
 
-**The file carries no time of its own: no generated-at stamp, hostname or git
-hash, on purpose.** Re-running the dump against an unchanged database produces a
-byte-identical file, so `git diff` is an honest answer to "has the cache moved?"
-A generated-at stamp would make every regeneration look like a change and the
-diff would stop meaning anything. The `received` day belongs to the data, so it
-does not move between runs. Reservation rows (`model_name` = `__PENDING__`) and
-ad-hoc `parcel=NULL` geometry queries are excluded — neither is data.
+Rows are keyed by `parcel_number` and OpenET's `field_id`, never by primary key,
+because primary keys differ between sites.
 
-The dump refuses a row whose items carry no received day, or two, and writes
-nothing: it never supplies a day the site did not record. The loader refuses a
-row without `received` and `source` the same way, and gives every recorded crop
-ET month its row's received day.
+**The file carries no time of its own: no generated-at stamp, host name or git hash.**
+The received day belongs to the data. The loader refuses a field or month without a
+received day, a month received before it ended, and a use area this database does
+not have, and writes nothing.
 
-Regenerate it (read-only; needs a database that already holds the cache):
+Load it (the use areas must exist first; `seed_merced` creates them):
 
 ```bash
-python manage.py dump_openet_fixture          # -> data/merced/openet_cache.json
+python manage.py load_openet_fields_fixture
 ```
 
-Load it (the parcels must exist first — `seed_merced` creates them; the loader
-refuses before writing anything if any `parcel_number` is missing):
-
-```bash
-python manage.py load_openet_fixture
-```
+Until 2026-11-14 the demonstration's crop ET and rain came from Earth Engine, in
+`openet_cache.json`; git history keeps that file.
 
 ## Usage
 

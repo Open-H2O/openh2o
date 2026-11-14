@@ -3,7 +3,7 @@
   "notes": [
     "Per-model row counts a rebuilt candidate MUST produce before it may become the golden snapshot.",
     "",
-    "WHY EVERY TOLERANCE IS ZERO. The rebuild makes no network calls and contains no randomness: parcels come from the committed data/merced/selected_parcels.geojson, flowlines from the committed data/merced/flowlines.json, and evapotranspiration from the committed data/merced/openet_cache.json. The same tree therefore has to produce the same numbers every time. A count that moves is not variance -- it is a change somebody made, and this gate's job is to make them say so in writing before it ships. A non-zero tolerance would have to name what varies and why; nothing here qualifies, so nothing here has one.",
+    "WHY EVERY TOLERANCE IS ZERO. The rebuild makes no network calls and contains no randomness: parcels come from the committed data/merced/selected_parcels.geojson, flowlines from the committed data/merced/flowlines.json, and crop ET and rain from the committed data/merced/openet_fields.json. The same tree therefore has to produce the same numbers every time. A count that moves is not variance -- it is a change somebody made, and this gate's job is to make them say so in writing before it ships. A non-zero tolerance would have to name what varies and why; nothing here qualifies, so nothing here has one.",
     "",
     "WHY NOT '> 0'. A check that only asserts not-zero passes a demonstration that quietly lost ninety percent of its rows and still renders every page. That is the precise failure this file exists to catch, so the comparison is equality against a written-down number.",
     "",
@@ -225,29 +225,29 @@
       "reason": "Frozen into data/merced/stations.json and loaded by load_station_fixture, for the same reason data/merced/flowlines.json is frozen: a gate that reddens because an upstream catalogue had a bad afternoon is a gate people learn to ignore. The demonstration's own about page lists these stations under 'Real published records -- USGS and CDEC', beside the river network, so they are demonstration content and not somebody else's registry passing through. 335 total, 42 of them is_active -- and 42 is the number the landing-page hero displays. Tolerance 0 is correct precisely because the count cannot move unless data/merced/stations.json moves. Supersedes the 103-01 reasoning that stations need not be frozen because no later seed step reads MonitoredStation: that judged them by what the build consumes rather than by what the demonstration shows."
     },
     "datasync.OpenETCache": {
-      "expected": 760,
+      "expected": 0,
       "tolerance": 0,
-      "reason": "76 parcels x 5 variables x 2 WINDOWS (WY 2024-25 and WY 2025-26), loaded from the committed data/merced/openet_cache.json by load_openet_fixture. Every row is a figure OpenET (crop ET and its spread) or gridMET (rainfall) sent, received 2026-11-12 through Google Earth Engine, and carries that day and its source (Plan 153-05, rulings 139 and 140). Plan 153-06 added to each WY 2025-26 crop ET row the months Earth Engine had none for (107 use-area months in December 2025 and January 2026), as OpenET's own service sent them the same day (ruling 146); the row count did not move. The row count did not move when 153-05 replaced the second window, which until then was generated from the first. check_cache_duplication reads green with exact_duplicate_groups 0 and overlapping_span_pairs 0. Without these rows the accounting engine has no demand side and every calculation run comes out empty."
+      "reason": "MOVED 760 -> 0 by Plan 153.2-01 (2026-11-14), read off a candidate built by scripts/rebuild-golden.sh from the working tree: the demonstration's crop ET and rain come from OpenET's field list (data/merced/openet_fields.json, load_openet_fields_fixture) and no longer from Earth Engine's rows in data/merced/openet_cache.json, which is deleted (git history keeps it). This table holds the older routes' answers; the demonstration has none. Before that: 760 = 76 parcels x 5 variables x 2 water years, received 2026-11-12 through Google Earth Engine (Plans 153-05, 153-06)."
     },
     "datasync.CropETFigure": {
       "expected": 1824,
       "tolerance": 0,
-      "reason": "MOVED 1717 -> 1824 by Plan 153-06 (2026-11-12), read off a candidate built from the working tree: 76 use areas x 24 months (Oct 2024 to Sep 2026), every one recorded. The 107 months Earth Engine had no figure for (61 in December 2025, 46 in January 2026) carry the figure OpenET's own service sent, received 2026-11-12 (ruling 146); nothing is filled in by OpenH2O. Before that: OpenET's crop ET recorded once per use area and month by load_openet_fixture, at the figure and the day the file says it was received (2026-11-12). MOVED 1824 -> 1717 by Plan 153-05, read off a candidate built from the working tree: 76 use areas x 24 months (Oct 2024 to Sep 2026), less the 107 use-area months OpenET sent no crop ET for (61 in December 2025, 46 in January 2026). Those months have no record and are never filled in (ruling 140)."
+      "reason": "Unchanged at 1824 by Plan 153.2-01 (2026-11-14): every one of the 76 use areas x 24 months is now recorded from its OpenET fields (data/merced/openet_fields.json), each field's crop ET over its acres inside the use area, over the use area's acres, received 2026-11-14. Before that: MOVED 1717 -> 1824 by Plan 153-06 (2026-11-12), read off a candidate built from the working tree: 76 use areas x 24 months (Oct 2024 to Sep 2026), every one recorded. The 107 months Earth Engine had no figure for (61 in December 2025, 46 in January 2026) carry the figure OpenET's own service sent, received 2026-11-12 (ruling 146); nothing is filled in by OpenH2O. Before that: OpenET's crop ET recorded once per use area and month by load_openet_fixture, at the figure and the day the file says it was received (2026-11-12). MOVED 1824 -> 1717 by Plan 153-05, read off a candidate built from the working tree: 76 use areas x 24 months (Oct 2024 to Sep 2026), less the 107 use-area months OpenET sent no crop ET for (61 in December 2025, 46 in January 2026). Those months have no record and are never filled in (ruling 140)."
     },
     "datasync.OpenETField": {
-      "expected": 0,
+      "expected": 78,
       "tolerance": 0,
-      "reason": "OpenET's own fields. Zero until the golden build fills it (Plan 153.2-01): the demonstration carries no outlines."
+      "reason": "MOVED 0 -> 78 by Plan 153.2-01 (2026-11-14): the OpenET fields that overlap the 76 use areas, loaded from data/merced/openet_fields.json (received 2026-11-14 from OpenET's field list). Each carries OpenET's number and its acres; no outline (the demonstration carries none)."
     },
     "datasync.OpenETFieldShare": {
-      "expected": 0,
+      "expected": 84,
       "tolerance": 0,
-      "reason": "Overlap of each use area with OpenET's fields. Zero until the golden build fills it (Plan 153.2-01)."
+      "reason": "MOVED 0 -> 84 by Plan 153.2-01 (2026-11-14): each use area's acres inside each OpenET field, measured from OpenET's outlines in EPSG 3310 after repair: 69 use areas overlap one field, 6 two and one three (69 + 12 + 3 = 84)."
     },
     "datasync.OpenETFieldMonth": {
-      "expected": 0,
+      "expected": 1872,
       "tolerance": 0,
-      "reason": "OpenET's crop ET and rain per OpenET field and month. Zero until the golden build fills it (Plan 153.2-01)."
+      "reason": "MOVED 0 -> 1872 by Plan 153.2-01 (2026-11-14): 78 OpenET fields x 24 months (Oct 2024 to Sep 2026), crop ET and rain exactly as OpenET's field list sent them, received 2026-11-14. Every field has both figures for every month."
     },
     "datasync.OpenETFieldMonthEvent": {
       "expected": 0,
