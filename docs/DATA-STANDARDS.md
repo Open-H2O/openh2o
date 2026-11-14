@@ -81,9 +81,11 @@ A USGS reading is also marked as a daily high, low or average. The mapping goes 
 code alone, so the daily high, low and average of water temperature all map to
 `water_temperature`.
 
-DWR is the California Department of Water Resources. OpenET's evapotranspiration
-(ET) and GRIDMET's precipitation are not in this table. OpenH2O stores them for each
-parcel as inputs to the monthly water balance and does not map them to the list.
+DWR is the California Department of Water Resources. OpenET's evapotranspiration (ET)
+and GRIDMET's precipitation are not in this table. OpenH2O stores ET and precipitation
+as inputs to the monthly water balance and does not map them to the list. With the
+default `OPENET_MODE`, OpenH2O stores ET and precipitation for each OpenET field and
+records each use area's monthly crop ET from those fields.
 
 The mapping of codes to keys is `CODE_TO_KEY`, a table written by hand in
 `seed_observed_properties.py`. When `python manage.py seed_observed_properties`
@@ -177,12 +179,13 @@ which OpenH2O calculates, and precipitation, which OpenH2O reads from GRIDMET.
   USDA-SCS (TR-21) method. The USDA-SCS method never estimates more than the month's
   precipitation or the month's satellite ET. The methods are in
   `accounting/precip_math.py`.
-- **Precipitation.** OpenH2O reads each parcel's monthly precipitation in
-  millimeters from GRIDMET's daily `pr` band, through Google Earth Engine. The
-  adapter is `datasync/adapters/gee.py`. The OpenET ensemble dataset that OpenH2O
-  reads is built on GRIDMET weather data, so precipitation from GRIDMET comes from
-  the same weather data as the ET. The water balance uses GRIDMET precipitation even
-  where a rain gauge is nearby.
+- **Precipitation.** OpenH2O reads GRIDMET's monthly precipitation in millimeters. With
+  the default `OPENET_MODE`, OpenET sends each OpenET field's precipitation with its
+  crop ET. For a use area with no OpenET field on record, `sync_precip_parcels` reads
+  its precipitation from GRIDMET through Google Earth Engine. The OpenET ensemble
+  dataset is built on GRIDMET weather data, so precipitation from GRIDMET comes from the
+  same weather data as the ET. The water balance uses GRIDMET precipitation even where a
+  rain gauge is nearby.
 
 ---
 

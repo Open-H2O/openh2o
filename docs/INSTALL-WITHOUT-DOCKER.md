@@ -491,19 +491,19 @@ LOGS=/var/log/openh2o
 0 2 * * *   cd $OPENH2O_DIR && for s in dwr_wdl dwr_sgma noaa cimis; do .venv/bin/python manage.py sync_source $s; done >> $LOGS/sync.log 2>&1
 30 3 * * *  cd $OPENH2O_DIR && .venv/bin/python manage.py run_accounting --open-periods --trigger schedule >> $LOGS/calculation.log 2>&1
 0 */6 * * * cd $OPENH2O_DIR && .venv/bin/python manage.py run_health_checks >> $LOGS/health.log 2>&1
+15 4 8 * *  cd $OPENH2O_DIR && .venv/bin/python manage.py sync_openet_parcels >> $LOGS/openet.log 2>&1
 0 3 1 * *   cd $OPENH2O_DIR && .venv/bin/python manage.py prune_old_data --confirm >> $LOGS/prune.log 2>&1
 ```
 
-These are the jobs in `crontab.txt`, at the same times, except the nightly backup.
-The backup script runs through Docker, so it does not work on this path. Section 11
-shows how to back up by hand. Site health's Backup card reads the status file the
-backup script writes, so on this path the card says OpenH2O cannot find the backups
-folder. `manage.py` reads `.env` itself, so the jobs need no other settings. The
-last job deletes sync logs, health-check results and readings OpenH2O fetched more
-than a year ago. It keeps every reading typed at an Entered by hand station. The
-jobs sync a data source only after that source's stations are turned on. Phase 4 of
-the [AI operator guide](AI-OPERATOR-GUIDE.md) describes turning stations on and
-explains each job.
+These are the jobs in `crontab.txt`, at the same times, except the nightly backup. The
+backup script runs through Docker, so it does not work on this path. Section 11 shows
+how to back up by hand. Site health's Backup card reads the status file the backup
+script writes, so on this path the card says OpenH2O cannot find the backups folder.
+`manage.py` reads `.env` itself, so the jobs need no other settings. The last job
+deletes sync logs, health-check results and readings OpenH2O fetched more than a year
+ago. It keeps every reading typed at an Entered by hand station. The hourly and daily
+sync jobs read only the stations that are turned on. Phase 4 of the [AI operator
+guide](AI-OPERATOR-GUIDE.md) describes turning stations on and explains each job.
 
 ---
 
@@ -593,7 +593,7 @@ files, to keep them small. Create `/etc/logrotate.d/openh2o` with administrator
 rights, as for the unit file, and write this into it:
 
 ```
-/var/log/openh2o/access.log /var/log/openh2o/sync.log /var/log/openh2o/calculation.log /var/log/openh2o/health.log /var/log/openh2o/prune.log {
+/var/log/openh2o/access.log /var/log/openh2o/sync.log /var/log/openh2o/calculation.log /var/log/openh2o/health.log /var/log/openh2o/openet.log /var/log/openh2o/prune.log {
     weekly
     rotate 8
     compress

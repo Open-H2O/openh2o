@@ -898,6 +898,7 @@ health. The jobs are in `crontab.txt`:
 | `run-sync.sh dwr_wdl dwr_sgma noaa cimis` | Every day at 2:00 | Groundwater levels, and NOAA climate data and CIMIS weather once their keys are set |
 | `run_accounting --open-periods --trigger schedule` | Every day at 3:30 | Calculates every reporting period that is not finalized, after the 2:00 sync. It never changes a finalized period. Only an administrator's correction or void does, in the months each covers. Each run's record shows on the period's page and on Site health |
 | `run_health_checks` | Every 6 hours | Checks the database, the disk, the certificate, the migrations and the data sources |
+| `sync_openet_parcels` | The 8th of each month at 4:15 | Asks OpenET for the monthly crop ET and rain of every OpenET field that overlaps a use area |
 | `prune_old_data --confirm` | The 1st of each month at 3:00 | Deletes sync logs and health-check results older than a year, published readings OpenH2O received more than a year ago whatever date they describe, and unfinished import uploads older than a day. It keeps readings at Entered by hand stations, and deletes a revised reading with its earlier values once OpenH2O received the newest of them more than a year ago |
 
 The times are in the server's own time zone. A station's page shows when OpenH2O next
@@ -905,9 +906,11 @@ reads that station's data. The page gives that time in the site's time zone. Set
 site's time zone with `set_organization --time-zone`. A site whose organization's name
 was never set uses the `TIME_ZONE` setting in `.env`. Set the server's clock to the same
 zone. Until its key is set, the schedule skips CIMIS or NOAA with one line in the log.
-OpenET is not on the schedule: OpenET's figures arrive through `sync_openet_parcels`,
-which the organization runs when it wants figures for new months (Phase 4 of the AI
-operator guide).
+The OpenET job works only on the default setting, `OPENET_MODE=fields`. On the other two
+settings in section 12 the job stops with an error each month. Run `sync_openet_parcels`
+and `sync_precip_parcels` by hand on those settings, with `--start-date` and
+`--end-date` (Phase 4 of the AI operator guide). The OpenET job writes its errors to
+`openet.log` and does not send an alert.
 
 You can also run the calculation by hand, for one water year or one month:
 `docker compose exec web python manage.py run_accounting --period "WY 2025-2026"` or
@@ -1326,10 +1329,10 @@ Two terms in the tables need explaining:
 | `OPENET_API_KEY` | For OpenET | empty | OpenET's key (section 11) |
 | `USGS_API_KEY` | No | empty | USGS's free key. USGS accepts more requests an hour from a site that sends it (section 11) |
 | `OPENET_MONTHLY_BUDGET` <!-- defines: openet_budget --> | No | `100` | OpenH2O stops sending OpenET requests when the month's count reaches this number. Raise it to the account's allowance |
-| `OPENET_FIELDS_PER_REQUEST` | No | `100` | How many OpenET field numbers one request carries. 100 is OpenET's first tier; an OpenET account linked to a Google Cloud project takes 400. OpenET's account status names the account's figure as "Max Field IDS" |
-| `OPENET_CACHE_DAYS` | No | `30` | How long OpenH2O keeps an OpenET estimate before asking again |
-| `OPENET_MODE` | No | `fields` | `fields` asks OpenET's field list for the crop ET and rain of OpenET's own fields, and each use area takes its share of the fields it overlaps. `api` asks OpenET's service for crop ET one use area at a time. <!-- defines: google_earth_engine -->`gee` asks Google Earth Engine, Google's service for analysing satellite imagery, for the same data, as [docs/earth-engine-tier-setup.md](docs/earth-engine-tier-setup.md) describes |
-| `GEE_PROJECT`, `GEE_SERVICE_ACCOUNT_EMAIL`, `GEE_SERVICE_ACCOUNT_KEY_FILE` | With `OPENET_MODE=gee` | empty | The Google Earth Engine project, its service account and the path to the account's key file. The compose file makes the `secrets/` folder readable inside the container at `/run/secrets` |
+| `OPENET_FIELDS_PER_REQUEST` | No | `100` | How many OpenET field IDs one request for outlines or monthly figures can carry. Set `OPENET_FIELDS_PER_REQUEST` to the "Max Field IDS" figure in OpenET's account status. |
+| `OPENET_CACHE_DAYS` | No | `30` | OpenH2O reads `OPENET_CACHE_DAYS` only when `OPENET_MODE` is `api`. OpenH2O then reuses a stored OpenET answer that covers the same use area and dates until the answer is older than `OPENET_CACHE_DAYS` days. |
+| `OPENET_MODE` | No | `fields` | With `fields`, OpenH2O asks OpenET for the crop ET and rain of OpenET's own fields. With `api`, OpenH2O asks OpenET for each use area's crop ET in a request of its own. With `gee`, OpenH2O reads the same crop ET from Google Earth Engine ([docs/earth-engine-tier-setup.md](docs/earth-engine-tier-setup.md)). <!-- defines: google_earth_engine -->Google Earth Engine is Google's service for analysing satellite imagery. |
+| `GEE_PROJECT`, `GEE_SERVICE_ACCOUNT_EMAIL`, `GEE_SERVICE_ACCOUNT_KEY_FILE` | For `OPENET_MODE=gee`, and for rain through `sync_precip_parcels` | empty | The Google Earth Engine project, its service account and the path to the account's key file. The compose file makes the `secrets/` folder readable inside the container at `/run/secrets` |
 | `DATASYNC_MOCK_MODE` | No | `False` | Use sample data in place of the live public services |
 | `HEALTH_DEMO_MODE` | No | `False` | Reports the data freshness check as passing, for a demonstration site restored from a stored copy every night. Keep it `False` on a site that keeps real records |
 | `OPENH2O_BACKUP_STATUS_DIR` | No | `/backups` | The folder holding the backup records that Site health's Backup card reads. With Docker, leave the setting unset: the compose file mounts the checkout's `backups` folder at `/backups` |

@@ -554,38 +554,38 @@ starts again on the 1st. Every site or program that uses the same key draws on t
 same allowance.
 
 <!-- defines: openet_budget -->
-OpenH2O counts this site's requests to OpenET. It stops sending them when the
-month's count reaches `OPENET_MONTHLY_BUDGET`, which is 100 unless `.env` sets
-another number. If the organization's account allows more requests, raise
-`OPENET_MONTHLY_BUDGET` in `.env` to match. The count leaves out requests from
-anything else that uses the same key. The monitoring dashboard
-(`/datasync/monitoring/`) shows how many requests the site has used this month. It
-shows OpenET's own count when OpenET answers and OpenH2O's count when it does not,
-and it says which one you are seeing.
+OpenH2O counts this site's requests to OpenET. It stops sending them when the month's
+count reaches `OPENET_MONTHLY_BUDGET`, which is 100 unless `.env` sets another number.
+If the organization's account allows more requests, raise `OPENET_MONTHLY_BUDGET` in
+`.env` to match. The count leaves out requests from anything else that uses the same
+key. The monitoring dashboard at `/datasync/monitoring/` shows OpenET's count for the
+account beside this site's own count.
 
-Let the organization decide when to make the first satellite ET run. A run against the
-demonstration spends part of the month's allowance on an area the organization does not
-manage. A run against the organization's own parcels produces the figures it needs.
-Load the organization's own parcels first, then fetch satellite ET. The demonstration
-ships with its own ET figures, so it does not need an OpenET run.
+Setting `OPENET_API_KEY` starts the OpenET runs, because the schedule's monthly job then
+asks OpenET for the crop ET and rain of the site's use areas. Let the organization
+decide when to set the key. Remove the demonstration first, so the job does not spend
+the allowance on the demonstration's fields. The demonstration includes its own crop ET
+and rain. To make the first run without waiting for the 8th, run:
 
 ```bash
-docker compose exec web python manage.py sync_openet_parcels --start-date 2025-10-01 --end-date 2026-09-30 --dry-run
-docker compose exec web python manage.py sync_openet_parcels --start-date 2025-10-01 --end-date 2026-09-30
+docker compose exec web python manage.py sync_openet_parcels --dry-run
+docker compose exec web python manage.py sync_openet_parcels
 ```
 
-Set `--start-date` to the first day of the first month you want and `--end-date` to
-the last day of the last month. The dry run lists the parcels the command would ask
-OpenET about, and it sends nothing. Count on at least one request for each parcel.
-`--parcel-prefix` limits the run to parcels whose number starts with the letters you
-give, and `--limit` caps the number of parcels for a small first test. The command
-stores the estimates, and `--to-ledger` also writes them to the ledger.
+On the default `fields` setting, `--start-date` and `--end-date` are optional. Without
+them, a run asks for every month from the start of the earliest water year not yet
+finalized. On the other two settings in section 12 of DEPLOY.md, the dates are required.
+With `--dry-run`, the command prints what it would ask OpenET for and sends nothing. The
+first run also looks up the OpenET fields around the use areas and asks for the fields'
+outlines, so it sends more requests than later runs. `--parcel-prefix` limits the run to
+use areas whose number starts with the letters you give, and `--limit` caps the number
+of use areas for a small first test. `--to-ledger` also writes each month's crop ET to
+the ledger.
 
-The first fetch of a month records its crop ET with the date it was fetched, and the
-calculation and the ledger use that recorded figure. Fetching a month again keeps the
-recorded figure. When OpenET now reports a different one, the command lists those
-months, and a person who can correct records may accept the newer figure, with a
-reason, on the month's calculation page.
+The first run to receive a month's figures records each use area's crop ET for that
+month. A later run leaves the recorded figure as it is and lists any month where OpenET
+now reports a different one. Rainfall is not fixed this way: each calculation uses the
+latest rainfall OpenH2O holds.
 
 ### Keys and the schedule
 
@@ -627,6 +627,8 @@ Upgrades in section 11 of DEPLOY.md gives the fix. The schedule runs these jobs:
 - Every day at 2:00, it syncs the Water Data Library, the SGMA Portal, NOAA and CIMIS.
 - Every day at 3:30, it calculates every reporting period that is not finalized.
 - Every 6 hours, it runs the health checks.
+- On the 8th of each month at 4:15, it asks OpenET for crop ET and rain with
+  `sync_openet_parcels`.
 - On the 1st of each month at 3:00, `prune_old_data` deletes published readings, sync
   logs and health-check results once they pass their retention period, counted from the
   day OpenH2O wrote them. It keeps every reading at an Entered by hand station,
@@ -638,10 +640,14 @@ reads that station's data. The page gives that time in the site's time zone. Set
 site's time zone with `set_organization --time-zone`. A site whose organization's name
 was never set uses the `TIME_ZONE` setting in `.env`. Set the computer's clock to the
 same zone. Until its key is set, the schedule skips CIMIS or NOAA with one line in the
-log. OpenET is not on the schedule: run `sync_openet_parcels` when the organization
-wants new months. The ntfy service sends notifications to a phone or a browser. For an
-alert when a sync fails, put `OPENH2O_NTFY_URL=` in `.env`, followed by the address of
-an ntfy topic, then run `make install-cron` again to copy the address into the schedule.
+log. The OpenET job works only on the default setting, `OPENET_MODE=fields`. On the
+other two settings in section 12 of DEPLOY.md the job stops with an error each month.
+Run `sync_openet_parcels` and `sync_precip_parcels` by hand on those settings, with
+`--start-date` and `--end-date`. The OpenET job writes its errors to `openet.log` and
+does not send an alert. The ntfy service sends notifications to a phone or a browser.
+For an alert when a sync fails, put `OPENH2O_NTFY_URL=` in `.env`, followed by the
+address of an ntfy topic, then run `make install-cron` again to copy the address into
+the schedule.
 
 On Windows, Task Scheduler runs the schedule. The jobs run in Git
 Bash, which comes with Git for Windows (https://git-scm.com/download/win), so install

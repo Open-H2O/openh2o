@@ -177,7 +177,7 @@ and names the source of every figure.
 - **Surface-water rights**, with points of diversion and diversion records.
 - **Managed aquifer recharge** sites and events.
 - **Drinking-water quality.** Water systems, facilities and sampling points are kept under their EPA PWSID. OpenH2O imports California DDW lab exports and the state's sampling schedule. It also imports a water system's monthly production. On the Add a water system page, you enter a system's PWSID and OpenH2O fills in the system's details from EPA's records. Quality and quantity records live in the same site.
-- **Data from public sources.** <!-- defines: api_key --> USGS, CDEC and DWR's Water Data Library and SGMA Portal are switched on and do not need credentials. CIMIS and NOAA are switched on and start fetching once you add a free API key. An *API key* is a long password-like string that lets a program fetch data from another organization's computers. Treat it like a password. CNRFC and OpenET satellite ET are off until you turn them on, and OpenET also needs a key. OpenH2O maps every source's data to one shared vocabulary (see [Data standards](#data-standards--interoperability)).
+- **Data from public sources.** <!-- defines: api_key --> USGS, CDEC and DWR's Water Data Library and SGMA Portal are switched on and do not need credentials. CIMIS and NOAA are switched on and start fetching once you add a free API key. An *API key* is a long password-like string that lets a program fetch data from another organization's computers. Treat it like a password. CNRFC is off until you turn it on. OpenET's crop ET and rain come in once you set its key, through a job that runs on the 8th of each month. OpenH2O maps every source's data to one shared vocabulary (see [Data standards](#data-standards--interoperability)).
 - **Reporting (under development, off by default):** figures written in California's reporting format. OpenH2O does not submit reports to the state.
 - **Open-standards publishing (not yet live).** The data model is designed for publishing as OGC SensorThings, Frictionless Data Packages and WaDE 2.0, but OpenH2O does not publish anywhere yet.
 - **A health dashboard** that shows how current each data source is.
@@ -263,8 +263,9 @@ openh2o/
 
 <!-- defines: google_earth_engine -->
 <!-- defines: smtp -->
-**Google Earth Engine** is a separate Google service for processing satellite
-imagery at large scale. Only an organization with thousands of parcels needs it.
+**Google Earth Engine** is a separate Google service for processing satellite imagery at
+large scale. OpenH2O can also read OpenET's crop ET and gridMET rainfall through Google
+Earth Engine.
 **Transactional email** is how a website sends its own messages, such as password
 resets, through an outside mail provider.
 
@@ -272,7 +273,7 @@ resets, through an outside mail provider.
 |------|--------------|
 | Virtual server (2–4 GB RAM) | $15–30 a month |
 | Domain name | About $12 a year |
-| OpenET (satellite ET) | A free API key covers a small number of parcels. For thousands of parcels, the Earth Engine tier costs a few dollars a year in computing time, plus a plan fee of at least $500 a month unless Google approves the organization for its no-fee Limited plan (see [docs/earth-engine-tier-setup.md](docs/earth-engine-tier-setup.md)). |
+| OpenET (satellite ET) | An OpenET key is free. In November 2026, OpenET's first tier allowed 100 requests a month and 100 OpenET fields in each request. A monthly run sends one request for every 100 OpenET fields over the organization's use areas. Earth Engine's costs are in docs/earth-engine-tier-setup.md. |
 | Transactional email (password resets) | A free tier covers most organizations |
 | CIMIS / NOAA / CDEC / USGS / DWR data | Free (public APIs) |
 

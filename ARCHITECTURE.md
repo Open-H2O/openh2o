@@ -142,11 +142,13 @@ records into a month's ledger.
   (`accounting/locks.py`).
 
 - **Effective rain.** The default USDA-SCS method (`accounting/precip_math.py`) works in
-  millimetres. With P the month's rain, ET the month's crop water use and D the soil storage in
-  inches (3.0 by default), SF = 0.531747 + 0.295164 D - 0.057697 D^2 + 0.003804 D^3 and effective
-  rain = SF x (1.25 x P^0.824 - 2.93) x 10^(0.000955 x ET), with P^0.824 taken as 0 when P is 0,
-  evaluated in ordinary binary floating point. It is capped at the smaller of P and ET, floored at
-  0, and converted to acre-feet over the field's area.
+  millimetres. P is the month's rain and ET the month's crop water use. D is the soil
+  storage in inches, 3.0 by default. SF = 0.531747 + 0.295164 D - 0.057697 D^2 +
+  0.003804 D^3. Effective rain = SF x (1.25 x P^0.824 - 2.93) x 10^(0.000955 x ET), with
+  P^0.824 taken as 0 when P is 0. It is evaluated in ordinary binary floating point,
+  capped at the smaller of P and ET and floored at 0. On a use area with OpenET field
+  shares, `subtract_effective_precip` (`accounting/steps.py`) applies the method to each OpenET field on its own. It converts each OpenET field's result to acre-feet over that OpenET field's acres inside the use area and adds them. P and ET come from the OpenET field's month row (`datasync.OpenETFieldMonth`), so ET is the OpenET field's latest figure and not the use area's recorded one. Rain on land outside the OpenET fields does not count. The step counts zero rain for a month in which any OpenET field's rain or crop ET is missing. For a use area
+  with no shares, the step reads rain from `OpenETCache` over the use area's acres.
 - **Rounding.** Every acre-foot figure the ledger and the runs store is quantized to four decimal places with
   Python's default `Decimal` context, which rounds half to even (2.50285 is stored as 2.5028).
   Irrigation efficiencies are stored to three places.
@@ -254,7 +256,7 @@ which is how the demonstration seeds load their finalized year through the same 
 and ledger imports refuse a finalized-year row even inside the door. The lock itself (`accounting/locks.py`,
 `LOCKED_MODELS`) covers twenty-one tables: the ledger, allocations, credits and calculation results, every kind of record
 a person enters that feeds a figure except use areas, and the two tables of filed figures (the stored OpenET figures and settings such as
-irrigation methods are not locked). A lab result takes its
+irrigation methods are not locked). The recorded crop ET in `datasync.CropETFigure` is locked the same way, except that a month's first row may still be added in a finalized year (`FIRST_ROW_OPEN_MODELS`). A lab result takes its
 sample's date, a production record its year and month, a fallow period the months it covers (a running
 one can still be ended after the year). A date-and-time column is read as the site's calendar day: each
 Django connection sets the session setting `openh2o.time_zone` to `TIME_ZONE`
@@ -301,7 +303,7 @@ answered as a part OpenH2O can no longer read, never as a change.
 number and its marking columns, and leaves out its Change history), a fallow period's end month after the year's end (and
 that table's Change history), and every table with no part, among them links and settings that feed figures and are not locked (for example `geography.ParcelZone`,
 `geography.Zone`, `accounting.WaterAccount`, `wells.WellIrrigatedParcel`, `wells.WellMeter`,
-`surface.PointOfDiversionParcel`, `core.SiteConfig`) and the stored OpenET figures (`datasync.OpenETCache`). A change to a link or a setting can move the Figures as filed card without changing the code: a zone membership, a well link, an account's status and the site settings are read when a page opens, and a meter link and a point of diversion's use areas reach the ledger at the next recalculation. Check for changes runs inside OpenH2O: it cannot catch a change to the software,
+`surface.PointOfDiversionParcel`, `core.SiteConfig`) and the stored OpenET figures (`datasync.OpenETCache`). The field list keeps its figures in `datasync.OpenETFieldMonth`, and every route records crop ET in `datasync.CropETFigure`. Check for changes covers neither table. A change to a link or a setting can move the Figures as filed card without changing the code: a zone membership, a well link, an account's status and the site settings are read when a page opens, and a meter link and a point of diversion's use areas reach the ledger at the next recalculation. Check for changes runs inside OpenH2O: it cannot catch a change to the software,
 and it does not catch someone who rewrites the records and the stored code together; the downloaded page compared by hand does.
 The screen and the page print the first 20 characters; the page also prints all 64, because matching a code already on file takes about 2^80 tries, and preparing two versions of the records with the same 20 before finalizing takes about 2^40.
 
@@ -322,8 +324,7 @@ External data (stream gauges, weather stations, groundwater levels, satellite ev
 arrives through adapters in `datasync/adapters/`. Each adapter subclasses `BaseAdapter`
 (`datasync/adapters/base.py`), directly or through another adapter, which requires `fetch`,
 `parse`, `validate` and `discover_stations`, and registers itself with `register_adapter`
-(`datasync/adapters/__init__.py`). Most also define a `PARAMETER_MAP` naming their measurements;
-the two OpenET adapters do not. `manage.py sync_source` runs one source; `scripts/run-sync.sh` is
+(`datasync/adapters/__init__.py`). Most also define a `PARAMETER_MAP` naming their measurements. The three OpenET adapters do not. The field-list adapter in `openet_fields.py` does not call `register_adapter`, because `sync_openet_parcels` calls `datasync/field_list.py` directly. `manage.py sync_source` runs one source; `scripts/run-sync.sh` is
 what the sync cron jobs call. A station page's Update readings now button runs `sync_source` for
 that one station in its own process (`datasync/fetch_now.py`). Each reading carries the daily
 statistic its source names, such as the USGS daily high or daily average. The Entered by hand

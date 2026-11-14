@@ -203,7 +203,7 @@ def test_a_month_openet_was_never_asked_about_stays_not_found(operator):
 
 
 METHODS_SENTENCES = [
-    "OpenH2O records the first crop ET figure OpenET sends for each use area and month.",
+    "OpenH2O records a use area’s crop ET for a month the first time OpenET’s figures for that month arrive.",
     "A recorded figure is Provisional when OpenET sent it within 120 days of the month’s end.",
     "OpenH2O leaves a figure unmarked if the day it was received is unknown.",
     "A Provisional or unmarked figure becomes Final when OpenET sends the same figure after the 120 days.",
@@ -212,7 +212,7 @@ METHODS_SENTENCES = [
     "Acceptance takes a reason of 10 to 500 characters.",
     "A person who can correct records may correct the entry with a reason.",
     "These months read “date received not recorded” on the calculation page.",
-    "A new gridMET figure for a month changes that month’s next calculation.",
+    "OpenH2O uses the latest rainfall figure each time it calculates a month.",
 ]
 
 

@@ -47,7 +47,7 @@
         <tbody>
           <tr>
             <td class="col-name">Crop ET</td>
-            <td>OpenH2O uses the crop ET from OpenET recorded for each use area and month. The next table says how a month&rsquo;s figure is recorded and how a newer one is accepted.</td>
+            <td>OpenH2O uses the crop ET from OpenET recorded for each use area and month. For a use area with OpenET fields on record, the recorded figure is the sum of each OpenET field&rsquo;s crop ET on that field&rsquo;s acres inside the use area. The next table says how a month&rsquo;s figure is recorded and how a newer one is accepted.</td>
           </tr>
           <tr>
             <td class="col-name">ETAW</td>
@@ -55,7 +55,11 @@
           </tr>
           <tr>
             <td class="col-name">The effective precipitation formula</td>
-            <td>The USDA-SCS method works in millimeters. With P the month&rsquo;s precipitation, ET the month&rsquo;s recorded OpenET crop ET (the satellite figure, even in a fallow month) and D the soil storage in inches (3.0 unless the setting is changed), OpenH2O first computes a storage factor, SF = 0.531747 + 0.295164 &times; D &minus; 0.057697 &times; D&sup2; + 0.003804 &times; D&sup3;. Effective precipitation is SF &times; (1.25 &times; P<sup>0.824</sup> &minus; 2.93) &times; 10<sup>(0.000955 &times; ET)</sup>, with P<sup>0.824</sup> taken as 0 when P is 0. The result is held at or below the smaller of P and ET and at or above 0, then converted to acre-feet over the use area&rsquo;s acres. The formula is evaluated in ordinary binary floating point.</td>
+            <td>The USDA-SCS method works in millimeters. P is the month&rsquo;s precipitation. ET is the month&rsquo;s OpenET crop ET, even in a fallow month. D is the soil storage in inches, 3.0 unless the setting is changed. OpenH2O first computes a storage factor, SF = 0.531747 + 0.295164 &times; D &minus; 0.057697 &times; D&sup2; + 0.003804 &times; D&sup3;. Effective precipitation is SF &times; (1.25 &times; P<sup>0.824</sup> &minus; 2.93) &times; 10<sup>(0.000955 &times; ET)</sup>, with P<sup>0.824</sup> taken as 0 when P is 0. OpenH2O keeps the result between 0 and the smaller of P and ET. The formula is evaluated in ordinary binary floating point.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Precipitation on OpenET fields</td>
+            <td>OpenH2O applies the formula to each OpenET field on its own. P and ET are that field&rsquo;s latest rainfall and crop ET from OpenET. OpenH2O converts each result to acre-feet over the field&rsquo;s acres inside the use area and adds the results. For a use area with no OpenET field on record, P is its own rainfall and ET its recorded crop ET.</td>
           </tr>
           <tr>
             <td class="col-name">ETAW met by surface water</td>
@@ -107,7 +111,7 @@
         <tbody>
           <tr>
             <td class="col-name">Recorded once</td>
-            <td>OpenH2O records the first crop ET figure OpenET sends for each use area and month. It also records the day the figure was received. The month&rsquo;s calculation and its ET estimate entry use that recorded figure and no other.</td>
+            <td>OpenH2O records a use area&rsquo;s crop ET for a month the first time OpenET&rsquo;s figures for that month arrive. OpenH2O also records the day those figures arrived. The month&rsquo;s crop ET in the calculation and its ET estimate entry are that recorded figure.</td>
           </tr>
           <tr>
             <td class="col-name">Why OpenET revises a month</td>
@@ -139,7 +143,7 @@
           </tr>
           <tr>
             <td class="col-name">Rainfall</td>
-            <td>OpenH2O does not record gridMET rainfall this way. A new gridMET figure for a month changes that month&rsquo;s next calculation.</td>
+            <td>OpenH2O uses the latest rainfall figure each time it calculates a month. When OpenET sends a revised crop ET for an OpenET field, the next calculation uses it for effective precipitation at once. The use area&rsquo;s recorded crop ET changes only when a person accepts the newer figure.</td>
           </tr>
         </tbody>
       </table>

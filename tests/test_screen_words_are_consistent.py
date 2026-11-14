@@ -85,8 +85,9 @@ shapes = _load()
 FIELD_WORD_KEPT: dict = {
     # The public records the demonstration was built from: the crop map's field
     # outlines, the basin's canals and fields, and the ET and rainfall estimated
-    # on each of them. Land outside the record, measured 2026-10-31.
-    "templates/about_demonstration_data.html": 5,
+    # on each of them. Land outside the record, measured 2026-10-31; 6 from 153.2-03,
+    # the rows for the 78 OpenET fields (crop ET, rainfall, outlines).
+    "templates/about_demonstration_data.html": 6,
     # "Field outlines": the outlines in the person's own file, before any of
     # them is a use area (the heading Brent approved on the drawing, ruling 70).
     "templates/parcels/use_area_import.html": 1,
@@ -101,6 +102,10 @@ FIELD_WORD_KEPT: dict = {
     # (153.2-02, ruling 168). Measured 2026-11-14.
     "templates/accounting/partials/_crop_et_segment.html": 2,
     "templates/parcels/partials/_detail_pane.html": 6,
+    # "OpenET field" in the glossary's entry for it and in the Methods page's crop ET and
+    # precipitation rows (153.2-03). Measured 2026-11-14.
+    "config/views.py": 3,
+    "templates/help/methods.html": 9,
 }
 
 #: Titles that start "New " or "Create " and are not a new record, one reason

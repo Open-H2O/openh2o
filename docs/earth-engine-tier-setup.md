@@ -2,24 +2,25 @@
 
 # Earth Engine Tier Setup
 
-OpenH2O can get satellite evapotranspiration (ET) in three ways. This guide sets up
-the Earth Engine tier, which reads OpenET's data through Google Earth Engine and is
-meant for an organization with thousands of parcels.
+OpenH2O reads crop ET in one of three ways. `OPENET_MODE` in `.env` names the one in
+use.
 
-1. **Public tier** (no setup). OpenH2O shows its bundled demonstration data and any
-   open datasets. The public tier is for trying OpenH2O out.
-2. **OpenET API-key tier** (`OPENET_MODE=api`, the default). OpenH2O uses a free key
-   from [etdata.org](https://etdata.org) to ask OpenET for ET over the internet, one
-   request for each parcel. As of August 2026, the free key allowed 100 requests a
-   month.
-3. **Earth Engine tier** (`OPENET_MODE=gee`, this guide). OpenH2O reads the same
-   OpenET data directly from Earth Engine and processes every parcel in one batched
-   job. A paid Earth Engine project has no monthly request limit.
+1. **OpenET's field list** (`OPENET_MODE=fields`, the default). OpenH2O asks OpenET for
+   the monthly crop ET and rain of OpenET's own fields, with a free key from
+   [etdata.org](https://etdata.org). In November 2026, OpenET's first tier allowed 100
+   requests a month and 100 fields in each request.
+2. **One request for each use area** (`OPENET_MODE=api`). OpenH2O asks OpenET for each
+   use area's crop ET with the same key. On this setting `sync_precip_parcels` reads the
+   rain from Earth Engine.
+3. **Earth Engine tier** (`OPENET_MODE=gee`, this guide). OpenH2O reads OpenET's monthly
+   Ensemble data for every use area from Earth Engine in one job, and
+   `sync_precip_parcels` reads the rain there too. Reading from Earth Engine does not
+   count against the OpenET allowance.
 
-The API-key tier and the Earth Engine tier read OpenET's monthly Ensemble dataset
-and return the same ET values. In Earth Engine the dataset is
-`projects/openet/assets/ensemble/conus/gridmet/monthly/v2_1`, and ET is the
-`et_ensemble_mad` band, in millimeters.
+The `api` and `gee` settings give the same ET values, because both read OpenET's monthly
+Ensemble dataset. In Earth Engine the dataset is
+`projects/openet/assets/ensemble/conus/gridmet/monthly/v2_1`. OpenH2O reads ET in
+millimeters from the dataset's `et_ensemble_mad` band.
 
 ---
 
@@ -163,21 +164,29 @@ signs in to Google without a browser and prints ET for five parcels:
 docker compose exec web python manage.py prove_gee_auth --limit 5
 ```
 
-If the command prints a table of ET and no sign-in error, the key and the project
-work. The command does not read `OPENET_MODE`. Once the tier is on,
-`sync_openet_parcels` prints `OPENET_MODE=gee -> GEEOpenETAdapter` at the start of
-its first line. To go back to the API-key tier, set `OPENET_MODE=api` and restart
-the web container.
+If the command prints a table of ET and no sign-in error, the key and the project work.
+The command does not read `OPENET_MODE`. Once the tier is on, `sync_openet_parcels`
+prints `OPENET_MODE=gee -> GEEOpenETAdapter` at the start of its first line. To go back
+to the default field list, set `OPENET_MODE=fields` and restart the web container.
 
 ### 5. Get ET for every parcel
 
-The same command fetches ET on either tier. Give it the first and last day of the
-period you want. With `--to-ledger`, it also turns the ET into ledger entries for
-the same period:
+On the Earth Engine tier, `sync_openet_parcels` needs the first and last day of the
+period you want. With `--to-ledger`, `sync_openet_parcels` also writes the crop ET to
+the ledger for the same period:
 
 ```bash
 docker compose exec web python manage.py sync_openet_parcels --start-date 2024-10-01 --end-date 2025-09-30 --to-ledger
 ```
+
+Then ask Earth Engine for the rain over the same period:
+
+```bash
+docker compose exec web python manage.py sync_precip_parcels --start-date 2024-10-01 --end-date 2025-09-30
+```
+
+The monthly scheduled job stops with an error on this tier, because the job does not
+pass dates. Run the two commands above by hand for each new period.
 
 ---
 
