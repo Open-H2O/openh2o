@@ -437,26 +437,50 @@ def subtract_effective_precip(running_af, parcel, period, ctx, config):
 
     No precip row -> Pe = 0 -> running_af passes through unchanged (zero effective
     precip is a valid, correct outcome, e.g. a dry summer month).
+
+    **A use area with OpenET field overlaps** (``datasync.models.OpenETFieldShare``)
+    takes its rain from OpenET's field list instead, field by field: each field's
+    effective rain comes from that field's own rain and that field's own crop ET
+    from the same answer (the cap is the field's crop ET, not the use area's), over
+    that field's acres inside the use area; the acre-feet are added up. Effective rain
+    is not linear in its two depths, so applying the rule once to area-weighted depths
+    would give a different figure. Land in no OpenET field counts no rain. ``precip_mm``
+    in the detail is the area-weighted rain over the use area's own acres, so
+    ``precip_mm`` x ``area_acres`` is the rain on the covered acres. A month with any
+    field's rain or crop ET missing counts no rain. A use area with no overlaps takes
+    the cache path above, unchanged.
     """
     from accounting.precip_math import effective_precip_inches
 
     from datasync.crop_et import recorded_mm
 
-    precip_mm, _, _ = _read_cache_mm(parcel, period, "precip", "GRIDMET", "precip")
-    # Crop ET from the month's record, as et_gross reads it; rain still from the cache.
+    # Crop ET from the month's record, as et_gross reads it.
     et_mm, _ = recorded_mm(parcel, period, "ET", "Ensemble")
-
     mm_per_in = Decimal("25.4")
-    p_in = precip_mm / mm_per_in
-    et_in = et_mm / mm_per_in
-
-    pe_in = effective_precip_inches(p_in, et_in, **config)
-    pe_mm = pe_in * mm_per_in
-
     area = parcel.area_acres or Decimal("0")
-    # abs(): et_mm_to_acre_feet returns a negative usage value; we want the
-    # positive effective-precip magnitude to subtract from the running total.
-    pe_af = abs(et_mm_to_acre_feet(pe_mm, area))
+
+    by_field = _field_rain_and_et(parcel, period)
+    if by_field is None:
+        precip_mm, _, _ = _read_cache_mm(parcel, period, "precip", "GRIDMET", "precip")
+        p_in = precip_mm / mm_per_in
+        et_in = et_mm / mm_per_in
+
+        pe_in = effective_precip_inches(p_in, et_in, **config)
+        pe_mm = pe_in * mm_per_in
+
+        # abs(): et_mm_to_acre_feet returns a negative usage value; we want the
+        # positive effective-precip magnitude to subtract from the running total.
+        pe_af = abs(et_mm_to_acre_feet(pe_mm, area))
+    else:
+        pe_af = Decimal("0")
+        rain_mm_acres = Decimal("0")
+        for pr_f, et_f, acres_f in by_field:
+            pe_f_mm = effective_precip_inches(pr_f / mm_per_in, et_f / mm_per_in, **config) * mm_per_in
+            pe_af += abs(et_mm_to_acre_feet(pe_f_mm, acres_f))
+            rain_mm_acres += pr_f * acres_f
+        precip_mm = rain_mm_acres / area if area else Decimal("0")
+        # The same acre-feet as one depth over the use area's own acres.
+        pe_mm = pe_af * Decimal("304.8") / area if area else Decimal("0")
     new_running = running_af - pe_af
 
     # Stash the effective-precip magnitude for clamp_floor's surplus split
@@ -475,6 +499,34 @@ def subtract_effective_precip(running_af, parcel, period, ctx, config):
     return new_running, _record(
         "subtract_effective_precip", running_af, new_running, detail
     )
+
+
+def _field_rain_and_et(parcel, period):
+    """``[(rain mm, crop ET mm, acres inside the use area)]`` per OpenET field, or None.
+
+    None when the use area has no OpenET field overlaps (the cache path applies). An
+    empty list when it has overlaps but a field's rain or crop ET for the month is
+    missing: the month then counts no rain, never a part of it.
+    """
+    from datasync.models import OpenETFieldMonth, OpenETFieldShare
+
+    shares = list(OpenETFieldShare.objects.filter(parcel=parcel))
+    if not shares:
+        return None
+    year, month = _period_year_month(period)
+    months = {
+        row.field_id: row
+        for row in OpenETFieldMonth.objects.filter(
+            field_id__in=[share.field_id for share in shares], month=date(year, month, 1)
+        )
+    }
+    rows = []
+    for share in shares:
+        row = months.get(share.field_id)
+        if row is None or row.pr_mm is None or row.et_mm is None:
+            return []
+        rows.append((Decimal(row.pr_mm), Decimal(row.et_mm), Decimal(share.overlap_acres)))
+    return rows
 
 
 # Maps step_type -> primitive.
