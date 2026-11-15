@@ -446,7 +446,7 @@ def test_a_change_to_a_table_in_the_set_is_gone_afterwards_and_the_names_read_li
     ReportingPeriod.objects.filter(pk=wy25().pk).update(name=WY25)  # a write works again
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, serialized_rollback=True)
 def test_in_a_real_transaction_the_block_leaves_the_connection_as_it_found_it():
     ld.seed_reference()
     d1 = ld.build_d1()

@@ -278,7 +278,7 @@ def test_ending_a_period_inside_a_finalized_year_is_refused_when_later_months_ar
 
 
 # ------------------------------------------------------------------ (d)
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(transaction=True, serialized_rollback=True)
 def test_migrating_forward_from_the_old_column_keeps_the_mark_as_an_open_period():
     executor = MigrationExecutor(connection)
     executor.migrate([("parcels", "0020_change_history_lock_and_labels")])

@@ -2,6 +2,40 @@
 import pytest
 
 
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_teardown(item, nextitem):
+    """Put the migration-seeded rows back after a ``transaction=True`` test.
+
+    Such a test ends with a flush that empties EVERY table, including the
+    reference rows data migrations seed (irrigation methods and the like). A
+    serial run hides that, because pytest-django runs transactional tests last.
+    Under xdist a worker goes on to run other files after one, and they found
+    the tables empty. ``serialized_rollback=True`` alone does not help: Django
+    reloads the snapshot BEFORE such a test and still flushes after it. So the
+    snapshot is reloaded here, after the flush, once the test's own teardown
+    has finished. Not after the last test: by then the test database is gone.
+    """
+    result = yield
+    marker = item.get_closest_marker("django_db")
+    if nextitem is None or marker is None or not marker.kwargs.get("transaction"):
+        return result
+    from django.db import connection
+    from pytest_django.plugin import blocking_manager_key
+
+    contents = getattr(connection, "_test_serialized_contents", None)
+    if contents is None:
+        raise RuntimeError(
+            f"{item.nodeid} is marked django_db(transaction=True) without "
+            "serialized_rollback=True, so the seeded rows its flush deletes cannot be "
+            "put back for the tests that follow. Add serialized_rollback=True to its "
+            "mark. (For Claude, as the fixer. If you are not Claude, paste this "
+            "message to Claude.)"
+        )
+    with item.config.stash[blocking_manager_key].unblock():
+        connection.creation.deserialize_db_from_string(contents)
+    return result
+
+
 @pytest.fixture(autouse=True)
 def enable_db_access_for_all_tests(db):
     pass
