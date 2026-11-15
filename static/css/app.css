@@ -1451,6 +1451,12 @@ html { color-scheme: dark; }
 .data-table--canal-water th {
     white-space: normal;
 }
+/* The returned and net lines under a month's figure wrap inside their cell:
+   on one line they crossed the column rule at 1,024 to 1,440. The figure
+   above them still never breaks. */
+.data-table--canal-water .canal-water-subline {
+    white-space: normal;
+}
 /* Plus the 2px collapsed border that sits BETWEEN the rows, outside the cell
    box: measured 2026-09-08, a 36px border-box row lands the next row at 38.25. */
 .data-table--grouped thead tr.th-group ~ tr th {

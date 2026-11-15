@@ -141,7 +141,7 @@
     </div>
 
     {% comment %}
-      The lead panel: Diverted minus Return flow equals Retained, for the
+      The lead panel: Diverted minus Return flow equals Net diversion, for the
       CURRENT water year only (accounting.services.current_period_id, the
       same helper the zone page and the allocations list read). The panel's
       figures are current_totals, the SAME group _pod_detail_context builds
@@ -154,7 +154,7 @@
         <h2 class="section-header-flush">Water diverted</h2>
         <div class="text-secondary text-base">
           {% if current_period %}
-            {% if current_totals %}{{ current_period.name }} &middot; {{ current_totals.count }} record{{ current_totals.count|pluralize }} &middot; Retained is the diverted volume less the return flow.{% else %}No records in {{ current_period.name }}.{% endif %}
+            {% if current_totals %}{{ current_period.name }} &middot; {{ current_totals.count }} record{{ current_totals.count|pluralize }}{% else %}No records in {{ current_period.name }}.{% endif %}
           {% else %}
             {% include "partials/_no_water_year.html" %}
           {% endif %}
@@ -177,7 +177,7 @@
             </div>
             <div class="budget-op">&equals;</div>
             <div class="budget-seg budget-seg--result">
-              <div class="budget-seg-label">Retained</div>
+              <div class="budget-seg-label">Net diversion</div>
               <div class="budget-seg-value {% if current_totals.retained >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ current_totals.retained|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
               {% comment %}Omit the clause with no current period, or this would read "Diverted less returned, ." literally.{% endcomment %}
               <div class="budget-seg-notes"><p class="text-tertiary">Diverted less returned{% if current_period %}, {{ current_period.name }}{% endif %}.</p></div>
@@ -200,7 +200,7 @@
             </div>
             <div class="budget-op">&equals;</div>
             <div class="budget-seg budget-seg--result">
-              <div class="budget-seg-label">Retained</div>
+              <div class="budget-seg-label">Net diversion</div>
               <div class="budget-seg-value text-tertiary">&mdash;</div>
             </div>
           </div>
@@ -230,7 +230,7 @@
     {% endcomment %}
     <div class="card-raised page-grid-account-full">
       <h2 class="section-header mb-md">Losses in the canal below this headgate</h2>
-      <p class="text-secondary text-sm mb-md">Each loss below is a percentage of the water kept at the headgate, the water taken less the water returned. Every month, OpenH2O subtracts these losses before dividing the rest among the use areas.</p>
+      <p class="text-secondary text-sm mb-md">Each loss below is a percentage of the net diversion for direct use. Every month, OpenH2O subtracts these losses before dividing the rest among the use areas.</p>
       <div class="field-grid-2">
         <div class="field-group">
           <div class="field-label">Basis</div>
@@ -283,7 +283,7 @@
     {% if canal_water %}
     <div class="card-raised page-grid-account-full" id="where-the-water-went">
       <h2 class="section-header mb-md">Where the water went</h2>
-      <p class="text-secondary text-sm mb-md">Canal losses and the columns after them add up to the water kept at the headgate, which is the water taken less the water returned; a month that does not is marked Does not add up. Acre-feet.</p>
+      <p class="text-secondary text-sm mb-md">Canal losses and the columns after them add up to the net diversion for direct use; a month that does not is marked Does not add up. Acre-feet.</p>
       {% for group in canal_water %}
       <details class="mb-md"{% if group.is_open %} open{% endif %}>
         <summary class="row-start" style="cursor: pointer; list-style: none; gap: var(--space-sm); padding: var(--space-xs) 0;">
@@ -332,9 +332,9 @@
                 {{ r.month|date:"M Y" }}
                 {% if r.estimated %}<span class="badge badge-grey" title="At least one diversion record this month was estimated from use, not measured. OpenH2O no longer makes these estimates.">Estimated</span>{% endif %}
                 {% if not r.calculated %}<span class="text-tertiary text-xs">Not yet calculated</span>{% endif %}
-                {% if not r.adds_up %}<span class="badge badge-amber" title="Canal losses plus the columns after them differ from the water kept at the headgate.">Does not add up</span>{% endif %}
+                {% if not r.adds_up %}<span class="badge badge-amber" title="Canal losses plus the columns after them differ from the net diversion for direct use.">Does not add up</span>{% endif %}
               </td>
-              <td class="td-num">{{ r.taken|floatformat:2|intcomma }}{% if r.returned %}<div class="text-tertiary text-xs">{{ r.returned|floatformat:2|intcomma }} returned, {{ r.headgate|floatformat:2|intcomma }} kept</div>{% endif %}</td>
+              <td class="td-num">{{ r.taken|floatformat:2|intcomma }}{% if r.returned %}<div class="text-tertiary text-xs canal-water-subline">{{ r.returned|floatformat:2|intcomma }} returned<br>{{ r.headgate|floatformat:2|intcomma }} net diversion for direct use</div>{% endif %}</td>
               {% if r.calculated %}
               <td class="td-num text-secondary col-sep">{{ r.evaporation|floatformat:2|intcomma }}</td>
               <td class="td-num text-secondary">{{ r.seepage|floatformat:2|intcomma }}</td>
@@ -356,7 +356,7 @@
             {% endfor %}
             <tr class="row-subtotal">
               <td class="tfoot-total">All {{ group.totals.count }} month{{ group.totals.count|pluralize }}</td>
-              <td class="td-num-bold td-total">{{ group.totals.taken|floatformat:2|intcomma }}{% if group.totals.returned %}<div class="text-tertiary text-xs">{{ group.totals.returned|floatformat:2|intcomma }} returned, {{ group.totals.headgate|floatformat:2|intcomma }} kept</div>{% endif %}</td>
+              <td class="td-num-bold td-total">{{ group.totals.taken|floatformat:2|intcomma }}{% if group.totals.returned %}<div class="text-tertiary text-xs canal-water-subline">{{ group.totals.returned|floatformat:2|intcomma }} returned<br>{{ group.totals.headgate|floatformat:2|intcomma }} net diversion for direct use</div>{% endif %}</td>
               <td class="td-num-bold td-total col-sep">{{ group.totals.evaporation|floatformat:2|intcomma }}</td>
               <td class="td-num-bold td-total">{{ group.totals.seepage|floatformat:2|intcomma }}</td>
               <td class="td-num-bold td-total">{{ group.totals.spill|floatformat:2|intcomma }}</td>
@@ -368,9 +368,6 @@
           </tbody>
         </table>
         </div>
-        {% if not group.totals.adds_up %}
-        <p class="text-tertiary text-xs mt-sm"><span class="badge badge-amber">Does not add up</span> marks a month whose canal losses plus the columns after them differ from the water kept at the headgate.</p>
-        {% endif %}
         {% if group.totals.uncalculated %}
         <p class="text-tertiary text-xs mt-sm">OpenH2O has not yet calculated {{ group.totals.uncalculated }} month{{ group.totals.uncalculated|pluralize }}. The headgate total above includes {{ group.totals.uncalculated|pluralize:"that month,those months" }}, but the canal loss columns and the columns after them do not.</p>
         {% endif %}

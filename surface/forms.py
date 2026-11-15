@@ -293,14 +293,14 @@ class PointOfDiversionForm(forms.ModelForm):
             "seepage share from the lining: 25 percent for an unlined canal, "
             "5 percent for a lined canal and 0 for a pipe. OpenH2O does not "
             "change a measured or estimated share.",
-            "seepage_fraction": "Share of the diverted volume lost to canal "
+            "seepage_fraction": "Share of the net diversion for direct use lost to canal "
             "seepage. When the basis is Platform default and the lining is "
             "stated, OpenH2O sets this share to the default for that lining "
             "when you save.",
             # The basis now sits above the three shares, beside the lining.
             "loss_basis": "How the three shares below were set: measured on "
             "this canal, estimated for this canal, or the platform's default.",
-            "evaporation_fraction": "Share of the diverted volume lost to "
+            "evaporation_fraction": "Share of the net diversion for direct use lost to "
             "evaporation off the canal. The platform's default is 1 percent "
             "for an open canal and 0 for a pipe. A share marked as measured "
             "or estimated replaces this default.",

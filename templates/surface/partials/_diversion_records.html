@@ -4,14 +4,14 @@
   full page load (_pod_detail_context) and diversion_record_create's POST
   response, so the two callers share _group_diversion_records rather than
   deriving the same water-year groups twice. Columns run Month, Diverted,
-  Return flow, Retained, Type -- rule 1, the equation's own order -- with
-  ONE .col-sep on Retained (rule 3: the kind of number changes there, from
+  Return flow, Net diversion, Type -- rule 1, the equation's own order -- with
+  ONE .col-sep on Net diversion (rule 3: the kind of number changes there, from
   what the operator recorded to what the platform worked out) and no Period
   column: the row-group dividers below say the water year once per group
-  (rule 7) instead of repeating it on every row. Retained/To storage, never
+  (rule 7) instead of repeating it on every row. Net diversion/To storage, never
   "consumed" (DESIGN.md copy rule 12) -- the Type cell carries the
   return-flow badges beside the diversion
-  type, not wrapped inside the Retained figure.
+  type, not wrapped inside the net diversion figure.
 
   An Actions column ends each row a writer can act on with the "..." menu
   (partials/_row_menu.html): Edit, Correct this record, then Void this record. Edit swaps this whole
@@ -50,7 +50,7 @@
       <th>Month</th>
       <th class="th-right">Diverted</th>
       <th class="th-right"><span class="th-stack">Return flow</span></th>
-      <th class="th-right col-sep">Retained</th>
+      <th class="th-right col-sep">Net diversion</th>
       <th>Type</th>
       <th>How known</th>
       <th class="th-right">Actions</th>
@@ -72,7 +72,7 @@
         {% if record.is_non_consumptive %}
         <span class="badge badge-teal" title="All of this water went back to the stream, so OpenH2O does not count any of it as a delivery.">Non-consumptive (returned to stream)</span>
         {% elif record.is_partial_return %}
-        <span class="badge badge-blue" title="Some of this water went back to the stream. OpenH2O counts only the water retained as a delivery.">Partial return</span>
+        <span class="badge badge-blue" title="Some of this water went back to the stream.">Partial return</span>
         {% endif %}
       </td>
       <td class="text-tertiary text-xs">

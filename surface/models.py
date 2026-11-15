@@ -307,7 +307,7 @@ class PointOfDiversion(models.Model):
         max_digits=5,
         decimal_places=4,
         default=Decimal("0.0100"),
-        help_text="Share of the diverted volume lost to evaporation off the "
+        help_text="Share of the net diversion for direct use lost to evaporation off the "
         "canal. The platform's default is 1 percent for an open canal and 0 "
         "for a pipe. A share marked as measured or estimated replaces this "
         "default.",
@@ -316,7 +316,7 @@ class PointOfDiversion(models.Model):
         max_digits=5,
         decimal_places=4,
         default=Decimal("0"),
-        help_text="Share of the diverted volume lost to canal seepage. When "
+        help_text="Share of the net diversion for direct use lost to canal seepage. When "
         "the basis is Platform default and the lining is stated, OpenH2O sets "
         "this share to the default for that lining when you save.",
     )
@@ -324,7 +324,7 @@ class PointOfDiversion(models.Model):
         max_digits=5,
         decimal_places=4,
         default=Decimal("0"),
-        help_text="Share of the diverted volume that spills out of the canal.",
+        help_text="Share of the net diversion for direct use that spills out of the canal.",
     )
     evaporation_band_percent = models.DecimalField(
         max_digits=5,
