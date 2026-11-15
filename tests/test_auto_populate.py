@@ -158,6 +158,34 @@ class TestEsriPolygonToGeos:
         assert result.srid == 4326
         assert result.valid
 
+    def test_two_clockwise_rings_are_two_pieces_not_a_hole(self):
+        """ArcGIS writes a parcel in two pieces as two clockwise rings. Read with the
+        winding sign the wrong way round, the second became a hole outside its
+        shell, and PostGIS refused the outline's geodetic area (Merced, 2026-11-15)."""
+        west = [[-120.71, 37.40], [-120.71, 37.41], [-120.70, 37.41], [-120.70, 37.40], [-120.71, 37.40]]
+        east = [[-120.69, 37.40], [-120.69, 37.41], [-120.68, 37.41], [-120.68, 37.40], [-120.69, 37.40]]
+        result = esri_polygon_to_geos({"rings": [west, east]})
+        assert result.valid
+        assert len(result) == 2
+        assert all(len(poly) == 1 for poly in result)  # no holes
+
+    def test_a_counter_clockwise_ring_inside_is_a_hole(self):
+        shell = [[-120.71, 37.40], [-120.71, 37.42], [-120.69, 37.42], [-120.69, 37.40], [-120.71, 37.40]]
+        hole = [[-120.705, 37.405], [-120.695, 37.405], [-120.695, 37.415], [-120.705, 37.415], [-120.705, 37.405]]
+        result = esri_polygon_to_geos({"rings": [shell, hole]})
+        assert result.valid
+        assert len(result) == 1
+        assert len(result[0]) == 2  # the shell and its hole
+
+    def test_an_outline_the_service_wound_the_other_way_is_repaired(self):
+        """Two counter-clockwise pieces (not ArcGIS's convention) still give a valid shape."""
+        a = [[-120.71, 37.40], [-120.70, 37.40], [-120.70, 37.41], [-120.71, 37.41], [-120.71, 37.40]]
+        b = [[-120.69, 37.40], [-120.68, 37.40], [-120.68, 37.41], [-120.69, 37.41], [-120.69, 37.40]]
+        result = esri_polygon_to_geos({"rings": [a, b]})
+        assert result.valid
+        assert result.geom_type == "MultiPolygon"
+        assert result.srid == 4326
+
     def test_empty_returns_none(self):
         """None or empty geometry input returns None."""
         assert esri_polygon_to_geos(None) is None
@@ -545,6 +573,34 @@ class TestEsriPolylineToGeos:
         assert result is not None
         assert result.geom_type == "MultiLineString"
         assert len(result) == 2
+
+    def test_two_clockwise_rings_are_two_pieces_not_a_hole(self):
+        """ArcGIS writes a parcel in two pieces as two clockwise rings. Read with the
+        winding sign the wrong way round, the second became a hole outside its
+        shell, and PostGIS refused the outline's geodetic area (Merced, 2026-11-15)."""
+        west = [[-120.71, 37.40], [-120.71, 37.41], [-120.70, 37.41], [-120.70, 37.40], [-120.71, 37.40]]
+        east = [[-120.69, 37.40], [-120.69, 37.41], [-120.68, 37.41], [-120.68, 37.40], [-120.69, 37.40]]
+        result = esri_polygon_to_geos({"rings": [west, east]})
+        assert result.valid
+        assert len(result) == 2
+        assert all(len(poly) == 1 for poly in result)  # no holes
+
+    def test_a_counter_clockwise_ring_inside_is_a_hole(self):
+        shell = [[-120.71, 37.40], [-120.71, 37.42], [-120.69, 37.42], [-120.69, 37.40], [-120.71, 37.40]]
+        hole = [[-120.705, 37.405], [-120.695, 37.405], [-120.695, 37.415], [-120.705, 37.415], [-120.705, 37.405]]
+        result = esri_polygon_to_geos({"rings": [shell, hole]})
+        assert result.valid
+        assert len(result) == 1
+        assert len(result[0]) == 2  # the shell and its hole
+
+    def test_an_outline_the_service_wound_the_other_way_is_repaired(self):
+        """Two counter-clockwise pieces (not ArcGIS's convention) still give a valid shape."""
+        a = [[-120.71, 37.40], [-120.70, 37.40], [-120.70, 37.41], [-120.71, 37.41], [-120.71, 37.40]]
+        b = [[-120.69, 37.40], [-120.68, 37.40], [-120.68, 37.41], [-120.69, 37.41], [-120.69, 37.40]]
+        result = esri_polygon_to_geos({"rings": [a, b]})
+        assert result.valid
+        assert result.geom_type == "MultiPolygon"
+        assert result.srid == 4326
 
     def test_empty_returns_none(self):
         """None or empty geometry input returns None."""
