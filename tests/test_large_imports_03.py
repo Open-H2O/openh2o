@@ -465,7 +465,11 @@ def test_a_token_from_another_page_is_refused(auth_client, index):
 
 
 @pytest.mark.parametrize("page", PAGES, ids=PAGE_IDS)
-@pytest.mark.parametrize("given", ["", "not-a-uuid", str(uuid.uuid4())])
+# The third case is a well-formed uuid no import was ever given. It is a fixed
+# literal, not uuid4(): parallel test workers must collect the same test ids.
+@pytest.mark.parametrize(
+    "given", ["", "not-a-uuid", "00000000-0000-4000-8000-0000000dead0"]
+)
 def test_a_missing_or_unknown_token_is_refused(auth_client, page, given):
     response = auth_client.post(
         page.commit_url, {"token": given, **page.commit_fields}, HTTP_HX_REQUEST="true"
