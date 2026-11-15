@@ -45,7 +45,7 @@ Import runs. Nothing is written until Import is pressed. A count of zero has no 
   <div class="card-raised">
     <h2 class="card-header-ruled">What Import would do</h2>
     <table class="data-table import-counts mt-md">
-      <colgroup><col style="width: 10%;"><col><col style="width: 45%;"></colgroup>
+      <colgroup><col style="width: 10%;"><col style="width: 48%;"><col></colgroup>
       <tbody>
         {% if new_count %}<tr><td class="td-num">{{ new_count|intcomma }}</td><td>new zone{{ new_count|pluralize }}</td><td class="text-secondary">Imported</td></tr>{% endif %}
         {% if used_count %}<tr><td class="td-num">{{ used_count|intcomma }}</td><td>{% if used_count == 1 %}name{% else %}names{% endif %} already used by a zone of this type

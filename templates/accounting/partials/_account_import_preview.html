@@ -54,7 +54,7 @@ pressed. A count of zero has no row.
     {% if account_lines %}
     <p class="form-label mt-md">Accounts</p>
     <table class="data-table import-counts">
-      <colgroup><col style="width: 10%;"><col><col style="width: 30%;"></colgroup>
+      <colgroup><col style="width: 10%;"><col style="width: 48%;"><col></colgroup>
       <tbody>
         {% for count, what, action in account_lines %}<tr><td class="td-num">{{ count|intcomma }}</td><td>{{ what }}</td><td class="text-secondary">{{ action }}</td></tr>{% endfor %}
       </tbody>
@@ -67,7 +67,7 @@ pressed. A count of zero has no row.
 
     <p class="form-label mt-lg">Rows of the file</p>
     <table class="data-table import-counts">
-      <colgroup><col style="width: 10%;"><col><col style="width: 30%;"></colgroup>
+      <colgroup><col style="width: 10%;"><col style="width: 48%;"><col></colgroup>
       <tbody>
         {% for row in row_lines %}<tr><td class="td-num">{{ row.count|intcomma }}</td><td>{{ row.what }}
           {% include "core/partials/_listed.html" with items=row.listed.items total=row.listed.total not_listed=row.listed.not_listed what="rows" lines=row.lines %}</td><td class="text-secondary">{{ row.action }}</td></tr>{% endfor %}
