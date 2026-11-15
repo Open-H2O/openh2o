@@ -52,10 +52,18 @@ def _pg_url(url):
     return "postgresql" + url[url.index("://"):]
 
 
+def _db_name(shape):
+    # One name per test process, so two parallel workers never DROP each
+    # other's scratch database. xdist names its workers gw0, gw1, ...; a plain
+    # (serial) run has no worker id.
+    worker = os.environ.get("PYTEST_XDIST_WORKER", "main")
+    return f"openh2o_t8_ic_{shape}_{worker}"
+
+
 def _run_manage(shape, *args):
     settings_for_run = dict(os.environ)
     settings_for_run["OPENH2O_MODULES"] = SETS[shape]
-    settings_for_run["DATABASE_URL"] = _url_for(f"openh2o_t8_ic_{shape}")
+    settings_for_run["DATABASE_URL"] = _url_for(_db_name(shape))
     settings_for_run["DJANGO_SETTINGS_MODULE"] = "config.settings.local"
     return subprocess.run(
         [sys.executable, "manage.py", *args],
@@ -83,11 +91,17 @@ def installs():
     import psycopg
 
     admin = psycopg.connect(_pg_url(_admin_url()), autocommit=True)
-    names = {shape: f"openh2o_t8_ic_{shape}" for shape in SETS}
+    names = {shape: _db_name(shape) for shape in SETS}
     try:
         for name in names.values():
-            admin.execute(f'DROP DATABASE IF EXISTS "{name}"')
-            admin.execute(f'CREATE DATABASE "{name}"')
+            try:
+                admin.execute(f'DROP DATABASE IF EXISTS "{name}"')
+                admin.execute(f'CREATE DATABASE "{name}"')
+            except psycopg.Error as error:
+                raise AssertionError(
+                    f"could not make scratch database {name!r} "
+                    f"(this run's names: {sorted(names.values())}): {error}"
+                ) from error
         for shape in SETS:
             for step in (("migrate", "--noinput"), ("seed_data",)):
                 done = _run_manage(shape, *step)
