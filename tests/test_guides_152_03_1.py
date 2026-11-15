@@ -39,7 +39,7 @@ FIXED = [
     (51, DATA, "Set the organization's name with `set_organization` or at `/admin/` under Core > Site configs."),
     (52, DATA, 'Without a browser, load the boundary with `import_boundary` and run `auto_populate`.'),
     (53, DATA, 'Import your water rights with `import_water_rights` or the Water Rights Import screen. You can also add a right by hand on the Water Rights page. Next, import points of diversion, storage ponds and recharge sites with `import_infrastructure` or the Import screen. A point that names a water right needs that right on the site first. Then run `import_parcels` again with the headgate column to link each use area to its point.'),
-    (54, DATA, 'Create the water years with `create_water_year` or on the Water Years page. Then import ledger history with `import_ledger_csv` or the Upload CSV page. Import diversion records with `import_diversion_records` or the diversion import screen.'),
+    (54, DATA, 'Set the water year\'s first month on the Delivery Settings page. Then create the water years with `create_water_year` or on the Water Years page, and create allocations on the Allocations page. Import ledger history with `import_ledger_csv` or the Upload CSV page. Import diversion records with `import_diversion_records` or the diversion import screen.'),
     (55, GUIDE, "`import_boundary` reads the same GeoJSON, zipped shapefile and KML files as the wizard's upload."),
     (56, GUIDE, "Before you load any records, set the organization's name with `set_organization`. Every email the site sends starts its subject line with that name."),
     (57, GUIDE, '`import_parcels` links each use area to its point when the file of use areas has a headgate column.'),

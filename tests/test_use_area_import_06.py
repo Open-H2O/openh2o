@@ -514,8 +514,8 @@ def test_the_use_areas_list_offers_the_import_to_a_writer_and_not_to_a_viewer():
 
 def test_the_empty_list_links_to_the_import_page():
     html = _text(_client().get(reverse("parcels:list")))
-    assert "The Setup Wizard loads use areas from the statewide parcel layer; you can also " in html
-    assert f'<a href="{PAGE}" class="prose-link">import your own file</a>' in html
+    assert "The Setup Wizard downloads use areas from DWR’s California parcel map. For land outside " in html
+    assert f'<a href="{PAGE}" class="prose-link">Import use areas</a>' in html
     assert "there is no add form" not in html
 
 

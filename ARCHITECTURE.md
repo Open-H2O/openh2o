@@ -39,7 +39,7 @@ per account. It runs in Docker Compose (`docker-compose.yml`): a `web` container
    adds each switched-on module's routes from `core/modules.py` (`url_specs_for`).
 2. Each app's `urls.py` maps a path to a view. The two apps with the most view code keep one
    view module per screen: `accounting/views/` (dashboard, ledger, periods, allocations, accounts,
-   calculation_runs, settings_pages) and `drinking/views/` (overview, facilities, sampling_points,
+   account_import, calculation_runs, settings_pages) and `drinking/views/` (overview, facilities, sampling_points,
    results, lab_import, onboard, production, schedule). Each package's `common.py` holds helpers two
    or more of its screens share (the Methodology Settings module also borrows two from
    `calculation_runs.py`). `accounting/urls.py` names every view by its module, so

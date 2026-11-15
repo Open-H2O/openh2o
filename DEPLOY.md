@@ -717,18 +717,18 @@ service in front.
 
 ### The Setup Wizard (`/setup/`)
 
-<!-- defines: geojson --><!-- defines: shapefile --><!-- defines: kml -->
-The Setup Wizard loads the organization's area through the browser. It asks for
-the boundary of the area the site covers and shows that boundary on a map for you to
-confirm. It then runs the populate steps, which download basins, parcels, streams
-and monitoring stations for the area from public services, shows their progress,
-and turns on the stations those steps find. The boundary can be a zipped shapefile,
-a KML file or a GeoJSON file. A *shapefile* is a map saved as several files that share
-one name and differ only in their endings, such as `.shp` and `.dbf`. Zip all of the
-files together for the upload. *KML* is the map format Google Earth saves. GeoJSON is
-a plain-text format for map shapes and the facts attached to them, such as a name and
-an area. You can also type the area's
-north, south, east and west edges by hand, or start without a boundary.
+<!-- defines: geojson --><!-- defines: shapefile --><!-- defines: kml --> The Setup
+Wizard asks for the boundary of the area the site covers and shows that boundary on a
+map for you to confirm. The boundary can be a zipped shapefile, a KML file or a
+GeoJSON file. A *shapefile* is a map saved as several files that share one name and
+differ only in their endings, such as `.shp` and `.dbf`. Zip all of the files
+together for the upload. *KML* is the map format Google Earth saves. GeoJSON is a
+plain-text format for map shapes and the facts attached to them, such as a name and
+an area. You can also type the area's bounding coordinates in decimal degrees or
+start without a boundary. With a boundary, the wizard downloads public records for
+the area: basins, parcels, streams and monitoring stations. You choose every parcel
+that overlaps the boundary or only those on the organization's list. The basin and
+parcel downloads cover California only.
 
 - **Where it is.** Click **Settings** in the top bar, beside your sign-in name, then
   **Setup Wizard**. An administrator sees the Settings button. On a site with `ACCESS_CONTROL_ENFORCED=False`, every signed-in person sees it.

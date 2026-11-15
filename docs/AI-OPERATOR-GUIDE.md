@@ -102,7 +102,6 @@ the longest:
 - The first sync of past readings from the slower public sources in Phase 4, which
   runs only as fast as those services answer. Start it and do other work while it
   runs.
-- A parcel download for a large area (Phase 3).
 
 ---
 
@@ -365,29 +364,26 @@ The wizard's first step offers four choices:
    name and an area. Most GIS programs can write it.
 3. Type the north, south, east and west edges of the area in decimal degrees. The
    wizard draws a rectangle from them.
-4. Start without a boundary. Everything except the map and the populate step works
-   without one, and you can come back to `/setup/` later.
+4. Start without a boundary. Add it later at `/setup/` before you use the map,
+   Populate or zones.
 
-The second step shows the boundary on a map for the person to confirm. The third
-step lists the populate steps with each box ticked. The populate steps download
-basins, parcels, streams and monitoring stations for the area from public services.
-Untick any the organization does not want, or click "I have my own data" to untick
-them all. Then run the steps that are still ticked. The
-[Data import guide](DATA-IMPORT.md) lists each populate step and its source. When
-the steps finish, the wizard lists the monitoring stations inside the boundary, each
-with its own switch, and offers **Enable all**. Click it, because the populate step
-creates every station switched off.
+The second step shows the boundary on a map for the person to confirm. The third step
+is Populate. Uncheck any download the organization does not want.
 
-On a server you reach only over SSH, run the same steps as commands. `import_boundary`
-reads the same GeoJSON, zipped shapefile and KML files as the wizard's upload.
-`auto_populate` then fills the area in from public sources, and `activate_stations`
-turns on the stations that `auto_populate` found (Phase 4). If the parcel download
-stops partway, run the same `auto_populate` command again. OpenH2O saves only the
-parcels that are not yet on file. If the stream download stops partway, its failure
-message gives the last OBJECTID it saved. Run
-`auto_populate --steps flowlines --resume-from` with that OBJECTID. The Data import
-guide shows each command, including the `docker compose cp` step that copies a file
-into the container.
+The basin and parcel downloads cover California only. Ask the person whether the
+organization keeps a list of its parcel numbers. If the organization keeps a list,
+choose Only the parcels on your list and select the file. Each number must be the
+whole APN.
+
+Press **Run setup**. When the downloads finish, press **Enable all** to switch on
+every station inside the boundary.
+
+On a server you reach only over SSH, run the same steps as commands.
+`import_boundary` reads the same GeoJSON, zipped shapefile and KML files as the
+wizard's upload. `auto_populate` then runs the same downloads, and `--parcel-list`
+limits the parcels to the organization's list. The Data import guide shows both
+commands. `activate_stations` then turns on the stations inside the boundary (Phase
+4).
 
 ### Option A: The demonstration data
 
@@ -481,7 +477,7 @@ saves the file at once unless you tick Dry run.
 
 | The organization has | Use | Notes |
 |---|---|---|
-| Only a boundary | `import_boundary`, then `auto_populate` | `import_boundary` loads a boundary from a GeoJSON file, a zipped shapefile or a KML file. `auto_populate` then downloads basins, parcels, streams and monitoring stations for that boundary, which must already be on the site. |
+| Only a boundary | `import_boundary`, then `auto_populate` | `import_boundary` loads a boundary from a GeoJSON file, a zipped shapefile or a KML file. `auto_populate` then runs the Setup Wizard's downloads. `--parcel-list` limits the parcels to the organization's list. |
 | Parcel outlines, as a zipped shapefile, KML or GeoJSON | The Import use areas screen at `/parcels/import/`, or `import_parcels` | Both read the same files. Water accounts link to parcels, so import the parcels before you create accounts. |
 | Zone outlines in a zipped shapefile, a KML or a GeoJSON file | Import zones at `/map/zones/import/` or `import_zones`, then Assign use areas to zones at `/map/zones/assign/` or `assign_zones` | Import the use areas first. Each use area goes to the zone of the chosen type that holds most of its area. |
 | Water accounts in a CSV file | Import accounts at `/accounting/accounts/import/` or `import_accounts` | Import the use areas first. Each new account takes the account type chosen on the preview or given with `--account-type`. |
@@ -516,9 +512,9 @@ Administrator first adds the station on Add monitoring station
 on the station's page under Add a reading. The Data import guide lists every record that
 is entered by hand and the page for each.
 
-✋ **Checkpoint:** before you create accounts, confirm with the person that the
-boundary looks right on the map and which parcels the organization's accounts will
-cover.
+✋ **Checkpoint:** confirm with the person that the boundary, use areas and zones on
+the map are right. Then confirm that the Accounts page lists the organization's
+accounts.
 
 ---
 

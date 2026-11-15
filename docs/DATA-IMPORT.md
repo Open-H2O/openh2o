@@ -3,12 +3,12 @@
 # Importing Your Organization's Data
 
 This guide explains how to load an organization's own records into OpenH2O. The
-demonstration data gives you a complete sample site to explore. The Setup
-Wizard sets the area your site covers and runs the populate step, which fills in
-basins, parcels, streams and monitoring stations from public sources. The file
-imports load the records you already have. Records are often kept as *CSV files*. A CSV
-file holds a table as plain text. Each row is one line of text with commas between its
-columns. Any spreadsheet program opens and saves this format.
+demonstration data gives you a complete sample site to explore. In the Setup Wizard
+you set the area your site covers. The wizard's Populate step downloads four kinds of
+record from public sources: basins, parcels, streams and monitoring stations. The
+file imports load the records you already have. Records are often kept as *CSV
+files*. A CSV file holds a table as plain text. Each row is one line of text with
+commas between its columns. Any spreadsheet program opens and saves this format.
 
 Some imports are screens in the browser, and some are commands that you run on the
 server. Several are both. On an import screen you upload the file and check a
@@ -81,10 +81,9 @@ records opens the wizard's first step, which offers four choices:
 3. Type an extent by hand.
 4. Start without a boundary.
 
-Everything except the map and the populate step works without a boundary, and you
-can add one later. The wizard's second step shows the boundary on a map for you to
-confirm. Its third step runs the populate steps described in section 4, one at a
-time.
+Add a boundary before you use the map, Populate or zones. The wizard's second step
+shows the boundary on a map for you to confirm. The third step runs the Populate
+downloads described in section 4.
 
 To load a boundary file with a command instead, use `import_boundary`. It reads the same
 files as the wizard's upload:
@@ -99,28 +98,29 @@ docker compose exec web python manage.py import_boundary --file /tmp/boundary.ge
 
 ## 3. File imports
 
-Seven import screens take a file in two steps: the preview, then Import. OpenH2O keeps
-the uploaded file on the server between the preview and Import, so a file can be up to
-25 MB with any number of rows. Import runs in a background process, and the screen
+Ten import screens take a file in two steps: the preview, then Import. OpenH2O keeps
+the uploaded file on the server between the preview and Import, so a file can be up
+to 25 MB with any number of rows. Import runs in a background process, and the screen
 shows the result when it finishes. OpenH2O keeps an upload for a day; after that,
-upload the file again. OpenH2O deletes the stored file once Import finishes, whether or
-not it succeeds.
+upload the file again. OpenH2O deletes the stored file once Import finishes, whether
+or not it succeeds.
 
 ### Use areas: the Import use areas screen, or `import_parcels`
 
-Import use areas first: ledger entries are filed under a use area, a water account
-holds use areas, and a well is linked to the use areas it serves. The Import use areas
-button on the Use Areas page opens the screen (`/parcels/import/`). The screen reads a
-zipped shapefile, a KML file or a GeoJSON file of up to 25 MB, such as a county parcel
-file or a Google Earth file of field outlines. OpenH2O proposes a column for the parcel
-number, you can choose one for the owner, and the screen shows the first five values
-beside each. The preview counts the new use areas and their acres, and the ones Import
-skips: parcel numbers already on file, which it never changes, and outlines outside the
-site's boundary. It also counts the features it leaves out: those without a readable
-outline or a parcel number, or with a parcel number over 50 characters. A parcel counts
-as inside the boundary when a point within its outline lies inside it. Outlines that
-share a parcel number become one use area. For a Google Earth file whose outlines carry
-only names, choose the Name column: each name becomes the use area's number.
+Load the use areas before the accounts, wells and ledger entries. The Setup Wizard
+can also download use areas from DWR's California parcel map (section 4). The Import
+use areas button on the Use Areas page opens the screen (`/parcels/import/`). The
+screen reads a zipped shapefile, a KML file or a GeoJSON file of up to 25 MB, such as
+a county parcel file or a Google Earth file of field outlines. OpenH2O proposes a
+column for the parcel number, you can choose one for the owner, and the screen shows
+the first five values beside each. The preview counts the new use areas and their
+acres, and the ones Import skips: parcel numbers already on file, which it never
+changes, and outlines outside the site's boundary. It also counts the features it
+leaves out: those without a readable outline or a parcel number, or with a parcel
+number over 50 characters. A parcel counts as inside the boundary when a point within
+its outline lies inside it. Outlines that share a parcel number become one use area.
+For a Google Earth file whose outlines carry only names, choose the Name column: each
+name becomes the use area's number.
 
 The `import_parcels` command reads the same zip, KML, GeoJSON and JSON files. It also
 reads an unzipped shapefile. `import_parcels` differs from the Import use areas screen
@@ -569,26 +569,37 @@ docker compose exec web python manage.py import_schedule /tmp/sample-schedule.cs
 
 ### From a boundary
 
-When a site has a boundary, `auto_populate` downloads the basins, parcels, streams
-and monitoring stations for that area from public services. The Setup Wizard's third
-step runs the same steps from the browser. In place of `My Basin`, give the boundary's
-name as it appears in the Setup Wizard.
+When a site has a boundary, `auto_populate` downloads four kinds of record for that
+area from public services: basins, parcels, streams and monitoring stations. The
+Setup Wizard's Populate page runs the same downloads.
+
+The `parcels` step saves every parcel that overlaps the boundary and has a parcel
+number and an outline. `--parcel-list` limits the step to the parcels in your CSV
+file. OpenH2O reads the numbers from the column headed APN or Parcel number. Write
+each number as the whole APN, with or without its dashes. The basin and parcel
+downloads cover California only. In place of `My Basin`, give the boundary's name.
 
 ```bash
+# Every parcel that overlaps the boundary
 docker compose exec web python manage.py auto_populate --boundary "My Basin" --dry-run
 docker compose exec web python manage.py auto_populate --boundary "My Basin"
+# Or only the parcels on your list
+docker compose cp parcels.csv web:/tmp/
+docker compose exec web python manage.py auto_populate --boundary "My Basin" --parcel-list /tmp/parcels.csv --dry-run
+docker compose exec web python manage.py auto_populate --boundary "My Basin" --parcel-list /tmp/parcels.csv
 ```
 
 | Step | Source | What it adds |
 |---|---|---|
-| `basins` | The California Department of Water Resources' Bulletin 118 groundwater basins | Management zones |
-| `parcels` | The Department of Water Resources' statewide parcel layer | Parcel outlines |
+| `basins` | The California Department of Water Resources' Bulletin 118 groundwater basins | One zone per subbasin |
+| `parcels` | The California Department of Water Resources' parcel map | A use area and its acreage for each Assessor Parcel Number (APN) |
 | `flowlines` | USGS 3DHP | Streams and canals |
 | `stations` | USGS; the California Data Exchange Center (CDEC); the Department of Water Resources' Water Data Library and SGMA Portal; and the California Irrigation Management Information System (CIMIS) and NOAA when their keys are set | Monitoring stations |
 
-To run some of the steps, list them with commas: `--steps basins,parcels`. The
-boundary must be on the site before the command runs. Create it in the Setup Wizard
-or with `import_boundary`.
+To run some of the steps, list them with commas: `--steps basins,parcels`. If DWR's
+parcel map stops responding partway, run the same command again. If the stream
+download stops partway, its failure message names the last OBJECTID it saved. Run
+`auto_populate --steps flowlines --resume-from` with that OBJECTID.
 
 ### From a PWSID, for a drinking-water system
 
@@ -672,14 +683,16 @@ form.
    `load_demonstration`, and run `remove_demonstration` before the next step. Set the
    organization's name with `set_organization` or at `/admin/` under Core > Site
    configs.
-2. Open the Setup Wizard (`/setup/`), choose Start with your own records, and choose,
-   upload or type a boundary, or start without one. With a boundary, run the wizard's
-   populate step to add monitoring stations, and basins, parcels and streams if you need
-   them. Without a browser, load the boundary with `import_boundary` and run
-   `auto_populate`.
-3. Import your use areas on the Import use areas screen, or with `import_parcels`.
-   If the file of use areas has a headgate column, run `import_parcels` on that file
-   after you import the points of diversion in step 5.
+2. Open the Setup Wizard (`/setup/`), choose Start with your own records and set a
+   boundary. On Populate, keep the downloads you need and choose every parcel or only
+   those on your list. Then switch on the stations you want. Without a browser, load
+   the boundary with `import_boundary` and run `auto_populate`. Then run
+   `activate_stations`.
+3. If the Setup Wizard did not save your use areas, import them on the Import use
+   areas screen or with `import_parcels`. Then import your zones with Import zones or
+   `import_zones`. Assign the use areas to them with Assign use areas to zones or
+   `assign_zones`. If the file of use areas has a headgate column, run
+   `import_parcels` on that file after you import the points of diversion in step 5.
 4. Import your wells with `import_wells` or the Wells page's Import screen.
    Then import the wells' water levels on the Import water levels screen.
 5. Import your water rights with `import_water_rights` or the Water Rights Import
@@ -694,9 +707,12 @@ form.
    import lab results with `import_lab_results` or the import screen. Import production
    with the `import_production` command or the import screen at
    `/drinking/production/import/`.
-7. Create water accounts and allocations on their pages.
-8. Create the water years with `create_water_year` or on the Water Years page. Then
-   import ledger history with `import_ledger_csv` or the Upload CSV page. Import
-   diversion records with `import_diversion_records` or the diversion import screen.
+7. Import your water accounts with Import accounts on the Accounts page or
+   `import_accounts`.
+8. Set the water year's first month on the Delivery Settings page. Then create the
+   water years with `create_water_year` or on the Water Years page, and create
+   allocations on the Allocations page. Import ledger history with
+   `import_ledger_csv` or the Upload CSV page. Import diversion records with
+   `import_diversion_records` or the diversion import screen.
 9. Connect the live data sources and set up the update schedule, as
    [DEPLOY.md](../DEPLOY.md) describes.
