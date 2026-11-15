@@ -15,7 +15,7 @@ import pytest
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 from django.test import Client
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse_lazy
 
 from accounting.models import ReportingPeriod
 from core.models import User

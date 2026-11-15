@@ -3742,6 +3742,26 @@ div[id$="-map"] {
     background: var(--color-inset);
 }
 
+/* -- Bulk import previews (Import zones, Assign use areas to zones, Import accounts) --
+   The count tables share one column split so a preview's tables line up, every cell
+   sits at the top of its row, and a listed number never breaks across lines. */
+
+.import-counts {
+    table-layout: fixed;
+}
+
+.import-counts td {
+    vertical-align: top;
+}
+
+.nowrap-item {
+    white-space: nowrap;
+}
+
+.listed-summary {
+    cursor: pointer;
+}
+
 /* -- Form error text ----------------------------------------------------- */
 
 .form-error-text {

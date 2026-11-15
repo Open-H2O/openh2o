@@ -1,0 +1,18 @@
+{% load humanize %}{% comment %}
+Outcome of Import zones, and every refusal the page shows: one error sentence, or the
+count of zones made (and of outlines the preview listed as left out).
+{% endcomment %}
+{% if error %}
+<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md);">
+  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
+</div>
+{% else %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Import complete</h2>
+  <p class="text-base text-secondary mt-md">OpenH2O imported {{ created|intcomma }} zone{{ created|pluralize }}{% if left_out %} and left out the {{ left_out|intcomma }} outline{{ left_out|pluralize }} the preview listed{% endif %}.</p>
+  <div class="row-start pt-sm" style="margin-top: var(--space-lg); gap: var(--space-sm);">
+    {% if 'parcels' in enabled_modules %}<a href="{% url 'geography:zones_assign' %}" class="btn-primary">Assign use areas to zones</a>{% endif %}
+    <a href="{% url 'geography:zone_list' %}" class="btn-secondary">View Zones</a>
+  </div>
+</div>
+{% endif %}

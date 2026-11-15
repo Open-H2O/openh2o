@@ -288,6 +288,8 @@ class PendingImport(models.Model):
         ("water_levels", "Water levels"),
         ("use_areas", "Use areas"),
         ("setup_parcels", "List of parcel numbers"),
+        ("zones", "Zone outlines"),
+        ("accounts", "Accounts and their use areas"),
     ]
     STATUS_CHOICES = [
         ("previewed", "Previewed"),

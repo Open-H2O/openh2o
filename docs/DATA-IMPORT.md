@@ -623,13 +623,34 @@ docker compose exec web python manage.py add_sampling_point --facility 010 --poi
 
 ---
 
+## Zones and water accounts
+
+To make zones from a map file, use Import zones on the Zones page (`/map/zones/import/`)
+or the `import_zones` command. To assign each use area to the zone of a chosen type that
+holds most of its area, use Assign use areas to zones on the Zones page
+(`/map/zones/assign/`) or `assign_zones`. To import water accounts and assign their use
+areas, use Import accounts on the Accounts page (`/accounting/accounts/import/`) or
+`import_accounts`. The CSV file gives each use area's parcel number and account number,
+with the name of each new account. Each new account takes the account type chosen on the
+preview or given with `--account-type`.
+
+```bash
+docker compose cp gsa-boundaries.geojson web:/tmp/
+docker compose exec web python manage.py import_zones /tmp/gsa-boundaries.geojson \
+  --name-column GSA_Name --zone-type management_area --dry-run
+docker compose exec web python manage.py assign_zones --zone-type management_area --dry-run
+docker compose cp accounts.csv web:/tmp/
+docker compose exec web python manage.py import_accounts /tmp/accounts.csv --account-type farm_unit --dry-run
+```
+
+---
+
 ## What is entered by hand
 
 These records have no file import and no public source. Each has its own page:
 
 - Water rights, when you do not have the eWRIMS list: `/surface/rights/add/`
 - Measuring devices on a point of diversion: from the point's page
-- Water accounts: `/accounting/accounts/create/`
 - Allocations: `/accounting/allocations/create/`
 - Water system facilities that the PWSID lookup did not add: `/drinking/facilities/add/`
 - Sampling points: Add sampling points on the Water Systems page (Drinking water > Water Systems) or `add_sampling_point`

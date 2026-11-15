@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Import accounts - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Import accounts{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    {% include "partials/_crumb_root.html" %}
+    <a href="{% url 'accounting:accounts_list' %}">Accounts</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Import accounts</span>
+  </nav>
+  <p class="page-description">This page imports water accounts from a spreadsheet and assigns use areas already on file to them.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <a href="{% url 'accounting:accounts_list' %}" class="back-link">&larr; Back to Accounts</a>
+
+  {% comment %} The Import use areas page's layout: the preview replaces this card (an empty #import-card comes back out of band) and lands in #import-area; a refusal lands in #import-area and leaves the card. {% endcomment %}
+  <div id="import-card">
+    <div class="card-raised">
+      <h2 class="card-header-ruled">Accounts and their use areas</h2>
+      <p class="text-base text-secondary mt-md">OpenH2O saves nothing until you press Import on the preview.</p>
+      <p class="text-base text-secondary mt-sm">On the preview you choose the account type for the new accounts.</p>
+
+      <form class="mt-lg"
+        id="import-upload-form"
+        method="post"
+        action="{% url 'accounting:account_import_preview' %}"
+        enctype="multipart/form-data"
+        hx-post="{% url 'accounting:account_import_preview' %}"
+        hx-target="#import-area"
+        hx-encoding="multipart/form-data"
+        hx-indicator="#import-spinner">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label" for="import-file">Data file <span class="required-mark">*</span></label>
+          <div class="file-picker">
+            <label class="btn-secondary file-picker-button">
+              Choose file
+              <input type="file" id="import-file" name="file" accept=".csv,.txt" required class="file-picker-input">
+            </label>
+            <span class="file-picker-name text-tertiary text-sm" id="import-file-name">No file chosen</span>
+          </div>
+          <div class="form-help">Save your spreadsheet as a CSV file of up to 25 MB. Each row needs the use area's parcel number and its account number. A new account also needs its name, and its contact name and email are optional. OpenH2O takes a new account's name and contact from its first row.</div>
+        </div>
+        <div class="row-start pt-sm">
+          <button type="submit" class="btn-primary">Upload &amp; preview</button>
+          <span id="import-spinner" class="htmx-indicator text-tertiary text-sm">Reading the file&hellip;</span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="import-area"></div>
+
+</div>
+<script>
+  // Show the chosen filename beside the styled "Choose file" button.
+  (function() {
+    var input = document.getElementById('import-file');
+    var name = document.getElementById('import-file-name');
+    if (!input || !name) return;
+    input.addEventListener('change', function() {
+      name.textContent = (input.files && input.files.length)
+        ? input.files[0].name
+        : 'No file chosen';
+    });
+  })();
+</script>
+{% endblock %}

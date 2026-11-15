@@ -3,6 +3,7 @@
 from django.urls import path
 
 from accounting.views import (
+    account_import,
     accounts,
     allocations,
     calculation_runs,
@@ -54,6 +55,9 @@ urlpatterns = [
     # Water Accounts
     path("accounts/", accounts.accounts_list, name="accounts_list"),
     path("accounts/create/", accounts.account_create, name="account_create"),
+    path("accounts/import/", account_import.account_import_page, name="account_import"),
+    path("accounts/import/preview/", account_import.account_import_preview, name="account_import_preview"),
+    path("accounts/import/commit/", account_import.account_import_commit, name="account_import_commit"),
     path("accounts/<int:pk>/", accounts.account_detail, name="account_detail"),
     path("accounts/<int:pk>/edit/", accounts.account_edit, name="account_edit"),
     path(

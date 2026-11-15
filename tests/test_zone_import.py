@@ -7,6 +7,7 @@ is pressed. ``import_zones`` runs the same function. The words asserted here are
 the approved rows, word for word.
 """
 import json
+from html import unescape
 
 import pytest
 from django.contrib.gis.geos import GEOSGeometry
@@ -186,7 +187,7 @@ def test_a_site_with_no_boundary_is_refused():
     response = _upload(_client(), THREE)
     assert (
         "This site's boundary is not set yet. Set it in the Setup Wizard, then import your zones."
-        in response.content.decode()
+        in unescape(response.content.decode())
     )
 
 
@@ -211,10 +212,7 @@ def test_the_import_page_reads_as_approved(boundary):
     page = _client().get(reverse("geography:zone_import")).content.decode()
     assert "This page imports zones from a map file, one zone for each name in the file." in page
     assert "Zone outlines" in page
-    assert (
-        "On the preview you choose the column that holds each zone&#x27;s name and the zone type." in page
-        or "On the preview you choose the column that holds each zone's name and the zone type." in page
-    )
+    assert "On the preview you choose the column that holds each zone's name and the zone type." in unescape(page)
     assert "Back to Zones" in page
 
 

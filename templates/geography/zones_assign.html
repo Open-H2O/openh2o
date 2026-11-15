@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Assign use areas to zones - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Assign use areas to zones{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    {% include "partials/_crumb_root.html" %}
+    <a href="{% url 'geography:zone_list' %}">Zones</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Assign use areas to zones</span>
+  </nav>
+  <p class="page-description">This page assigns each use area to the zone of the chosen type that holds most of its area.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <a href="{% url 'geography:zone_list' %}" class="back-link">&larr; Back to Zones</a>
+
+  {% if message %}
+  <div class="card-raised"><p class="text-base text-secondary m-0">{{ message }}</p></div>
+  {% elif result %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Assignment complete</h2>
+    <p class="text-base text-secondary mt-md">{{ result }}</p>
+    {% if result_outside %}<p class="text-base text-secondary mt-sm">{{ result_outside }}</p>{% endif %}
+    <div class="row-start pt-sm" style="margin-top: var(--space-lg);">
+      <a href="{% url 'geography:zone_list' %}" class="btn-primary">View Zones</a>
+    </div>
+  </div>
+  {% else %}
+  <div class="card-raised" id="assign-card">
+    <h2 class="card-header-ruled">What Assign would do</h2>
+    <form method="post" action="{% url 'geography:zones_assign' %}" class="mt-md">
+      {% csrf_token %}
+      <div class="form-group" style="max-width: 320px;">
+        <label class="form-label" for="assign-zone-type">Zone type <span class="required-mark">*</span></label>
+        <select id="assign-zone-type" name="zone_type" class="form-select"
+          hx-get="{% url 'geography:zones_assign' %}" hx-trigger="change" hx-target="#assign-card" hx-select="#assign-card" hx-swap="outerHTML" hx-push-url="true">
+          {% for value, label in types %}<option value="{{ value }}"{% if value == zone_type %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      {% if nothing %}
+      <p class="text-base text-secondary mt-md">{{ nothing }}</p>
+      {% else %}
+      <table class="data-table import-counts mt-md">
+        <colgroup><col style="width: 10%;"><col style="width: 38%;"><col></colgroup>
+        <tbody>
+          {% for row in per_zone %}<tr><td class="td-num">{{ row.count|intcomma }}</td><td>{{ row.what }}</td><td class="text-secondary">{{ row.action }}</td></tr>{% endfor %}
+          {% if outside_count %}<tr><td class="td-num">{{ outside_count|intcomma }}</td><td>{{ outside_what }}
+            {% include "core/partials/_listed.html" with items=outside.items total=outside.total not_listed=outside.not_listed what="parcel numbers" %}</td><td class="text-secondary">Not assigned</td></tr>{% endif %}
+          {% if already_count %}<tr><td class="td-num">{{ already_count|intcomma }}</td><td>{{ already_what }}</td><td class="text-secondary">Unchanged</td></tr>{% endif %}
+        </tbody>
+      </table>
+      {% if across_sentence %}<p class="text-base text-secondary mt-md">{{ across_sentence }}</p>
+      {% include "core/partials/_listed.html" with items=across.items total=across.total not_listed=across.not_listed what="parcel numbers" %}{% endif %}
+      <div class="card-raised card-inset mt-lg" style="padding: var(--space-md);">
+        <p class="text-base text-secondary m-0">{{ each_assignment }}</p>
+        {% for sentence in finalized %}<p class="text-base text-secondary mt-sm" style="margin-bottom: 0;">{{ sentence }}</p>{% endfor %}
+      </div>
+      <div class="row-start pt-sm mt-lg">
+        <button type="submit" class="btn-primary">Assign {{ to_assign|intcomma }} {{ to_assign_what }}</button>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

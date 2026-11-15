@@ -1,0 +1,89 @@
+{% load humanize %}{% comment %}
+The Import accounts preview. Two cards in one form: the column matches and the account
+type, then what Import would do (an Accounts table and a Rows of the file table) and the
+buttons. Changing a choice re-posts the preview with the stored upload's token, and the
+counts come back from the same plan Import runs. Nothing is written until Import is
+pressed. A count of zero has no row.
+{% endcomment %}
+<div id="import-card" hx-swap-oob="true"></div>
+<form id="import-mapping-form" method="post" action="{% url 'accounting:account_import_commit' %}" class="page-stack">
+  {% csrf_token %}
+  <input type="hidden" name="token" value="{{ token }}">
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Match the file's columns</h2>
+    <p class="text-base text-secondary mt-md">OpenH2O found {{ row_count|intcomma }} row{{ row_count|pluralize }} and {{ columns|length|intcomma }} column{{ columns|length|pluralize }} in {{ file_name }}. Changing a choice updates the counts below.</p>
+    <table class="data-table mt-lg">
+      <thead>
+        <tr>
+          <th style="width: 28%;">Field</th>
+          <th style="width: 30%;">Your column</th>
+          <th>First five values</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fr in field_rows %}
+        <tr>
+          <td>{{ fr.label }}{% if fr.required %} <span class="required-mark">*</span>{% endif %}</td>
+          <td>
+            <select name="map:{{ fr.field }}" class="form-select" hx-post="{% url 'accounting:account_import_preview' %}" hx-trigger="change" hx-target="#import-area" hx-include="closest form">
+              {% if not fr.required %}<option value=""{% if not fr.guess %} selected{% endif %}>Not imported</option>{% endif %}
+              {% for col in columns %}<option value="{{ col }}"{% if fr.guess == col %} selected{% endif %}>{{ col }}</option>{% endfor %}
+            </select>
+          </td>
+          <td class="text-tertiary text-sm">{{ fr.sample|join:", " }}</td>
+        </tr>
+        {% endfor %}
+        {% if new_count %}
+        <tr>
+          <td>Account type <span class="required-mark">*</span></td>
+          <td>
+            <select name="unit_kind" class="form-select" required>
+              <option value=""{% if not unit_kind %} selected{% endif %}>Choose a type</option>
+              {% for value, label in unit_kinds %}<option value="{{ value }}"{% if value == unit_kind %} selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+          </td>
+          <td class="text-tertiary text-sm">OpenH2O gives each new account the type you choose here.</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">What Import would do</h2>
+    {% if account_lines %}
+    <p class="form-label mt-md">Accounts</p>
+    <table class="data-table import-counts">
+      <colgroup><col style="width: 10%;"><col><col style="width: 30%;"></colgroup>
+      <tbody>
+        {% for count, what, action in account_lines %}<tr><td class="td-num">{{ count|intcomma }}</td><td>{{ what }}</td><td class="text-secondary">{{ action }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    {% if differing_sentence %}<p class="text-base text-secondary mt-md">{{ differing_sentence }}</p>
+    {% include "core/partials/_listed.html" with items=differing.items total=differing.total not_listed=differing.not_listed what="accounts" lines=True %}{% endif %}
+    {% if bad_email_sentence %}<p class="text-base text-secondary mt-md">{{ bad_email_sentence }}</p>
+    {% include "core/partials/_listed.html" with items=bad_email.items total=bad_email.total not_listed=bad_email.not_listed what="accounts" %}{% endif %}
+
+    <p class="form-label mt-lg">Rows of the file</p>
+    <table class="data-table import-counts">
+      <colgroup><col style="width: 10%;"><col><col style="width: 30%;"></colgroup>
+      <tbody>
+        {% for row in row_lines %}<tr><td class="td-num">{{ row.count|intcomma }}</td><td>{{ row.what }}
+          {% include "core/partials/_listed.html" with items=row.listed.items total=row.listed.total not_listed=row.listed.not_listed what="rows" lines=row.lines %}</td><td class="text-secondary">{{ row.action }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+
+    {% if has_work %}
+    {% for sentence in finalized %}<p class="text-base text-secondary mt-lg">{{ sentence }}</p>{% endfor %}
+    {% if type_error %}<p class="text-base mt-md" style="color: var(--color-error);">{{ type_error }}</p>{% endif %}
+    <div class="row-start pt-sm mt-lg" style="gap: var(--space-sm);">
+      <button type="submit" class="btn-primary" hx-post="{% url 'accounting:account_import_commit' %}" hx-target="#import-area" hx-include="closest form">Import</button>
+      <a href="{% url 'accounting:account_import' %}" class="btn-secondary">Choose another file</a>
+    </div>
+    {% else %}
+    <p class="text-base text-secondary mt-lg">OpenH2O has nothing to import from this file.</p>
+    <div class="row-start pt-sm mt-md"><a href="{% url 'accounting:account_import' %}" class="btn-secondary">Choose another file</a></div>
+    {% endif %}
+  </div>
+</form>

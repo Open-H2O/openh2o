@@ -2,7 +2,7 @@
 """URL routes for the geography app."""
 from django.urls import path
 
-from geography import views
+from geography import views, views_bulk
 
 app_name = "geography"
 
@@ -13,6 +13,10 @@ urlpatterns = [
     # Zone management
     path("zones/", views.zone_list, name="zone_list"),
     path("zones/create/", views.zone_create, name="zone_create"),
+    path("zones/import/", views_bulk.zone_import_page, name="zone_import"),
+    path("zones/import/preview/", views_bulk.zone_import_preview, name="zone_import_preview"),
+    path("zones/import/commit/", views_bulk.zone_import_commit, name="zone_import_commit"),
+    path("zones/assign/", views_bulk.zones_assign, name="zones_assign"),
     path("zones/<int:pk>/", views.zone_detail, name="zone_detail"),
     path("zones/<int:pk>/edit/", views.zone_edit, name="zone_edit"),
     path("zones/<int:pk>/assign/", views.zone_parcel_assign, name="zone_parcel_assign"),

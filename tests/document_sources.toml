@@ -1211,6 +1211,17 @@ checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
+heading = "Zones and water accounts"
+files = ["geography/zone_import.py", "geography/zone_assign.py", "geography/views_bulk.py", "geography/urls.py", "geography/management/commands/import_zones.py", "geography/management/commands/assign_zones.py", "accounting/account_import.py", "accounting/views/account_import.py", "accounting/urls.py", "accounting/management/commands/import_accounts.py"]
+labels = [
+  { text = "Import zones", where = "templates/geography/zone_list.html" },
+  { text = "Assign use areas to zones", where = "templates/geography/zone_list.html" },
+  { text = "Import accounts", where = "templates/accounting/accounts_list.html" },
+]
+checked_at = "072eb1c6"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
 heading = "Use areas: the Import use areas screen, or `import_parcels`"
 files = ["parcels/management/commands/import_parcels.py", "parcels/models.py", "infrastructure/views.py", "parcels/use_area_import.py", "parcels/views.py", "templates/parcels/use_area_import.html", "templates/parcels/partials/_use_area_import_preview.html", "core/geofiles.py"]
 labels = []

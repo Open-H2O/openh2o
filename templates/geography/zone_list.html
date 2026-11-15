@@ -16,7 +16,11 @@
 {% endblock %}
 
 {% block page_actions %}
-{% if user_can_write %}<a href="{% url 'geography:zone_create' %}" class="btn-primary btn-sm">+ Add zone</a>{% endif %}
+{% if user_can_write %}<div class="row-start" style="gap: var(--space-sm);">
+<a href="{% url 'geography:zone_import' %}" class="btn-secondary btn-sm">Import zones</a>
+{% if all_count and 'parcels' in enabled_modules %}<a href="{% url 'geography:zones_assign' %}" class="btn-secondary btn-sm">Assign use areas to zones</a>{% endif %}
+<a href="{% url 'geography:zone_create' %}" class="btn-primary btn-sm">+ Add zone</a>
+</div>{% endif %}
 {% endblock %}
 
 {% block breadcrumbs %}

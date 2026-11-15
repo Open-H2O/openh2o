@@ -257,7 +257,9 @@ def test_the_template_flag_is_false_only_for_a_viewer(viewer, operator):
 #: them is refused like a POST. Pinned so a read page can never match by
 #: accident and a new write page is a deliberate addition here.
 WRITE_PAGES = [
-    "accounting:account_create", "accounting:account_edit", "accounting:allocation_create",
+    "accounting:account_create", "accounting:account_edit", "accounting:account_import",
+    "accounting:account_import_commit", "accounting:account_import_preview",
+    "accounting:allocation_create",
     "accounting:assign_parcel", "accounting:csv_upload", "accounting:ledger_create",
     "accounting:methodology_step_config", "accounting:methodology_step_move",
     "accounting:methodology_step_toggle", "accounting:parcel_search_for_assignment",
@@ -273,7 +275,9 @@ WRITE_PAGES = [
     "drinking:schedule_add", "drinking:schedule_edit", "drinking:schedule_import",
     "drinking:schedule_import_commit", "drinking:schedule_import_preview",
     "geography:zone_create",
-    "geography:zone_edit", "geography:zone_parcel_assign", "geography:zone_parcel_remove",
+    "geography:zone_edit", "geography:zone_import", "geography:zone_import_commit",
+    "geography:zone_import_preview", "geography:zone_parcel_assign", "geography:zone_parcel_remove",
+    "geography:zones_assign",
     "infrastructure:add", "infrastructure:import", "infrastructure:import_commit",
     "infrastructure:import_preview", "infrastructure:parcel_create", "parcels:edit_field",
     "parcels:fallow_period_add", "parcels:fallow_period_end_edit",

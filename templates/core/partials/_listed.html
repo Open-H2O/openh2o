@@ -1,0 +1,10 @@
+{% load humanize %}{% comment %}
+  The numbers or names a preview row lists under its words. Up to five show in
+  place; a longer list opens from "Show all N". The caller passes `items` (the
+  listed strings, already capped at core/pending_imports.py ERROR_ROW_LIMIT),
+  `total` (how many there are in all), `what` for the capped-list line, and
+  `lines` to put each item on its own line.
+{% endcomment %}{% if items %}{% if total > 5 %}<details class="mt-sm"><summary class="text-sm text-accent listed-summary">Show all {{ total|intcomma }}</summary>{% endif %}
+<div class="text-tertiary text-sm mt-sm">{% for item in items %}{% if lines %}{{ item }}{% if not forloop.last %}<br>{% endif %}{% else %}<span class="nowrap-item">{{ item }}</span>{% if not forloop.last %}, {% endif %}{% endif %}{% endfor %}</div>
+{% include "core/partials/_rows_not_listed.html" with count=not_listed what=what %}
+{% if total > 5 %}</details>{% endif %}{% endif %}

@@ -4,7 +4,10 @@
 {% block page_title %}Accounts{% endblock %}
 
 {% block page_actions %}
-{% if user_can_write %}<a href="{% url 'accounting:account_create' %}" class="btn-primary btn-sm">+ Add account</a>{% endif %}
+{% if user_can_write %}<div class="row-start" style="gap: var(--space-sm);">
+<a href="{% url 'accounting:account_import' %}" class="btn-secondary btn-sm">Import accounts</a>
+<a href="{% url 'accounting:account_create' %}" class="btn-primary btn-sm">+ Add account</a>
+</div>{% endif %}
 {% endblock %}
 
 {% block breadcrumbs %}

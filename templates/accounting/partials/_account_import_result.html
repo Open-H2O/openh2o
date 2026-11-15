@@ -1,0 +1,19 @@
+{% load humanize %}{% comment %}
+Outcome of Import accounts, and every refusal the page shows: one error sentence, or the
+accounts made and use areas assigned (and the rows the preview listed as left out).
+{% endcomment %}
+{% if error %}
+<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md);">
+  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
+</div>
+{% else %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Import complete</h2>
+  <p class="text-base text-secondary mt-md">OpenH2O imported {{ made|intcomma }} account{{ made|pluralize }} and assigned {{ assigned|intcomma }} use area{{ assigned|pluralize }} to their accounts.</p>
+  {% if left_out %}<p class="text-base text-secondary mt-sm">OpenH2O left out the {{ left_out|intcomma }} row{{ left_out|pluralize }} the preview listed.</p>{% endif %}
+  <div class="row-start pt-sm" style="margin-top: var(--space-lg); gap: var(--space-sm);">
+    <a href="{% url 'accounting:accounts_list' %}" class="btn-primary">View Accounts</a>
+    <a href="{% url 'accounting:account_import' %}" class="btn-secondary">Choose another file</a>
+  </div>
+</div>
+{% endif %}

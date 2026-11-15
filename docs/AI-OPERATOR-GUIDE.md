@@ -483,6 +483,8 @@ saves the file at once unless you tick Dry run.
 |---|---|---|
 | Only a boundary | `import_boundary`, then `auto_populate` | `import_boundary` loads a boundary from a GeoJSON file, a zipped shapefile or a KML file. `auto_populate` then downloads basins, parcels, streams and monitoring stations for that boundary, which must already be on the site. |
 | Parcel outlines, as a zipped shapefile, KML or GeoJSON | The Import use areas screen at `/parcels/import/`, or `import_parcels` | Both read the same files. Water accounts link to parcels, so import the parcels before you create accounts. |
+| Zone outlines in a zipped shapefile, a KML or a GeoJSON file | Import zones at `/map/zones/import/` or `import_zones`, then Assign use areas to zones at `/map/zones/assign/` or `assign_zones` | Import the use areas first. Each use area goes to the zone of the chosen type that holds most of its area. |
+| Water accounts in a CSV file | Import accounts at `/accounting/accounts/import/` or `import_accounts` | Import the use areas first. Each new account takes the account type chosen on the preview or given with `--account-type`. |
 | A list of wells, as a CSV file | The import screen at `/infrastructure/import/?type=well`, or `import_wells` | Both create the same records. The screen asks you to match the file's columns first. |
 | Water levels measured at the wells, as a CSV file | `/wells/water-levels/import/` | The screen reads DWR's groundwater level data from its SGMA Portal, and the organization's own spreadsheet. Each row identifies its well by name, state well number or WCR number, so import the wells first. |
 | A list of water rights | `import_water_rights` or the import screen at `/surface/rights/import/` | From the state's CSV list, the command creates the same water rights as the screen. Import the water rights before the points of diversion. |
@@ -502,8 +504,9 @@ starts in a month it chooses. Record the answer on the Delivery Settings page
 only when the site runs the `surface` section. The reporting year applies only to
 diversion files, and is separate from the month the site's water year starts in.
 
-Water accounts and allocations have no import. Create them on the Accounts and
-Allocations pages under Water accounting. Before the first allocation, set the water
+Import water accounts from a spreadsheet with Import accounts on the Accounts page or the
+`import_accounts` command. Allocations have no import, so create them on the Allocations
+page under Water accounting. Before the first allocation, set the water
 year's first month on the Delivery Settings page. Then create each water year with
 `create_water_year` or on the Water Years page. A water year starts on the first day of
 a month and ends on the last day of a month. You can also enter water levels one at a

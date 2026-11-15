@@ -1,0 +1,70 @@
+{% load humanize %}{% comment %}
+The Import zones preview. Two cards in one form: the choices (the name column and the
+zone type), then what Import would do and the buttons. Changing a choice re-posts the
+preview with the stored upload's token, and the counts come back from the same plan
+Import runs. Nothing is written until Import is pressed. A count of zero has no row.
+{% endcomment %}
+<div id="import-card" hx-swap-oob="true"></div>
+<form id="import-mapping-form" method="post" action="{% url 'geography:zone_import_commit' %}" class="page-stack">
+  {% csrf_token %}
+  <input type="hidden" name="token" value="{{ token }}">
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Name the zones</h2>
+    <p class="text-base text-secondary mt-md">OpenH2O found {{ outline_count|intcomma }} outline{{ outline_count|pluralize }} and {{ columns|length|intcomma }} column{{ columns|length|pluralize }} in {{ file_name }}. Changing a choice updates the counts below.</p>
+    <table class="data-table mt-lg">
+      <thead>
+        <tr>
+          <th style="width: 28%;">Field</th>
+          <th style="width: 30%;">Your column</th>
+          <th>First five values</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Zone name <span class="required-mark">*</span></td>
+          <td>
+            <select name="name_column" class="form-select" hx-post="{% url 'geography:zone_import_preview' %}" hx-trigger="change" hx-target="#import-area" hx-include="closest form">
+              {% for col in columns %}<option value="{{ col }}"{% if col == name_column %} selected{% endif %}>{{ col }}</option>{% endfor %}
+            </select>
+          </td>
+          <td class="text-tertiary text-sm">{{ name_sample|join:", " }}</td>
+        </tr>
+        <tr>
+          <td>Zone type <span class="required-mark">*</span></td>
+          <td>
+            <select name="zone_type" class="form-select" hx-post="{% url 'geography:zone_import_preview' %}" hx-trigger="change" hx-target="#import-area" hx-include="closest form">
+              {% for value, label in zone_types %}<option value="{{ value }}"{% if value == zone_type %} selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+          </td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">What Import would do</h2>
+    <table class="data-table import-counts mt-md">
+      <colgroup><col style="width: 10%;"><col><col style="width: 45%;"></colgroup>
+      <tbody>
+        {% if new_count %}<tr><td class="td-num">{{ new_count|intcomma }}</td><td>new zone{{ new_count|pluralize }}</td><td class="text-secondary">Imported</td></tr>{% endif %}
+        {% if used_count %}<tr><td class="td-num">{{ used_count|intcomma }}</td><td>{% if used_count == 1 %}name{% else %}names{% endif %} already used by a zone of this type
+          {% include "core/partials/_listed.html" with items=used total=used_total not_listed=used_not_listed what="names" %}</td><td class="text-secondary">Not imported</td></tr>{% endif %}
+        {% if no_name_count %}<tr><td class="td-num">{{ no_name_count|intcomma }}</td><td>outline{{ no_name_count|pluralize }} without a name</td><td class="text-secondary">Not imported</td></tr>{% endif %}
+        {% if unreadable_count %}<tr><td class="td-num">{{ unreadable_count|intcomma }}</td><td>without a readable outline
+          {% include "core/partials/_listed.html" with items=unreadable total=unreadable_count not_listed=unreadable_not_listed what="names" %}</td><td class="text-secondary">Not imported</td></tr>{% endif %}
+        {% if too_long_count %}<tr><td class="td-num">{{ too_long_count|intcomma }}</td><td>{% if too_long_count == 1 %}name{% else %}names{% endif %} over {{ name_max_length }} characters</td><td class="text-secondary">Not imported</td></tr>{% endif %}
+      </tbody>
+    </table>
+    {% for sentence in shared %}<p class="text-base text-secondary mt-md">{{ sentence }}</p>{% endfor %}
+    {% if new_count %}
+    <div class="row-start pt-sm mt-lg" style="gap: var(--space-sm);">
+      <button type="submit" class="btn-primary" hx-post="{% url 'geography:zone_import_commit' %}" hx-target="#import-area" hx-include="closest form">Import {{ new_count|intcomma }} zone{{ new_count|pluralize }}</button>
+      <a href="{% url 'geography:zone_import' %}" class="btn-secondary">Choose another file</a>
+    </div>
+    {% else %}
+    <p class="text-base text-secondary mt-lg">OpenH2O has nothing to import from this file.</p>
+    <div class="row-start pt-sm mt-md"><a href="{% url 'geography:zone_import' %}" class="btn-secondary">Choose another file</a></div>
+    {% endif %}
+  </div>
+</form>

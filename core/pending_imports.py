@@ -137,6 +137,20 @@ KINDS = {
         commit_url_name="setup:run",
         extensions=(".csv", ".txt"),
     ),
+    # Import zones on the Zones page: one zone for each name in a map file.
+    "zones": Kind(
+        commit="geography.zone_import:commit_stored_zones",
+        result_template="geography/partials/_zone_import_result.html",
+        commit_url_name="geography:zone_import_commit",
+        extensions=(".zip", ".kml", ".geojson", ".json"),
+    ),
+    # Import accounts on the Accounts page: accounts and the use areas in each.
+    "accounts": Kind(
+        commit="accounting.account_import:commit_stored_accounts",
+        result_template="accounting/partials/_account_import_result.html",
+        commit_url_name="accounting:account_import_commit",
+        extensions=(".csv", ".txt"),
+    ),
 }
 
 
@@ -393,3 +407,17 @@ def status_response(request, token):
         pending.delete()
         return response
     return _waiting(request, pending)
+
+
+# ---------------------------------------------------------------------------
+# Words a bulk action's preview shares
+# ---------------------------------------------------------------------------
+
+
+def finalized_sentences(names, what):
+    """The finalized-year lines above a bulk action's button, one a finalized year
+    (``what`` names the change: "these assignments change", "this import changes")."""
+    return [
+        f"{name} is finalized. Its pages keep its figures as filed and show beside them any figure {what}."
+        for name in names
+    ]
