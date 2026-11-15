@@ -200,6 +200,16 @@ def test_a_number_on_several_outlines_is_saved_once_and_counted(boundary):
     assert "already use area" not in out.split("OpenH2O saved")[1]
 
 
+def test_a_second_run_does_not_say_it_saved_the_repeated_numbers(boundary):
+    # Found on the real-size run: a run that saved nothing still said "OpenH2O saved
+    # one use area for each number" about the repeats.
+    fake = FakeLightBox(count=1500, apns={1400: apn_of(10)})
+    run(boundary, fake)
+    out = run(boundary, FakeLightBox(count=1500, apns={1400: apn_of(10)}))
+    assert "OpenH2O did not save any new use areas." in out
+    assert "duplicate record" not in out
+
+
 def test_a_use_area_on_file_with_dashes_counts_as_already_on_file(boundary):
     from django.contrib.gis.geos import MultiPolygon, Polygon
     for oid in (3, 4):
