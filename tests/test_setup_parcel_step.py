@@ -125,6 +125,15 @@ def test_the_list_chosen_with_no_file_is_refused(client, boundary):
     assert not PendingImport.objects.exists()
 
 
+def test_a_refusal_keeps_the_steps_that_were_checked(client, boundary):
+    # Seen on staging: after a refusal every step came back checked, so pressing Run
+    # setup again would run steps the administrator had unchecked.
+    html = _start(client, boundary, choice="list", steps=("parcels",)).content.decode()
+    assert 'value="parcels" checked' in html
+    for step in ("basins", "flowlines", "stations"):
+        assert f'value="{step}" checked' not in html
+
+
 def test_a_spreadsheet_is_refused_by_name(client, boundary):
     upload = SimpleUploadedFile("parcels.xlsx", b"PK\x03\x04binary")
     page = _words(_start(client, boundary, choice="list", upload=upload))
