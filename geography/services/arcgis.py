@@ -573,11 +573,12 @@ def esri_polygon_to_geos(esri_geometry: dict | None) -> MultiPolygon | None:
     if not rings:
         return None
 
-    # ArcGIS convention: the first ring with clockwise winding is the
-    # exterior, subsequent counter-clockwise rings are holes belonging
-    # to the preceding exterior ring. For simplicity and because most
-    # basin boundaries are simple polygons, we treat each ring set as
-    # a single polygon. Django/GEOS will normalize winding order.
+    # ArcGIS convention: a clockwise ring is an exterior and each
+    # counter-clockwise ring after it is a hole in that exterior. A parcel in
+    # two pieces is two clockwise rings. Until 2026-11-15 the sign below was
+    # the wrong way round, so a second piece became a "hole" outside its shell:
+    # 6 of the first 11,673 Merced parcels, whose geodetic area PostGIS then
+    # refused to compute ("lwgeom_area_spher returned area < 0").
     polygons = []
     exterior = None
     holes: list[list[tuple]] = []
@@ -588,14 +589,14 @@ def esri_polygon_to_geos(esri_geometry: dict | None) -> MultiPolygon | None:
         if coords[0] != coords[-1]:
             coords.append(coords[0])
 
-        # Determine winding: positive area = clockwise (exterior in ArcGIS)
-        # Use the shoelace formula
+        # Winding by the shoelace sum, x east and y north: negative is
+        # clockwise (an exterior in ArcGIS), positive counter-clockwise (a hole).
         area = sum(
             (coords[i][0] * coords[i + 1][1] - coords[i + 1][0] * coords[i][1])
             for i in range(len(coords) - 1)
         )
 
-        if area >= 0 or exterior is None:
+        if area <= 0 or exterior is None:
             # New exterior ring: flush previous polygon if any
             if exterior is not None:
                 polygons.append(Polygon(exterior, *holes))
@@ -612,7 +613,28 @@ def esri_polygon_to_geos(esri_geometry: dict | None) -> MultiPolygon | None:
         return None
 
     mp = MultiPolygon(polygons, srid=4326)
+    if not mp.valid:
+        # A service that winds its rings the other way, or a self-touching
+        # outline, still gives a valid shape: GEOS repairs it, keeping only
+        # the polygon parts.
+        mp = _as_multipolygon(mp.make_valid())
     return mp
+
+
+def _as_multipolygon(geom: GEOSGeometry) -> MultiPolygon | None:
+    """The polygon parts of ``geom`` as one MultiPolygon (SRID 4326), or None."""
+    if geom.geom_type == "MultiPolygon":
+        geom.srid = 4326
+        return geom
+    if geom.geom_type == "Polygon":
+        return MultiPolygon([geom], srid=4326)
+    parts = []
+    for part in geom:
+        if part.geom_type == "Polygon":
+            parts.append(part)
+        elif part.geom_type == "MultiPolygon":
+            parts.extend(part)
+    return MultiPolygon(parts, srid=4326) if parts else None
 
 
 def esri_polyline_to_geos(esri_geometry: dict | None) -> MultiLineString | None:
