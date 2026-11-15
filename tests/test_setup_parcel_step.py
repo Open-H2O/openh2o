@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The Setup Wizard's parcel step runs as its own process and the page polls it.
 
-Before 153.3 the wizard ran the parcel download inside one web request (153.1 M3: 258 s
+Before 2026-11-15 the wizard ran the parcel download inside one web request (258 s
 held open, then a failure the page could not act on). Now the step starts
 ``run_pending_import`` for a ``setup_parcels`` upload, answers at once, shows the
-download's progress, and shows the result in the words of ruling 179. The other steps
+download's progress, and shows the result in the words approved on 2026-11-15. The other steps
 still run inside the request.
 """
 import datetime
@@ -81,8 +81,15 @@ def _start(client, boundary, choice="every", upload=None, steps=("parcels",)):
     return client.post(RUN_URL, data)
 
 
+def _past_basins(client):
+    """The first poll reports Groundwater Basins as unchecked; the parcel step is next."""
+    assert "Skipped: you unchecked this step" in client.post(PROGRESS_URL).content.decode()
+
+
 def _words(response):
-    return " ".join(response.content.decode().split()).replace("&#x27;", "'").replace("&rsquo;", "'")
+    import re
+    text = re.sub(r"<[^>]+>", "", response.content.decode())
+    return " ".join(text.split()).replace("&#x27;", "'").replace("&rsquo;", "'")
 
 
 # -- The pages before the run -------------------------------------------------------------
@@ -107,8 +114,8 @@ def test_the_populate_page_offers_the_choice_the_list_and_the_california_line(cl
             "headed APN or Parcel number, or from the first column when no column has either "
             "heading. OpenH2O matches each number with or without its dashes.") in page
     assert CALIFORNIA_LINE in page
-    assert reverse("parcels:use_area_import") in page
-    assert 'enctype="multipart/form-data"' in page
+    assert reverse("parcels:use_area_import") in client.get(RUN_URL).content.decode()
+    assert 'enctype="multipart/form-data"' in client.get(RUN_URL).content.decode()
 
 
 def test_the_list_chosen_with_no_file_is_refused(client, boundary):
@@ -139,6 +146,7 @@ def test_the_parcel_step_answers_at_once_then_shows_its_result(
     settings.OPENH2O_IMPORT_INLINE = False
     upload = SimpleUploadedFile("parcels.csv", b"APN\n000000000001\n000000000002\n900-000-001-000\n")
     assert _start(client, boundary, choice="list", upload=upload).status_code == 302
+    _past_basins(client)
 
     with patch("core.pending_imports.subprocess.Popen") as popen:
         with django_capture_on_commit_callbacks(execute=True):
@@ -170,7 +178,6 @@ def test_the_parcel_step_answers_at_once_then_shows_its_result(
             "areas.") in done
     assert ("1 parcel number on your list does not match any parcel that overlaps the boundary: "
             "900-000-001-000.") in done
-    assert "Setup complete" in done
     assert not PendingImport.objects.exists()
 
 
@@ -178,6 +185,7 @@ def test_the_progress_line_counts_the_download(client, boundary, settings,
                                                 django_capture_on_commit_callbacks):
     settings.OPENH2O_IMPORT_INLINE = False
     _start(client, boundary)
+    _past_basins(client)
     with patch("core.pending_imports.subprocess.Popen"):
         with django_capture_on_commit_callbacks(execute=True):
             client.post(PROGRESS_URL)
@@ -194,6 +202,7 @@ def test_a_download_whose_process_went_quiet_is_reported_stopped(
         client, boundary, settings, django_capture_on_commit_callbacks):
     settings.OPENH2O_IMPORT_INLINE = False
     _start(client, boundary)
+    _past_basins(client)
     with patch("core.pending_imports.subprocess.Popen"):
         with django_capture_on_commit_callbacks(execute=True):
             client.post(PROGRESS_URL)
@@ -202,14 +211,17 @@ def test_a_download_whose_process_went_quiet_is_reported_stopped(
     pending.status = "running"
     pending.result = {"done": 11000, "total": 57306, "saved": 11000, "updated": quiet.isoformat()}
     pending.save()
-    page = _words(client.post(PROGRESS_URL))
+    response = client.post(PROGRESS_URL)
+    page = _words(response)
     assert "The parcel download stopped after OpenH2O saved 11,000 new use areas." in page
     assert RERUN_LINES in page
-    assert "wizard-step--error" in page
+    assert "wizard-step--error" in response.content.decode()
+    assert not PendingImport.objects.exists()
 
 
 def test_every_parcel_inline_shows_the_saved_count(client, boundary):
     _start(client, boundary)
+    _past_basins(client)
     fake = FakeLightBox(count=1200)
     with patch("geography.services.arcgis.requests.post", side_effect=fake.post):
         client.post(PROGRESS_URL)
@@ -222,6 +234,7 @@ def test_every_parcel_inline_shows_the_saved_count(client, boundary):
 
 def test_a_stop_shows_the_cause_and_the_way_to_add_the_rest(client, boundary):
     _start(client, boundary)
+    _past_basins(client)
     fake = FakeLightBox(count=2500, short={2: "always"})
     with patch("geography.services.arcgis.requests.post", side_effect=fake.post):
         client.post(PROGRESS_URL)
@@ -234,7 +247,8 @@ def test_a_stop_shows_the_cause_and_the_way_to_add_the_rest(client, boundary):
 
 def test_no_parcels_found_points_to_import_use_areas(client, boundary):
     _start(client, boundary)
-    with patch("geography.services.arcgis.requests.post", side_effect=FakeLightBox(ids=None).post):
+    _past_basins(client)
+    with patch("geography.services.arcgis.requests.post", side_effect=FakeLightBox(none_found=True).post):
         client.post(PROGRESS_URL)
     response = client.post(PROGRESS_URL)
     page = _words(response)
@@ -246,10 +260,13 @@ def test_no_parcels_found_points_to_import_use_areas(client, boundary):
 
 def test_the_other_steps_still_run_inside_the_request(client, boundary):
     _start(client, boundary, steps=("flowlines",))
+    _past_basins(client)
     from tests.lightbox_fake import _response
     with patch("geography.services.arcgis.requests.post",
                side_effect=lambda *a, **k: _response({"features": []})) as post:
-        client.post(PROGRESS_URL)
+        client.post(PROGRESS_URL)  # Parcel Boundaries, unchecked
+        assert post.call_count == 0
+        client.post(PROGRESS_URL)  # Flowlines, inside this request
     assert post.call_count == 1
     assert not PendingImport.objects.exists()
 

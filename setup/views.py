@@ -18,8 +18,9 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
-from core import demonstration
+from core import demonstration, pending_imports
 from core.access import admin_required, is_administrator
+from core.models import PendingImport
 from core.modules import is_enabled
 from datasync.models import MonitoredStation
 from geography.models import Boundary
@@ -29,10 +30,13 @@ from setup.boundaries import (
     boundary_from_upload,
     parse_extent_bounds,
 )
+from parcels.parcel_list import ParcelListError, read_parcel_list
 from setup.services import (
     STATION_PROVIDERS,
     build_station_review,
     get_boundary_preview_data,
+    parcel_download_quiet,
+    parcel_result_row,
     run_auto_populate_step,
     run_station_provider_step,
     station_provider_label,
@@ -54,6 +58,15 @@ SESSION_KEY_SELECTED_STEPS = "setup_wizard_selected_steps"
 # by an upload, removed by a select or a typed extent, so the confirm step only
 # says "N polygons combined" about the file that was just read.
 SESSION_KEY_POLYGON_COUNT = "setup_wizard_polygon_count"
+# The token of this run's parcel download (a ``setup_parcels`` PendingImport):
+# set when Run setup is pressed with Parcel Boundaries checked, read by each
+# progress poll while the download runs in its own process.
+SESSION_KEY_PARCEL_TOKEN = "setup_wizard_parcel_token"
+PARCEL_KIND = "setup_parcels"
+PARCEL_NO_FILE = (
+    "Choose the file that lists your parcel numbers, or choose Every parcel that "
+    "overlaps the boundary."
+)
 
 # The upload card's refusals that name the three formats.
 # A file that is not text or not JSON reuses the GeoJSON sentence.
@@ -211,6 +224,7 @@ def setup_confirm(request):
         request.session[SESSION_KEY_RESULTS] = []
         request.session[SESSION_KEY_PROVIDER_INDEX] = 0
         request.session.pop(SESSION_KEY_SELECTED_STEPS, None)
+        _discard_parcel_download(request)
         return redirect("setup:run")
 
     preview = get_boundary_preview_data(boundary)
@@ -250,25 +264,67 @@ def setup_run(request):
         )
         return redirect("setup:wizard")
 
+    errors = []
     if request.method == "POST":
         chosen = request.POST.getlist("steps")
         # Keep only real step names, in wizard_steps() order, so a tampered or
         # stale form value can never make setup_progress index past the list.
         valid_names = {s[0] for s in wizard_steps()}
-        request.session[SESSION_KEY_SELECTED_STEPS] = [
-            name for name in chosen if name in valid_names
-        ]
-        request.session[SESSION_KEY_STEP_INDEX] = 0
-        request.session[SESSION_KEY_RESULTS] = []
-        request.session[SESSION_KEY_PROVIDER_INDEX] = 0
-        return redirect("setup:run")
+        selected = [name for name in chosen if name in valid_names]
+        _discard_parcel_download(request)
+        if "parcels" in selected:
+            errors = _prepare_parcel_download(request, boundary)
+        if not errors:
+            request.session[SESSION_KEY_SELECTED_STEPS] = selected
+            request.session[SESSION_KEY_STEP_INDEX] = 0
+            request.session[SESSION_KEY_RESULTS] = []
+            request.session[SESSION_KEY_PROVIDER_INDEX] = 0
+            return redirect("setup:run")
 
     context = {
         "boundary": boundary,
         "steps": wizard_steps(),
-        "picking": SESSION_KEY_SELECTED_STEPS not in request.session,
+        "picking": bool(errors) or SESSION_KEY_SELECTED_STEPS not in request.session,
+        "errors": errors,
+        "parcel_choice": request.POST.get("parcel_choice", "every") if errors else "every",
     }
     return render(request, "setup/run.html", context)
+
+
+def _discard_parcel_download(request):
+    """Forget this session's parcel download if it never started."""
+    token = request.session.pop(SESSION_KEY_PARCEL_TOKEN, None)
+    if token:
+        pending = pending_imports.lookup(request.user, token, PARCEL_KIND)
+        if pending is not None and pending.status == "previewed":
+            pending_imports.discard(pending)
+
+
+def _prepare_parcel_download(request, boundary):
+    """Record the parcel download Run setup asked for; returns the refusals, if any.
+
+    With "Only the parcels on your list", the list is read now, so a file the
+    download could not use is refused on this page, and stored for the worker.
+    """
+    page_settings = {"boundary_id": boundary.pk}
+    if request.POST.get("parcel_choice") == "list":
+        upload = request.FILES.get("parcel_list")
+        if not upload:
+            return [PARCEL_NO_FILE]
+        try:
+            read_parcel_list(upload, upload.name)
+        except ParcelListError as exc:
+            return [str(exc)]
+        page_settings["mode"] = "list"
+        pending = pending_imports.save_upload(request.user, PARCEL_KIND, upload, page_settings)
+    else:
+        page_settings["mode"] = "every"
+        pending = PendingImport.objects.create(
+            kind=PARCEL_KIND, user=request.user, original_name="", stored_path="",
+            settings=page_settings,
+        )
+    request.session[SESSION_KEY_PARCEL_TOKEN] = str(pending.token)
+    return []
 
 
 def _run_next_step(
@@ -316,6 +372,13 @@ def _run_next_step(
             step_index += 1
             provider_index = 0
         request.session[SESSION_KEY_PROVIDER_INDEX] = provider_index
+    elif step_name == "parcels":
+        # Its own process: start it once, then each poll reads where it stands
+        # and moves on only when it has finished or gone quiet.
+        row = _poll_parcel_download(request, boundary, steps[step_index][1])
+        if row is not None:
+            results.append(row)
+            step_index += 1
     else:
         outcome = run_auto_populate_step(boundary, step_name)
         count, errors = outcome
@@ -332,6 +395,48 @@ def _run_next_step(
     request.session[SESSION_KEY_RESULTS] = results
     request.session.modified = True
     return step_index, provider_index
+
+
+def _parcel_row(request, boundary):
+    """This session's parcel download row; a new "every parcel" row when there is none."""
+    token = request.session.get(SESSION_KEY_PARCEL_TOKEN)
+    pending = pending_imports.lookup(request.user, token, PARCEL_KIND) if token else None
+    if pending is None:
+        pending = PendingImport.objects.create(
+            kind=PARCEL_KIND, user=request.user, original_name="", stored_path="",
+            settings={"boundary_id": boundary.pk, "mode": "every"},
+        )
+        request.session[SESSION_KEY_PARCEL_TOKEN] = str(pending.token)
+    return pending
+
+
+def _poll_parcel_download(request, boundary, label):
+    """Start the download if it has not started; its result row once it is over, else None."""
+    pending = _parcel_row(request, boundary)
+    if pending.status == "previewed":
+        pending.status = "waiting"
+        pending.save(update_fields=["status"])
+        pending_imports.start(str(pending.token))
+        pending.refresh_from_db()
+    if pending.status in ("finished", "failed"):
+        row = parcel_result_row(label, pending)
+    elif parcel_download_quiet(pending):
+        row = parcel_result_row(label, pending, stopped=True)
+    else:
+        return None
+    pending_imports.discard(pending)
+    request.session.pop(SESSION_KEY_PARCEL_TOKEN, None)
+    return row
+
+
+def _parcel_progress(request):
+    """The running download's count for the progress line, or None before the IDs come."""
+    token = request.session.get(SESSION_KEY_PARCEL_TOKEN)
+    pending = pending_imports.lookup(request.user, token, PARCEL_KIND) if token else None
+    result = (pending.result or {}) if pending is not None else {}
+    if result.get("total") is None:
+        return None
+    return {"done": result.get("done") or 0, "total": result["total"]}
 
 
 def _progress_context(
@@ -410,6 +515,9 @@ def setup_progress(request):
     context = _progress_context(
         boundary, steps, step_names, results, step_index, provider_index, all_done
     )
+    context["parcels_running"] = not all_done and step_names[step_index] == "parcels"
+    if context["parcels_running"]:
+        context["parcel_progress"] = _parcel_progress(request)
     return render(request, "setup/partials/_progress.html", context)
 
 

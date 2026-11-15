@@ -1,10 +1,18 @@
+{% load humanize %}
 {% if all_done %}
 {% comment %}All steps complete{% endcomment %}
 <div id="progress-area">
-  <div class="wizard-step-list" style="margin-bottom: var(--space-lg);">
+  <div class="wizard-step-list" style="margin-bottom: var(--space-md);">
     {% for result in results %}
       {% include "setup/partials/_step_result.html" %}
     {% endfor %}
+  </div>
+  {% comment %}Under the steps, inside the Progress card (the approved drawing, 2026-11-15).
+  The second line shows only while the parcel download runs in its own process:
+  the steps after it run from this page's polls.{% endcomment %}
+  <div class="progress-notes">
+    <p class="text-tertiary text-sm m-0">Populate skips records already on file, so running a step again is safe.</p>
+    {% if parcels_running %}<p class="text-tertiary text-sm m-0 mt-sm">The parcel download continues if you leave this page, but Flowlines and Monitoring Stations start only when you come back. Keep this page open until every step finishes.</p>{% endif %}
   </div>
 
   {# In-flow station review: enable the monitoring stations just discovered. Module-guarded — its rows include a datasync partial that reverses datasync:station_toggle. #}
@@ -29,11 +37,11 @@
 <div
   id="progress-area"
   hx-post="{% url 'setup:progress' %}"
-  hx-trigger="load"
+  hx-trigger="{% if parcels_running %}load delay:2s{% else %}load{% endif %}"
   hx-target="#progress-area"
   hx-swap="outerHTML"
 >
-  <div class="wizard-step-list">
+  <div class="wizard-step-list" style="margin-bottom: var(--space-md);">
     {% for step_name, step_label, step_desc in steps %}
     {% with forloop.counter0 as idx %}
     {% if step_name == "stations" %}
@@ -74,7 +82,7 @@
         <div class="wizard-step-icon"><span class="spinner-sm" style="width: 10px; height: 10px; border-width: 1.5px;"></span></div>
         <div class="wizard-step-body">
           <div class="wizard-step-name">{{ step_label }}</div>
-          <div class="wizard-step-count text-accent">{{ step_desc }}</div>
+          <div class="wizard-step-count text-accent">{% if step_name == "parcels" and parcels_running %}{% if parcel_progress %}Downloading the parcels that overlap the boundary: {{ parcel_progress.done|intcomma }} of {{ parcel_progress.total|intcomma }}{% else %}Finding the parcels that overlap the boundary…{% endif %}{% else %}{{ step_desc }}{% endif %}</div>
         </div>
       </div>
     {% else %}
@@ -89,6 +97,13 @@
     {% endif %}
     {% endwith %}
     {% endfor %}
+  </div>
+  {% comment %}Under the steps, inside the Progress card (the approved drawing, 2026-11-15).
+  The second line shows only while the parcel download runs in its own process:
+  the steps after it run from this page's polls.{% endcomment %}
+  <div class="progress-notes">
+    <p class="text-tertiary text-sm m-0">Populate skips records already on file, so running a step again is safe.</p>
+    {% if parcels_running %}<p class="text-tertiary text-sm m-0 mt-sm">The parcel download continues if you leave this page, but Flowlines and Monitoring Stations start only when you come back. Keep this page open until every step finishes.</p>{% endif %}
   </div>
 </div>
 {% endif %}

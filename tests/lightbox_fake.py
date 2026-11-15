@@ -2,7 +2,7 @@
 """A stand-in for DWR's LightBox parcel layer, for the parcel download tests.
 
 It answers the three kinds of query the parcel step can send, the way the live
-layer answered them on 2026-11-15 (153.3 setup facts F3, F4, P24):
+layer answered them on 2026-11-15:
 
 - ``returnIdsOnly``: every OBJECTID inside the boundary, or ``null`` when there
   are none (a boundary outside California).
@@ -39,9 +39,10 @@ def ring_of(oid):
 
 class FakeLightBox:
     def __init__(self, count=2500, ids=None, apns=None, no_outline=(), short=None,
-                 ids_error=None):
-        #: OBJECTIDs inside the boundary; None answers ``"objectIds": null``.
-        self.ids = list(range(1, count + 1)) if ids is None else ids
+                 ids_error=None, none_found=False):
+        #: OBJECTIDs inside the boundary; ``none_found`` answers ``"objectIds": null``
+        #: as the live layer does for a boundary outside California (P24).
+        self.ids = None if none_found else (list(range(1, count + 1)) if ids is None else ids)
         #: OBJECTID -> PARCEL_APN, overriding apn_of (None or "" for a blank).
         self.apns = dict(apns or {})
         self.no_outline = set(no_outline)

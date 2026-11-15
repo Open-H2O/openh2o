@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # Step registry: matches the OrderedDict in auto_populate.Command
 WIZARD_STEPS = [
     ("basins", "Groundwater Basins", "DWR Bulletin 118 subbasins"),
-    ("parcels", "Parcel Boundaries", "LightBox statewide parcels"),
+    ("parcels", "Parcel Boundaries", "DWR's California parcel map"),
     ("flowlines", "Flowlines", "USGS 3DHP hydrography"),
     ("stations", "Monitoring Stations", "USGS, CDEC, DWR, CIMIS and NOAA station lists near your boundary"),
 ]
@@ -124,6 +124,106 @@ def run_auto_populate_step(boundary: Boundary, step_name: str) -> StepOutcome:
         errors.append(str(exc))
 
     return StepOutcome(count, errors, note)
+
+
+# --------------------------------------------------------------------------
+# The parcel step: its own process, polled by the page
+# --------------------------------------------------------------------------
+
+#: A download whose process has written no progress for this long has stopped.
+#: Each batch of 1,000 took at most 2.6 s against DWR's layer on 2026-11-15
+#: and a batch retries for about 31 s at most, so ten quiet minutes is a process
+#: that is gone, not a slow one.
+PARCEL_QUIET_MINUTES = 10
+
+
+def run_stored_parcel_download(pending):
+    """The worker for a ``setup_parcels`` row (``manage.py run_pending_import``).
+
+    Downloads the parcels of the row's boundary with the command's own step,
+    writing progress into the row as it goes, and returns the result the page
+    shows: ``{"outcome": ParcelDownload as a dict}``. A stop is an outcome, not
+    a failure, so the page can say what was saved before it.
+    """
+    from django.utils import timezone
+
+    from core.models import PendingImport
+    from core.pending_imports import stored_file
+    from geography.management.commands.auto_populate import Command
+    from geography.services.arcgis import ArcGISBatchError, ArcGISRefusedError
+    from parcels.download_words import ParcelDownload
+    from parcels.parcel_list import read_parcel_list
+
+    class SilentCommand(Command):
+        def __init__(self) -> None:
+            super().__init__()
+            self.stdout = _NullWriter()
+            self.stderr = _NullWriter()
+            self.style = _NullStyle()
+
+    def progress(done, total, saved):
+        PendingImport.objects.filter(pk=pending.pk).update(result={
+            "done": done, "total": total, "saved": saved,
+            "updated": timezone.now().isoformat(),
+        })
+
+    cmd = SilentCommand()
+    try:
+        boundary = Boundary.objects.get(pk=pending.settings.get("boundary_id"))
+        parcel_list = None
+        if pending.stored_path:
+            with stored_file(pending) as handle:
+                parcel_list = read_parcel_list(handle, pending.original_name)
+        progress(None, None, 0)
+        cmd._step_parcels(boundary, dry_run=False, parcel_list=parcel_list, progress=progress)
+    except (ArcGISBatchError, ArcGISRefusedError):
+        logger.warning("The parcel download for %s stopped", pending.token)
+    except Exception:
+        logger.exception("The parcel download for %s stopped", pending.token)
+        outcome = getattr(cmd, "parcel_download", None) or ParcelDownload()
+        outcome.stopped = "process"
+        cmd.parcel_download = outcome
+    outcome = getattr(cmd, "parcel_download", None) or ParcelDownload(stopped="process")
+    return {"outcome": outcome.as_dict()}
+
+
+def parcel_download_quiet(pending, now=None):
+    """Whether a waiting or running download has gone quiet past PARCEL_QUIET_MINUTES."""
+    from datetime import datetime, timedelta
+
+    from django.utils import timezone
+
+    now = now or timezone.now()
+    last = pending.started_at or pending.created_at
+    updated = (pending.result or {}).get("updated")
+    if updated:
+        try:
+            last = datetime.fromisoformat(updated)
+        except (TypeError, ValueError):
+            pass
+    return now - last > timedelta(minutes=PARCEL_QUIET_MINUTES)
+
+
+def parcel_result_row(label, pending, stopped=False):
+    """The wizard's result row for a finished, failed or quiet download."""
+    from parcels.download_words import ParcelDownload, saved_lines, stopped_lines
+
+    result = pending.result or {}
+    if "outcome" in result:
+        outcome = ParcelDownload.from_dict(result["outcome"])
+    else:
+        outcome = ParcelDownload(stopped="process", saved=int(result.get("saved") or 0))
+    if stopped and not outcome.stopped:
+        outcome.stopped = "process"
+    lines = stopped_lines(outcome) if outcome.stopped else saved_lines(outcome)
+    return {
+        "step": "parcels",
+        "label": label,
+        "count": outcome.saved,
+        "errors": [],
+        "success": not outcome.stopped,
+        "lines": lines,
+    }
 
 
 # Ordered provider codes for the station step, the single source of truth shared

@@ -1,0 +1,8 @@
+{% comment %}
+  Registered as the setup_parcels kind's result template (core/pending_imports.py
+  KINDS) only because every kind names one. The Setup Wizard reads its parcel
+  download's row itself (setup/views.py _poll_parcel_download) and shows the
+  result in its own step row, so the import pages' status route never renders
+  this for a row the wizard started.
+{% endcomment %}
+<div id="pending-import-status"></div>

@@ -102,8 +102,7 @@ the longest:
 - The first sync of past readings from the slower public sources in Phase 4, which
   runs only as fast as those services answer. Start it and do other work while it
   runs.
-- A parcel download for a large area, which can run for hours. If it stops partway,
-  `auto_populate --resume-from` picks it up again (Phase 3).
+- A parcel download for a large area (Phase 3).
 
 ---
 
@@ -382,11 +381,13 @@ creates every station switched off.
 On a server you reach only over SSH, run the same steps as commands. `import_boundary`
 reads the same GeoJSON, zipped shapefile and KML files as the wizard's upload.
 `auto_populate` then fills the area in from public sources, and `activate_stations`
-turns on the stations that `auto_populate` found (Phase 4). If the parcel or stream
-download stops partway, its failure message gives the last OBJECTID it reached. Run
-`auto_populate` again with `--steps parcels` or `--steps flowlines` and `--resume-from`
-that number. The Data import guide shows each command, including the `docker compose cp`
-step that copies a file into the container.
+turns on the stations that `auto_populate` found (Phase 4). If the parcel download
+stops partway, run the same `auto_populate` command again. OpenH2O saves only the
+parcels that are not yet on file. If the stream download stops partway, its failure
+message gives the last OBJECTID it saved. Run
+`auto_populate --steps flowlines --resume-from` with that OBJECTID. The Data import
+guide shows each command, including the `docker compose cp` step that copies a file
+into the container.
 
 ### Option A: The demonstration data
 

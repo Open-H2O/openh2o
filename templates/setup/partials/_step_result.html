@@ -8,7 +8,19 @@ at a glance:
 Expects: result (with .label, .success, .count, .errors; optional .note for a
 clean per-provider skip).
 {% endcomment %}
-{% if result.success %}
+{% if result.lines %}
+{% comment %}The parcel download's own sentences (parcels/download_words.py, ruling
+179), one a line; a number list never breaks inside a number.{% endcomment %}
+<div class="wizard-step {% if result.success %}wizard-step--complete{% else %}wizard-step--error{% endif %}">
+  <div class="wizard-step-icon">{% if result.success %}✓{% else %}!{% endif %}</div>
+  <div class="wizard-step-body">
+    <div class="wizard-step-name">{{ result.label }}</div>
+    <div class="wizard-step-count wizard-step-lines">
+      {% for line in result.lines %}{% if not forloop.first %}<br>{% endif %}{% if line.link and 'parcels' in enabled_modules %}{{ line.before }}<a href="{% url 'parcels:use_area_import' %}" class="text-accent">{{ line.link }}</a>{{ line.after }}{% else %}{{ line.text }}{% endif %}{% if line.numbers %} {% for n in line.numbers %}<span class="nowrap">{{ n }}</span>{% if not forloop.last %}, {% else %}.{% endif %}{% endfor %}{% endif %}{% endfor %}
+    </div>
+  </div>
+</div>
+{% elif result.success %}
 <div class="wizard-step wizard-step--complete">
   <div class="wizard-step-icon">✓</div>
   <div class="wizard-step-body">

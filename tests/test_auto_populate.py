@@ -363,11 +363,37 @@ def _lightbox_features():
 # Parcel step tests
 # ---------------------------------------------------------------------------
 
+def _lightbox_service(features):
+    """A ``requests.post`` side effect answering the parcel step's IDs-first queries.
+
+    The step asks for the OBJECTIDs inside the boundary, then the parcels by ID
+    (the layer pages wrong by offset, measured 2026-11-15). Each feature gets OBJECTID n.
+    """
+    by_id = {}
+    for n, feat in enumerate(features, start=1):
+        feat["attributes"]["OBJECTID"] = n
+        by_id[n] = feat
+
+    def post(url, data=None, timeout=None):
+        data = data or {}
+        resp = MagicMock()
+        resp.status_code = 200
+        resp.raise_for_status = MagicMock()
+        if str(data.get("returnIdsOnly", "")).lower() == "true":
+            resp.json.return_value = {"objectIdFieldName": "OBJECTID", "objectIds": list(by_id)}
+        else:
+            asked = [int(x) for x in str(data.get("objectIds", "")).split(",") if x]
+            resp.json.return_value = {"features": [by_id[i] for i in asked]}
+        return resp
+
+    return post
+
+
 class TestStepParcels:
     @patch("geography.services.arcgis.requests.post")
     def test_creates_parcels(self, mock_post, boundary):
         """Parcels step creates Parcel records from mocked API response."""
-        mock_post.return_value = _make_mock_response(_lightbox_features())
+        mock_post.side_effect = _lightbox_service(_lightbox_features())
 
         out = StringIO()
         call_command(
@@ -390,7 +416,7 @@ class TestStepParcels:
     @patch("geography.services.arcgis.requests.post")
     def test_idempotent(self, mock_post, boundary):
         """Running the parcels step twice creates parcels only once."""
-        mock_post.return_value = _make_mock_response(_lightbox_features())
+        mock_post.side_effect = _lightbox_service(_lightbox_features())
 
         call_command(
             "auto_populate",
@@ -400,7 +426,7 @@ class TestStepParcels:
         )
         assert Parcel.objects.count() == 2
 
-        mock_post.return_value = _make_mock_response(_lightbox_features())
+        mock_post.side_effect = _lightbox_service(_lightbox_features())
         call_command(
             "auto_populate",
             boundary=str(boundary.pk),
@@ -412,7 +438,7 @@ class TestStepParcels:
     @patch("geography.services.arcgis.requests.post")
     def test_dry_run_parcels(self, mock_post, boundary):
         """Dry run reports parcel count but writes nothing."""
-        mock_post.return_value = _make_mock_response(_lightbox_features())
+        mock_post.side_effect = _lightbox_service(_lightbox_features())
 
         out = StringIO()
         call_command(
@@ -424,8 +450,7 @@ class TestStepParcels:
         )
 
         assert Parcel.objects.count() == 0
-        output = out.getvalue()
-        assert "would create" in output.lower() or "2" in output
+        assert "Batch 1 of 1: would save 2 new use areas" in out.getvalue()
 
     @patch("geography.services.arcgis.requests.post")
     def test_skips_empty_apn(self, mock_post, boundary):
@@ -453,7 +478,7 @@ class TestStepParcels:
                 },
             }
         )
-        mock_post.return_value = _make_mock_response(features)
+        mock_post.side_effect = _lightbox_service(features)
 
         call_command(
             "auto_populate",
@@ -465,14 +490,9 @@ class TestStepParcels:
         assert Parcel.objects.count() == 2
 
     @patch("geography.services.arcgis.requests.post")
-    def test_pagination(self, mock_post, boundary):
-        """Parcels from multiple pages are all created."""
-        page1_features = [_lightbox_features()[0]]
-        page2_features = [_lightbox_features()[1]]
-
-        resp_page1 = _make_mock_response(page1_features, exceeded=True)
-        resp_page2 = _make_mock_response(page2_features, exceeded=False)
-        mock_post.side_effect = [resp_page1, resp_page2]
+    def test_asks_for_the_ids_then_the_parcels(self, mock_post, boundary):
+        """One IDs request, then one batch for two parcels; no offset paging."""
+        mock_post.side_effect = _lightbox_service(_lightbox_features())
 
         call_command(
             "auto_populate",
@@ -481,9 +501,11 @@ class TestStepParcels:
             stdout=StringIO(),
         )
 
-        assert Parcel.objects.count() == 2
-        apns = set(Parcel.objects.values_list("parcel_number", flat=True))
-        assert apns == {"100-200-300", "100-200-301"}
+        assert mock_post.call_count == 2
+        sent = [call.kwargs["data"] for call in mock_post.call_args_list]
+        assert sent[0]["returnIdsOnly"] == "true"
+        assert sent[1]["objectIds"] == "1,2"
+        assert not any("resultOffset" in d for d in sent)
 
 
 # ---------------------------------------------------------------------------

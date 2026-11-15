@@ -400,6 +400,138 @@ def query_feature_server(
         time.sleep(0.5)  # Rate limit between pages
 
 
+class ArcGISBatchError(ArcGISTraversalError):
+    """A batch of the IDs-first route that failed every attempt.
+
+    ``batch`` is 1-based (0 is the IDs request itself) and ``batches`` the count.
+    ``kind`` is ``"error"`` (the service answered with an error code each time;
+    ``code`` and ``detail`` hold the last one), ``"short"`` (it returned fewer
+    features than the IDs asked for; ``got`` and ``asked``) or ``"transport"``
+    (the request itself failed; ``detail``). The caller writes the sentence.
+    """
+
+    def __init__(self, batch, batches, kind, code=None, detail="", got=0, asked=0):
+        self.batch, self.batches, self.kind = batch, batches, kind
+        self.code, self.detail, self.got, self.asked = code, detail, got, asked
+        self.attempts = MAX_ATTEMPTS
+        super().__init__(
+            f"batch {batch} of {batches} failed {MAX_ATTEMPTS} times ({kind}): "
+            f"{detail or f'{got} of {asked} features'}"
+        )
+
+
+class ArcGISRefusedError(ArcGISTraversalError):
+    """The service answered with an error code that a second try repeats."""
+
+    def __init__(self, code, message):
+        self.code, self.detail = code, str(message)
+        super().__init__(f"ArcGIS API error (code {code}, not retryable): {message}")
+
+
+def _error_of(data):
+    """``(code, message)`` of an in-body ArcGIS error, or None."""
+    error = data.get("error")
+    if error is None:
+        return None
+    if isinstance(error, dict):
+        return error.get("code"), error.get("message", error)
+    return None, error
+
+
+def _post_until(url, params, batch, batches, expected=None):
+    """POST ``params`` up to MAX_ATTEMPTS times; return the parsed body.
+
+    Retries a transport failure, a retryable in-body error code and, when
+    ``expected`` is given, a body holding fewer features than that. Raises
+    ArcGISRefusedError at once on any other error code, and ArcGISBatchError
+    naming the batch when every attempt fails.
+    """
+    last = ("transport", None, "", 0)
+    for attempt in range(MAX_ATTEMPTS):
+        try:
+            response = requests.post(url, data=params, timeout=60)
+            response.raise_for_status()
+            data = response.json()
+        except RETRYABLE_TRANSPORT_ERRORS as exc:
+            last = ("transport", None, str(exc), 0)
+        else:
+            error = _error_of(data)
+            if error is not None:
+                code, message = error
+                if code not in RETRYABLE_ARCGIS_ERROR_CODES:
+                    raise ArcGISRefusedError(code, message)
+                last = ("error", code, str(message), 0)
+            elif expected is not None and len(data.get("features") or []) < expected:
+                last = ("short", None, "", len(data.get("features") or []))
+            else:
+                return data
+        logger.warning("ArcGIS batch %d of %d, attempt %d/%d: %s", batch, batches,
+                       attempt + 1, MAX_ATTEMPTS, last)
+        if attempt < MAX_ATTEMPTS - 1:
+            time.sleep(_backoff_seconds(attempt))
+    kind, code, detail, got = last
+    raise ArcGISBatchError(batch, batches, kind, code=code, detail=detail, got=got,
+                           asked=expected or 0)
+
+
+def query_by_object_ids(
+    url: str,
+    geometry: dict | str,
+    geometry_type: str = "esriGeometryPolygon",
+    spatial_rel: str = "esriSpatialRelIntersects",
+    out_fields: str = "*",
+    out_sr: int = 4326,
+    batch_size: int = 1000,
+    resume_from: int | str | None = None,
+    oid_field: str = "OBJECTID",
+    on_ids: "callable | None" = None,
+) -> Iterator[tuple[int, int, list[dict]]]:
+    """Every feature inside ``geometry``, asked for by ID: yields ``(batch, batches, features)``.
+
+    One ``returnIdsOnly`` request gives every OBJECTID inside the geometry; the
+    features then come ``batch_size`` IDs a request (``objectIds``), in ID order.
+    This is the route for a layer that pages wrong by offset: DWR's LightBox
+    parcel layer handed back 16, 8, 7 and 5 overlapping parcels and then empty
+    pages when paged by ``resultOffset``, and all 57,306 parcels of the Merced
+    Subbasin in 52 s asked this way (both measured 2026-11-15). Every other layer
+    keeps ``query_feature_server``, which pages correctly for them (F5).
+
+    A batch that comes back with fewer features than IDs asked for is asked
+    again, like an error, and fails naming the batch (ArcGISBatchError).
+    ``resume_from`` skips the IDs at or below it. ``on_ids`` is called once with
+    the number of IDs found. A layer that finds none answers ``"objectIds":
+    null``; that yields nothing.
+    """
+    if resume_from is not None:
+        resume_from = _validated_resume_key(resume_from)
+    geometry_param = json.dumps(geometry) if isinstance(geometry, dict) else geometry
+    data = _post_until(url, {
+        "where": "1=1",
+        "geometry": geometry_param,
+        "geometryType": geometry_type,
+        "spatialRel": spatial_rel,
+        "returnIdsOnly": "true",
+        "f": "json",
+    }, 0, 0)
+    ids = sorted(int(i) for i in (data.get("objectIds") or []))
+    if resume_from is not None:
+        ids = [i for i in ids if i > resume_from]
+    if on_ids is not None:
+        on_ids(len(ids))
+    batches = (len(ids) + batch_size - 1) // batch_size
+    out_fields = _with_oid_field(out_fields, oid_field)
+    for number in range(1, batches + 1):
+        chunk = ids[(number - 1) * batch_size:number * batch_size]
+        data = _post_until(url, {
+            "objectIds": ",".join(str(i) for i in chunk),
+            "outFields": out_fields,
+            "returnGeometry": "true",
+            "outSR": out_sr,
+            "f": "json",
+        }, number, batches, expected=len(chunk))
+        yield number, batches, data.get("features") or []
+
+
 def query_by_boundary(
     url: str,
     boundary_geometry: GEOSGeometry,

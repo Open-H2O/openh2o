@@ -32,10 +32,13 @@ from datasync.adapters import get_adapter
 from datasync.models import DataSource, MonitoredStation
 from geography.models import Boundary, Flowline, Zone
 from geography.services.arcgis import (
+    ArcGISBatchError,
+    ArcGISRefusedError,
     esri_polygon_to_geos,
     esri_polyline_to_geos,
     geos_to_esri_geometry,
     query_by_boundary,
+    query_by_object_ids,
     query_feature_server,
 )
 from parcels.models import Parcel
@@ -116,9 +119,19 @@ class Command(BaseCommand):
             type=int,
             default=None,
             help=(
-                "Resume a failed traversal after this OBJECTID — read it off "
-                "the previous run's failure message. Requires exactly one "
-                "resumable step (--steps parcels or --steps flowlines)."
+                "Start the flowlines download after the OBJECTID that a failed "
+                "flowlines download prints. Use this option only with --steps "
+                "flowlines."
+            ),
+        )
+        parser.add_argument(
+            "--parcel-list",
+            default=None,
+            help=(
+                "A CSV file of the parcel numbers to save as use areas. OpenH2O "
+                "reads it the same way as the list on the Setup Wizard's Populate "
+                "page. Without this file, OpenH2O saves every parcel that overlaps "
+                "the boundary and has a parcel number and an outline."
             ),
         )
 
@@ -132,6 +145,7 @@ class Command(BaseCommand):
 
         step_registry = self._select_steps(options["steps"])
         self._check_resume_from(step_registry, resume_from)
+        self.parcel_list = self._read_parcel_list(options.get("parcel_list"))
 
         self.stdout.write(
             f"Running {len(step_registry)} step(s) for boundary "
@@ -164,6 +178,21 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(f"\nDone. {total_created} total record(s) created.")
         )
+
+    @staticmethod
+    def _read_parcel_list(path):
+        """The ``--parcel-list`` file's numbers, or None without one."""
+        if not path:
+            return None
+        from parcels.parcel_list import ParcelListError, read_parcel_list
+
+        try:
+            with open(path, "rb") as handle:
+                return read_parcel_list(handle, Path(path).name)
+        except FileNotFoundError:
+            raise CommandError(f"No file at {path}.") from None
+        except ParcelListError as exc:
+            raise CommandError(str(exc)) from None
 
     def _select_steps(self, requested: str | None) -> "OrderedDict[str, Callable[..., int]]":
         """The steps to run, in order: all offered ones, or the ``--steps`` subset."""
@@ -232,7 +261,10 @@ class Command(BaseCommand):
         for step_name, step_fn in step_registry.items():
             self.stdout.write(f"\n--- Step: {step_name} ---")
             try:
-                if step_name in RESUMABLE_STEPS:
+                if step_name == "parcels":
+                    count = step_fn(boundary, dry_run, resume_from=resume_from,
+                                    parcel_list=getattr(self, "parcel_list", None))
+                elif step_name in RESUMABLE_STEPS:
                     count = step_fn(boundary, dry_run, resume_from=resume_from)
                 else:
                     count = step_fn(boundary, dry_run)
@@ -242,6 +274,20 @@ class Command(BaseCommand):
                 )
             except Exception as exc:
                 had_failure = True
+                if step_name == "parcels" and getattr(self, "parcel_download", None):
+                    # The rows a stopped download wrote count (the closing line
+                    # once said 0 when 15 were), and the reason is said in its own words.
+                    from parcels.download_words import COMMAND_RERUN, command_stop_reason
+
+                    total_created += getattr(self, "partial_created", 0)
+                    outcome = self.parcel_download
+                    if outcome.stopped:
+                        self.stdout.write(self.style.ERROR(
+                            f"  {step_name} failed: {command_stop_reason(outcome)}"))
+                        if outcome.stopped != "refused":
+                            self.stdout.write(f"  {COMMAND_RERUN}")
+                        logger.warning("Step parcels stopped: %s", exc)
+                        continue
                 self.stdout.write(
                     self.style.ERROR(f"  {step_name} failed: {exc}")
                 )
@@ -345,136 +391,132 @@ class Command(BaseCommand):
 
         return created_count
 
-    def _step_parcels(self, boundary, dry_run, resume_from=None):
-        """Fetch LightBox parcel boundaries that intersect the boundary.
+    def _step_parcels(self, boundary, dry_run, resume_from=None, parcel_list=None,
+                      progress=None):
+        """Download the parcels that overlap the boundary from DWR's LightBox layer.
 
-        Queries DWR's statewide LightBox parcel MapServer page-by-page,
-        creates Parcel records with APN and geometry. Idempotent: skips
-        parcels whose APN already exists.
+        Asks for the parcel IDs inside the boundary first, then the parcels 1,000 at
+        a time (``query_by_object_ids``): the layer pages wrong by offset
+        (measured 2026-11-15). Each batch's new parcels are saved with their acreage in
+        the same step (``parcels.areas.fill_area_acres``). ``parcel_list`` is a
+        ``{normalized: as written}`` map from ``parcels.parcel_list``; with it, only
+        the parcels on the list are saved and every listed number not in the
+        download is reported. Running the step again saves only what is missing: a
+        number already on file (dashes and capital letters aside) is skipped, and a
+        number that repeats in the download is saved once. ``progress(done, total)``
+        is called after the IDs and after each batch.
+
+        Leaves the outcome on ``self.parcel_download`` (parcels.download_words) and
+        the rows written on ``self.partial_created``, also when it raises.
         """
-        self.stdout.write("  Querying LightBox Parcels MapServer...")
-        esri_geom = geos_to_esri_geometry(boundary.geometry)
+        from parcels.download_words import ParcelDownload, batch_line, plain, saved_lines
+        from parcels.parcel_list import normalize
 
-        out_fields = "PARCEL_APN,SITE_ADDR,SITE_CITY,SITE_STATE,SITE_ZIP"
-        created_total = 0
-        page_num = 0
+        outcome = ParcelDownload(mode="list" if parcel_list is not None else "every")
+        if parcel_list is not None:
+            outcome.listed = len(parcel_list)
+        self.parcel_download = outcome
+        self.partial_created = 0
+        state = {"total": 0, "done": 0}
 
+        def on_ids(count):
+            state["total"] = count
+            outcome.found = count
+            if progress:
+                progress(0, count, 0)
+
+        on_file = {normalize(n) for n in Parcel.objects.values_list("parcel_number", flat=True)}
+        seen = set()
+        repeated = set()
+        in_download = set()
+        self.stdout.write("  Asking DWR's LightBox parcel layer for the parcel IDs...")
         try:
-            pages = query_feature_server(
+            batches = query_by_object_ids(
                 LIGHTBOX_PARCELS_URL,
-                geometry=esri_geom,
-                geometry_type="esriGeometryPolygon",
-                spatial_rel="esriSpatialRelIntersects",
-                out_fields=out_fields,
-                return_geometry=True,
-                out_sr=4326,
-                max_record_count=1500,
+                geos_to_esri_geometry(boundary.geometry),
+                out_fields="PARCEL_APN,SITE_ADDR,SITE_CITY,SITE_STATE,SITE_ZIP",
                 resume_from=resume_from,
+                on_ids=on_ids,
             )
-
-            for features in pages:
-                page_num += 1
-                apn_map = self._parcels_by_apn(features)
-
-                if not apn_map:
-                    self.stdout.write(f"  Page {page_num}: 0 valid parcels, skipping.")
-                    continue
-
-                existing_apns = set(
-                    Parcel.objects.filter(
-                        parcel_number__in=list(apn_map.keys())
-                    ).values_list("parcel_number", flat=True)
-                )
-
-                new_parcels = self._build_parcels(apn_map, existing_apns)
-
-                created_total += self._store_parcel_page(
-                    page_num, new_parcels, existing_apns, dry_run
-                )
-
-        except Exception as exc:
-            # Propagate so a mid-pagination failure is reported incomplete, not a
-            # green success with an undercount. Pages created so far persist.
-            self.stdout.write(self.style.ERROR(f"  API query failed: {exc}"))
-            logger.exception("LightBox parcels API query failed")
+            for batch, count, features in batches:
+                new, already = self._parcels_of_batch(
+                    features, outcome, parcel_list, on_file, seen, repeated, in_download)
+                saved = self._store_parcels(new, dry_run)
+                outcome.saved += saved
+                outcome.already += already
+                self.partial_created = 0 if dry_run else outcome.saved
+                state["done"] += len(features)
+                self.stdout.write("  " + batch_line(batch, count, saved, already, dry_run))
+                if progress:
+                    progress(state["done"], state["total"], outcome.saved)
+        except ArcGISRefusedError as exc:
+            outcome.stopped, outcome.code, outcome.detail = "refused", exc.code, exc.detail
             raise
+        except ArcGISBatchError as exc:
+            outcome.stopped = "stopped"
+            outcome.batch, outcome.batches, outcome.kind = exc.batch, exc.batches, exc.kind
+            outcome.code, outcome.detail = exc.code, exc.detail
+            outcome.got, outcome.asked = exc.got, exc.asked
+            raise
+        outcome.repeat_numbers = len(repeated)
+        if parcel_list is not None:
+            outcome.not_found = [w for key, w in parcel_list.items() if key not in in_download]
+        for line in saved_lines(outcome):
+            self.stdout.write("  " + plain(line))
+        return 0 if dry_run else outcome.saved
 
-        return created_total
+    def _parcels_of_batch(self, features, outcome, parcel_list, on_file, seen, repeated,
+                          in_download):
+        """Unsaved Parcels for one batch, and how many were already on file."""
+        from parcels.parcel_list import normalize
 
-    @staticmethod
-    def _parcels_by_apn(features: list[dict]) -> dict[str, dict]:
-        """One page's features keyed by trimmed APN, dropping blanks and repeats."""
-        apn_map = {}
+        new = []
+        already = 0
         for feat in features:
-            apn = (feat.get("attributes") or {}).get("PARCEL_APN")
-            if not apn or not str(apn).strip():
-                continue
-            apn = str(apn).strip()
-            if apn not in apn_map:
-                apn_map[apn] = feat
-        return apn_map
-
-    def _build_parcels(self, apn_map: dict[str, dict], existing_apns: set[str]) -> list[Parcel]:
-        """Unsaved Parcels for the page's new APNs; a feature with no usable geometry is skipped."""
-        new_parcels = []
-        for apn, feat in apn_map.items():
-            if apn in existing_apns:
-                continue
-
             attrs = feat.get("attributes") or {}
-            addr_parts = [
-                str(attrs.get("SITE_ADDR") or "").strip(),
-                str(attrs.get("SITE_CITY") or "").strip(),
-                str(attrs.get("SITE_STATE") or "").strip(),
-                str(attrs.get("SITE_ZIP") or "").strip(),
-            ]
-            address = ", ".join(p for p in addr_parts if p)
-
+            apn = str(attrs.get("PARCEL_APN") or "").strip()
+            key = normalize(apn)
+            if not key:
+                outcome.no_number += 1
+                continue
+            if parcel_list is not None and key not in parcel_list:
+                continue
+            in_download.add(key)
+            if key in seen:
+                outcome.repeat_records += 1
+                repeated.add(key)
+                continue
+            seen.add(key)
+            if key in on_file:
+                already += 1
+                continue
             geom = None
-            esri_feat_geom = feat.get("geometry")
-            if esri_feat_geom:
+            if feat.get("geometry"):
                 try:
-                    geom = esri_polygon_to_geos(esri_feat_geom)
+                    geom = esri_polygon_to_geos(feat["geometry"])
                 except Exception as exc:
                     logger.warning("Bad geometry for %s: %s", apn, exc)
-
             if geom is None:
-                self.stdout.write(
-                    self.style.WARNING(f"  Skipping (no geometry): {apn}")
-                )
+                outcome.no_outline += 1
                 continue
-
-            new_parcels.append(
-                Parcel(
-                    parcel_number=apn,
-                    geometry=geom,
-                    address=address,
-                    status="active",
-                )
+            address = ", ".join(
+                p for p in (str(attrs.get(f) or "").strip()
+                            for f in ("SITE_ADDR", "SITE_CITY", "SITE_STATE", "SITE_ZIP")) if p
             )
-        return new_parcels
+            new.append(Parcel(parcel_number=apn, geometry=geom, address=address, status="active"))
+        return new, already
 
-    def _store_parcel_page(
-        self,
-        page_num: int,
-        new_parcels: list[Parcel],
-        existing_apns: set[str],
-        dry_run: bool,
-    ) -> int:
-        """Save one page of parcels (or only count them on a dry run); returns the count."""
-        if dry_run:
-            self.stdout.write(
-                f"  Page {page_num}: would create {len(new_parcels)} parcel(s)"
-            )
-            return len(new_parcels)
-        created = Parcel.objects.bulk_create(
-            new_parcels, ignore_conflicts=True
-        )
-        self.stdout.write(
-            f"  Page {page_num}: {len(created)} parcel(s) created "
-            f"({len(existing_apns)} existing skipped)"
-        )
-        return len(created)
+    @staticmethod
+    def _store_parcels(new_parcels, dry_run):
+        """Save one batch's new parcels and fill their acreage; returns the rows written."""
+        from parcels.areas import fill_area_acres
+
+        if dry_run or not new_parcels:
+            return len(new_parcels) if dry_run else 0
+        numbers = [p.parcel_number for p in new_parcels]
+        Parcel.objects.bulk_create(new_parcels, ignore_conflicts=True)
+        fill_area_acres(numbers)
+        return Parcel.objects.filter(parcel_number__in=numbers).count()
 
     def _step_flowlines(self, boundary, dry_run, resume_from=None):
         """Fetch USGS 3DHP flowlines that intersect the boundary.

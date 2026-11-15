@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The parcel download asks for the parcel IDs first, then the parcels 1,000 at a time.
 
-DWR's LightBox parcel layer pages wrong by offset (153.3 setup facts F3): asked the
+DWR's LightBox parcel layer pages wrong by offset (measured 2026-11-15): asked the
 way OpenH2O used to ask, it handed back 16, 8, 7 and 5 overlapping parcels and then
 empty pages, so the Merced Subbasin failed 3 of 3 times. Asked for the IDs first, it
-gave all 57,306 in 52 s (F4). These tests hold the new route, the acreage saved with
+gave all 57,306 in 52 s. These tests hold the new route, the acreage saved with
 each parcel, the district's own list of parcel numbers and the words the command
-prints (ruling 179 approved them word for word).
+prints (approved word for word on 2026-11-15).
 """
 from decimal import Decimal
 from io import StringIO
@@ -67,7 +67,7 @@ def test_every_parcel_the_ids_list_names_is_saved_and_none_by_offset(boundary):
     assert fake.ids_calls == 1
     assert fake.batch_calls == 3
     assert fake.offset_calls == 0
-    assert "Batch 1 of 3: 1000 new use areas, 0 already on file" in out.replace(",", "")
+    assert "Batch 1 of 3: 1,000 new use areas, 0 already on file" in out
     assert "OpenH2O saved 2,500 new use areas." in out
 
 
@@ -85,7 +85,7 @@ def test_a_batch_short_every_time_stops_naming_the_batch(boundary):
     assert ("After 6 attempts, DWR's parcel map had returned only 999 of the 1,000 parcels "
             "OpenH2O asked for in batch 2 of 3.") in out
     assert "Run the same command again to add the rest. OpenH2O saves only the parcels that are not yet on file." in out
-    # The closing count is the rows written (153.1 M2 said 0 when 15 were).
+    # The closing count is the rows written (it once said 0 when 15 were).
     assert "1000 record(s) created before the failure(s)" in out
     assert "--resume-from" not in out.split("parcels failed")[1].split("\n")[0]
 
@@ -212,7 +212,7 @@ def test_a_use_area_on_file_with_dashes_counts_as_already_on_file(boundary):
 
 
 def test_a_download_that_finds_no_parcels_says_so(boundary):
-    out = run(boundary, FakeLightBox(ids=None))
+    out = run(boundary, FakeLightBox(none_found=True))
     assert Parcel.objects.count() == 0
     assert ("DWR's parcel map has no parcels that overlap this boundary. The map covers "
             "California only. For land outside California, load your parcel outlines with "
@@ -250,7 +250,7 @@ def test_a_list_with_no_heading_reads_its_first_column_from_the_first_row(bounda
 
 
 def test_a_shorter_county_number_matches_only_exactly(boundary, tmp_path):
-    # Task 1 (facts P22): no source says 000-000-001 names 000000000001, so it does not.
+    # No public source says 000-000-001 names 000000000001, so it does not match it.
     path = list_file(tmp_path, "APN\n000-000-001\n000000000002\n")
     out = run(boundary, FakeLightBox(count=1200), "--parcel-list", path)
     assert Parcel.objects.count() == 1

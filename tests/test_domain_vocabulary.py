@@ -478,7 +478,12 @@ BASELINE: dict = {
     #   water year ends "An administrator can reopen the water year.", in the approved words.
     #   It says who can act on the record, not what a water year is: a false positive
     #   (opening "water year").
-    "templates/**/*.html": 16,
+    #   2026-11-15: 16 -> 17 for setup/run.html, whose line under the step list reads
+    #   "The basins and parcels come from the California Department of Water Resources
+    #   and cover California only.", in the words approved 2026-11-15. It says where two
+    #   downloads come from and where they stop, not what a basin is: a false positive
+    #   (opening "basin").
+    "templates/**/*.html": 17,
     "help_text=": 4,
 }
 

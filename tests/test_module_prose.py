@@ -176,7 +176,7 @@ class TestRenderedPages:
         # table tells the truth setup/services.py tells: use areas and
         # stations are brought in, wells and recharge sites are not.
         assert "Add surface diversions and recharge sites" in body
-        assert "The Setup Wizard brings in every parcel that overlaps your boundary" in body
+        assert "The Setup Wizard downloads the parcels that overlap your boundary" in body
         assert "Each well needs a name and a location." in body
         # The state-report step (GEARS / CalWATRS) came off the page 2026-10-07.
         assert "Work out your state report figures" not in body
@@ -210,7 +210,7 @@ class TestRenderedPages:
         assert "recharge basins" not in body
         assert "CalWATRS" not in body
         assert "Surface diversions" not in body
-        assert "The Setup Wizard brings in every parcel that overlaps your boundary" in body, (
+        assert "The Setup Wizard downloads the parcels that overlap your boundary" in body, (
             "The use-areas row lost its wizard clause when surface went."
         )
 

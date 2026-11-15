@@ -40,6 +40,14 @@
     </div>
   </div>
 
+  {% if errors %}
+  <div class="alert-error">
+    {% for error in errors %}
+    <p style="margin: 0 0 var(--space-xs) 0;">{{ error }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   {% if picking %}
   {% comment %}Nothing runs until this form is submitted. Every box
   starts checked; "I have my own data" (JS only, no server round trip) unchecks
@@ -47,7 +55,7 @@
   zero populate steps.{% endcomment %}
   <div class="card-raised">
     <h2 class="card-header-ruled">Choose what to populate</h2>
-    <form method="post" action="{% url 'setup:run' %}" id="step-picker-form">
+    <form method="post" action="{% url 'setup:run' %}" id="step-picker-form" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="wizard-step-list" style="margin-bottom: var(--space-md);">
         {% for step_name, step_label, step_desc in steps %}
@@ -58,8 +66,29 @@
             <span class="text-secondary text-sm">{{ step_desc }}</span>
           </span>
         </label>
+        {% if step_name == "parcels" %}
+        {% comment %}Which parcels become use areas (approved 2026-11-15): every parcel
+        the download finds, or only the parcels on the district's own list,
+        read now and refused here if the download could not use it.{% endcomment %}
+        <div class="parcel-choice">
+          <label class="radio-option"><input type="radio" name="parcel_choice" value="every"{% if parcel_choice != "list" %} checked{% endif %}><span class="text-sm">Every parcel that overlaps the boundary</span></label>
+          <label class="radio-option"><input type="radio" name="parcel_choice" value="list"{% if parcel_choice == "list" %} checked{% endif %}><span class="text-sm">Only the parcels on your list</span></label>
+          <div class="parcel-list-file">
+            <label class="form-label" for="parcel-list">List of parcel numbers</label>
+            <div class="file-picker">
+              <label class="btn-secondary file-picker-button">
+                Choose file
+                <input type="file" id="parcel-list" name="parcel_list" accept=".csv,.txt" class="file-picker-input">
+              </label>
+              <span class="file-picker-name text-tertiary text-sm" id="parcel-list-name">No file chosen</span>
+            </div>
+            <div class="form-help">Save your spreadsheet as a CSV file. OpenH2O reads the numbers from the column headed APN or Parcel number, or from the first column when no column has either heading. OpenH2O matches each number with or without its dashes.</div>
+          </div>
+        </div>
+        {% endif %}
         {% endfor %}
       </div>
+      {% if 'parcels' in enabled_modules %}<p class="text-secondary text-sm">The basins and parcels come from the California Department of Water Resources and cover California only. For land outside California, uncheck Groundwater Basins and Parcel Boundaries and load your parcel outlines with <a href="{% url 'parcels:use_area_import' %}" class="text-accent">Import use areas</a> on the Use Areas page.</p>{% endif %}
       <div class="form-footer row-between">
         <button type="button" id="clear-all-steps" class="link-accent" style="background: none; border: none; padding: 0; cursor: pointer; font: inherit;">I have my own data</button>
         <button type="submit" class="btn-primary">Run setup →</button>
@@ -77,6 +106,17 @@
       box.checked = false;
     });
   });
+  (function () {
+    var input = document.getElementById('parcel-list');
+    if (!input) return;
+    input.addEventListener('change', function () {
+      if (input.files && input.files.length) {
+        document.getElementById('parcel-list-name').textContent = input.files[0].name;
+        var list = document.querySelector('#step-picker-form input[name="parcel_choice"][value="list"]');
+        if (list) list.checked = true;
+      }
+    });
+  })();
   </script>
 
   {% else %}
@@ -98,9 +138,6 @@
     </div>
   </div>
 
-  <div class="card-raised card-inset">
-    <p class="text-tertiary text-sm m-0">Populate skips records already on file, so running a step again is safe.</p>
-  </div>
   {% endif %}
 
 </div>

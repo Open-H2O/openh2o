@@ -4745,6 +4745,31 @@ details[open] > summary .disclosure-mark {
 /* On-brand radio options — each choice is a selectable tile; the native dot is
    replaced with a gold-filled disc, and the tile lights up gold when chosen.
    Styled by descendant selector so it works on Django's bare RadioSelect tag. */
+/* Setup Wizard, Populate: the parcel step's choice under its checkbox (every parcel or
+   the district's list) and the list's file control, lined up with the step's label. */
+.parcel-choice {
+    margin: var(--space-xs) 0 var(--space-sm) calc(13px + var(--space-sm));
+}
+.parcel-choice .radio-option {
+    margin-bottom: var(--space-xs);
+}
+.parcel-list-file {
+    margin: var(--space-sm) 0 0 calc(var(--space-md) + 18px + var(--space-sm));
+}
+.parcel-list-file .form-label {
+    margin-bottom: var(--space-xs);
+}
+/* The Progress card's notes sit under its steps, above the finish panel. */
+.progress-notes {
+    margin: 0 0 var(--space-lg);
+}
+.wizard-step-lines {
+    line-height: 1.5;
+}
+.wizard-step-lines .nowrap {
+    white-space: nowrap;
+}
+
 .radio-option {
     display: flex;
     align-items: flex-start;

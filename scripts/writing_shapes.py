@@ -179,6 +179,9 @@ CALIFORNIA_NAMES: tuple = (
     (r"California water system", "a PS Code is built from the PWSID only in California's format; another state's code is typed as the lab file has it"),
     (r"California PS Code", "the same: only California's PS Codes begin with the PWSID"),
     (r"system outside California", "the same: a system elsewhere types its code as the lab file has it (2026-11-08)"),
+    (r"DWR(?:'|&rsquo;|’|&#x27;)s California parcel map", "DWR's parcel layer covers one state; the wizard says so where the choice is made (approved 2026-11-15)"),
+    (r"covers? California only", "the same: the parcel and basin downloads stop at the state line (approved 2026-11-15)"),
+    (r"For land outside California", "the same: where a site outside the state loads its outlines (approved 2026-11-15)"),
     (r"California's reporting format", "the state's own format, the approved name for it (2026-10-12: \"California's reporting format, not layout\")"),
 )
 CALIFORNIA = re.compile(r"\bCalifornia\b")

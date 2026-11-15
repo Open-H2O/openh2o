@@ -127,6 +127,16 @@ KINDS = {
         commit_url_name="parcels:use_area_import_commit",
         extensions=(".zip", ".kml", ".geojson", ".json"),
     ),
+    # The Setup Wizard's parcel download (setup/services.py). Its stored file is
+    # the district's own list of parcel numbers, or none for every parcel; the
+    # wizard's progress partial reads the row itself, so result_template is only
+    # what the import pages' status route would show.
+    "setup_parcels": Kind(
+        commit="setup.services:run_stored_parcel_download",
+        result_template="setup/partials/_parcel_download_status.html",
+        commit_url_name="setup:run",
+        extensions=(".csv", ".txt"),
+    ),
 }
 
 
@@ -140,7 +150,9 @@ def _path(pending):
 
 
 def delete_file(pending):
-    """Remove the stored file; a file already gone is fine."""
+    """Remove the stored file; a file already gone, or a row with none, is fine."""
+    if not pending.stored_path:
+        return
     _path(pending).unlink(missing_ok=True)
 
 
@@ -288,12 +300,17 @@ def start_import(request, kind, page_settings):
         pending.settings = page_settings
         pending.status = "waiting"
         pending.save(update_fields=["settings", "status"])
-        token = str(pending.token)
-        if getattr(settings, "OPENH2O_IMPORT_INLINE", False):
-            run(token)
-        else:
-            transaction.on_commit(lambda: _launch(token))
+        start(str(pending.token))
     return _waiting(request, pending)
+
+
+def start(token):
+    """Start the worker for a waiting row: in this process under OPENH2O_IMPORT_INLINE
+    (the test suite), else as its own process once the request commits."""
+    if getattr(settings, "OPENH2O_IMPORT_INLINE", False):
+        run(token)
+    else:
+        transaction.on_commit(lambda: _launch(token))
 
 
 def _launch(token):
