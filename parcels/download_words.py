@@ -86,7 +86,9 @@ def saved_lines(o):
         if o.no_outline:
             text += f" and {_n(o.no_outline)} whose outline it cannot read"
         lines.append(text + ".")
-    if o.repeat_records:
+    if o.repeat_records and o.saved:
+        # Only when this run saved use areas: a run that saved none would say it
+        # saved one for each repeated number.
         lines.append(
             f"DWR's map has {_n(o.repeat_records)} duplicate "
             f"{_s(o.repeat_records, 'record', 'records')} of {_n(o.repeat_numbers)} parcel "
