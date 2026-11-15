@@ -34,6 +34,10 @@ jobs:
         run: pip install ruff==0.16.10
       - name: Lint
         run: ruff check .
+      # CLAUDE.md "Never hardcode a colour": the pre-Deep-Water values may only
+      # fall. Standard library only, so it needs nothing installed.
+      - name: Colour literals
+        run: python scripts/check_colour_literals.py
 
   # The suite runs as four jobs at once. As one job it took 37 to 60 minutes on
   # GitHub's runners and was cancelled at the 60-minute limit with no test failed.
