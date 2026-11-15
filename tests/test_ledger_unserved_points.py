@@ -217,4 +217,4 @@ def test_the_headgate_prints_taken_then_returned_then_kept():
     html = _client().get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
     section = html[html.index('id="where-the-water-went"'):]
     assert "100.00" in section
-    assert "40.00 returned, 60.00 kept" in section
+    assert "40.00 returned<br>60.00 net diversion for direct use" in section

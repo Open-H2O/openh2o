@@ -123,11 +123,18 @@ class TestPodRecordsGroupedByWaterYear:
         assert "25.00" in current_row
         assert "275.00" in current_row
 
-    def test_exactly_one_col_sep_header_reading_retained(self):
+    def test_exactly_one_col_sep_header_reading_net_diversion(self):
         html = _pod_page(self._two_year_pod())
         headers = _th_col_sep(html)
         assert len(headers) == 1
-        assert headers[0].strip() == "Retained"
+        assert headers[0].strip() == "Net diversion"
+
+    def test_no_retained_anywhere_on_a_points_page(self):
+        # "Retained" was the old name for diverted less return flow; the
+        # records keeper's word is "net diversion" (ruling of 2026-11-14).
+        html = _pod_page(self._two_year_pod())
+        assert "Retained" not in html
+        assert "kept at the headgate" not in html
 
     def test_no_header_reads_period(self):
         html = _pod_page(self._two_year_pod())
@@ -166,6 +173,8 @@ class TestPodLeadPanel:
         panel = html[html.index('class="budget-panel"'):html.index('class="budget-panel"') + 2000]
         assert "300.00" in panel
         assert "275.00" in panel
+        assert '<div class="budget-seg-label">Net diversion</div>' in panel
+        assert "Retained" not in panel
 
     def test_no_records_in_the_current_period_shows_no_figure(self):
         pod = PointOfDiversionFactory()

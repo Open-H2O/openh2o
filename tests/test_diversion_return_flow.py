@@ -275,7 +275,8 @@ def test_a_to_storage_record_renders_to_storage_and_never_consumptive_use():
 
     html = _pod_pane(pod)
 
-    assert "Retained</th>" in html
+    assert "Net diversion</th>" in html
+    assert "Retained" not in html
     assert "To Storage" in html
     # 877.47 diverted, 0 returned: the retained cell reads the whole volume.
     assert "877.47" in html
