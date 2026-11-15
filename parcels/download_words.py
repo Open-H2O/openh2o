@@ -127,13 +127,13 @@ def command_stop_reason(o):
     """Rows 31 and 32: the reason the command prints after a stop."""
     if o.stopped == "refused":
         return stopped_lines(o)[0]["text"]
-    if o.batch == 0:
+    if o.batch == 0 or (o.kind != "short" and o.code is None):
+        # The IDs request, or a batch whose requests themselves failed (no code).
         return f"DWR's parcel map stopped responding after OpenH2O saved {_n(o.saved)} new use areas."
     if o.kind == "short":
         return (f"After 6 attempts, DWR's parcel map had returned only {_n(o.got)} of the "
                 f"{_n(o.asked)} parcels OpenH2O asked for in batch {o.batch} of {o.batches}.")
-    code = f"error {o.code}" if o.code is not None else "an error"
-    return (f"DWR's parcel map returned {code} on all 6 attempts at batch {o.batch} of "
+    return (f"DWR's parcel map returned error {o.code} on all 6 attempts at batch {o.batch} of "
             f"{o.batches}: {_sentence(o.detail)}")
 
 

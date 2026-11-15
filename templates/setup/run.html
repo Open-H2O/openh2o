@@ -60,7 +60,7 @@
       <div class="wizard-step-list" style="margin-bottom: var(--space-md);">
         {% for step_name, step_label, step_desc in steps %}
         <label class="row-start" style="gap: var(--space-sm); align-items: flex-start; padding: var(--space-sm) 0;">
-          <input type="checkbox" name="steps" value="{{ step_name }}" checked id="step-check-{{ step_name }}">
+          <input type="checkbox" name="steps" value="{{ step_name }}"{% if step_name in checked_steps %} checked{% endif %} id="step-check-{{ step_name }}">
           <span>
             <span class="text-base" style="font-weight: 600;">{{ step_label }}</span><br>
             <span class="text-secondary text-sm">{{ step_desc }}</span>

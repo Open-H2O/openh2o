@@ -287,6 +287,8 @@ def setup_run(request):
         "picking": bool(errors) or SESSION_KEY_SELECTED_STEPS not in request.session,
         "errors": errors,
         "parcel_choice": request.POST.get("parcel_choice", "every") if errors else "every",
+        # After a refusal the form keeps what was checked; otherwise every box starts checked.
+        "checked_steps": selected if errors else [s[0] for s in wizard_steps()],
     }
     return render(request, "setup/run.html", context)
 
