@@ -23,10 +23,15 @@ import gzip
 import json
 import os
 
+import pgtrigger
 import pytest
+from django.apps import apps
 from django.core.management import call_command
-from django.db import connection
+from django.db import IntegrityError, connection, transaction
+from django.db.models import ProtectedError, RestrictedError
 
+from core.demonstration import history_lock_uris
+from core.history import CONTEXT_LOCK_URI
 from drinking.models import (
     EnvirofactsCache,
     SampleResult,
@@ -60,15 +65,15 @@ def _seeded_once(django_db_setup, django_db_blocker):
     mutating tests below are genuinely independent of each other and of order.
     """
     with django_db_blocker.unblock():
+        before = _row_keys()
         call_command("seed_well_types")
         call_command("seed_drinking")
         call_command("seed_merced_drinking")
         # 22k rows land in tables the fresh test database's statistics still
-        # call empty, and those rows outlive this module. Until autoanalyze
-        # catches up, any later DELETE of this system's results (a flush
-        # test, or a fixture clearing other systems) is planned as a nested
-        # loop: measured 2026-09-23, one such DELETE ran 12+ minutes and took
-        # the suite from 7 minutes to 14 or more. Analysing here makes the
+        # call empty. Until autoanalyze catches up, any DELETE of this
+        # system's results (the flush test, or this fixture's own teardown)
+        # is planned as a nested loop: measured 2026-09-23, one such DELETE
+        # ran 12+ minutes and took the suite from 7 minutes to 14 or more. Analysing here makes the
         # plan a hash join whatever the timing.
         with connection.cursor() as cursor:
             cursor.execute(
@@ -76,10 +81,55 @@ def _seeded_once(django_db_setup, django_db_blocker):
                 "drinking_samplingpoint, drinking_systemfacility"
             )
     yield
-    # A site keeps one water system, so a system left behind here would turn
-    # down every later test that adds a different one. Take it away again.
+    # Take away every row the seed committed, not only the water system. A
+    # site keeps one water system, so a system left behind would turn down
+    # every later test that adds a different one; and the seed's 21 municipal
+    # wells, well types, analytes, limits and history rows, left behind, made
+    # the next file on the same worker see a non-empty Wells list
+    # (test_empty_onboarding.py failed under pytest-xdist).
     with django_db_blocker.unblock():
         WaterSystem.objects.filter(pwsid=PWSID).delete()
+        _delete_rows_added_since(before)
+
+
+def _row_keys():
+    """Every row's primary key, per model, as the test database holds them now."""
+    return {
+        model: set(model._base_manager.values_list("pk", flat=True))
+        for model in apps.get_models(include_auto_created=True)
+        if model._meta.managed and not model._meta.proxy
+    }
+
+
+def _delete_rows_added_since(before):
+    """Delete every row that was not there when ``before`` was taken.
+
+    Goes round until nothing is left: a delete can write rows of its own (a
+    history trigger records it), and a protected reference makes one table
+    wait for another to empty first. The history tables refuse deletes, so
+    their locks are off for this block only, as ``core.demonstration`` does
+    when it takes the demonstration out.
+    """
+    with pgtrigger.ignore(*history_lock_uris(), CONTEXT_LOCK_URI):
+        _delete_in_rounds(before)
+
+
+def _delete_in_rounds(before):
+    for _ in range(10):
+        left = {}
+        for model, keys in before.items():
+            added = model._base_manager.exclude(pk__in=keys)
+            try:
+                with transaction.atomic():
+                    added.delete()
+            except (IntegrityError, ProtectedError, RestrictedError):
+                pass
+            count = added.count()
+            if count:
+                left[model._meta.label] = count
+        if not left:
+            return
+    raise AssertionError(f"rows the Merced seed added could not be deleted: {left}")
 
 
 @pytest.fixture
