@@ -10,12 +10,14 @@
   two-column field grid and does nothing outside one; pass `half=True`
   where the line should pair with the field beside it instead; `span_class` names the class that spans
   the line where a grid of its own does the spanning (the facility page's inset) (the water
-  system card, where a full row left the regulating agency alone).
+  system card, where a full row left the regulating agency alone). The ? opens
+  to the right (`align="start"`), because the label sits at the card's left
+  edge and a centred tooltip ran under the sidebar.
 {% endcomment %}{% persistent_identifier record as identifier_uri %}
 <div class="field-group{% if span_class %} {{ span_class }}{% elif not half %} field-grid-2-span{% endif %}">
   <div class="field-label field-row">
     Identifier
-    {% include "partials/_help_tooltip.html" with label="Identifier" text="This identifier is the record's permanent address. A browser opens the record's page from it, and software that requests JSON-LD receives a machine-readable description." %}
+    {% include "partials/_help_tooltip.html" with label="Identifier" align="start" text="The Identifier is this record's web address. Use it to cite the record in a report or in another program." %}
   </div>
   <div class="field-row" style="align-items: center;">
     <span class="field-value-mono" style="overflow-wrap: anywhere;">{{ identifier_uri }}</span>

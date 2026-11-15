@@ -295,7 +295,7 @@ def test_demo_lining_command_sets_each_named_point_once():
 
     assert apply_demo_pod_lining() == 0
     atwater.refresh_from_db()
-    assert atwater.notes.count("Demonstration data") == 1
+    assert atwater.notes.count(LINING_BY_POD[atwater.name][1]) == 1
 
 
 def test_demo_lining_command_replaces_the_note_that_named_a_district():

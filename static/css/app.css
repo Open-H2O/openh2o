@@ -972,15 +972,24 @@ html { color-scheme: dark; }
     display: flex;
     flex-direction: column;
 }
-/* Four rows of fields at a slightly looser rhythm than the default 16px, so
-   the card's natural height meets the balance card's (measured 2026-09-11:
-   328 against 329) and neither is stretched over blank fill. The last row
-   sits on the card's padding. */
-.page-grid-account-info .field-grid-2 > .field-group {
-    margin-bottom: var(--space-lg);
+/* The card's rows of fields sit a row gap apart, at a slightly looser rhythm
+   than the default 16px, so the account card's natural height meets the
+   balance card's (measured 2026-09-11: 328 against 329) and neither is
+   stretched over blank fill. A row gap falls only between rows, so the last
+   row sits on the card's padding, and a field alone in its row above the last
+   (a Notes field above the Identifier, an odd field out) keeps its space.
+   A bottom margin taken off the last two fields would take it from them. */
+.page-grid-account-info .field-grid-2 {
+    row-gap: var(--space-lg);
 }
-.page-grid-account-info .field-grid-2 > .field-group:nth-last-child(-n+2) {
+.page-grid-account-info .field-grid-2 > .field-group {
     margin-bottom: 0;
+}
+
+/* A note keeps the blank line between its paragraphs (a point's own note,
+   then the demonstration's). */
+.field-notes {
+    white-space: pre-line;
 }
 /* The breakdown table spreads its seven columns evenly instead of handing the
    label column every pixel the numbers did not claim. */
@@ -1902,6 +1911,13 @@ html { color-scheme: dark; }
     z-index: 50;
     margin-bottom: var(--space-xs);
     box-shadow: var(--shadow-pop-sm);
+}
+
+/* A ? at the left edge of a card opens to the right, so its text stays
+   inside the card and clear of the sidebar (the Identifier). */
+.help-tooltip--start .help-text {
+    left: 0;
+    transform: none;
 }
 
 .help-tooltip:hover .help-text,
