@@ -324,6 +324,111 @@ def test_demo_lining_command_replaces_the_note_that_named_a_district():
     assert apply_demo_pod_lining() == 0
 
 
+# The notes the command wrote from 150.3-01 until 153.6-01, one text per kind of
+# point. A re-run must take each out, so a point ends with one current note.
+_WRITTEN_BEFORE_153_6 = {
+    "MER-POD-004-DEMO Atwater Canal Headgate": (
+        "Demonstration data: lining set to unlined. A published water management "
+        "plan for this area counts 406 miles of unlined canal against 105 of lined "
+        "canal, and no published source read states this canal's own lining."
+    ),
+    "MER-POD-005-DEMO Le Grand Canal Headgate": (
+        "Demonstration data: lining set to unlined. A published water management "
+        "plan for this area counts 406 miles of unlined canal against 105 of lined "
+        "canal, and no published source read states this canal's own lining. A "
+        "regional water plan from 2018 lists lining portions of this canal."
+    ),
+    "MER-POD-009-DEMO Bottomlands Riparian Take": (
+        "Demonstration data: lining not stated. This riparian take draws from the "
+        "Merced River with no canal of its own, and no published source describes "
+        "how its water reaches the fields, so it carries no seepage share."
+    ),
+    "MER-POD-010-DEMO Merced Falls Hydroelectric Diversion": (
+        "Demonstration data: lining set to pipe. A hydroelectric diversion passes "
+        "its water through the power plant and back to the river."
+    ),
+    "MER-POD-011-DEMO Snelling Re-Diversion": (
+        "Demonstration data: lining not stated. This re-diversion takes from the "
+        "Merced River with no canal of its own, and no published source describes "
+        "how its water reaches the fields, so it carries no seepage share."
+    ),
+}
+
+# The notes Brent approved as rows 1 to 5 of 153.6-01-ROWS.md (ruling 175).
+_UNLINED_NOTE_153_6 = (
+    "The lining below is an assumption for the demonstration. An irrigation "
+    "district in the area reports 406 miles of canal unlined and 105 miles lined "
+    "in its 2020 agricultural water management plan."
+)
+_APPROVED_153_6 = {
+    "MER-POD-004-DEMO Atwater Canal Headgate": _UNLINED_NOTE_153_6,
+    "MER-POD-005-DEMO Le Grand Canal Headgate": _UNLINED_NOTE_153_6,
+    "MER-POD-009-DEMO Bottomlands Riparian Take": (
+        "This river take's lining is not stated in the demonstration, so its "
+        "seepage share is zero."
+    ),
+    "MER-POD-010-DEMO Merced Falls Hydroelectric Diversion": (
+        "Pipe is an assumption for the demonstration, because this diversion's "
+        "water passes through the power plant and back to the river."
+    ),
+    "MER-POD-011-DEMO Snelling Re-Diversion": (
+        "This re-diversion does not serve a use area in the demonstration, so the "
+        "lining is not stated."
+    ),
+}
+
+
+@pytest.mark.parametrize("name", sorted(_WRITTEN_BEFORE_153_6))
+def test_demo_lining_rerun_replaces_each_note_written_before(name):
+    """A re-run ends with the approved note only, after the point's own note (153.6-01)."""
+    from core.management.commands.seed_merced_pod_lining import apply_demo_pod_lining
+
+    own = "A note the point's keeper wrote."
+    pod = PointOfDiversionFactory(name=name, notes=f"{own}\n\n{_WRITTEN_BEFORE_153_6[name]}")
+
+    apply_demo_pod_lining()
+    pod.refresh_from_db()
+    assert pod.notes == f"{own}\n\n{_APPROVED_153_6[name]}"
+    assert apply_demo_pod_lining() == 0
+
+
+def test_demo_lining_notes_are_the_approved_rows():
+    """Every point's note is word for word its approved row (153.6-01, ruling 175)."""
+    from core.management.commands.seed_merced_pod_lining import LINING_BY_POD
+
+    for name, approved in _APPROVED_153_6.items():
+        assert LINING_BY_POD[name][1] == approved
+    for name in (
+        "MER-POD-006-DEMO Stevinson Diversion Canal Headgate",
+        "MER-POD-007-DEMO Plainsburg El Nido Canal Headgate",
+        "MER-POD-008-DEMO Crocker-Huffman River Diversion",
+        "MER-BPOD-001 El Nido Canal Recharge Intake",
+    ):
+        assert LINING_BY_POD[name][1] == _UNLINED_NOTE_153_6
+
+
+def test_identifier_help_text_is_the_approved_row(auth_client):
+    """The Identifier's ? text is row 6 of 153.6-01-ROWS.md (ruling 175), opening to the right."""
+    pod = PointOfDiversionFactory()
+    html = auth_client.get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
+    assert (
+        "The Identifier is this record&#x27;s web address. Use it to cite the record "
+        "in a report or in another program." in html
+    ) or (
+        "The Identifier is this record's web address. Use it to cite the record "
+        "in a report or in another program." in html
+    )
+    assert "help-tooltip help-tooltip--start" in html
+    assert "JSON-LD" not in html.split('aria-label="Help: Identifier"')[1][:400]
+
+
+def test_point_notes_keep_their_paragraphs(auth_client):
+    """A point's own note and the demonstration's note show as two paragraphs (153.6-01)."""
+    pod = PointOfDiversionFactory(notes="First paragraph.\n\nSecond paragraph.")
+    html = auth_client.get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
+    assert 'class="text-secondary text-base field-notes"' in html
+
+
 def test_form_basis_help_points_at_the_shares_below_it():
     """The basis sits above the three shares on the form (150.3-01)."""
     form = PointOfDiversionForm(instance=PointOfDiversionFactory())
