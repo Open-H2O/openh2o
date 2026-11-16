@@ -2,6 +2,31 @@
 import pytest
 
 
+#: Each case boots its own Django process on its own database, so the cases
+#: need not share a worker.
+SPLIT_FILES = ("tests/test_droppability_acceptance.py",)
+
+
+def pytest_xdist_make_scheduler(config, log):
+    """``--dist loadfile``, except the module-drop file is dealt one test at a time.
+
+    loadfile keeps a file on one worker. The module-drop file is about half the
+    serial run on its own, so on one worker it decides when the whole run ends
+    however many CPUs the others have. Only called when xdist is running.
+    """
+    if config.getoption("dist") != "loadfile":
+        return None
+    from xdist.scheduler import LoadFileScheduling
+
+    class LoadFileSplittingDrop(LoadFileScheduling):
+        def _split_scope(self, nodeid):
+            if nodeid.split("::", 1)[0] in SPLIT_FILES:
+                return nodeid
+            return super()._split_scope(nodeid)
+
+    return LoadFileSplittingDrop(config, log)
+
+
 @pytest.hookimpl(wrapper=True)
 def pytest_runtest_teardown(item, nextitem):
     """Put the migration-seeded rows back after a ``transaction=True`` test.
