@@ -39,18 +39,17 @@ jobs:
       - name: Colour literals
         run: python scripts/check_colour_literals.py
 
-  # The suite runs as six jobs at once, and each job runs its tests in parallel
+  # The suite runs as five jobs at once, and each job runs its tests in parallel
   # (pytest-xdist, one worker per CPU of the runner). As one serial job it took 37
   # to 60 minutes on GitHub's runners and was cancelled at the 60-minute limit with
   # no test failed; as one parallel job about 15 minutes, so several jobs still pay.
-  # Every test file is one unit, except the module-drop proof: it boots a separate
-  # Django process for each of its cases and is about 30% of the run on its own,
-  # so each of its cases is a unit. The units are dealt into six parts by measured
+  # The module-drop proof boots a separate Django process for each of its cases and
+  # is about a third of the run on its own, so it gets two halves of its own
+  # (drop-1, drop-2). The other test files are dealt into three parts by measured
   # seconds, longest first, so the parts finish together; the seconds live in
-  # tests/ci_durations.tsv. To refresh them, download the durations-* artifacts of
-  # a few runs, one folder per run, and run
-  # `python3 scripts/ci_parts.py --refresh run-*/durations-*/junit.xml`.
-  # The workflow passes only when all six jobs do, which is what `make deploy`
+  # tests/ci_durations.tsv. To refresh them, download a run's durations-* artifacts
+  # and run `python3 scripts/ci_parts.py --refresh durations-*/junit.xml`.
+  # The workflow passes only when all five jobs do, which is what `make deploy`
   # reads (scripts/ci_gate.py).
   pytest:
     runs-on: ubuntu-latest
@@ -58,7 +57,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        part: ["1", "2", "3", "4", "5", "6"]
+        part: ["1", "2", "3", drop-1, drop-2]
     env:
       # Throwaway values for CI only, not secrets. Same as clean-install.yml.
       DJANGO_SETTINGS_MODULE: config.settings.local
@@ -92,27 +91,31 @@ jobs:
       - name: Start database and web
         run: docker compose up -d --wait db web
 
-      # scripts/ci_parts.py fails this step when the six parts do not hold every
-      # test file and every module-drop case exactly once, or when no module-drop
-      # case was collected. The module-drop ids come from pytest inside the
-      # container, because the cases are built from code the runner host cannot
-      # import.
-      - name: Choose this job's tests
+      # scripts/ci_parts.py fails this step when the three parts and the
+      # module-drop file do not hold every test module exactly once, or the two
+      # module-drop halves do not hold every module-drop test exactly once. The
+      # halves split the node ids pytest collects inside the container.
+      - name: Choose this job's test files
         env:
           PART: ${{ matrix.part }}
         run: |
-          docker compose exec -T -e OPENH2O_MODULES=all web \
-            python -m pytest --collect-only -q -p no:cacheprovider \
-            --ds=config.settings.local tests/test_droppability_acceptance.py \
-            > drop_ids.txt
-          python3 scripts/ci_parts.py --part "$PART" --parts 6 \
-            --drop-ids drop_ids.txt > files.txt
+          case "$PART" in
+            drop-*)
+              docker compose exec -T -e OPENH2O_MODULES=all web \
+                python -m pytest --collect-only -q -p no:cacheprovider \
+                --ds=config.settings.local tests/test_droppability_acceptance.py \
+                | python3 scripts/ci_parts.py --drop-half "${PART#drop-}" > files.txt
+              echo "load" > dist.txt ;;
+            *)
+              python3 scripts/ci_parts.py --part "$PART" --parts 3 > files.txt
+              echo "loadfile" > dist.txt ;;
+          esac
           wc -l < files.txt
 
-      # The tests are read into an array rather than split by the shell: a
+      # The node ids are read into an array rather than split by the shell: a
       # module-drop id carries [brackets] the shell would treat as a pattern.
-      # loadfile keeps each test file on one worker; conftest.py deals the
-      # module-drop cases one at a time even so.
+      # loadfile keeps each test file on one worker; the module-drop cases are
+      # independent, so they are dealt one by one (load).
       - name: Run the test suite
         run: |
           mapfile -t files < files.txt
@@ -121,7 +124,7 @@ jobs:
             --ds=config.settings.local \
             -m "not network" \
             -p no:cacheprovider \
-            -n auto --dist loadfile \
+            -n auto --dist "$(cat dist.txt)" \
             --junitxml=/tmp/junit.xml \
             -q
 
