@@ -628,8 +628,8 @@ class CalculationRun(models.Model):
     re-deriving anything. Decimal(4dp) throughout to match the ledger's quantize;
     a float column would reintroduce the drift the engine was built to avoid.
 
-    No DB unique_together(parcel, period): the runner does delete-then-insert in a
-    transaction (mirroring the calculated ledger row and WaterCredit, which also
+    No DB unique_together(parcel, period): the runner keeps one run per
+    (parcel, period) by comparing with the stored run in a transaction (mirroring the calculated ledger row and WaterCredit, which also
     carry no unique constraint), so a hard constraint buys nothing and would only
     complicate future multi-period scoping.
 

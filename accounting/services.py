@@ -54,6 +54,7 @@ from parcels.models import Parcel, ParcelLedger
 from core.constants import CARRY_FORWARD
 from core.modules import is_enabled
 from core.water_year import water_year_start_month
+from core.write_changes import write_changes
 
 from accounting.carryover_math import available_with_carryover, water_year_of
 from accounting.ledger_import import import_ledger_rows
@@ -247,12 +248,13 @@ def replace_account_credits(
     source_key: str,
     credits: Iterable[tuple[WaterAccount, WaterType, int, Decimal, str]],
 ) -> list[AccountCredit]:
-    """Replace every credit one source wrote, with the rows given.
+    """Make the credits one source wrote hold the rows given, writing only what differs.
 
     ``credits`` is ``(account, water_type, water_year, amount_af, description)``
-    per row. The source's earlier rows (``origin`` and ``source_key``) go first,
-    so a re-run leaves the same rows and an empty list clears the source. A row
-    that rounds to zero is not written.
+    per row. The source's stored rows (``origin`` and ``source_key``) are
+    compared with them (``core.write_changes``): an equal row is left as it is,
+    so a re-run leaves the same rows and records nothing, and an empty list
+    clears the source. A row that rounds to zero is not written.
     """
     rows = [
         AccountCredit(
@@ -267,9 +269,11 @@ def replace_account_credits(
         for account, water_type, water_year, amount, description in credits
         if Decimal(amount).quantize(Decimal("0.0001")) != 0
     ]
-    with transaction.atomic():
-        AccountCredit.objects.filter(origin=origin, source_key=source_key).delete()
-        return AccountCredit.objects.bulk_create(rows)
+    return write_changes(
+        AccountCredit.objects.filter(origin=origin, source_key=source_key),
+        rows,
+        key=("water_account_id", "water_type_id", "water_year"),
+    )
 
 
 def _fraction_split_entries(

@@ -70,8 +70,10 @@ from django.utils import timezone
 
 from accounting.allocation_math import allocate_by_demand, apportion_shared_supply
 from accounting.carryover_math import water_year_of
+from core.as_of import LEDGER_KEY
 from core.map_labels import map_label
 from core.water_year import water_year_start_month
+from core.write_changes import write_changes
 from accounting.ledger_words import delivery_share_words, percent_words
 from accounting.models import CalculationRun, ReportingPeriod, WaterType
 from accounting.services import (
@@ -201,7 +203,7 @@ def _fraction_rows(
     """Unsaved static-fraction fallback rows (NEGATIVE) — the no-ET-demand path.
 
     Builds unsaved instances rather than writing, so ``dry_run`` can preview it
-    and the single delete-then-bulk_create path stays idempotent.
+    and the one compare-and-write path stays idempotent.
 
     T3 (math eval 2026-07-18): the split now runs through
     ``apportion_shared_supply`` — the SAME normalized kernel the report layer
@@ -613,24 +615,27 @@ def _store_month_loss(
         if new_zone is not None:
             _settle_seepage(new_zone, new_year, new_amount)
 
-    if loss is None:
-        if prior is not None:
-            prior.delete()
-        return
-    CanalMonthLoss.objects.update_or_create(
-        point_of_diversion=pod,
-        month=month,
-        defaults={
-            "diverted_af": loss["diverted_af"],
-            "evaporation_af": loss["evaporation_af"],
-            "seepage_af": loss["seepage_af"],
-            "spill_af": loss["spill_af"],
-            "available_af": loss["available_af"],
-            "own_af": loss.get("own_af", Decimal("0")),
-            "unserved_af": loss.get("unserved_af", Decimal("0")),
-            "seepage_zone": new_zone,
-            "seepage_water_year": new_year,
-        },
+    computed = []
+    if loss is not None:
+        computed.append(
+            CanalMonthLoss(
+                point_of_diversion=pod,
+                month=month,
+                diverted_af=loss["diverted_af"],
+                evaporation_af=loss["evaporation_af"],
+                seepage_af=loss["seepage_af"],
+                spill_af=loss["spill_af"],
+                available_af=loss["available_af"],
+                own_af=loss.get("own_af", Decimal("0")),
+                unserved_af=loss.get("unserved_af", Decimal("0")),
+                seepage_zone=new_zone,
+                seepage_water_year=new_year,
+            )
+        )
+    write_changes(
+        CanalMonthLoss.objects.filter(point_of_diversion=pod, month=month),
+        computed,
+        key=("point_of_diversion_id", "month"),
     )
 
 
@@ -1028,12 +1033,13 @@ def _store_allocation(
     losses: dict[date, dict[str, Decimal]],
     seepage_zones: dict[date, Zone | None],
 ) -> list[ParcelLedger]:
-    """Replace this point's split rows, surplus rows and canal-loss rows for the months touched."""
+    """Make this point's split rows, surplus rows and canal-loss rows for the months touched hold what was worked out."""
     # Idempotency: this service owns the rows IT wrote (divided_from_headgate)
-    # for its served parcels in the months it just allocated. Delete them up
-    # front (ONCE for the whole month set — not per record, so two records
-    # sharing a month don't clobber each other), then write fresh, mirroring
-    # run_calculations. A field's own recorded delivery is never touched.
+    # for its served parcels in the months it just allocated. They are
+    # compared with what was just worked out, ONCE for the whole month set
+    # (not per record, so two records sharing a month don't clobber each
+    # other), and only what differs is written (``core.write_changes``),
+    # mirroring run_calculations. A field's own recorded delivery is never touched.
     #
     # Only THIS point's shares are replaced (``divided_from_point_pk``), so a
     # field two points serve keeps the other point's share. A split row written
@@ -1046,31 +1052,38 @@ def _store_allocation(
     months_to_clear = {_month_start(record.month) for record in records}
     if months is not None:
         months_to_clear |= {_month_start(m) for m in months}
+    if not months_to_clear:
+        return list(ParcelLedger.objects.bulk_create(to_write))
     with transaction.atomic():
-        if months_to_clear:
+        written = write_changes(
             ParcelLedger.objects.filter(
                 Q(divided_from_point_pk=pod.pk)
                 | Q(divided_from_point_pk__isnull=True, parcel__in=served),
                 _in_months("effective_date", months_to_clear),
                 source_type="surface_diversion",
                 divided_from_headgate=True,
-            ).delete()
+            ),
+            to_write,
+            key=LEDGER_KEY,
+            refresh=("transaction_date",),
+        )
         # Unallocated surplus is owned by this service for the same POD-months,
-        # and is cleared on every run so a re-allocation that now balances does
-        # not leave a stale surplus behind.
-        if months_to_clear:
+        # and is brought up to date on every run so a re-allocation that now
+        # balances does not leave a stale surplus behind.
+        write_changes(
             UnallocatedDelivery.objects.filter(
                 _in_months("month", months_to_clear), point_of_diversion=pod
-            ).delete()
-            if unallocated:
-                UnallocatedDelivery.objects.bulk_create(unallocated)
+            ),
+            unallocated,
+            key=("point_of_diversion_id", "month"),
+        )
         # Canal losses and the seepage pool, for every month named or recorded
         # (a month with no record left has its row removed and its seepage
         # taken back out of the pool).
         for month in sorted(months_to_clear):
             _store_month_loss(pod, month, losses.get(month), seepage_zones.get(month))
             _store_seepage_credits(pod, month, losses.get(month), served)
-        return list(ParcelLedger.objects.bulk_create(to_write))
+        return written
 
 
 def allocate_district_delivery(

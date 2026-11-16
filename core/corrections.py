@@ -569,7 +569,7 @@ def _always(row):
 
 
 def _ledger_entry_can_void(row):
-    """Only a row a person entered. The engine rewrites its own rows every run."""
+    """Only a row a person entered. The engine keeps its own rows up to date every run."""
     source = row.source_type
     if source in ("manual_entry", "adjustment", "csv_import", "allocation"):
         return True
@@ -580,7 +580,7 @@ def _ledger_entry_can_void(row):
         return not _is_engine_recharge_credit(description)
     if source == "surface_diversion":
         # A delivery typed on the use area's own ledger. The canal split's rows
-        # carry the headgate mark and are replaced whenever the month runs.
+        # carry the headgate mark and are brought up to date whenever the month runs.
         return not row.divided_from_headgate
     return False
 

@@ -582,6 +582,12 @@ GUARDED_FILES = (
 #: with its reason. Function names, never line numbers. A new read of a covered
 #: model that is neither chained to ``.current()`` nor here fails the build.
 ALLOWED_READS = {
+    ("accounting/management/commands/run_calculations.py", "_write_residual_row"):
+        "names the stored calculated rows the engine keeps up to date, voided or not, as the delete it replaced did",
+    ("accounting/management/commands/run_calculations.py", "_write_well_meter_shares"):
+        "names the stored well-meter share rows the engine keeps up to date, voided or not, as the delete it replaced did",
+    ("surface/services.py", "_store_allocation"):
+        "names the stored canal split rows the division keeps up to date, voided or not, as the delete it replaced did",
     ("accounting/views/ledger.py", "_ledger_as_of_scope"):
         "finds which use areas a search or zone names, for the count in the line; the count itself reads current rows",
     ("parcels/views.py", "_use_area_on_record"):

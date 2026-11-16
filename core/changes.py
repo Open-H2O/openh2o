@@ -118,9 +118,9 @@ RECORD_TYPE_NAMES = {
 # monthly diversions. A reader who changes one there looks for it in that
 # page's History panel, so a record's history includes these, found by the
 # foreign key the history row copied (as a plain id column, core/history.py).
-# A use area's ledger entries are left out on purpose: the engine rewrites
-# them every run, and ten of them would push every edit a person made off the
-# panel. They are one filter away on the Change history page.
+# A use area's ledger entries are left out on purpose: the engine updates
+# them whenever a recalculation moves a figure, and ten of them would push every
+# edit a person made off the panel. They are one filter away on the Change history page.
 RELATED_RECORDS = {
     "parcels.Parcel": (
         ("wells.WellIrrigatedParcel", "parcel"),

@@ -4,7 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.http import HttpRequest
 from django.shortcuts import render
 from django.utils import timezone
@@ -14,6 +14,7 @@ from datasync.models import MonitoredStation
 from accounting.models import (
     AllocationPlan,
     CalculationPlan,
+    CalculationRequest,
     CalculationRun,
     ReportingPeriod,
     WaterAccount,
@@ -33,6 +34,7 @@ from accounting.services import (
 )
 from geography.models import Zone
 from parcels.models import Parcel, ParcelLedger
+from accounting.engine_run import months_in_span
 from accounting.views.common import _account_summary_row
 
 
@@ -301,10 +303,30 @@ def _latest_data_dates(selected_period: ReportingPeriod | None) -> tuple[date | 
         last_ledger_date = ParcelLedger.objects.filter(
             reporting_period=selected_period
         ).aggregate(d=Max("transaction_date"))["d"]
-        last_run_at = runs_in_period(
+        last_run_at = _last_calculation_finished(selected_period) or runs_in_period(
             CalculationRun.objects.all(), selected_period
         ).aggregate(d=Max("created_at"))["d"]
     return last_ledger_date, last_run_at
+
+
+def _last_calculation_finished(period: ReportingPeriod) -> datetime | None:
+    """When the calculation last finished a run for the year: the year's own run, or one naming its months.
+
+    A figure that comes out the same is kept with its creation time, so the
+    newest figure does not say when the calculation last ran; its request does.
+    A stopped run does not count. None when no run has finished (a site whose
+    figures predate the request record reads the newest figure instead).
+    """
+    months = Q()
+    for month in months_in_span(period.start_date, period.end_date):
+        months |= Q(months__contains=[month])
+    return (
+        CalculationRequest.objects.filter(
+            Q(reporting_period=period) | months,
+            status__in=("succeeded", "finished_with_notes"),
+            finished_at__isnull=False,
+        ).aggregate(d=Max("finished_at"))["d"]
+    )
 
 
 def _period_budget_sections(

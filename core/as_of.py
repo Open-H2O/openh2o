@@ -58,15 +58,18 @@ AS_OF_TABLES = (
     "accounting.PeriodStatement",
 )
 
-# Columns a calculation is NOT compared on: its row id and creation time change
-# with every re-run, the breakdown is a printout of the figures, and the use
-# area and month are the key.
-_RUN_KEY = ("parcel_id", "period")
-_RUN_LEFT_OUT = ("id", "created_at", "breakdown") + _RUN_KEY
+# Columns no comparison reads: a row's id and the times it was written say when,
+# not what. ``core.write_changes`` compares on everything else.
+UNCOMPARED = ("id", "created_at", "updated_at")
+
+# A calculation is the same record when the use area and month match. A reading
+# does not compare its breakdown, a printout of the figures.
+RUN_KEY = ("parcel_id", "period")
+_RUN_LEFT_OUT = ("id", "created_at", "breakdown") + RUN_KEY
 
 # A ledger row is the same record when use area, date, source and water type
-# match; it has changed when its amount or description differ.
-_LEDGER_KEY = ("parcel_id", "effective_date", "source_type", "water_type_id")
+# match; a reading counts it changed when its amount or description differ.
+LEDGER_KEY = ("parcel_id", "effective_date", "source_type", "water_type_id")
 _LEDGER_FIGURES = ("amount_acre_feet", "description")
 
 DATE_UNREADABLE = "OpenH2O could not read that date. This page shows today's records."
@@ -181,7 +184,7 @@ class Reading:
         ledger = self._table("parcels_parcelledger", live)
         parcel = self._table("parcels_parcel", live)
         scope, params = self._scope("l", "effective_date", parcel_ids, start, end)
-        columns = ", ".join(f"l.{c}" for c in _LEDGER_KEY + _LEDGER_FIGURES)
+        columns = ", ".join(f"l.{c}" for c in LEDGER_KEY + _LEDGER_FIGURES)
         # The rules of ``.current()``, written against this side's own columns.
         return self._rows(
             f"""SELECT {columns} FROM {ledger} l
@@ -198,7 +201,7 @@ class Reading:
         scope, params = self._scope("c", "period_start", parcel_ids, start, end)
         with connection.cursor() as cursor:
             names = _live_columns(cursor, "accounting_calculationrun")
-        columns = ", ".join(f"c.{c}" for c in _RUN_KEY + tuple(n for n in names if n not in _RUN_LEFT_OUT))
+        columns = ", ".join(f"c.{c}" for c in RUN_KEY + tuple(n for n in names if n not in _RUN_LEFT_OUT))
         return self._rows(f"SELECT {columns} FROM {runs} c WHERE TRUE {scope}", params), [
             n for n in names if n not in _RUN_LEFT_OUT
         ]
@@ -233,7 +236,7 @@ class Reading:
                 "AND table_name = %s AND data_type <> 'USER-DEFINED' ORDER BY ordinal_position",
                 [table],
             )
-            columns = [r[0] for r in cursor.fetchall() if r[0] not in ("id", "created_at", "updated_at")]
+            columns = [r[0] for r in cursor.fetchall() if r[0] not in UNCOMPARED]
         where, params = [], []
         for column, value in filters.items():
             where.append(f'"{column}" = ANY(%s)')
@@ -261,12 +264,12 @@ class Reading:
         then = self._ledger(False, parcel_ids, start, end)
         now = self._ledger(True, parcel_ids, start, end)
         count = self._differences(
-            self._bag(then, _LEDGER_KEY, _LEDGER_FIGURES), self._bag(now, _LEDGER_KEY, _LEDGER_FIGURES)
+            self._bag(then, LEDGER_KEY, _LEDGER_FIGURES), self._bag(now, LEDGER_KEY, _LEDGER_FIGURES)
         )
         runs_then, figures = self._runs(False, parcel_ids, start, end)
         runs_now, _ = self._runs(True, parcel_ids, start, end)
         count += self._differences(
-            self._bag(runs_then, _RUN_KEY, figures), self._bag(runs_now, _RUN_KEY, figures)
+            self._bag(runs_then, RUN_KEY, figures), self._bag(runs_now, RUN_KEY, figures)
         )
         running = event_models()
         return count + sum(self._other_table(label, filters) for label, filters in also if label in running)

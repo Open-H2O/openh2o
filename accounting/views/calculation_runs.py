@@ -394,7 +394,7 @@ def calculation_run_detail(request, parcel_id, period):
     """One month's calculation receipt: where the estimated pumping came from.
 
     Keyed on the STABLE (parcel, period), not the run's pk: the calculated ledger
-    row is delete-recreated every run (its pk churns) and the ledger list iterates
+    row can be removed and written again (an archetype flip) and the ledger list iterates
     rows, not runs, so this key lets a ledger link resolve without threading a run
     pk through the list and survives re-runs. Most-recent run wins if more than one
     ever exists; 404 when none.

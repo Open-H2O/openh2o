@@ -10,9 +10,11 @@ gets NO calculated row — its residual is recorded as `unmet_demand_af` on the 
 never a phantom groundwater extraction; a METERED parcel also gets NO calculated
 row (its meter reading is the authoritative groundwater record — a calculated row
 would double-count it) and its run is kept purely as the ET reference value, with
-disposition "metered". Both the calculated row and the run are delete-then-insert per
-(parcel, month) inside one transaction, so re-running is idempotent: running twice
-yields identical balances (no drift, no double-count).
+disposition "metered". Both the calculated row and the run are written per (parcel,
+month) inside one transaction by comparing with what is stored
+(``core.write_changes``): a row that comes out the same is left as it is, a changed
+one is updated in place, so re-running is idempotent (no drift, no double-count) and
+a re-run that moves no figure writes nothing and records no change history.
 
 There is no rain bank. In a wet month the chain nets below the
 floor; clamp_floor surfaces that surplus as `rain_surplus_af` on the run's
@@ -60,6 +62,7 @@ from typing import TYPE_CHECKING, Any
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import Q, QuerySet
+from django.utils import timezone
 
 from accounting.calculation import evaluate_chain, plan_config_hash
 from accounting.carryover_math import water_year_of
@@ -85,8 +88,10 @@ from accounting.services import (
     deposit_to_basin_pool,
     parcel_pool_zone as _parcel_pool_zone,
 )
+from core.as_of import LEDGER_KEY, RUN_KEY
 from core.models import SiteConfig
 from core.water_year import water_year_start_month
+from core.write_changes import write_changes
 from parcels.models import Parcel, ParcelLedger
 from parcels.services import field_efficiency
 
@@ -258,8 +263,10 @@ def _persist_calculation_run(
 ):
     """Write the one CalculationRun for this (parcel, period) — the audit trail.
 
-    Delete-then-insert so a re-run leaves exactly one run with identical values
-    (mirrors the calculated ledger row's idempotency). All AF figures are quantized
+    Compared with the stored run (``core.write_changes``): the same figures and
+    breakdown leave it as it is, with its id and creation time; a difference
+    updates it in place and moves its creation time to now, so a re-run leaves
+    exactly one run (mirrors the calculated ledger row's idempotency). All AF figures are quantized
     to 4dp the same way the ledger row is, so ``final_af`` equals
     ``-ledger.amount_acre_feet`` exactly. Input magnitudes come straight off the
     breakdown the runner already evaluated; a step that did not run in this chain
@@ -312,8 +319,7 @@ def _persist_calculation_run(
         )
     )
 
-    CalculationRun.objects.filter(parcel=parcel, period=period).delete()
-    CalculationRun.objects.create(
+    computed = CalculationRun(
         parcel=parcel,
         period=period,
         gross_et_af=gross_q,
@@ -340,6 +346,15 @@ def _persist_calculation_run(
         methodology_plan_id=plan_id,
         methodology_plan_name=plan_name,
         config_hash=plan_hash,
+        created_at=timezone.now(),
+    )
+    computed.period_start = CalculationRun.period_to_date(period)
+    write_changes(
+        CalculationRun.objects.filter(parcel=parcel, period=period),
+        [computed],
+        key=RUN_KEY,
+        refresh=("created_at",),
+        bulk=False,
     )
 
 
@@ -364,8 +379,8 @@ def _clear_engine_rows_of_voided_parcels(
 ) -> None:
     """Treat a use area that does not count (voided) as one with no data for the month.
 
-    The month's engine rows for it are removed, the same ones the engine removes
-    for a use area it figures again (its run, its ``calculated`` row, its share
+    The month's engine rows for it are removed, the same ones the engine writes
+    for a use area it figures (its run, its ``calculated`` row, its share
     of a well's meter, its incidental recharge credit, and what its last run
     put in the basin pool), and none are written. The rows a person entered on
     it are left alone: they stay on its page and count nowhere.
@@ -396,8 +411,8 @@ def _clear_engine_rows_of_voided_parcels(
 
 
 #: What a field's ledger row for its share of a well's meter reading starts
-#: with. The month's calculation writes these rows and replaces them every
-#: time it runs; a meter row a person typed on the field never starts this way.
+#: with. The month's calculation writes these rows and keeps them up to date
+#: every time it runs; a meter row a person typed on the field never starts this way.
 WELL_METER_SHARE_WORDS = "From the well's meter:"
 
 _GALLONS_PER_ACRE_FOOT = Decimal("325851")
@@ -455,8 +470,6 @@ def _well_meter_shares(year: int, month: int, parcel_ids: set[int]) -> dict[int,
     A well whose fields include one that carries its own meter row for the
     month is left out: that row already holds the meter's water.
     """
-    from django.utils import timezone
-
     from core.modules import is_enabled
 
     if not is_enabled("wells"):
@@ -530,20 +543,20 @@ def _write_well_meter_shares(
     parcel_ids: set[int],
     reporting_period: ReportingPeriod | None,
 ) -> None:
-    """Replace the month's well-meter rows on the fields in scope with ``shares``."""
+    """Make the month's well-meter rows on the fields in scope hold ``shares``, writing only what changed."""
     gw_type, _ = WaterType.objects.get_or_create(
         code="GW", defaults={"name": "Groundwater"}
     )
-    with transaction.atomic():
+    write_changes(
         ParcelLedger.objects.filter(
             source_type="meter_reading",
             description__startswith=WELL_METER_SHARE_WORDS,
             effective_date__year=year,
             effective_date__month=month,
             parcel_id__in=parcel_ids,
-        ).delete()
-        for parcel_id, (amount, description) in shares.items():
-            ParcelLedger.objects.create(
+        ),
+        [
+            ParcelLedger(
                 parcel_id=parcel_id,
                 transaction_date=dt.date.today(),
                 effective_date=eff_date,
@@ -553,6 +566,11 @@ def _write_well_meter_shares(
                 reporting_period=reporting_period,
                 water_type=gw_type,
             )
+            for parcel_id, (amount, description) in shares.items()
+        ],
+        key=LEDGER_KEY,
+        refresh=("transaction_date",),
+    )
 
 
 def _metered_parcel_ids(year: int, month: int) -> set[int]:
@@ -742,9 +760,9 @@ def _write_residual_row(
 ) -> tuple[str, Decimal]:
     """Resolve the residual by archetype; returns ``(disposition, unmet_demand_af)``."""
     # The residual (ET − precip − surface, surfaced as
-    # net_af) resolves by archetype. Always delete the stale calculated
-    # row first so an archetype flip (well → no-well, or → metered)
-    # clears it, THEN decide:
+    # net_af) resolves by archetype. The stored calculated row is made to
+    # match what is decided below, so an archetype flip (well → no-well,
+    # or → metered) removes it:
     #   * metered  — the parcel carries an authoritative meter_reading;
     #     the meter OWNS its groundwater, so the engine writes NO
     #     calculated row (that would double-count the meter). The run is
@@ -754,11 +772,7 @@ def _write_residual_row(
     #     groundwater estimate, written as the one `calculated` row.
     #   * unmet_demand — no well: the residual is under-irrigation or a
     #     bad surface number, recorded on the run, NEVER a phantom GW row.
-    ParcelLedger.objects.filter(
-        parcel=parcel,
-        effective_date=eff_date,
-        source_type="calculated",
-    ).delete()
+    computed = []
     if is_metered:
         residual_disposition = "metered"
         unmet_demand_af = Decimal("0")
@@ -775,21 +789,31 @@ def _write_residual_row(
             if amount == 0
             else PUMPING_ESTIMATE_WORDS
         )
-        ParcelLedger.objects.create(
-            parcel=parcel,
-            transaction_date=dt.date.today(),
-            effective_date=eff_date,
-            amount_acre_feet=amount,
-            source_type="calculated",
-            description=description,
-            reporting_period=reporting_period,
-            water_type=gw_water_type,
+        computed.append(
+            ParcelLedger(
+                parcel=parcel,
+                transaction_date=dt.date.today(),
+                effective_date=eff_date,
+                amount_acre_feet=amount,
+                source_type="calculated",
+                description=description,
+                reporting_period=reporting_period,
+                water_type=gw_water_type,
+            )
         )
     else:
         residual_disposition = "unmet_demand"
         unmet_demand_af = max(Decimal("0"), net_af).quantize(
             Decimal("0.0001")
         )
+    write_changes(
+        ParcelLedger.objects.filter(
+            parcel=parcel, effective_date=eff_date, source_type="calculated"
+        ),
+        computed,
+        key=LEDGER_KEY,
+        refresh=("transaction_date",),
+    )
     return residual_disposition, unmet_demand_af
 
 
@@ -899,7 +923,7 @@ def _commit_parcel_month(
             is_metered=is_metered, routes_personal=routes_personal,
         )
         # Persist the reconstructable audit record in the SAME
-        # transaction, delete-then-insert per (parcel, period). For a well
+        # transaction, one per (parcel, period), written only where it changed. For a well
         # parcel it stays 1:1 with the calculated row; for a no-well parcel
         # it is the ONLY record of the parcel-month (consumptive use + unmet
         # demand, no groundwater row). Input magnitudes are pulled off the

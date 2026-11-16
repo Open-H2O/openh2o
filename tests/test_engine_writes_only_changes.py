@@ -260,7 +260,7 @@ def test_a_changed_crop_et_figure_updates_only_that_use_area_and_month(world):
     assert set(events) == {"accounting.CalculationRun"}
     labels = {kind for kind, _row in events["accounting.CalculationRun"]}
     assert labels <= {"before_update", "update"}
-    assert {(row["parcel_id"], row["period"]) for _k, row in events["accounting.CalculationRun"]} == {
+    assert {(row["parcel"], row["period"]) for _k, row in events["accounting.CalculationRun"]} == {
         (world.fields["E"].pk, "2024-01")
     }
     _assert_matches_a_run_from_nothing()
@@ -277,7 +277,7 @@ def test_a_changed_meter_reading_updates_only_that_use_areas_share(world):
     assert set(events) == {"parcels.ParcelLedger"}
     rows = events["parcels.ParcelLedger"]
     assert {kind for kind, _row in rows} <= {"before_update", "update"}
-    assert {(row["parcel_id"], row["effective_date"]) for _k, row in rows} == {(world.fields["D"].pk, JAN)}
+    assert {(row["parcel"], row["effective_date"]) for _k, row in rows} == {(world.fields["D"].pk, JAN)}
     _assert_matches_a_run_from_nothing()
 
 
@@ -290,10 +290,10 @@ def test_a_changed_diversion_record_updates_only_its_month(world):
     served = {world.fields[n].pk for n in "ABC"}
     for kind, row in events.get("parcels.ParcelLedger", []):
         assert kind in ("before_update", "update"), row
-        assert row["parcel_id"] in served and row["effective_date"] == FEB, row
+        assert row["parcel"] in served and row["effective_date"] == FEB, row
     for kind, row in events.get("accounting.CalculationRun", []):
         assert kind in ("before_update", "update"), row
-        assert row["parcel_id"] in served and row["period"] == "2024-02", row
+        assert row["parcel"] in served and row["period"] == "2024-02", row
     for kind, row in events.get("surface.CanalMonthLoss", []):
         assert kind in ("before_update", "update") and row["month"] == FEB, row
     for kind, row in events.get("accounting.AccountCredit", []):
