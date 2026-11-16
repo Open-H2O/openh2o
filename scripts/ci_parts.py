@@ -177,10 +177,12 @@ def refresh(paths, durations=DURATIONS, root=REPO_ROOT):
     merged = {m: s for m, s in old.items() if m in present}
     merged.update({m: s for m, s in fresh.items() if m in present})
     changed = sum(1 for m in set(merged) | set(old) if merged.get(m) != old.get(m))
+    # Only each file's last two path parts (durations-1/junit.xml): the full
+    # path would publish the folder layout of whoever ran the refresh.
     header = (
         "# openh2o per-file test seconds, summed from JUnit testcase times by "
         "scripts/ci_parts.py --refresh, from: "
-        + " ".join(str(p) for p in paths)
+        + " ".join("/".join(Path(p).parts[-2:]) for p in paths)
     )
     rows = sorted(merged.items(), key=lambda kv: (-kv[1], kv[0]))
     Path(durations).write_text(
