@@ -12,7 +12,7 @@ and ``void``, ``run_accounting``, ``account_balance``, ``parcel_water_use_months
   and the new one on the day, through the balance functions and ``.current()``;
 * (b) a voided row counts the day before the void and not after;
 * (c) a recalculation that moved a figure reads the earlier calculation the day
-  before, and a re-run that moved none counts 0 although history grew;
+  before, and a re-run that moved none counts 0 and writes no history;
 * (d) rows with no history are read from their own ``created_at``; a row whose
   only event is a delete comes back; an insert event with no live row does not;
 * at the moment now every rebuilt table equals its live table;
@@ -299,19 +299,18 @@ def test_a_recalculation_that_moved_a_figure_reads_the_earlier_calculation_befor
         assert reading.changed_count() == 0
 
 
-def test_a_rerun_that_moved_no_figure_counts_zero_although_history_grew(d1):
+def test_a_rerun_that_moved_no_figure_counts_zero_and_writes_no_history(d1):
     ld.run_months(["2025-07"])
     age(9)
-    ld.run_months(["2025-07"])  # same inputs: every row deleted and written again
+    ld.run_months(["2025-07"])  # same inputs: every row left as it was
     age(5)  # first run 14 days ago, the re-run 5 days ago
     with reading_as_of(day_ago(6)) as reading:
         assert reading.changed_count() == 0
     moment_after_first_run = reading.moment
-    # The history plainly grew, so a count of events would not have been 0.
     runs_now = CalculationRun.objects.count()
     assert runs_now > 0
-    assert events_after("accounting.CalculationRun", moment_after_first_run) >= runs_now
-    assert events_after("parcels.ParcelLedger", moment_after_first_run) > 0
+    assert events_after("accounting.CalculationRun", moment_after_first_run) == 0
+    assert events_after("parcels.ParcelLedger", moment_after_first_run) == 0
 
 
 # ---------------------------------------------------------------- (d) rows with no history
