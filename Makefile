@@ -15,7 +15,7 @@ export APP_VERSION = $(VERSION)
         createsuperuser collectstatic seed seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo remove-demo \
-        check test test-droppable golden-update dev-up dev-css guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod guard-demo-host deploy rebuild-golden \
+        check test test-release test-droppable golden-update dev-up dev-css guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod guard-demo-host deploy rebuild-golden \
         verify-candidate promote-golden ci-gate release upgrade guard-demo-target
 
 help: ## Show this help message
@@ -259,13 +259,21 @@ dev-up: guard-prod dev-css ## Start the stack with docker-compose.dev.yml: edits
 # serially, for debugging a failure; TEST_WORKERS=4 leaves CPUs free.
 TEST_WORKERS ?= $(if $(filter-out tests/ tests,$(T)),0,auto)
 
-test: ## Run the tests in T (a path or node id; all of tests/ when T is not given), pinned to local settings with every module on; waits on a lock so two runs never share the test database
+# Tests marked `release` take many minutes each, so `make test` leaves them out, as
+# tests.yml does; deploy-checks.yml runs them before a release. `make test-release`
+# runs them here. MARK= (empty) runs everything in T, release tests included.
+MARK ?= not release
+
+test: ## Run the tests in T (a path or node id; all of tests/ when T is not given) except those marked release, pinned to local settings with every module on; waits on a lock so two runs never share the test database
 	@if [ "$(DEV_BIND)" = "bind" ]; then \
 		echo "guard-fresh skipped: docker-compose.dev.yml is in use, so the web container runs this folder's own source."; \
 	else \
 		$(MAKE) --no-print-directory guard-fresh; \
 	fi
-	python3 scripts/with_test_lock.py $(COMPOSE) exec -e OPENH2O_MODULES=all web python -m pytest $(T) -v --ds=config.settings.local -n $(TEST_WORKERS) --dist loadfile
+	python3 scripts/with_test_lock.py $(COMPOSE) exec -e OPENH2O_MODULES=all web python -m pytest $(T) -v --ds=config.settings.local -n $(TEST_WORKERS) --dist loadfile -m "$(MARK)"
+
+test-release: ## Run only the tests marked release (many minutes each; deploy-checks.yml runs them before a release)
+	@$(MAKE) --no-print-directory test MARK=release
 
 golden-update: ## Rewrite the golden files for the tests in T (required), then copy tests/golden out of the container unless docker-compose.dev.yml is in use
 	@test -n "$(T)" -a "$(T)" != "tests/" || { echo "Usage: make golden-update T=tests/test_nav_golden.py"; exit 1; }

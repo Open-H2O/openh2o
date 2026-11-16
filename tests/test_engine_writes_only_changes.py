@@ -21,7 +21,12 @@ fields with crop ET in both months.
   the well's meter.
 - E has no well and no canal water: its run records unmet demand.
 
-One test also runs on the Merced demonstration (``load_demonstration``).
+Two tests prove a second run writes no history and keeps every row on records
+shaped like the Merced demonstration. One builds a small copy of its shape
+(``demonstration_slice``) and runs in seconds on every change. The other loads
+the demonstration itself (``load_demonstration``) and takes many minutes, so it
+is marked ``release``: tests.yml and ``make test`` leave it out and
+deploy-checks.yml runs it before a release.
 """
 import datetime as dt
 import io
@@ -48,7 +53,7 @@ from tests.factories import (
     WellFactory,
     WellIrrigatedParcelFactory,
 )
-from tests.test_calculation_run import _et_cache, _irrigate, _parcel
+from tests.test_calculation_run import _et_cache, _irrigate, _parcel, _precip_cache
 from wells.models import WellMeter
 
 pytestmark = pytest.mark.django_db
@@ -315,9 +320,102 @@ def test_a_use_area_voided_between_runs_loses_its_engine_rows(world):
     assert not ParcelLedger.objects.filter(parcel=b, source_type="calculated").exists()
 
 
+# -- On a small copy of the demonstration's shape ---------------------------------
+
+SLICE_OPEN = (dt.date(2025, 10, 1), dt.date(2025, 11, 1), dt.date(2025, 12, 1))
+SLICE_FINALIZED = (dt.date(2025, 8, 1), dt.date(2025, 9, 1))
+
+
+@pytest.fixture
+def demonstration_slice():
+    """Six use areas carrying what the demonstration's open year holds beyond ``world``.
+
+    The demonstration (read 2026-11-16: 76 use areas, 12 open months) has a
+    finalized year before its open one, divides every headgate by shares, and
+    leaves most use-area months with unmet demand. Here: a finalized year of two
+    months and an open year of three, with crop ET and rainfall in uneven figures.
+    Two headgates divide by shares; C takes water from both, and in November the
+    first headgate also records water diverted to storage. A and B have unmetered
+    wells, D and E share one metered well, and F has neither well nor canal.
+    """
+    call_command("seed_calculation_plan", stdout=io.StringIO())
+    finalized = ReportingPeriodFactory(
+        name="Slice 2024-2025", start_date=SLICE_FINALIZED[0], end_date=dt.date(2025, 9, 30)
+    )
+    ReportingPeriodFactory(name="Slice 2025-2026", start_date=SLICE_OPEN[0], end_date=dt.date(2026, 9, 30))
+    fields = {}
+    for i, name in enumerate("ABCDEF"):
+        parcel = _parcel(f"SL-{name}", acres=str(Decimal("7.31") + i * Decimal("3.17")))
+        _irrigate(parcel)
+        for j, month in enumerate(SLICE_FINALIZED + SLICE_OPEN):
+            _et_cache(parcel, period=month.strftime("%Y-%m"), et_mm=41.237 + 13.91 * i + 7.3 * j)
+        fields[name] = parcel
+    for name in "AF":
+        for month in SLICE_OPEN[1:]:
+            _precip_cache(fields[name], period=month.strftime("%Y-%m"), precip_mm=18.43 + 2.7 * month.month)
+    for name in "AB":
+        WellIrrigatedParcelFactory(parcel=fields[name])
+    upper = PointOfDiversionFactory(name="Slice upper headgate", seepage_fraction=Decimal("0.0730"))
+    lower = PointOfDiversionFactory(name="Slice lower headgate", seepage_fraction=Decimal("0.1150"))
+    for pod, shares in ((upper, {"A": "0.5130", "B": "0.2870", "C": "0.2000"}), (lower, {"C": "0.3500", "D": "0.6500"})):
+        for name, share in shares.items():
+            PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=fields[name], fraction=Decimal(share))
+    for j, month in enumerate(SLICE_FINALIZED + SLICE_OPEN):
+        DiversionRecordFactory(point_of_diversion=upper, month=month, volume_acre_feet=Decimal("23.4170") + j)
+        DiversionRecordFactory(point_of_diversion=lower, month=month, volume_acre_feet=Decimal("11.0930") + j)
+    DiversionRecordFactory(
+        point_of_diversion=upper, month=SLICE_OPEN[1], volume_acre_feet=Decimal("4.2210"), diversion_type="to_storage"
+    )
+    well = WellFactory(name="SL-DE well")
+    WellIrrigatedParcelFactory(well=well, parcel=fields["D"], fraction=Decimal("0.6000"))
+    WellIrrigatedParcelFactory(well=well, parcel=fields["E"], fraction=Decimal("0.4000"))
+    meter = Meter.objects.create(serial_number="SL-DE-M", meter_type="totalizer", unit="acre_feet")
+    WellMeter.objects.create(well=well, meter=meter, is_current=True)
+    for month, before, after in ((SLICE_OPEN[1], "212.40", "219.13"), (SLICE_FINALIZED[1], "205.02", "212.40")):
+        MeterReading.objects.create(
+            meter=meter,
+            reading_date=timezone.make_aware(dt.datetime(month.year, month.month, 27, 9, 0)),
+            previous_value=Decimal(before),
+            current_value=Decimal(after),
+            calculated_volume=Decimal(after) - Decimal(before),
+        )
+    call_command("run_accounting", "--period", finalized.name, stdout=io.StringIO())
+    ReportingPeriod.objects.filter(pk=finalized.pk).update(is_finalized=True)
+    return fields
+
+
+def test_the_slice_holds_what_the_demonstrations_open_year_holds(demonstration_slice):
+    """Else the slice test below proves less than the demonstration test it stands in for."""
+    _run()
+    open_runs = CalculationRun.objects.filter(period_start__gte=SLICE_OPEN[0])
+    assert set(open_runs.values_list("period", flat=True)) >= {"2025-10", "2025-11", "2025-12"}
+    assert {"unmet_demand", "groundwater"} <= set(open_runs.values_list("residual_disposition", flat=True))
+    assert CalculationRun.objects.filter(period_start__lt=SLICE_OPEN[0]).exists()
+    open_rows = ParcelLedger.objects.filter(effective_date__gte=SLICE_OPEN[0])
+    assert {"calculated", "surface_diversion", "meter_reading"} <= set(open_rows.values_list("source_type", flat=True))
+    assert open_rows.filter(description__startswith="From the well's meter:").values("parcel").distinct().count() == 2
+    assert open_rows.filter(divided_from_headgate=True, parcel=demonstration_slice["C"]).count() >= 2
+    assert CanalMonthLoss.objects.filter(month__gte=SLICE_OPEN[0]).count() == 6
+
+
+def test_on_a_slice_shaped_like_the_demonstration_a_second_run_writes_no_history_and_keeps_every_row(
+    demonstration_slice,
+):
+    _run()
+    _age_the_rows(SLICE_OPEN[0])
+    figures = _figures()
+    kept = _ids_and_times()
+    before = _event_counts()
+    _run()
+    assert _new_events(before) == {}
+    assert _figures() == figures
+    assert _ids_and_times() == kept
+
+
 # -- On the Merced demonstration -------------------------------------------------
 
 
+@pytest.mark.release
 def test_on_the_demonstration_a_second_run_writes_no_history_and_keeps_every_row():
     call_command("load_demonstration", stdout=io.StringIO())
     _run()

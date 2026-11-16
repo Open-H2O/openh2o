@@ -50,6 +50,7 @@ pythonpath = ["."]
 markers = [
     "network: reaches a real public service over the internet; CI runs -m 'not network'",
     "slow: takes seconds, not milliseconds (a timing budget on a demonstration-sized district)",
+    "release: takes many minutes; tests.yml and make test leave it out, deploy-checks.yml runs it before a release and weekly, make test-release runs it here",
 ]
 
 [tool.ruff]

@@ -379,16 +379,19 @@ station list has its own, `templates/datasync/partials/_stations_map_card_head.h
 The suite is pytest with pytest-django and factory_boy, in `tests/` (`tests/factories.py`,
 `tests/fixtures/`, `tests/golden/`).
 
-- **Whole suite:** `make test`. It runs every module (`OPENH2O_MODULES=all`) with
+- **Whole suite:** `make test`. It leaves out the tests marked `release`, which take many
+  minutes each; `make test-release` runs them. It runs every module (`OPENH2O_MODULES=all`) with
   `--ds=config.settings.local`, because the production settings refuse to start with a known
   default database password or an empty `ALLOWED_HOSTS` (`config/settings/production.py`).
 - **One file or one test:** `make test T=tests/test_name.py` (a pytest path or node id).
 - **Before a commit or pull request:** `make test` and `ruff check .` both pass. On every push to
   `main` and every pull request, `.github/workflows/tests.yml` runs `ruff check .` (ruff pinned to
-  0.16.10) and the pytest suite without the tests marked `network`;
+  0.16.10) and the pytest suite without the tests marked `network` or `release`;
   `.github/workflows/clean-install.yml` checks that no migration is missing, that a fresh install
   migrates and seeds with no demonstration content, and that the Merced seed sequence (`seed_merced`, one
   step of `load_demonstration`) names no real organization.
+- **Before a release:** `.github/workflows/deploy-checks.yml` runs the candidate's tests marked
+  `release`. `deploy.sh` waits for it, and it also runs every Monday.
 - **The image has no source mount, unless the development file is in use.** The `web` image copies the
   code when it is built, so after adding or changing a file run `docker compose up -d --build web`
   before testing. `make dev-up` starts the stack with `docker-compose.dev.yml` as well, which mounts

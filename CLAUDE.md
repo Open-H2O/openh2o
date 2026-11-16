@@ -204,8 +204,14 @@ The suite uses pytest + pytest-django + factory_boy and lives in `tests/`.
 
 ```bash
 make test            # runs pytest pinned to local settings
+make test-release    # only the tests marked release (many minutes each)
 make test-droppable  # prove every optional module can still be dropped
 ```
+
+A test that takes many minutes is marked `release`. `make test` and `tests.yml` leave
+it out. `deploy-checks.yml` runs it before a release and every week. Prove the same
+fact on a few records in the every-change suite, as
+`tests/test_engine_writes_only_changes.py` does for the demonstration test.
 
 `make test-droppable` boots a Django process per optional module with that
 module left out of `OPENH2O_MODULES` and asserts the kept pages still render,

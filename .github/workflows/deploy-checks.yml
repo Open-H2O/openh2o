@@ -1,4 +1,4 @@
-# deploy-checks.yml: two checks run before a production release and weekly, never on push.
+# deploy-checks.yml: three checks run before a production release and weekly, never on push.
 #
 #   old tests  the released commit's tests/ and conftest.py run against the candidate's code.
 #              A failure means a test was changed so that it would pass; it blocks unless a
@@ -6,6 +6,8 @@
 #   fix tests  each commit in the range whose subject says "fix" and that adds or changes a test
 #              and changes code: its test files run on the commit before it, where they must
 #              fail. Excused only by:  Fix-Test: <commit>: <reason>
+#   release    the candidate's own tests marked `release`, which take many minutes each, so
+#              tests.yml and `make test` leave them out. The other two checks leave them out too.
 #
 # deploy.sh asks for exactly its own pair (the candidate, and the commit in the live page footer)
 # through scripts/regress-gate.sh, which dispatches this workflow (inputs base and head, both
@@ -18,7 +20,8 @@
 # commit at or before 7 days earlier.
 #
 # Jobs: `plan` resolves the pair and lists the fix commits; `old-tests` runs the whole suite once;
-# `fix-tests` runs one job per fix, at most 10 at a time; `verdict` gathers them, so the run's
+# `fix-tests` runs one job per fix, at most 10 at a time; `release-tests` runs the candidate's
+# release tests; `verdict` gathers them, so the run's
 # conclusion is the check's. Each suite run builds the web image from its own tree (the code is
 # copied into the image, never mounted) and runs pytest inside it against PostGIS, as tests.yml
 # does. The engine is scripts/regress.py, a verbatim copy whose first comment line names its
@@ -130,7 +133,7 @@ jobs:
           dc build -q web || exit 3
           dc up -d --wait db web || { dc logs web --tail 100; exit 3; }
           dc exec -T -e OPENH2O_MODULES=all web python -m pytest "$@" --ds=config.settings.local \
-            -m "not network" -p no:cacheprovider -q -o junit_family=xunit1 --junitxml=/tmp/deploy-checks.xml
+            -m "not network and not release" -p no:cacheprovider -q -o junit_family=xunit1 --junitxml=/tmp/deploy-checks.xml
           rc=$?
           dc cp web:/tmp/deploy-checks.xml "$junit" >/dev/null 2>&1
           exit "$rc"
@@ -203,7 +206,7 @@ jobs:
           dc build -q web || exit 3
           dc up -d --wait db web || { dc logs web --tail 100; exit 3; }
           dc exec -T -e OPENH2O_MODULES=all web python -m pytest "$@" --ds=config.settings.local \
-            -m "not network" -p no:cacheprovider -q -o junit_family=xunit1 --junitxml=/tmp/deploy-checks.xml
+            -m "not network and not release" -p no:cacheprovider -q -o junit_family=xunit1 --junitxml=/tmp/deploy-checks.xml
           rc=$?
           dc cp web:/tmp/deploy-checks.xml "$junit" >/dev/null 2>&1
           exit "$rc"
@@ -244,9 +247,56 @@ jobs:
           retention-days: 90
           if-no-files-found: warn
 
+  # The candidate's own tests marked `release`, run on its own code, as tests.yml runs the rest.
+  # A candidate with no such test passes, and the summary says so.
+  release-tests:
+    name: release tests
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.plan.outputs.head }}
+
+      - name: Write throwaway CI .env
+        run: |
+          printf '%s\n' SECRET_KEY=ci-tests-not-a-secret DJANGO_SETTINGS_MODULE=config.settings.local \
+            POSTGRES_DB=openh2o POSTGRES_USER=openh2o POSTGRES_PASSWORD=openh2o OPENH2O_MODULES=all > .env
+
+      - name: Build web image
+        run: APP_VERSION=deploy-checks docker compose build -q web
+
+      - name: Start database and web
+        run: APP_VERSION=deploy-checks docker compose up -d --wait db web
+
+      - name: The release tests on the candidate
+        run: |
+          set +e
+          docker compose exec -T -e OPENH2O_MODULES=all web python -m pytest tests/ --ds=config.settings.local \
+            -m "release and not network" -p no:cacheprovider -q -rA -o junit_family=xunit1 --junitxml=/tmp/release-tests.xml \
+            | tee "$RUNNER_TEMP/release-tests.txt"
+          rc=${PIPESTATUS[0]}
+          # pytest's exit 5 is "no test collected": a candidate older than the marker has none.
+          if [ "$rc" = 5 ]; then echo "no test marked release in this commit"; rc=0; fi
+          {
+            echo '### Release tests'; echo; echo '```'
+            grep -E '^(PASSED|FAILED|ERROR) | in [0-9.]+s|^no test marked release' "$RUNNER_TEMP/release-tests.txt" | head -40
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
+
+      - name: Web log on failure
+        if: failure()
+        run: docker compose logs web --tail 200
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
   verdict:
     name: verdict
-    needs: [plan, old-tests, fix-tests]
+    needs: [plan, old-tests, fix-tests, release-tests]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -263,11 +313,12 @@ jobs:
           PLAN: ${{ needs.plan.result }}
           OLD: ${{ needs.old-tests.result }}
           FIX: ${{ needs.fix-tests.result }}
+          RELEASE: ${{ needs.release-tests.result }}
           COUNT: ${{ needs.plan.outputs.count }}
         run: |
           {
             echo '### Verdict'; echo; echo '```'
-            echo "plan: $PLAN; old tests: $OLD; fix tests: $FIX ($COUNT fix commits with a test)"
+            echo "plan: $PLAN; old tests: $OLD; fix tests: $FIX ($COUNT fix commits with a test); release tests: $RELEASE"
             for f in records/*/deploy-checks.json; do
               [ -f "$f" ] || continue
               python3 -I -c 'import json,sys; r=json.load(open(sys.argv[1])); print(sys.argv[2], r["result"], "exit", r["exit"])' "$f" "$(basename "$(dirname "$f")")"
@@ -276,5 +327,6 @@ jobs:
           } | tee -a "$GITHUB_STEP_SUMMARY"
           [ "$PLAN" = success ] || exit 1
           [ "$OLD" = success ] || exit 1
+          [ "$RELEASE" = success ] || exit 1
           if [ "$COUNT" = 0 ]; then [ "$FIX" = skipped ] || exit 1; else [ "$FIX" = success ] || exit 1; fi
           echo "deploy checks: PASS"

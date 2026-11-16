@@ -8,6 +8,12 @@ name: tests
 # runs it locally, so CI and a contributor's machine cannot disagree about the
 # environment.
 #
+# Tests marked `release` are left out here and from `make test`: each takes many
+# minutes (the Merced demonstration loaded and its open year calculated twice),
+# which held every push for twenty minutes or more. deploy-checks.yml runs them
+# on the candidate before a release and on its weekly run; `make test-release`
+# runs them on a contributor's machine.
+#
 # Tests marked `network` are left out here. They reach real public services
 # (state and federal GIS endpoints), and a gate that goes red because one of
 # those had a bad afternoon is a gate people learn to ignore. `make test` still
@@ -122,7 +128,7 @@ jobs:
           docker compose exec -T -e OPENH2O_MODULES=all web \
             python -m pytest "${files[@]}" \
             --ds=config.settings.local \
-            -m "not network" \
+            -m "not network and not release" \
             -p no:cacheprovider \
             -n auto --dist "$(cat dist.txt)" \
             --junitxml=/tmp/junit.xml \
