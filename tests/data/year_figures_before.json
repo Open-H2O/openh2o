@@ -1,0 +1,9818 @@
+{
+ "zone_pages": {
+  "D1 GSA": [
+   {
+    "period": "ReportingPeriod:WY 2025-2026",
+    "water_type": "WaterType:GW",
+    "budget": "D:100.0000",
+    "carryover": "D:-153.3333",
+    "available": "D:-53.3333",
+    "used": "D:20.7500",
+    "used_lines": [
+     {
+      "kind": "metered",
+      "pill": "Metered",
+      "pill_class": "metered",
+      "amount": "D:12.00"
+     },
+     {
+      "kind": "estimated",
+      "pill": "Estimated",
+      "pill_class": "estimated",
+      "amount": "D:6.25"
+     },
+     {
+      "kind": "unknown",
+      "pill": "Unknown",
+      "pill_class": "unknown",
+      "amount": "D:2.50"
+     }
+    ],
+    "used_label": "pumped",
+    "is_groundwater": true,
+    "credit_sources": [
+     [
+      "Carried forward",
+      "D:-153.3333"
+     ]
+    ],
+    "pool_sources": [
+     [
+      "Canal seepage",
+      "D:10.0000"
+     ]
+    ],
+    "remaining": "D:-74.0833",
+    "ledger_count": 5
+   },
+   {
+    "period": "ReportingPeriod:WY 2024-2025",
+    "water_type": "WaterType:GW",
+    "budget": "D:100.0000",
+    "carryover": "D:0",
+    "available": "D:100.0000",
+    "used": "D:226.6667",
+    "used_lines": [
+     {
+      "kind": "metered",
+      "pill": "Metered",
+      "pill_class": "metered",
+      "amount": "D:105.00"
+     },
+     {
+      "kind": "estimated",
+      "pill": "Estimated",
+      "pill_class": "estimated",
+      "amount": "D:116.67"
+     },
+     {
+      "kind": "unknown",
+      "pill": "Unknown",
+      "pill_class": "unknown",
+      "amount": "D:5.00"
+     }
+    ],
+    "used_label": "pumped",
+    "is_groundwater": true,
+    "credit_sources": [],
+    "pool_sources": [
+     [
+      "Canal seepage",
+      "D:62.5000"
+     ]
+    ],
+    "remaining": "D:-126.6667"
+   }
+  ],
+  "D2 District": [
+   {
+    "period": "ReportingPeriod:WY 2024-2025",
+    "water_type": "WaterType:SW",
+    "budget": "D:200.0000",
+    "carryover": null,
+    "available": "D:200.0000",
+    "used": "D:85.0000",
+    "used_lines": [
+     {
+      "kind": "estimated",
+      "pill": "Estimated",
+      "pill_class": "estimated",
+      "amount": "D:85.00"
+     }
+    ],
+    "used_label": "delivered",
+    "remaining": "D:115.0000"
+   }
+  ],
+  "D3 District": [
+   {
+    "period": "ReportingPeriod:WY 2025-2026",
+    "water_type": "WaterType:SW",
+    "budget": "D:150.0000",
+    "carryover": null,
+    "available": "D:150.0000",
+    "used": "D:29.6000",
+    "used_lines": [
+     {
+      "kind": "metered",
+      "pill": "Metered",
+      "pill_class": "metered",
+      "amount": "D:29.60"
+     }
+    ],
+    "used_label": "delivered",
+    "remaining": "D:120.4000",
+    "ledger_count": 4
+   },
+   {
+    "period": "ReportingPeriod:WY 2024-2025",
+    "water_type": "WaterType:SW",
+    "budget": "D:160.0000",
+    "carryover": null,
+    "available": "D:160.0000",
+    "used": "D:155.4000",
+    "used_lines": [
+     {
+      "kind": "metered",
+      "pill": "Metered",
+      "pill_class": "metered",
+      "amount": "D:88.80"
+     },
+     {
+      "kind": "estimated",
+      "pill": "Estimated",
+      "pill_class": "estimated",
+      "amount": "D:44.40"
+     },
+     {
+      "kind": "unknown",
+      "pill": "Unknown",
+      "pill_class": "unknown",
+      "amount": "D:22.20"
+     }
+    ],
+    "used_label": "delivered",
+    "remaining": "D:4.6000"
+   }
+  ],
+  "D3 GSA": [
+   {
+    "period": "ReportingPeriod:WY 2025-2026",
+    "water_type": "WaterType:GW",
+    "budget": "D:100.0000",
+    "carryover": "D:79.9600",
+    "available": "D:179.9600",
+    "used": "D:22.2400",
+    "used_lines": [
+     {
+      "kind": "estimated",
+      "pill": "Estimated",
+      "pill_class": "estimated",
+      "amount": "D:22.24"
+     }
+    ],
+    "used_label": "pumped",
+    "is_groundwater": true,
+    "credit_sources": [
+     [
+      "Carried forward",
+      "D:79.9600"
+     ]
+    ],
+    "pool_sources": [],
+    "remaining": "D:157.7200",
+    "ledger_count": 4
+   },
+   {
+    "period": "ReportingPeriod:WY 2024-2025",
+    "water_type": "WaterType:GW",
+    "budget": "D:100.0000",
+    "carryover": "D:0",
+    "available": "D:100.0000",
+    "used": "D:20.0400",
+    "used_lines": [
+     {
+      "kind": "estimated",
+      "pill": "Estimated",
+      "pill_class": "estimated",
+      "amount": "D:20.04"
+     }
+    ],
+    "used_label": "pumped",
+    "is_groundwater": true,
+    "credit_sources": [],
+    "pool_sources": [
+     [
+      "Managed recharge",
+      "D:50.0000"
+     ]
+    ],
+    "remaining": "D:79.9600"
+   }
+  ]
+ },
+ "WY 2024-2025": {
+  "figures": [
+   [
+    "use_area",
+    "F1",
+    "2024-10-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2024-10-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2024-10-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2024-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2024-11-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2024-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2024-11-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2024-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2024-12-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2024-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2024-12-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2024-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-01-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-01-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-01-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-02-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-02-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-03-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-03-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-04-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-04-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-05-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-05-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-06-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-06-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-07-01",
+    "crop_et",
+    "D:20.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-07-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-07-01",
+    "groundwater_extraction",
+    "D:30.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-08-01",
+    "crop_et",
+    "D:20.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-08-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-08-01",
+    "groundwater_extraction",
+    "D:24.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-09-01",
+    "crop_et",
+    "D:10.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-09-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-09-01",
+    "groundwater_extraction",
+    "D:16.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "crop_et",
+    "D:50.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "groundwater_extraction",
+    "D:70.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "supplies",
+    "D:70.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "uses",
+    "D:70.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "water_not_consumed",
+    "D:20.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "balance",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2024-10-01",
+    "crop_et",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2024-10-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2024-10-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2024-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2024-11-01",
+    "crop_et",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2024-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2024-11-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2024-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2024-12-01",
+    "crop_et",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2024-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2024-12-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2024-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-01-01",
+    "crop_et",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-01-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-01-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-02-01",
+    "crop_et",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-02-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-03-01",
+    "crop_et",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-03-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-04-01",
+    "crop_et",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-04-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-05-01",
+    "crop_et",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-05-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-06-01",
+    "crop_et",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-06-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-07-01",
+    "crop_et",
+    "D:20.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-07-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-07-01",
+    "groundwater_extraction",
+    "D:15.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-08-01",
+    "crop_et",
+    "D:10.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-08-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-08-01",
+    "groundwater_extraction",
+    "D:12.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-09-01",
+    "crop_et",
+    "D:10.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-09-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-09-01",
+    "groundwater_extraction",
+    "D:8.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    "2025-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    null,
+    "crop_et",
+    "D:40.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    null,
+    "groundwater_extraction",
+    "D:35.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    null,
+    "supplies",
+    "D:35.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    null,
+    "uses",
+    "D:42.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    null,
+    "water_not_consumed",
+    "D:2.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F2",
+    null,
+    "balance",
+    "D:-7.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2024-10-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2024-10-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2024-10-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2024-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2024-11-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2024-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2024-11-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2024-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2024-12-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2024-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2024-12-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2024-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-01-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-01-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-01-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-02-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-02-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-03-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-03-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-04-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-04-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-05-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-05-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-06-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-06-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-07-01",
+    "crop_et",
+    "D:20.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-07-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-07-01",
+    "groundwater_extraction",
+    "D:26.6700",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-08-01",
+    "crop_et",
+    "D:20.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-08-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-08-01",
+    "groundwater_extraction",
+    "D:26.6700",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-09-01",
+    "crop_et",
+    "D:10.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-09-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-09-01",
+    "groundwater_extraction",
+    "D:13.3300",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    "2025-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    null,
+    "crop_et",
+    "D:50.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    null,
+    "groundwater_extraction",
+    "D:66.6700",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    null,
+    "supplies",
+    "D:66.6667",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    null,
+    "uses",
+    "D:66.6667",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    null,
+    "water_not_consumed",
+    "D:16.6667",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F3",
+    null,
+    "balance",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2024-10-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2024-10-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2024-10-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2024-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2024-11-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2024-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2024-11-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2024-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2024-12-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2024-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2024-12-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2024-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-01-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-01-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-01-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-02-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-02-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-03-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-03-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-04-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-04-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-05-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-05-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-06-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-06-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-07-01",
+    "crop_et",
+    "D:30.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-07-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-07-01",
+    "groundwater_extraction",
+    "D:37.5000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-08-01",
+    "crop_et",
+    "D:5.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-08-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-08-01",
+    "groundwater_extraction",
+    "D:6.2500",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-09-01",
+    "crop_et",
+    "D:5.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-09-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-09-01",
+    "groundwater_extraction",
+    "D:6.2500",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "crop_et",
+    "D:40.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "groundwater_extraction",
+    "D:50.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "supplies",
+    "D:50.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "uses",
+    "D:50.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "water_not_consumed",
+    "D:10.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "balance",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2024-10-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2024-10-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2024-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2024-11-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2024-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2024-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2024-12-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2024-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2024-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-01-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-01-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-02-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-03-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-04-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-05-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-06-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-07-01",
+    "crop_et",
+    "D:30.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-07-01",
+    "surface_delivered",
+    "D:42.5000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-08-01",
+    "crop_et",
+    "D:15.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-08-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-09-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-09-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    null,
+    "crop_et",
+    "D:45.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    null,
+    "surface_delivered",
+    "D:42.5000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    null,
+    "supplies",
+    "D:42.5000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    null,
+    "uses",
+    "D:45.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    null,
+    "balance",
+    "D:-2.5000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2024-10-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2024-10-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2024-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2024-11-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2024-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2024-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2024-12-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2024-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2024-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-01-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-01-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-02-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-03-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-04-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-05-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-06-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-07-01",
+    "crop_et",
+    "D:24.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-07-01",
+    "surface_delivered",
+    "D:25.5000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-08-01",
+    "crop_et",
+    "D:12.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-08-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-09-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-09-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    "2025-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    null,
+    "crop_et",
+    "D:36.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    null,
+    "surface_delivered",
+    "D:25.5000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    null,
+    "supplies",
+    "D:25.5000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    null,
+    "uses",
+    "D:36.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G2",
+    null,
+    "balance",
+    "D:-10.5000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2024-10-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2024-10-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2024-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2024-11-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2024-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2024-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2024-12-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2024-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2024-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-01-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-01-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-02-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-03-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-04-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-05-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-06-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-07-01",
+    "crop_et",
+    "D:9.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-07-01",
+    "surface_delivered",
+    "D:17.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-08-01",
+    "crop_et",
+    "D:6.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-08-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-09-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-09-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    "2025-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    null,
+    "crop_et",
+    "D:15.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    null,
+    "surface_delivered",
+    "D:17.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    null,
+    "supplies",
+    "D:17.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    null,
+    "uses",
+    "D:15.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G3",
+    null,
+    "balance",
+    "D:2.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2024-10-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2024-10-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2024-10-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2024-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2024-11-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2024-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2024-11-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2024-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2024-12-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2024-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2024-12-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2024-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-01-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-01-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-01-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-02-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-02-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-03-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-03-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-04-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-04-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-05-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-05-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-06-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-06-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-07-01",
+    "crop_et",
+    "D:30.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-07-01",
+    "surface_delivered",
+    "D:53.2800",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-07-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-08-01",
+    "crop_et",
+    "D:30.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-08-01",
+    "surface_delivered",
+    "D:26.6400",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-08-01",
+    "groundwater_extraction",
+    "D:13.3600",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-09-01",
+    "crop_et",
+    "D:15.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-09-01",
+    "surface_delivered",
+    "D:13.3200",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-09-01",
+    "groundwater_extraction",
+    "D:6.6800",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "crop_et",
+    "D:75.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "surface_delivered",
+    "D:93.2400",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "groundwater_extraction",
+    "D:20.0400",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "supplies",
+    "D:113.2800",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "uses",
+    "D:80.0100",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "water_not_consumed",
+    "D:5.0100",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "balance",
+    "D:33.2700",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2024-10-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2024-10-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2024-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2024-11-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2024-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2024-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2024-12-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2024-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2024-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-01-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-01-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-02-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-03-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-04-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-05-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-06-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-07-01",
+    "crop_et",
+    "D:30.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-07-01",
+    "surface_delivered",
+    "D:35.5200",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-08-01",
+    "crop_et",
+    "D:30.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-08-01",
+    "surface_delivered",
+    "D:17.7600",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-09-01",
+    "crop_et",
+    "D:15.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-09-01",
+    "surface_delivered",
+    "D:8.8800",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    "2025-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    null,
+    "crop_et",
+    "D:75.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    null,
+    "surface_delivered",
+    "D:62.1600",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    null,
+    "supplies",
+    "D:62.1600",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    null,
+    "uses",
+    "D:75.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H2",
+    null,
+    "balance",
+    "D:-12.8400",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2024-10-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2024-10-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2024-10-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2024-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2024-11-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2024-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2024-11-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2024-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2024-12-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2024-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2024-12-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2024-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-01-01",
+    "crop_et",
+    "D:2.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-01-01",
+    "surface_delivered",
+    "D:50.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-01-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-02-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-02-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-03-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-03-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-04-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-04-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-05-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-05-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-06-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-06-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-07-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-07-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-07-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-08-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-08-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-08-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-09-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-09-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-09-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    "2025-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    null,
+    "crop_et",
+    "D:2.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    null,
+    "surface_delivered",
+    "D:50.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    null,
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    null,
+    "supplies",
+    "D:50.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    null,
+    "uses",
+    "D:2.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H3",
+    null,
+    "balance",
+    "D:48.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2024-10-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2024-10-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2024-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2024-11-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2024-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2024-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2024-12-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2024-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2024-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-01-01",
+    "crop_et",
+    "D:2.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-01-01",
+    "surface_delivered",
+    "D:50.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-02-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-03-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-04-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-05-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-06-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-07-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-07-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-08-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-08-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-09-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-09-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    "2025-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    null,
+    "crop_et",
+    "D:2.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    null,
+    "surface_delivered",
+    "D:50.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    null,
+    "supplies",
+    "D:50.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    null,
+    "uses",
+    "D:2.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H4",
+    null,
+    "balance",
+    "D:48.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "crop_et",
+    "D:90.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "groundwater_extraction",
+    "D:105.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "supplies",
+    "D:105.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "uses",
+    "D:112.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "water_not_consumed",
+    "D:22.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "balance",
+    "D:-7.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "allocation",
+    "D:31.5789",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "credit",
+    "D:3.2500",
+    "",
+    "Typed credit for D1-A"
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "used",
+    "D:105.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "remaining",
+    "D:-70.1711",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "crop_et",
+    "D:90.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "groundwater_extraction",
+    "D:116.6667",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "supplies",
+    "D:116.6667",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "uses",
+    "D:116.6667",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "water_not_consumed",
+    "D:26.6667",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "balance",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "allocation",
+    "D:42.1053",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "used",
+    "D:116.6667",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "remaining",
+    "D:-74.5614",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "crop_et",
+    "D:81.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "surface_delivered",
+    "D:68.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "supplies",
+    "D:68.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "uses",
+    "D:81.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "balance",
+    "D:-13.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "allocation",
+    "D:21.0526",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "used",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "remaining",
+    "D:21.0526",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "crop_et",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "supplies",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "uses",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "balance",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "crop_et",
+    "D:165.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "surface_delivered",
+    "D:172.4000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "groundwater_extraction",
+    "D:20.0400",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "supplies",
+    "D:192.4400",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "uses",
+    "D:170.0100",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "water_not_consumed",
+    "D:5.0100",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "balance",
+    "D:22.4300",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "allocation",
+    "D:50.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "used",
+    "D:20.0400",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "remaining",
+    "D:29.9600",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "crop_et",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "groundwater_extraction",
+    "D:5.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "supplies",
+    "D:5.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "uses",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "balance",
+    "D:5.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "allocation",
+    "D:5.2632",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "used",
+    "D:5.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "remaining",
+    "D:0.2632",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "crop_et",
+    "D:216.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "surface_delivered",
+    "D:25.5000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "groundwater_extraction",
+    "D:226.6667",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "supplies",
+    "D:252.1667",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "water_not_consumed",
+    "D:48.6667",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "balance",
+    "D:-12.5000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "allocation",
+    "D:100.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "carryover",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "remaining",
+    "D:-126.6667",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "available",
+    "D:100.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "used",
+    "D:226.6667",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "crop_et",
+    "D:154.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "surface_delivered",
+    "D:255.4000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "groundwater_extraction",
+    "D:20.0400",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "supplies",
+    "D:275.4400",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "water_not_consumed",
+    "D:5.0100",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "balance",
+    "D:116.4300",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "allocation",
+    "D:100.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "carryover",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "remaining",
+    "D:79.9600",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "available",
+    "D:100.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "used",
+    "D:20.0400",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "crop_et",
+    "D:96.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "surface_delivered",
+    "D:85.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "supplies",
+    "D:85.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "balance",
+    "D:-11.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "delivered",
+    "D:85.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "crop_et",
+    "D:150.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "surface_delivered",
+    "D:155.4000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "groundwater_extraction",
+    "D:20.0400",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "supplies",
+    "D:175.4400",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "water_not_consumed",
+    "D:5.0100",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "balance",
+    "D:20.4300",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "delivered",
+    "D:155.4000",
+    "",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "crop_et",
+    "D:426.0000",
+    "",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "surface_delivered",
+    "D:240.4000",
+    "",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "groundwater_extraction",
+    "D:246.7067",
+    "",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "supplies",
+    "D:487.1067",
+    "",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "uses",
+    "D:479.6767",
+    "",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "water_not_consumed",
+    "D:53.6767",
+    "",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "balance",
+    "D:2.4300",
+    "",
+    ""
+   ]
+  ],
+  "dashboard": {
+   "grand_consumptive_use": "D:426.0000",
+   "grand_supply_total": "D:487.1067",
+   "grand_supply_surface": "D:240.4000",
+   "grand_supply_groundwater": "D:246.7067",
+   "grand_supply_precip": "D:0",
+   "grand_surface_lines": [
+    {
+     "kind": "metered",
+     "pill": "Metered",
+     "pill_class": "metered",
+     "amount": "D:88.80"
+    },
+    {
+     "kind": "estimated",
+     "pill": "Estimated",
+     "pill_class": "estimated",
+     "amount": "D:129.40"
+    },
+    {
+     "kind": "unknown",
+     "pill": "Unknown",
+     "pill_class": "unknown",
+     "amount": "D:22.20"
+    }
+   ],
+   "grand_groundwater_lines": [
+    {
+     "kind": "metered",
+     "pill": "Metered",
+     "pill_class": "metered",
+     "amount": "D:105.00"
+    },
+    {
+     "kind": "estimated",
+     "pill": "Estimated",
+     "pill_class": "estimated",
+     "amount": "D:136.71"
+    },
+    {
+     "kind": "unknown",
+     "pill": "Unknown",
+     "pill_class": "unknown",
+     "amount": "D:5.00"
+    }
+   ],
+   "grand_not_consumed": "D:53.6767",
+   "grand_uses_total": "D:479.6767",
+   "grand_net": "D:2.4300",
+   "accounts_with_estimates": 4,
+   "grand_calculation_runs": 24,
+   "accounts_in_surplus": 1,
+   "accounts_in_deficit": 2,
+   "accounts_balanced": 1,
+   "has_allocations": true,
+   "engine_has_never_run": false,
+   "accounts_over_budget": 2,
+   "unmet_demand_rows": [
+    {
+     "parcel_number": "H2",
+     "gross_et": "D:75.0000",
+     "unmet": "D:28.3800"
+    },
+    {
+     "parcel_number": "G2",
+     "gross_et": "D:36.0000",
+     "unmet": "D:15.6000"
+    },
+    {
+     "parcel_number": "G1",
+     "gross_et": "D:15.0000",
+     "unmet": "D:15.0000"
+    },
+    {
+     "parcel_number": "G3",
+     "gross_et": "D:6.0000",
+     "unmet": "D:6.0000"
+    }
+   ],
+   "unmet_demand_total": "D:64.9800",
+   "unmet_demand_count": 4,
+   "attention_total": 8,
+   "periods_to_close": 2,
+   "accounts": [
+    [
+     "D1-A",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:90.0000",
+      "consumptive_use_net": "D:90.0000",
+      "surface": "D:0",
+      "groundwater": "D:105.0000",
+      "precip": "D:0",
+      "supply_total": "D:105.0000",
+      "water_not_consumed": "D:22.0000",
+      "net_vs_supply": "D:-7.0000",
+      "allocation": "D:31.5789",
+      "remaining": "D:-70.1711",
+      "calculation_runs": 6
+     }
+    ],
+    [
+     "D1-B",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:90.0000",
+      "consumptive_use_net": "D:90.0000",
+      "surface": "D:0",
+      "groundwater": "D:116.6667",
+      "precip": "D:0",
+      "supply_total": "D:116.6667",
+      "water_not_consumed": "D:26.6667",
+      "net_vs_supply": "D:0.0000",
+      "allocation": "D:42.1053",
+      "remaining": "D:-74.5614",
+      "calculation_runs": 6
+     }
+    ],
+    [
+     "D2-C",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:81.0000",
+      "consumptive_use_net": "D:81.0000",
+      "surface": "D:68.0000",
+      "groundwater": "D:0.0000",
+      "precip": "D:0",
+      "supply_total": "D:68.0000",
+      "water_not_consumed": "D:0",
+      "net_vs_supply": "D:-13.0000",
+      "allocation": "D:21.0526",
+      "remaining": "D:21.0526",
+      "calculation_runs": 4
+     }
+    ],
+    [
+     "D2-D",
+     {
+      "has_calculations": false,
+      "consumptive_use_gross": "D:0",
+      "consumptive_use_net": "D:0",
+      "surface": "D:0",
+      "groundwater": "D:0.0000",
+      "precip": "D:0",
+      "supply_total": "D:0.0000",
+      "water_not_consumed": "D:0",
+      "net_vs_supply": "D:0.0000",
+      "allocation": null,
+      "remaining": null,
+      "calculation_runs": 0
+     }
+    ],
+    [
+     "D3-E",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:165.0000",
+      "consumptive_use_net": "D:165.0000",
+      "surface": "D:172.4000",
+      "groundwater": "D:20.0400",
+      "precip": "D:0",
+      "supply_total": "D:192.4400",
+      "water_not_consumed": "D:5.0100",
+      "net_vs_supply": "D:22.4300",
+      "allocation": "D:50.0000",
+      "remaining": "D:29.9600",
+      "calculation_runs": 8
+     }
+    ],
+    [
+     "N-G",
+     {
+      "has_calculations": false,
+      "consumptive_use_gross": "D:0",
+      "consumptive_use_net": "D:0",
+      "surface": "D:0",
+      "groundwater": "D:5.0000",
+      "precip": "D:0",
+      "supply_total": "D:5.0000",
+      "water_not_consumed": "D:0",
+      "net_vs_supply": "D:5.0000",
+      "allocation": "D:5.2632",
+      "remaining": "D:0.2632",
+      "calculation_runs": 0
+     }
+    ]
+   ],
+   "zones": [
+    [
+     "D1 GSA",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:216.0000",
+      "consumptive_use_net": "D:216.0000",
+      "surface": "D:25.5000",
+      "groundwater": "D:226.6667",
+      "precip": "D:0",
+      "supply_total": "D:252.1667",
+      "water_not_consumed": "D:48.6667",
+      "net_vs_supply": "D:-12.5000",
+      "allocation": "D:100.0000",
+      "carryover": "D:0",
+      "remaining": "D:-126.6667",
+      "has_groundwater_budget": true
+     }
+    ],
+    [
+     "D3 GSA",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:154.0000",
+      "consumptive_use_net": "D:154.0000",
+      "surface": "D:255.4000",
+      "groundwater": "D:20.0400",
+      "precip": "D:0",
+      "supply_total": "D:275.4400",
+      "water_not_consumed": "D:5.0100",
+      "net_vs_supply": "D:116.4300",
+      "allocation": "D:100.0000",
+      "carryover": "D:0",
+      "remaining": "D:79.9600",
+      "has_groundwater_budget": true
+     }
+    ],
+    [
+     "D2 District",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:96.0000",
+      "consumptive_use_net": "D:96.0000",
+      "surface": "D:85.0000",
+      "groundwater": "D:0.0000",
+      "precip": "D:0",
+      "supply_total": "D:85.0000",
+      "water_not_consumed": "D:0",
+      "net_vs_supply": "D:-11.0000",
+      "allocation": null,
+      "carryover": null,
+      "remaining": null,
+      "has_groundwater_budget": false
+     }
+    ],
+    [
+     "D3 District",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:150.0000",
+      "consumptive_use_net": "D:150.0000",
+      "surface": "D:155.4000",
+      "groundwater": "D:20.0400",
+      "precip": "D:0",
+      "supply_total": "D:175.4400",
+      "water_not_consumed": "D:5.0100",
+      "net_vs_supply": "D:20.4300",
+      "allocation": null,
+      "carryover": null,
+      "remaining": null,
+      "has_groundwater_budget": false
+     }
+    ]
+   ]
+  },
+  "accounts_list": {
+   "grand_consumptive_use": "D:426.0000",
+   "grand_supply_total": "D:487.1067",
+   "grand_supply_surface": "D:240.4000",
+   "grand_supply_groundwater": "D:246.7067",
+   "grand_supply_precip": "D:0",
+   "grand_not_consumed": "D:53.6767",
+   "grand_net": "D:2.4300",
+   "has_allocations": true,
+   "engine_has_never_run": false,
+   "total_count": 6,
+   "matched_count": 6,
+   "accounts": [
+    [
+     "D1-A",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:90.0000",
+      "consumptive_use_net": "D:90.0000",
+      "surface": "D:0",
+      "groundwater": "D:105.0000",
+      "precip": "D:0",
+      "supply_total": "D:105.0000",
+      "water_not_consumed": "D:22.0000",
+      "net_vs_supply": "D:-7.0000",
+      "allocation": "D:31.5789",
+      "remaining": "D:-70.1711",
+      "calculation_runs": 6
+     }
+    ],
+    [
+     "D1-B",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:90.0000",
+      "consumptive_use_net": "D:90.0000",
+      "surface": "D:0",
+      "groundwater": "D:116.6667",
+      "precip": "D:0",
+      "supply_total": "D:116.6667",
+      "water_not_consumed": "D:26.6667",
+      "net_vs_supply": "D:0.0000",
+      "allocation": "D:42.1053",
+      "remaining": "D:-74.5614",
+      "calculation_runs": 6
+     }
+    ],
+    [
+     "D2-C",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:81.0000",
+      "consumptive_use_net": "D:81.0000",
+      "surface": "D:68.0000",
+      "groundwater": "D:0.0000",
+      "precip": "D:0",
+      "supply_total": "D:68.0000",
+      "water_not_consumed": "D:0",
+      "net_vs_supply": "D:-13.0000",
+      "allocation": "D:21.0526",
+      "remaining": "D:21.0526",
+      "calculation_runs": 4
+     }
+    ],
+    [
+     "D2-D",
+     {
+      "has_calculations": false,
+      "consumptive_use_gross": "D:0",
+      "consumptive_use_net": "D:0",
+      "surface": "D:0",
+      "groundwater": "D:0.0000",
+      "precip": "D:0",
+      "supply_total": "D:0.0000",
+      "water_not_consumed": "D:0",
+      "net_vs_supply": "D:0.0000",
+      "allocation": null,
+      "remaining": null,
+      "calculation_runs": 0
+     }
+    ],
+    [
+     "D3-E",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:165.0000",
+      "consumptive_use_net": "D:165.0000",
+      "surface": "D:172.4000",
+      "groundwater": "D:20.0400",
+      "precip": "D:0",
+      "supply_total": "D:192.4400",
+      "water_not_consumed": "D:5.0100",
+      "net_vs_supply": "D:22.4300",
+      "allocation": "D:50.0000",
+      "remaining": "D:29.9600",
+      "calculation_runs": 8
+     }
+    ],
+    [
+     "N-G",
+     {
+      "has_calculations": false,
+      "consumptive_use_gross": "D:0",
+      "consumptive_use_net": "D:0",
+      "surface": "D:0",
+      "groundwater": "D:5.0000",
+      "precip": "D:0",
+      "supply_total": "D:5.0000",
+      "water_not_consumed": "D:0",
+      "net_vs_supply": "D:5.0000",
+      "allocation": "D:5.2632",
+      "remaining": "D:0.2632",
+      "calculation_runs": 0
+     }
+    ]
+   ]
+  }
+ },
+ "WY 2025-2026": {
+  "figures": [
+   [
+    "use_area",
+    "F1",
+    "2025-10-01",
+    "crop_et",
+    "D:10.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-10-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-10-01",
+    "groundwater_extraction",
+    "D:12.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-11-01",
+    "crop_et",
+    "D:5.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-11-01",
+    "groundwater_extraction",
+    "D:6.2500",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-12-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-12-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2025-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-01-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-01-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-01-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-02-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-02-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-03-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-03-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-04-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-04-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-05-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-05-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-06-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-06-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-07-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-07-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-07-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-08-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-08-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-08-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-09-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-09-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-09-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    "2026-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "crop_et",
+    "D:15.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "groundwater_extraction",
+    "D:18.2500",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "supplies",
+    "D:18.2500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "uses",
+    "D:18.2500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "water_not_consumed",
+    "D:3.2500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F1",
+    null,
+    "balance",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-10-01",
+    "crop_et",
+    "D:15.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-10-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-10-01",
+    "groundwater_extraction",
+    "D:18.7500",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-11-01",
+    "crop_et",
+    "D:7.5000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-11-01",
+    "groundwater_extraction",
+    "D:9.3800",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-12-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-12-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2025-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-01-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-01-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-01-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-02-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-02-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-03-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-03-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-04-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-04-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-05-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-05-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-06-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-06-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-07-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-07-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-07-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-08-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-08-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-08-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-09-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-09-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-09-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    "2026-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "crop_et",
+    "D:22.5000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "groundwater_extraction",
+    "D:28.1300",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "supplies",
+    "D:28.1250",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "uses",
+    "D:28.1250",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "water_not_consumed",
+    "D:5.6250",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "F4",
+    null,
+    "balance",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-10-01",
+    "crop_et",
+    "D:12.5000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-10-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-11-01",
+    "crop_et",
+    "D:6.2500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-12-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2025-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-01-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-01-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-02-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-03-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-04-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-05-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-06-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-07-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-07-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-08-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-08-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-09-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-09-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    "2026-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    null,
+    "crop_et",
+    "D:18.7500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    null,
+    "supplies",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    null,
+    "uses",
+    "D:18.7500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "G1",
+    null,
+    "balance",
+    "D:-18.7500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-10-01",
+    "crop_et",
+    "D:20.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-10-01",
+    "surface_delivered",
+    "D:17.7600",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-10-01",
+    "groundwater_extraction",
+    "D:8.9100",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-10-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-11-01",
+    "crop_et",
+    "D:10.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-11-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-11-01",
+    "groundwater_extraction",
+    "D:13.3300",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-11-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-12-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-12-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-12-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2025-12-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-01-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-01-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-01-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-01-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-02-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-02-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-02-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-02-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-03-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-03-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-03-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-03-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-04-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-04-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-04-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-04-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-05-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-05-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-05-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-05-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-06-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-06-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-06-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-06-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-07-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-07-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-07-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-07-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-08-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-08-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-08-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-08-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-09-01",
+    "crop_et",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-09-01",
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-09-01",
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    "2026-09-01",
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "crop_et",
+    "D:30.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "surface_delivered",
+    "D:17.7600",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "groundwater_extraction",
+    "D:22.2400",
+    "",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "supplies",
+    "D:40.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "uses",
+    "D:35.5600",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "water_not_consumed",
+    "D:5.5600",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "use_area",
+    "H1",
+    null,
+    "balance",
+    "D:4.4400",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "crop_et",
+    "D:15.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "groundwater_extraction",
+    "D:18.2500",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "supplies",
+    "D:18.2500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "uses",
+    "D:18.2500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "water_not_consumed",
+    "D:3.2500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "balance",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "allocation",
+    "D:40.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "credit",
+    "D:-85.8835",
+    "",
+    "Carried forward from WY 2024-2025"
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "used",
+    "D:18.2500",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-A \u00b7 D1 Account A",
+    null,
+    "remaining",
+    "D:-64.1335",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "crop_et",
+    "D:22.5000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "groundwater_extraction",
+    "D:28.1250",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "supplies",
+    "D:28.1250",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "uses",
+    "D:28.1250",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "water_not_consumed",
+    "D:5.6250",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "balance",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "allocation",
+    "D:26.6667",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "credit",
+    "D:-68.4739",
+    "",
+    "Carried forward from WY 2024-2025"
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "credit",
+    "D:1.7500",
+    "",
+    "Typed credit for D1-B"
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "used",
+    "D:28.1250",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D1-B \u00b7 D1 Account B",
+    null,
+    "remaining",
+    "D:-68.1822",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "crop_et",
+    "D:18.7500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "supplies",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "uses",
+    "D:18.7500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D2-C \u00b7 Account D2-C",
+    null,
+    "balance",
+    "D:-18.7500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "crop_et",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "supplies",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "uses",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D2-D \u00b7 Account D2-D",
+    null,
+    "balance",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "crop_et",
+    "D:30.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "surface_delivered",
+    "D:29.6000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "groundwater_extraction",
+    "D:22.2400",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "supplies",
+    "D:51.8400",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "uses",
+    "D:35.5600",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "water_not_consumed",
+    "D:5.5600",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "balance",
+    "D:16.2800",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "allocation",
+    "D:50.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "credit",
+    "D:-0.5000",
+    "",
+    "Typed credit for D3-E"
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "used",
+    "D:22.2400",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "D3-E \u00b7 Account D3-E",
+    null,
+    "remaining",
+    "D:27.2600",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "crop_et",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "groundwater_extraction",
+    "D:2.5000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "supplies",
+    "D:2.5000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "uses",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "balance",
+    "D:2.5000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "allocation",
+    "D:6.6667",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "used",
+    "D:2.5000",
+    "",
+    ""
+   ],
+   [
+    "account",
+    "N-G \u00b7 Account N-G",
+    null,
+    "remaining",
+    "D:4.1667",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "crop_et",
+    "D:15.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "groundwater_extraction",
+    "D:20.7500",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "supplies",
+    "D:20.7500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "water_not_consumed",
+    "D:3.2500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "balance",
+    "D:2.5000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "allocation",
+    "D:100.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "carryover",
+    "D:-153.3333",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "remaining",
+    "D:-74.0833",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "available",
+    "D:-53.3333",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D1 GSA",
+    null,
+    "used",
+    "D:20.7500",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "crop_et",
+    "D:30.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "surface_delivered",
+    "D:29.6000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "groundwater_extraction",
+    "D:22.2400",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "supplies",
+    "D:51.8400",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "water_not_consumed",
+    "D:5.5600",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "balance",
+    "D:16.2800",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "allocation",
+    "D:100.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "carryover",
+    "D:79.9600",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "remaining",
+    "D:157.7200",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "available",
+    "D:179.9600",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 GSA",
+    null,
+    "used",
+    "D:22.2400",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "crop_et",
+    "D:18.7500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "surface_delivered",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "groundwater_extraction",
+    "D:0.0000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "supplies",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "water_not_consumed",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D2 District",
+    null,
+    "balance",
+    "D:-18.7500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "crop_et",
+    "D:30.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "surface_delivered",
+    "D:29.6000",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "groundwater_extraction",
+    "D:22.2400",
+    "",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "supplies",
+    "D:51.8400",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "water_not_consumed",
+    "D:5.5600",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "balance",
+    "D:16.2800",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "zone",
+    "D3 District",
+    null,
+    "delivered",
+    "D:29.6000",
+    "",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "crop_et",
+    "D:86.2500",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "surface_delivered",
+    "D:29.6000",
+    "",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "groundwater_extraction",
+    "D:71.1150",
+    "",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "effective_precipitation",
+    "D:0.0000",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "supplies",
+    "D:100.7150",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "uses",
+    "D:100.6850",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "water_not_consumed",
+    "D:14.4350",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ],
+   [
+    "site",
+    "",
+    null,
+    "balance",
+    "D:-2.4700",
+    "Default Methodology 721bc1ae69a9",
+    ""
+   ]
+  ],
+  "dashboard": {
+   "grand_consumptive_use": "D:86.2500",
+   "grand_supply_total": "D:100.7150",
+   "grand_supply_surface": "D:29.6000",
+   "grand_supply_groundwater": "D:71.1150",
+   "grand_supply_precip": "D:0",
+   "grand_surface_lines": [
+    {
+     "kind": "metered",
+     "pill": "Metered",
+     "pill_class": "metered",
+     "amount": "D:29.60"
+    }
+   ],
+   "grand_groundwater_lines": [
+    {
+     "kind": "metered",
+     "pill": "Metered",
+     "pill_class": "metered",
+     "amount": "D:12.00"
+    },
+    {
+     "kind": "estimated",
+     "pill": "Estimated",
+     "pill_class": "estimated",
+     "amount": "D:56.62"
+    },
+    {
+     "kind": "unknown",
+     "pill": "Unknown",
+     "pill_class": "unknown",
+     "amount": "D:2.50"
+    }
+   ],
+   "grand_not_consumed": "D:14.4350",
+   "grand_uses_total": "D:100.6850",
+   "grand_net": "D:-2.4700",
+   "accounts_with_estimates": 4,
+   "grand_calculation_runs": 8,
+   "accounts_in_surplus": 1,
+   "accounts_in_deficit": 1,
+   "accounts_balanced": 2,
+   "has_allocations": true,
+   "engine_has_never_run": false,
+   "accounts_over_budget": 2,
+   "unmet_demand_rows": [
+    {
+     "parcel_number": "G1",
+     "gross_et": "D:18.7500",
+     "unmet": "D:18.7500"
+    }
+   ],
+   "unmet_demand_total": "D:18.7500",
+   "unmet_demand_count": 1,
+   "attention_total": 5,
+   "periods_to_close": 2,
+   "accounts": [
+    [
+     "D1-A",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:15.0000",
+      "consumptive_use_net": "D:15.0000",
+      "surface": "D:0",
+      "groundwater": "D:18.2500",
+      "precip": "D:0",
+      "supply_total": "D:18.2500",
+      "water_not_consumed": "D:3.2500",
+      "net_vs_supply": "D:0.0000",
+      "allocation": "D:40.0000",
+      "remaining": "D:-64.1335",
+      "calculation_runs": 2
+     }
+    ],
+    [
+     "D1-B",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:22.5000",
+      "consumptive_use_net": "D:22.5000",
+      "surface": "D:0",
+      "groundwater": "D:28.1250",
+      "precip": "D:0",
+      "supply_total": "D:28.1250",
+      "water_not_consumed": "D:5.6250",
+      "net_vs_supply": "D:0.0000",
+      "allocation": "D:26.6667",
+      "remaining": "D:-68.1822",
+      "calculation_runs": 2
+     }
+    ],
+    [
+     "D2-C",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:18.7500",
+      "consumptive_use_net": "D:18.7500",
+      "surface": "D:0",
+      "groundwater": "D:0.0000",
+      "precip": "D:0",
+      "supply_total": "D:0.0000",
+      "water_not_consumed": "D:0",
+      "net_vs_supply": "D:-18.7500",
+      "allocation": null,
+      "remaining": null,
+      "calculation_runs": 2
+     }
+    ],
+    [
+     "D2-D",
+     {
+      "has_calculations": false,
+      "consumptive_use_gross": "D:0",
+      "consumptive_use_net": "D:0",
+      "surface": "D:0",
+      "groundwater": "D:0.0000",
+      "precip": "D:0",
+      "supply_total": "D:0.0000",
+      "water_not_consumed": "D:0",
+      "net_vs_supply": "D:0.0000",
+      "allocation": null,
+      "remaining": null,
+      "calculation_runs": 0
+     }
+    ],
+    [
+     "D3-E",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:30.0000",
+      "consumptive_use_net": "D:30.0000",
+      "surface": "D:29.6000",
+      "groundwater": "D:22.2400",
+      "precip": "D:0",
+      "supply_total": "D:51.8400",
+      "water_not_consumed": "D:5.5600",
+      "net_vs_supply": "D:16.2800",
+      "allocation": "D:50.0000",
+      "remaining": "D:27.2600",
+      "calculation_runs": 2
+     }
+    ],
+    [
+     "N-G",
+     {
+      "has_calculations": false,
+      "consumptive_use_gross": "D:0",
+      "consumptive_use_net": "D:0",
+      "surface": "D:0",
+      "groundwater": "D:2.5000",
+      "precip": "D:0",
+      "supply_total": "D:2.5000",
+      "water_not_consumed": "D:0",
+      "net_vs_supply": "D:2.5000",
+      "allocation": "D:6.6667",
+      "remaining": "D:4.1667",
+      "calculation_runs": 0
+     }
+    ]
+   ],
+   "zones": [
+    [
+     "D1 GSA",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:15.0000",
+      "consumptive_use_net": "D:15.0000",
+      "surface": "D:0",
+      "groundwater": "D:20.7500",
+      "precip": "D:0",
+      "supply_total": "D:20.7500",
+      "water_not_consumed": "D:3.2500",
+      "net_vs_supply": "D:2.5000",
+      "allocation": "D:100.0000",
+      "carryover": "D:-153.3333",
+      "remaining": "D:-74.0833",
+      "has_groundwater_budget": true
+     }
+    ],
+    [
+     "D3 GSA",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:30.0000",
+      "consumptive_use_net": "D:30.0000",
+      "surface": "D:29.6000",
+      "groundwater": "D:22.2400",
+      "precip": "D:0",
+      "supply_total": "D:51.8400",
+      "water_not_consumed": "D:5.5600",
+      "net_vs_supply": "D:16.2800",
+      "allocation": "D:100.0000",
+      "carryover": "D:79.9600",
+      "remaining": "D:157.7200",
+      "has_groundwater_budget": true
+     }
+    ],
+    [
+     "D2 District",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:18.7500",
+      "consumptive_use_net": "D:18.7500",
+      "surface": "D:0",
+      "groundwater": "D:0.0000",
+      "precip": "D:0",
+      "supply_total": "D:0.0000",
+      "water_not_consumed": "D:0",
+      "net_vs_supply": "D:-18.7500",
+      "allocation": null,
+      "carryover": null,
+      "remaining": null,
+      "has_groundwater_budget": false
+     }
+    ],
+    [
+     "D3 District",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:30.0000",
+      "consumptive_use_net": "D:30.0000",
+      "surface": "D:29.6000",
+      "groundwater": "D:22.2400",
+      "precip": "D:0",
+      "supply_total": "D:51.8400",
+      "water_not_consumed": "D:5.5600",
+      "net_vs_supply": "D:16.2800",
+      "allocation": null,
+      "carryover": null,
+      "remaining": null,
+      "has_groundwater_budget": false
+     }
+    ]
+   ]
+  },
+  "accounts_list": {
+   "grand_consumptive_use": "D:86.2500",
+   "grand_supply_total": "D:100.7150",
+   "grand_supply_surface": "D:29.6000",
+   "grand_supply_groundwater": "D:71.1150",
+   "grand_supply_precip": "D:0",
+   "grand_not_consumed": "D:14.4350",
+   "grand_net": "D:-2.4700",
+   "has_allocations": true,
+   "engine_has_never_run": false,
+   "total_count": 6,
+   "matched_count": 6,
+   "accounts": [
+    [
+     "D1-A",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:15.0000",
+      "consumptive_use_net": "D:15.0000",
+      "surface": "D:0",
+      "groundwater": "D:18.2500",
+      "precip": "D:0",
+      "supply_total": "D:18.2500",
+      "water_not_consumed": "D:3.2500",
+      "net_vs_supply": "D:0.0000",
+      "allocation": "D:40.0000",
+      "remaining": "D:-64.1335",
+      "calculation_runs": 2
+     }
+    ],
+    [
+     "D1-B",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:22.5000",
+      "consumptive_use_net": "D:22.5000",
+      "surface": "D:0",
+      "groundwater": "D:28.1250",
+      "precip": "D:0",
+      "supply_total": "D:28.1250",
+      "water_not_consumed": "D:5.6250",
+      "net_vs_supply": "D:0.0000",
+      "allocation": "D:26.6667",
+      "remaining": "D:-68.1822",
+      "calculation_runs": 2
+     }
+    ],
+    [
+     "D2-C",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:18.7500",
+      "consumptive_use_net": "D:18.7500",
+      "surface": "D:0",
+      "groundwater": "D:0.0000",
+      "precip": "D:0",
+      "supply_total": "D:0.0000",
+      "water_not_consumed": "D:0",
+      "net_vs_supply": "D:-18.7500",
+      "allocation": null,
+      "remaining": null,
+      "calculation_runs": 2
+     }
+    ],
+    [
+     "D2-D",
+     {
+      "has_calculations": false,
+      "consumptive_use_gross": "D:0",
+      "consumptive_use_net": "D:0",
+      "surface": "D:0",
+      "groundwater": "D:0.0000",
+      "precip": "D:0",
+      "supply_total": "D:0.0000",
+      "water_not_consumed": "D:0",
+      "net_vs_supply": "D:0.0000",
+      "allocation": null,
+      "remaining": null,
+      "calculation_runs": 0
+     }
+    ],
+    [
+     "D3-E",
+     {
+      "has_calculations": true,
+      "consumptive_use_gross": "D:30.0000",
+      "consumptive_use_net": "D:30.0000",
+      "surface": "D:29.6000",
+      "groundwater": "D:22.2400",
+      "precip": "D:0",
+      "supply_total": "D:51.8400",
+      "water_not_consumed": "D:5.5600",
+      "net_vs_supply": "D:16.2800",
+      "allocation": "D:50.0000",
+      "remaining": "D:27.2600",
+      "calculation_runs": 2
+     }
+    ],
+    [
+     "N-G",
+     {
+      "has_calculations": false,
+      "consumptive_use_gross": "D:0",
+      "consumptive_use_net": "D:0",
+      "surface": "D:0",
+      "groundwater": "D:2.5000",
+      "precip": "D:0",
+      "supply_total": "D:2.5000",
+      "water_not_consumed": "D:0",
+      "net_vs_supply": "D:2.5000",
+      "allocation": "D:6.6667",
+      "remaining": "D:4.1667",
+      "calculation_runs": 0
+     }
+    ]
+   ]
+  }
+ }
+}
