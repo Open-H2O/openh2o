@@ -39,19 +39,25 @@ jobs:
       - name: Colour literals
         run: python scripts/check_colour_literals.py
 
-  # The suite runs as four jobs at once. As one job it took 37 to 60 minutes on
-  # GitHub's runners and was cancelled at the 60-minute limit with no test failed.
-  # The module-drop proof boots a separate Django process for each of its 30
-  # cases and is about a third of the run on its own, so it is one job; the other
-  # test files are dealt round-robin into three. The workflow passes only when all
-  # four do, which is what `make deploy` reads (scripts/ci_gate.py).
+  # The suite runs as five jobs at once, and each job runs its tests in parallel
+  # (pytest-xdist, one worker per CPU of the runner). As one serial job it took 37
+  # to 60 minutes on GitHub's runners and was cancelled at the 60-minute limit with
+  # no test failed; as one parallel job about 15 minutes, so several jobs still pay.
+  # The module-drop proof boots a separate Django process for each of its cases and
+  # is about a third of the run on its own, so it gets two halves of its own
+  # (drop-1, drop-2). The other test files are dealt into three parts by measured
+  # seconds, longest first, so the parts finish together; the seconds live in
+  # tests/ci_durations.tsv. To refresh them, download a run's durations-* artifacts
+  # and run `python3 scripts/ci_parts.py --refresh durations-*/junit.xml`.
+  # The workflow passes only when all five jobs do, which is what `make deploy`
+  # reads (scripts/ci_gate.py).
   pytest:
     runs-on: ubuntu-latest
     timeout-minutes: 60  # backstop: a hung run fails here instead of at the 6h runner limit
     strategy:
       fail-fast: false
       matrix:
-        part: [module-drop, "1", "2", "3"]
+        part: ["1", "2", "3", drop-1, drop-2]
     env:
       # Throwaway values for CI only, not secrets. Same as clean-install.yml.
       DJANGO_SETTINGS_MODULE: config.settings.local
@@ -85,35 +91,59 @@ jobs:
       - name: Start database and web
         run: docker compose up -d --wait db web
 
-      # Every test module sits directly in tests/ (pyproject.toml's python_files).
-      # The step fails if the three parts and the module-drop job do not together
-      # hold every module exactly once.
+      # scripts/ci_parts.py fails this step when the three parts and the
+      # module-drop file do not hold every test module exactly once, or the two
+      # module-drop halves do not hold every module-drop test exactly once. The
+      # halves split the node ids pytest collects inside the container.
       - name: Choose this job's test files
         env:
           PART: ${{ matrix.part }}
         run: |
-          python3 - <<'EOF' > files.txt
-          import glob, os, sys
-          drop = "tests/test_droppability_acceptance.py"
-          names = sorted({*glob.glob("tests/test_*.py"), *glob.glob("tests/*_tests.py"), *glob.glob("tests/tests.py")})
-          rest = [n for n in names if n != drop]
-          parts = {str(k): rest[k - 1::3] for k in (1, 2, 3)}
-          dealt = sorted(n for files in parts.values() for n in files) + [drop]
-          if sorted(dealt) != names:
-              sys.exit("the parts do not hold every test module exactly once")
-          part = os.environ["PART"]
-          print("\n".join([drop] if part == "module-drop" else parts[part]))
-          EOF
+          case "$PART" in
+            drop-*)
+              docker compose exec -T -e OPENH2O_MODULES=all web \
+                python -m pytest --collect-only -q -p no:cacheprovider \
+                --ds=config.settings.local tests/test_droppability_acceptance.py \
+                | python3 scripts/ci_parts.py --drop-half "${PART#drop-}" > files.txt
+              echo "load" > dist.txt ;;
+            *)
+              python3 scripts/ci_parts.py --part "$PART" --parts 3 > files.txt
+              echo "loadfile" > dist.txt ;;
+          esac
           wc -l < files.txt
 
+      # The node ids are read into an array rather than split by the shell: a
+      # module-drop id carries [brackets] the shell would treat as a pattern.
+      # loadfile keeps each test file on one worker; the module-drop cases are
+      # independent, so they are dealt one by one (load).
       - name: Run the test suite
-        run: >-
-          docker compose exec -T -e OPENH2O_MODULES=all web
-          python -m pytest $(cat files.txt)
-          --ds=config.settings.local
-          -m "not network"
-          -p no:cacheprovider
-          -q
+        run: |
+          mapfile -t files < files.txt
+          docker compose exec -T -e OPENH2O_MODULES=all web \
+            python -m pytest "${files[@]}" \
+            --ds=config.settings.local \
+            -m "not network" \
+            -p no:cacheprovider \
+            -n auto --dist "$(cat dist.txt)" \
+            --junitxml=/tmp/junit.xml \
+            -q
+
+      # Per-test seconds, for `scripts/ci_parts.py --refresh`.
+      - name: Copy out the test durations
+        if: always()
+        run: |
+          mkdir -p durations
+          docker compose cp web:/tmp/junit.xml durations/junit.xml \
+            || echo "no JUnit file: the suite did not start"
+
+      - name: Upload the test durations
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: durations-${{ matrix.part }}
+          path: durations/
+          retention-days: 14
+          if-no-files-found: ignore
 
       - name: Web log on failure
         if: failure()
