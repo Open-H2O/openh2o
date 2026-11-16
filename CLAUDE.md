@@ -210,6 +210,20 @@ the dropped routes 404 and the sidebar carries no dead links. It is part of
 runs it in isolation dozens of times. See
 [tests/droppability/README.md](tests/droppability/README.md).
 
+The suite runs in parallel (pytest-xdist): `make test` starts one worker per CPU
+the container sees, each with its own test database, and `--dist loadfile` keeps
+every test file on one worker. `make test TEST_WORKERS=0` runs serially, for
+debugging a failure; a run that names a single file in `T` is serial by default.
+Parallel workers run files in an order a serial run never does, so a test must
+leave the database as it found it. Three rules come from faults already fixed. A
+test id may not be random: workers must collect the same ids, so no `uuid4()` in
+`parametrize`. A `transaction=True` test must also set `serialized_rollback=True`:
+its closing flush empties the rows data migrations seed, and `conftest.py` can
+only put them back from that snapshot. A fixture that commits rows outside a
+test's transaction (through `django_db_blocker`) must delete every row it
+committed, not only the one it cares about, as `tests/test_merced_drinking_seed.py`
+does.
+
 Tests are pinned to `config.settings.local` via `--ds` because the production
 settings refuse to boot without a strong DB password and a real ALLOWED_HOSTS.
 Add tests alongside any new model, view, or data adapter.

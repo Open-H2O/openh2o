@@ -252,13 +252,20 @@ dev-css: ## Compile static/css/output.css from this folder with the image's Tail
 dev-up: guard-prod dev-css ## Start the stack with docker-compose.dev.yml: edits are live in the web container with no rebuild
 	$(DEV_COMPOSE) up -d --build
 
+# Parallel test workers (pytest-xdist). "auto" is one per CPU the container sees,
+# so each machine uses what its Docker allows. Every worker builds its own test
+# database first, and --dist loadfile keeps a file on one worker, so a run whose
+# T is narrower than tests/ (usually one file) stays serial by default. TEST_WORKERS=0 runs
+# serially, for debugging a failure; TEST_WORKERS=4 leaves CPUs free.
+TEST_WORKERS ?= $(if $(filter-out tests/ tests,$(T)),0,auto)
+
 test: ## Run the tests in T (a path or node id; all of tests/ when T is not given), pinned to local settings with every module on; waits on a lock so two runs never share the test database
 	@if [ "$(DEV_BIND)" = "bind" ]; then \
 		echo "guard-fresh skipped: docker-compose.dev.yml is in use, so the web container runs this folder's own source."; \
 	else \
 		$(MAKE) --no-print-directory guard-fresh; \
 	fi
-	python3 scripts/with_test_lock.py $(COMPOSE) exec -e OPENH2O_MODULES=all web python -m pytest $(T) -v --ds=config.settings.local
+	python3 scripts/with_test_lock.py $(COMPOSE) exec -e OPENH2O_MODULES=all web python -m pytest $(T) -v --ds=config.settings.local -n $(TEST_WORKERS) --dist loadfile
 
 golden-update: ## Rewrite the golden files for the tests in T (required), then copy tests/golden out of the container unless docker-compose.dev.yml is in use
 	@test -n "$(T)" -a "$(T)" != "tests/" || { echo "Usage: make golden-update T=tests/test_nav_golden.py"; exit 1; }
@@ -273,7 +280,7 @@ golden-update: ## Rewrite the golden files for the tests in T (required), then c
 	fi
 
 test-droppable: guard-fresh ## Prove every optional module can be dropped (see tests/droppability/README.md)
-	$(COMPOSE) exec -e OPENH2O_MODULES=all web python -m pytest tests/test_droppability_acceptance.py -v --ds=config.settings.local
+	$(COMPOSE) exec -e OPENH2O_MODULES=all web python -m pytest tests/test_droppability_acceptance.py -v --ds=config.settings.local -n $(TEST_WORKERS) --dist load
 
 # ---------------------------------------------------------------------------
 # Seed Data
