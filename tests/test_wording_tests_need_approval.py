@@ -39,22 +39,153 @@ MARK = re.compile(r"#\s*(wording approved|not wording):\s*(\S.*)$")
 SHOWN = 5
 
 
-# -- The detector (not written yet: the self-checks below come first) ------------------------
+# -- The detector ------------------------------------------------------------------------------
+
+
+def is_prose(node):
+    """A string constant of 12+ characters holding a space and a run of three letters."""
+    return (
+        isinstance(node, ast.Constant)
+        and isinstance(node.value, str)
+        and len(node.value) >= 12
+        and " " in node.value
+        and re.search(r"[A-Za-z]{3}", node.value) is not None
+    )
+
+
+def _prose_in(nodes):
+    return [n for n in nodes if is_prose(n)]
+
+
+def assertions(fn):
+    """``[(assertion node, [prose literal nodes it compares])]`` for every assertion in ``fn``."""
+    out = []
+    for node in ast.walk(fn):
+        if isinstance(node, ast.Assert):
+            test = node.test
+            literals = []
+            if isinstance(test, ast.Compare):
+                literals = _prose_in([test.left, *test.comparators])
+            elif isinstance(test, ast.UnaryOp) and isinstance(test.operand, ast.Compare):
+                literals = _prose_in([test.operand.left, *test.operand.comparators])
+            out.append((node, literals))
+        elif (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr.startswith("assert")
+        ):
+            out.append((node, _prose_in(list(node.args) + [k.value for k in node.keywords])))
+    return out
+
+
+def not_wording(text):
+    """Whether a literal is something other than wording a person reads."""
+    return (
+        text.startswith("<")
+        or 'class="' in text
+        or "(DEMO)" in text
+        or re.search(r"(?<! )/(?! )", text) is not None
+        or "{" in text
+        or "}" in text
+    )
+
+
+def is_sentence_only(fn):
+    """Every assertion compares a prose literal, and not every literal is something other than wording."""
+    found = assertions(fn)
+    if not found or not all(literals for _node, literals in found):
+        return False
+    texts = [lit.value for _node, literals in found for lit in literals]
+    return not all(not_wording(text) for text in texts)
+
+
+def _marked(fn, lines):
+    """Whether the test carries a marker with a reason above its def or inside it."""
+    first = min([fn.lineno] + [d.lineno for d in fn.decorator_list])
+    above = lines[max(first - 3, 0):first - 1]
+    inside = lines[fn.lineno - 1:fn.end_lineno]
+    return any(MARK.search(line) for line in above + inside)
+
+
+def _qualname(node, parents):
+    names = [node.name]
+    parent = parents.get(node)
+    while parent is not None:
+        if isinstance(parent, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            names.append(parent.name)
+        parent = parents.get(parent)
+    return "::".join(reversed(names))
 
 
 def scan(source, rel):
-    raise NotImplementedError
+    """``[(test id, marked)]`` for every sentence-only test in one file's source; ``rel`` is its path."""
+    tree = ast.parse(source)
+    lines = source.splitlines()
+    parents = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
+    out, seen = [], set()
+    for node in ast.walk(tree):
+        if not (isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test")):
+            continue
+        if not is_sentence_only(node):
+            continue
+        test_id = f"{rel}::{_qualname(node, parents)}"
+        if test_id in seen:
+            test_id = f"{test_id}@{node.lineno}"
+        seen.add(test_id)
+        out.append((test_id, _marked(node, lines)))
+    return out
 
 
-def failures(current, baseline):
-    raise NotImplementedError
+def unmarked_in_tree(root=REPO_ROOT):
+    """The ids of every sentence-only test with no marker, across ``tests/``."""
+    found = set()
+    for path in sorted((root / "tests").rglob("*.py")):
+        if "__pycache__" in path.parts:
+            continue
+        rel = path.relative_to(root).as_posix()
+        found |= {test_id for test_id, marked in scan(path.read_text(), rel) if not marked}
+    return found
+
+
+def read_baseline(text):
+    return {line.strip() for line in text.splitlines() if line.strip() and not line.startswith("#")}
 
 
 def _names(ids):
-    raise NotImplementedError
+    ids = sorted(ids)
+    shown = ", ".join(ids[:SHOWN])
+    return f"{shown} and {len(ids) - SHOWN} more" if len(ids) > SHOWN else shown
 
 
-SHOWN = 5
+def failures(current, baseline):
+    """The messages for new unmarked sentence-only tests and for baseline lines to delete."""
+    out = []
+    new = current - baseline
+    if new:
+        out.append(
+            f"{len(new)} new test(s) check only exact sentences: {_names(new)}. A test that requires a "
+            "sentence puts it back whenever Brent edits the page (CLAUDE.md: a test may never mandate a domain "
+            "description). Check the fact the page must show (a number, a name, a status, that a warning is "
+            "present) instead. Only if Brent approved this exact wording, add `# wording approved: ruling N` (or "
+            "the ROWS row) above the test; if the literal is not wording a person reads, add "
+            "`# not wording: <why>`. Do not add it to the baseline list. (If you are not Claude: pass this to "
+            "Claude.)"
+        )
+    gone = baseline - current
+    if gone:
+        out.append(
+            f"{len(gone)} line(s) of tests/wording_tests_baseline.txt name a test that is gone or no longer "
+            f"checks only sentences: {_names(gone)}. Delete those lines; the list only shrinks."
+        )
+    return out
+
+
+# -- The guard ---------------------------------------------------------------------------------
+
+
+def test_no_new_test_checks_only_unapproved_sentences():
+    problems = failures(unmarked_in_tree(), read_baseline(BASELINE.read_text()))
+    assert problems == [], "\n\n".join(problems)
 
 
 # -- Self-checks, on test data ----------------------------------------------------------------
