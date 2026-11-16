@@ -21,6 +21,10 @@ that, and not the wording itself, is the failure mode this rule exists to end:
 three tests in `tests/test_drinking_readability.py` asserted the water lectures
 had to be present, so every correction made by hand was reverted by the suite
 on the next run.
+`tests/test_wording_tests_need_approval.py` fails the suite when a new test
+asserts nothing but exact sentences. Instead, check the fact the page must show,
+such as a number, a name or a status. If the maintainer approved a sentence word
+for word, keep the test and add `# wording approved: ruling N` above it.
 
 The core goal is to lower the cost and access barrier for under-resourced agencies. A poorly-funded agency can point a frontier AI subscription at this repo and have the AI stand the platform up, and an engineering firm or consultant can run it just as well. Self-deployment is meant to be a real option, not a vendor contract by default.
 
