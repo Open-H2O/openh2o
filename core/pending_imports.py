@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""One upload for a whole file, on every bulk import page.
+"""One upload for a whole file, on every bulk import page, and other work longer than a request.
 
 A page used to carry every parsed row through the browser between the preview
 and Import (a hidden ``rows_json`` field), which is why each page refused a
@@ -18,6 +18,11 @@ request's transaction commits; the page then polls
 ``core:pending_import_status`` every 2 seconds. With
 ``settings.OPENH2O_IMPORT_INLINE`` true (the test suite) the worker runs in
 this process instead, so a test never spawns one.
+
+The same row and runner also carry work with no file that outlasts a request:
+finalizing a water year (``accounting/finalize.py``) and the Setup Wizard's parcel,
+stream and station steps (``setup/services.py``). Their pages read the row
+themselves.
 
 Every kind of upload is registered in :data:`KINDS` with the function that
 commits it. The functions are named as dotted paths and resolved when called, so an optional module that is
@@ -143,6 +148,29 @@ KINDS = {
         result_template="geography/partials/_zone_import_result.html",
         commit_url_name="geography:zone_import_commit",
         extensions=(".zip", ".kml", ".geojson", ".json"),
+    ),
+    # Finalize water year on the water year page (accounting/finalize.py). It has no
+    # file; the page reads the row itself, and its history context's address comes
+    # from the row (settings["url"]), because the button's address names the year.
+    "finalize": Kind(
+        commit="accounting.finalize:run_stored_finalize",
+        result_template="core/partials/_pending_import_notice.html",
+        commit_url_name="accounting:periods_list",
+        extensions=(),
+    ),
+    # The Setup Wizard's stream and station steps (setup/services.py), read by the
+    # wizard's own progress partial like the parcel download.
+    "setup_flowlines": Kind(
+        commit="setup.services:run_stored_flowlines",
+        result_template="setup/partials/_parcel_download_status.html",
+        commit_url_name="setup:run",
+        extensions=(),
+    ),
+    "setup_stations": Kind(
+        commit="setup.services:run_stored_stations",
+        result_template="setup/partials/_parcel_download_status.html",
+        commit_url_name="setup:run",
+        extensions=(),
     ),
     # Import accounts on the Accounts page: accounts and the use areas in each.
     "accounts": Kind(
@@ -361,17 +389,17 @@ def run(token):
     and the commit path), so every row it writes names who imported it. An
     administrator's detail goes to the log; the screen gets one sentence.
     """
-    pending = PendingImport.objects.filter(token=token, status="waiting").first()
-    if pending is None:
+    # Claimed in one UPDATE, so two launches for one token cannot both run it.
+    claimed = PendingImport.objects.filter(token=token, status="waiting").update(
+        status="running", started_at=timezone.now()
+    )
+    if not claimed:
         return
-    pending.status = "running"
-    pending.started_at = timezone.now()
-    pending.save(update_fields=["status", "started_at"])
+    pending = PendingImport.objects.get(token=token)
     kind = KINDS[pending.kind]
+    url = (pending.settings or {}).get("url") or reverse(kind.commit_url_name)
     try:
-        with pghistory.context(
-            user=pending.user_id, url=reverse(kind.commit_url_name)
-        ):
+        with pghistory.context(user=pending.user_id, url=url):
             result = import_string(kind.commit.replace(":", "."))(pending)
         outcome = ("finished", to_jsonable(result))
     except Exception:

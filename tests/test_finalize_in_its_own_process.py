@@ -116,14 +116,14 @@ def test_the_page_shows_the_run_and_no_button_while_it_runs(
     assert "Finalize water year</button>" not in html
     # A calculation now would change the records the statement is written from.
     assert reverse("accounting:period_calculate", args=[year.pk]) not in html
-    assert reverse("accounting:period_finalize_status", args=[year.pk]) in html
+    assert reverse("accounting:period_finalizing", args=[year.pk]) in html
 
 
 def test_the_status_poll_asks_for_a_reload_once_the_year_is_finalized(
         client, year, settings, django_capture_on_commit_callbacks):
     settings.OPENH2O_IMPORT_INLINE = False
     _press(client, year, django_capture_on_commit_callbacks)
-    status_url = reverse("accounting:period_finalize_status", args=[year.pk])
+    status_url = reverse("accounting:period_finalizing", args=[year.pk])
     assert client.get(status_url).get("HX-Refresh") is None
 
     pending_imports.run(str(PendingImport.objects.get(kind="finalize").token))
@@ -185,7 +185,7 @@ def test_the_finalized_year_lock_refuses_an_edit_after_the_process_ends(
     from django.db import DatabaseError, transaction
     with pytest.raises(DatabaseError), transaction.atomic():
         PeriodStatementRow.objects.create(
-            statement=statement, period=year, scope="site", scope_id="x", scope_name="x",
+            statement=statement, period=year, scope="site", scope_id=1, scope_name="x",
             figure="crop_et", value=1)
 
 

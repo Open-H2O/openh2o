@@ -34,12 +34,14 @@ from parcels.parcel_list import ParcelListError, read_parcel_list
 from setup.services import (
     STATION_PROVIDERS,
     build_station_review,
+    flowlines_result_row,
     get_boundary_preview_data,
     parcel_download_quiet,
     parcel_result_row,
     run_auto_populate_step,
-    run_station_provider_step,
     station_provider_label,
+    stations_stopped_row,
+    step_quiet,
     wizard_steps,
 )
 
@@ -63,6 +65,10 @@ SESSION_KEY_POLYGON_COUNT = "setup_wizard_polygon_count"
 # progress poll while the download runs in its own process.
 SESSION_KEY_PARCEL_TOKEN = "setup_wizard_parcel_token"
 PARCEL_KIND = "setup_parcels"
+# The token of the Flowlines or Monitoring Stations step running in its own process
+# (a ``setup_flowlines`` or ``setup_stations`` PendingImport), read by each poll.
+SESSION_KEY_STEP_TOKEN = "setup_wizard_step_token"
+STEP_KINDS = {"flowlines": "setup_flowlines", "stations": "setup_stations"}
 PARCEL_NO_FILE = (
     "Choose the file that lists your parcel numbers, or choose Every parcel that "
     "overlaps the boundary."
@@ -353,27 +359,13 @@ def _run_next_step(
             "note": "Skipped: you unchecked this step",
         })
         step_index += 1
-    elif step_name == "stations":
-        # Stations is split into one short request per provider: a
-        # slow/failing provider becomes an isolated, labeled row instead of a
-        # synchronous all-providers call that can outlast the worker timeout.
-        code = STATION_PROVIDERS[provider_index]
-        count, errors, status = run_station_provider_step(boundary, code)
-        results.append({
-            "step": "stations",
-            "label": station_provider_label(code),
-            "count": count,
-            "errors": errors,
-            "success": status not in ("failed", "timed_out"),
-            "status": status,
-            "note": PROVIDER_SKIP_NOTES.get(status),
-        })
-        provider_index += 1
-        if provider_index >= len(STATION_PROVIDERS):
-            # Every provider polled — the stations step is complete.
+    elif step_name in STEP_KINDS:
+        # Its own process, as the parcel download: start it once, then each poll
+        # reads where it stands and moves on when it has finished or gone quiet.
+        new_rows = _poll_step_process(request, boundary, step_name, steps[step_index][1])
+        if new_rows is not None:
+            results.extend(new_rows)
             step_index += 1
-            provider_index = 0
-        request.session[SESSION_KEY_PROVIDER_INDEX] = provider_index
     elif step_name == "parcels":
         # Its own process: start it once, then each poll reads where it stands
         # and moves on only when it has finished or gone quiet.
@@ -429,6 +421,78 @@ def _poll_parcel_download(request, boundary, label):
     pending_imports.discard(pending)
     request.session.pop(SESSION_KEY_PARCEL_TOKEN, None)
     return row
+
+
+def _step_row(request, boundary, step_name):
+    """This session's process row for ``step_name``; a new waiting one when there is none."""
+    kind = STEP_KINDS[step_name]
+    token = request.session.get(SESSION_KEY_STEP_TOKEN)
+    pending = pending_imports.lookup(request.user, token, kind) if token else None
+    if pending is None:
+        pending = PendingImport.objects.create(
+            kind=kind, user=request.user, original_name="", stored_path="",
+            status="waiting", settings={"boundary_id": boundary.pk},
+        )
+        request.session[SESSION_KEY_STEP_TOKEN] = str(pending.token)
+        request.session.modified = True
+        pending_imports.start(str(pending.token))
+        pending.refresh_from_db()
+    return pending
+
+
+def _station_rows(done):
+    """The wizard's rows for the providers a station process has checked."""
+    return [
+        {
+            "step": "stations",
+            "label": station_provider_label(item["code"]),
+            "count": item["count"],
+            "errors": item["errors"],
+            "success": item["status"] not in ("failed", "timed_out"),
+            "status": item["status"],
+            "note": PROVIDER_SKIP_NOTES.get(item["status"]),
+        }
+        for item in done
+    ]
+
+
+def _poll_step_process(request, boundary, step_name, label):
+    """Start the step's process if it has not started; its result rows once it is over, else None."""
+    pending = _step_row(request, boundary, step_name)
+    stopped = False
+    if pending.status in ("finished", "failed"):
+        pass
+    elif step_quiet(pending):
+        stopped = True
+    else:
+        return None
+    result = pending.result or {}
+    if step_name == "flowlines":
+        rows = [flowlines_result_row(label, pending, stopped=stopped)]
+    else:
+        rows = _station_rows(result.get("done") or [])
+        if stopped or pending.status == "failed":
+            rows.append(stations_stopped_row(label, len(rows)))
+    pending_imports.discard(pending)
+    request.session.pop(SESSION_KEY_STEP_TOKEN, None)
+    return rows
+
+
+def _step_progress(request, step_name):
+    """What a running stream or station process has written so far, or None."""
+    token = request.session.get(SESSION_KEY_STEP_TOKEN)
+    pending = pending_imports.lookup(request.user, token, STEP_KINDS[step_name]) if token else None
+    return (pending.result or {}) if pending is not None else {}
+
+
+def flowlines_progress_line(progress):
+    """The Flowlines step's line while its process runs: the count once USGS has given it."""
+    done, total = progress.get("done") or 0, progress.get("total")
+    if total:
+        return f"Downloading the streams and canals in and near the boundary: {done:,} of {total:,}"
+    if done:
+        return f"Downloading the streams and canals in and near the boundary: {done:,} so far"
+    return "Finding the streams and canals in and near the boundary…"
 
 
 def _parcel_progress(request):
@@ -517,9 +581,19 @@ def setup_progress(request):
     context = _progress_context(
         boundary, steps, step_names, results, step_index, provider_index, all_done
     )
-    context["parcels_running"] = not all_done and step_names[step_index] == "parcels"
+    running = None if all_done else step_names[step_index]
+    context["parcels_running"] = running == "parcels"
+    # The note under the steps and the 2-second poll, while a step runs in its own process.
+    context["download_running"] = running in ("parcels", "flowlines", "stations")
     if context["parcels_running"]:
         context["parcel_progress"] = _parcel_progress(request)
+    if running == "flowlines":
+        context["flowlines_line"] = flowlines_progress_line(_step_progress(request, "flowlines"))
+    if running == "stations":
+        progress = _step_progress(request, "stations")
+        context["station_rows"] = _station_rows(progress.get("done") or [])
+        current = progress.get("current") or STATION_PROVIDERS[0]
+        context["active_provider_label"] = station_provider_label(current)
     return render(request, "setup/partials/_progress.html", context)
 
 

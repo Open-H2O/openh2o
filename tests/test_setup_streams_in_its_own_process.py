@@ -268,8 +268,7 @@ def test_while_stations_run_the_page_lists_the_providers_done_and_the_next(
     pending = PendingImport.objects.get(kind="setup_stations")
     pending.status = "running"
     pending.result = {
-        "rows": [{"step": "stations", "label": "USGS Service", "count": 4, "errors": [],
-                  "success": True, "status": "created", "note": None}],
+        "done": [{"code": "usgs", "count": 4, "errors": [], "status": "created"}],
         "current": "cdec", "updated": timezone.now().isoformat()}
     pending.save()
     words = _words(client.post(PROGRESS_URL))
@@ -285,10 +284,9 @@ def test_a_station_process_that_went_quiet_is_reported_stopped(
     _poll(client, django_capture_on_commit_callbacks)
     pending = PendingImport.objects.get(kind="setup_stations")
     quiet = timezone.now() - datetime.timedelta(minutes=11)
-    rows = [{"step": "stations", "label": f"{code.upper()} Service", "count": 1, "errors": [],
-             "success": True, "status": "created", "note": None} for code in STATION_PROVIDERS[:3]]
+    done = [{"code": code, "count": 1, "errors": [], "status": "created"} for code in STATION_PROVIDERS[:3]]
     pending.status = "running"
-    pending.result = {"rows": rows, "current": STATION_PROVIDERS[3], "updated": quiet.isoformat()}
+    pending.result = {"done": done, "current": STATION_PROVIDERS[3], "updated": quiet.isoformat()}
     pending.save()
 
     response = client.post(PROGRESS_URL)

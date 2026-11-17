@@ -12,6 +12,7 @@ from collections.abc import Callable
 
 from core.modules import is_enabled
 from geography.models import Boundary, Flowline, Zone
+from geography.services.arcgis import count_features
 from parcels.models import Parcel
 
 logger = logging.getLogger(__name__)
@@ -223,6 +224,134 @@ def parcel_result_row(label, pending, stopped=False):
         "errors": [],
         "success": not outcome.stopped,
         "lines": lines,
+    }
+
+
+# --------------------------------------------------------------------------
+# The stream and station steps: their own process, polled by the page
+# --------------------------------------------------------------------------
+
+#: The words a stopped step's row ends with; the step's own name fills in.
+RERUN_STEP = (
+    "Run the Setup Wizard again and choose this boundary under Select an existing boundary. "
+    "On the Populate step, check only {step}."
+)
+
+
+def _silent_command():
+    from geography.management.commands.auto_populate import Command
+
+    class SilentCommand(Command):
+        def __init__(self) -> None:
+            super().__init__()
+            self.stdout = _NullWriter()
+            self.stderr = _NullWriter()
+            self.style = _NullStyle()
+
+    return SilentCommand()
+
+
+def _write_progress(pending, **values):
+    from django.utils import timezone
+
+    from core.models import PendingImport
+
+    PendingImport.objects.filter(pk=pending.pk).update(
+        result={**values, "updated": timezone.now().isoformat()}
+    )
+
+
+def run_stored_flowlines(pending):
+    """The worker for a ``setup_flowlines`` row (``manage.py run_pending_import``).
+
+    Asks USGS how many streams and canals the boundary holds (for the count on the
+    page), then downloads them page by page with the command's own step, writing
+    progress into the row after each page. Returns the row the page shows, with the
+    same count and error the step gave when it ran inside the page's request.
+    """
+    from geography.management.commands.auto_populate import THREEDHP_FLOWLINES_URL
+    from geography.services.arcgis import geos_to_esri_geometry
+
+    boundary = Boundary.objects.get(pk=pending.settings.get("boundary_id"))
+    _write_progress(pending, total=None, done=0, saved=0)
+    total = count_features(
+        THREEDHP_FLOWLINES_URL,
+        geometry=geos_to_esri_geometry(boundary.geometry),
+        geometry_type="esriGeometryPolygon",
+        spatial_rel="esriSpatialRelIntersects",
+    )
+    _write_progress(pending, total=total, done=0, saved=0)
+
+    def progress(done, saved):
+        _write_progress(pending, total=total, done=done, saved=saved)
+
+    cmd = _silent_command()
+    errors = []
+    count = 0
+    try:
+        count = cmd._step_flowlines(boundary, dry_run=False, progress=progress)
+    except Exception as exc:
+        logger.exception("The stream download for boundary %s stopped", boundary.pk)
+        errors.append(str(exc))
+    return {"count": count, "errors": errors}
+
+
+def run_stored_stations(pending):
+    """The worker for a ``setup_stations`` row: every station provider in turn.
+
+    Each provider's outcome is written into the row as it finishes, with the code of
+    the provider being checked next, so the page lists them as they come. An outcome
+    is ``{"code", "count", "errors", "status"}``; the page words it.
+    """
+    boundary = Boundary.objects.get(pk=pending.settings.get("boundary_id"))
+    done = []
+    for code in STATION_PROVIDERS:
+        _write_progress(pending, done=done, current=code)
+        count, errors, status = run_station_provider_step(boundary, code)
+        done.append({"code": code, "count": count, "errors": errors, "status": status})
+    return {"done": done}
+
+
+def step_quiet(pending, now=None):
+    """Whether a waiting or running step's process has written nothing for PARCEL_QUIET_MINUTES."""
+    return parcel_download_quiet(pending, now)
+
+
+def flowlines_result_row(label, pending, stopped=False):
+    """The wizard's Flowlines row for a finished, failed or quiet download."""
+    result = pending.result or {}
+    if stopped or pending.status == "failed" or "count" not in result:
+        saved = int(result.get("saved") or 0)
+        return {
+            "step": "flowlines",
+            "label": label,
+            "count": saved,
+            "errors": [],
+            "success": False,
+            "lines": [{"text": f"The download stopped after OpenH2O saved {saved:,} streams and canals."}],
+            "then": RERUN_STEP.format(step=label),
+        }
+    return {
+        "step": "flowlines",
+        "label": label,
+        "count": result["count"],
+        "errors": result.get("errors") or [],
+        "success": not result.get("errors"),
+        "note": None,
+    }
+
+
+def stations_stopped_row(label, checked):
+    """The wizard's Monitoring Stations row when its process stopped partway."""
+    return {
+        "step": "stations",
+        "label": label,
+        "count": 0,
+        "errors": [],
+        "success": False,
+        "lines": [{"text": f"The search stopped after OpenH2O checked {checked} of "
+                           f"{len(STATION_PROVIDERS)} data providers."}],
+        "then": RERUN_STEP.format(step=label),
     }
 
 

@@ -8,11 +8,11 @@
     {% endfor %}
   </div>
   {% comment %}Under the steps, inside the Progress card (the approved drawing, 2026-11-15).
-  The second line shows only while the parcel download runs in its own process:
-  the steps after it run from this page's polls.{% endcomment %}
+  The second line shows only while a step runs in its own process (the parcel,
+  stream or station download): the steps after it start from this page's polls.{% endcomment %}
   <div class="progress-notes">
     <p class="text-tertiary text-sm m-0">Populate skips records already on file, so running a step again is safe.</p>
-    {% if parcels_running %}<p class="text-tertiary text-sm m-0 mt-sm">The parcel download continues if you leave this page, but Flowlines and Monitoring Stations start only when you come back. Keep this page open until every step finishes.</p>{% endif %}
+    {% if download_running %}<p class="text-tertiary text-sm m-0 mt-sm">Keep this page open until every step finishes. A step that has started keeps going if you leave, but the next step starts only when you come back.</p>{% endif %}
   </div>
 
   {# In-flow station review: enable the monitoring stations just discovered. Module-guarded — its rows include a datasync partial that reverses datasync:station_toggle. #}
@@ -37,7 +37,7 @@
 <div
   id="progress-area"
   hx-post="{% url 'setup:progress' %}"
-  hx-trigger="{% if parcels_running %}load delay:2s{% else %}load{% endif %}"
+  hx-trigger="{% if download_running %}load delay:2s{% else %}load{% endif %}"
   hx-target="#progress-area"
   hx-swap="outerHTML"
 >
@@ -45,12 +45,10 @@
     {% for step_name, step_label, step_desc in steps %}
     {% with forloop.counter0 as idx %}
     {% if step_name == "stations" %}
-      {% comment %}Stations runs one provider per poll: render every provider finished so far, then a spinner for the one the next poll will query.{% endcomment %}
+      {% comment %}Stations runs in its own process, one provider at a time: render every provider it has checked so far, then a spinner for the one it is checking.{% endcomment %}
       {% if idx == step_index %}
-        {% for result in results %}
-        {% if result.step == "stations" %}
+        {% for result in station_rows %}
           {% include "setup/partials/_step_result.html" %}
-        {% endif %}
         {% endfor %}
         <div class="wizard-step wizard-step--active">
           <div class="wizard-step-icon"><span class="spinner-sm" style="width: 10px; height: 10px; border-width: 1.5px;"></span></div>
@@ -82,7 +80,7 @@
         <div class="wizard-step-icon"><span class="spinner-sm" style="width: 10px; height: 10px; border-width: 1.5px;"></span></div>
         <div class="wizard-step-body">
           <div class="wizard-step-name">{{ step_label }}</div>
-          <div class="wizard-step-count text-accent">{% if step_name == "parcels" and parcels_running %}{% if parcel_progress %}Downloading the parcels that overlap the boundary: {{ parcel_progress.done|intcomma }} of {{ parcel_progress.total|intcomma }}{% else %}Finding the parcels that overlap the boundary…{% endif %}{% else %}{{ step_desc }}{% endif %}</div>
+          <div class="wizard-step-count text-accent">{% if step_name == "parcels" and parcels_running %}{% if parcel_progress %}Downloading the parcels that overlap the boundary: {{ parcel_progress.done|intcomma }} of {{ parcel_progress.total|intcomma }}{% else %}Finding the parcels that overlap the boundary…{% endif %}{% elif step_name == "flowlines" and flowlines_line %}{{ flowlines_line }}{% else %}{{ step_desc }}{% endif %}</div>
         </div>
       </div>
     {% else %}
@@ -99,11 +97,11 @@
     {% endfor %}
   </div>
   {% comment %}Under the steps, inside the Progress card (the approved drawing, 2026-11-15).
-  The second line shows only while the parcel download runs in its own process:
-  the steps after it run from this page's polls.{% endcomment %}
+  The second line shows only while a step runs in its own process (the parcel,
+  stream or station download): the steps after it start from this page's polls.{% endcomment %}
   <div class="progress-notes">
     <p class="text-tertiary text-sm m-0">Populate skips records already on file, so running a step again is safe.</p>
-    {% if parcels_running %}<p class="text-tertiary text-sm m-0 mt-sm">The parcel download continues if you leave this page, but Flowlines and Monitoring Stations start only when you come back. Keep this page open until every step finishes.</p>{% endif %}
+    {% if download_running %}<p class="text-tertiary text-sm m-0 mt-sm">Keep this page open until every step finishes. A step that has started keeps going if you leave, but the next step starts only when you come back.</p>{% endif %}
   </div>
 </div>
 {% endif %}

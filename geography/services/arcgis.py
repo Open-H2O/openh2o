@@ -428,6 +428,30 @@ class ArcGISRefusedError(ArcGISTraversalError):
         super().__init__(f"ArcGIS API error (code {code}, not retryable): {message}")
 
 
+def count_features(url, *, geometry, geometry_type, spatial_rel):
+    """How many features a query would return, by one ``returnCountOnly`` request.
+
+    For a progress line only: one attempt, and None on any failure, so a count the
+    service will not give never stops the download itself.
+    """
+    params = {
+        "where": "1=1",
+        "geometry": json.dumps(geometry) if isinstance(geometry, dict) else geometry,
+        "geometryType": geometry_type,
+        "spatialRel": spatial_rel,
+        "returnCountOnly": "true",
+        "f": "json",
+    }
+    try:
+        response = requests.post(url, data=params, timeout=60)
+        response.raise_for_status()
+        count = response.json().get("count")
+    except Exception:  # noqa: BLE001 - a count is optional; see the docstring
+        logger.warning("ArcGIS count request to %s failed", url, exc_info=True)
+        return None
+    return count if isinstance(count, int) else None
+
+
 def _error_of(data):
     """``(code, message)`` of an in-body ArcGIS error, or None."""
     error = data.get("error")

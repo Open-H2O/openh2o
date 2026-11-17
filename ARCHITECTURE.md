@@ -20,10 +20,7 @@ per account. It runs in Docker Compose (`docker-compose.yml`): a `web` container
   builds (`Dockerfile`), and htmx and MapLibre load from a CDN, so building the site needs only
   Docker.
 - **No background job queue (such as Celery) and no Redis.** The platform is designed for a small
-  server with 2 to 4 GB of memory (`config/settings/base.py`). Work longer than a request, such as
-  the calculation and a file import's commit, runs as its own `manage.py` process (see "The
-  calculation" below; an import runs `run_pending_import`, `core/pending_imports.py`), and
-  scheduled work runs from cron (`crontab.txt`, installed by `make install-cron`).
+  server with 2 to 4 GB of memory (`config/settings/base.py`). Work that would outlast a web request, such as the calculation (see "The calculation" below), runs as its own `manage.py` process. OpenH2O runs three kinds of work through `run_pending_import` (`core/pending_imports.py`): committing a file import, finalizing a water year and running the Setup Wizard's parcel, stream and station steps. `run_pending_import` is named for the file imports, which used it first. Each run's `PendingImport` row holds its status and result, and the view that polls the run reads the result from that row. Scheduled work runs from cron (`crontab.txt`, installed by `make install-cron`).
 - **Caddy in front** (`Caddyfile`). It answers at the address in `OPENH2O_SITE_ADDRESS` from `.env`.
   Unset, that is port 80 at any address over plain HTTP, for a site reached only from this computer or
   the office network, or one behind a service that handles the HTTPS (a tunnel, for example); a bare
@@ -273,8 +270,7 @@ behind the place used the same plan and settings). The rows are
 read by one collector off the same functions the pages call (`parcels.views.water_use_for` and the balance line,
 `_account_summary_row` and `account_groundwater_budget`, `_zone_summary_rows` and `_zone_budget_row`,
 `_account_rollup`), never a second computation, and `figures_now` reads the same set without saving it.
-`period_finalize` takes the statement before it marks the year finalized, holding the period row so two presses
-write one; reopening keeps every statement and finalizing again writes a `restated` one. A correction or void
+The Finalize water year button posts to `period_finalize`, which saves a `PendingImport` of kind `finalize` and starts `run_pending_import`. That process calls `run_stored_finalize` in `accounting/finalize.py`. In one transaction, that function locks the year's `ReportingPeriod` row, writes the statement, marks the year finalized and writes the fingerprint. If any step fails, the transaction rolls back and the year stays open. After it acquires the lock, the process checks that the year is still open, so a second run does not write a second statement. `period_finalize` also refuses a second run while a `finalize` import for the year is waiting or running. To tell a stopped process from a slow one, the water year view tries the lock with `select_for_update(nowait=True)`. If the view acquires the lock while the year is still open and the import has been waiting or running for more than a minute, the process has stopped, and the view marks the import failed. Reopening keeps every statement, and finalizing again writes a `restated` one. A correction or void
 inside a finalized year takes none. Both tables are in `LOCKED_MODELS` on their own period column and also refuse
 every UPDATE, even inside `override`: a statement is never edited. A year finalized before statements existed
 gets one of kind `recorded_at_upgrade` from `record_filed_figures`, which `entrypoint.sh` runs after `migrate`
@@ -285,12 +281,13 @@ the newest calculation request and statement), because reading every figure take
 made since the oldest statement to records that touch its use areas (the `use_areas` hook in `core/corrections.py`).
 The account and use area pages compare the figures they already computed with the newest statement's.
 
+`take_statement` runs `SET CONSTRAINTS ALL IMMEDIATE` before its inserts. Django creates foreign keys `DEFERRABLE INITIALLY DEFERRED`, so their checks wait in Postgres' deferred-trigger queue until the commit. The `accounting_periodstatementrow` table has two triggers: the finalized-year lock and the change history. Both read `pgtrigger.ignore` inside a block that catches the error Postgres raises for a setting that was never set. Postgres rescans the deferred-trigger queue after every caught error (`AfterTriggerEndSubXact` in its `trigger.c`), so each row costs more than the one before. On a Merced-size copy, 433,228 statement rows took 482 s with the checks deferred and 21 s with the checks made immediate. The setting stays in force for the rest of the transaction, so a write that relies on a deferred check cannot follow `take_statement` in the same transaction.
+
 **The year's code.** The screen says "Changes to this year's records" and "code"; the code's own names say fingerprint. `core/fingerprint.py` computes one SHA-256 digest per part of a water year and one for the
 whole year: every table in `LOCKED_MODELS` plus the use areas with a ledger row or calculation in the year, rows chosen
 by the same rule the lock reads, read through the default managers so voided and replaced rows are in, and then the
 Change history of those rows with each entry's context. A row is a JSON array of its columns in the stored order (keys sorted inside a JSON column, Decimal as normalized
-text, float as `repr`, dates in ISO), rows in key order; a column type the module does not know raises. `period_finalize`
-takes the year's code after the statement, in the same note and transaction with the period row held; a year already
+text, float as `repr`, dates in ISO), rows in key order; a column type the module does not know raises. `run_stored_finalize` (`accounting/finalize.py`) writes the statement and then computes and saves the year's code. It saves both in one transaction under one change note, holding the lock on the period row throughout; a year already
 finalized gets one from `record_fingerprints`, which `entrypoint.sh` runs after `record_filed_figures`, and a demonstration
 load takes it between two `forget_events` calls: the first so it reads the finished load, the second to remove its own write. `ReportingPeriod` keeps the digest, when it was
 issued and, in `fingerprint_parts`, each part's digest and row count and the columns read per table. Reopening keeps them;

@@ -1,0 +1,13 @@
+{% comment %}
+  The Finalize card while a finalize run waits or runs (accounting/finalize.py). It
+  polls itself every 3 seconds; when the run has ended the status route answers with
+  HX-Refresh, so the whole page shows the year as it now is. No hx-on and no inline
+  script (the content security policy allows neither).
+{% endcomment %}
+<div id="finalize-status" hx-get="{% url 'accounting:period_finalizing' period.pk %}" hx-trigger="every 3s" hx-swap="outerHTML" aria-live="polite">
+  <div class="row-start">
+    <span class="spinner-sm"></span>
+    <p class="text-base m-0" style="font-weight: 600;">Finalizing since {{ finalizing.since|time:"g:i A" }}.</p>
+  </div>
+  <p class="text-tertiary text-sm" style="margin: var(--space-xs) 0 0;">You can leave this page. When finalizing ends, the result appears here.</p>
+</div>

@@ -52,6 +52,11 @@ urlpatterns = [
         periods.period_finalize,
         name="period_finalize",
     ),
+    path(
+        "reporting-periods/<int:pk>/finalizing/",
+        periods.period_finalizing,
+        name="period_finalizing",
+    ),
     # Water Accounts
     path("accounts/", accounts.accounts_list, name="accounts_list"),
     path("accounts/create/", accounts.account_create, name="account_create"),

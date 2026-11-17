@@ -268,16 +268,16 @@ def test_no_parcels_found_points_to_import_use_areas(client, boundary):
     assert reverse("parcels:use_area_import") in response.content.decode()
 
 
-def test_the_other_steps_still_run_inside_the_request(client, boundary):
+def test_flowlines_runs_its_own_process_and_leaves_no_row(client, boundary):
     _start(client, boundary, steps=("flowlines",))
     _past_basins(client)
     from tests.lightbox_fake import _response
     with patch("geography.services.arcgis.requests.post",
-               side_effect=lambda *a, **k: _response({"features": []})) as post:
+               side_effect=lambda *a, **k: _response({"features": [], "count": 0})) as post:
         client.post(PROGRESS_URL)  # Parcel Boundaries, unchecked
         assert post.call_count == 0
-        client.post(PROGRESS_URL)  # Flowlines, inside this request
-    assert post.call_count == 1
+        client.post(PROGRESS_URL)  # Flowlines: its process, run in this one by the suite
+    assert post.call_count == 2  # USGS's count, then the one empty page
     assert not PendingImport.objects.exists()
 
 

@@ -7,11 +7,10 @@ from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from core.history import change_note
-from accounting import fingerprints
+from accounting import finalize, fingerprints
 from accounting.engine_run import create_request, start_calculation
 from accounting.locks import finalized_message
 from accounting.forms import PeriodFinalizeForm, ReportingPeriodForm
@@ -19,8 +18,6 @@ from accounting.models import AllocationPlan, CalculationRequest, ReportingPerio
 from accounting.statements import (
     cached_comparison,
     card_context,
-    newest_statement,
-    take_statement,
 )
 from core.access import admin_required
 from accounting.services import create_water_year, water_year_created_sentence
@@ -155,6 +152,7 @@ def _period_detail_context(period, finalize_form=None, comparison=None, fingerpr
         "fingerprint_line": fingerprints.line_context(period),
         "fingerprint_answer": fingerprint_answer,
         **_calculation_card_context(period),
+        "finalizing": finalize.state(period),
     }
 
 
@@ -265,35 +263,44 @@ def period_finalize(request, pk):
             _period_detail_context(period, finalize_form=form),
         )
 
+    if not reopening:
+        # Finalizing runs as its own process (accounting/finalize.py): at 8,906 use
+        # areas it takes over a minute. A press while a run is under way starts nothing.
+        finalize.start(request, period, form.cleaned_data.get("note"))
+        return redirect("accounting:period_detail", pk=period.pk)
+
     with change_note(form.cleaned_data.get("note")), transaction.atomic():
-        # Held until the save commits, so two presses of Finalize at once cannot
-        # each write a statement; the second finds the year already changed.
+        # Held until the save commits; a finalize run that holds it finishes first.
         period = ReportingPeriod.objects.select_for_update().get(pk=period.pk)
-        if period.is_finalized != reopening:
+        if not period.is_finalized:
             return redirect("accounting:period_detail", pk=period.pk)
-        if reopening:
-            period.is_finalized = False
-            period.finalized_at = None
-            period.finalized_by = None
-        else:
-            # Write down every figure the year prints BEFORE it is marked
-            # finalized (the lock lets the rows in while the year is open).
-            # Reopening keeps every statement, so finalizing again restates.
-            take_statement(
-                period,
-                kind="restated" if newest_statement(period) else "filed",
-                user=request.user,
-            )
-            period.is_finalized = True
-            period.finalized_at = timezone.now()
-            period.finalized_by = request.user
-            # The year's fingerprint, after its statement, in the same note and
-            # transaction and with the row held. It reads records and Change
-            # history only; the write below adds nothing it reads.
-            fingerprints.take_fingerprint(period)
+        period.is_finalized = False
+        period.finalized_at = None
+        period.finalized_by = None
         period.save()
 
     return redirect("accounting:period_detail", pk=period.pk)
+
+
+@login_required
+@require_GET
+def period_finalizing(request, pk):
+    """The Finalize card's status, re-fetched every 3 seconds while a run is under way.
+
+    Once the run has ended (finalized, or stopped) the answer asks the browser to
+    reload the page, so the whole page shows the year as it now is.
+    """
+    period = get_object_or_404(ReportingPeriod, pk=pk)
+    finalizing = finalize.state(period)
+    if finalizing["state"] != "running":
+        response = HttpResponse("")
+        response["HX-Refresh"] = "true"
+        return response
+    return render(
+        request,
+        "accounting/partials/_finalize_status.html",
+        {"period": period, "finalizing": finalizing},
+    )
 
 
 @login_required

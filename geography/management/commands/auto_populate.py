@@ -518,18 +518,21 @@ class Command(BaseCommand):
         fill_area_acres(numbers)
         return Parcel.objects.filter(parcel_number__in=numbers).count()
 
-    def _step_flowlines(self, boundary, dry_run, resume_from=None):
+    def _step_flowlines(self, boundary, dry_run, resume_from=None, progress=None):
         """Fetch USGS 3DHP flowlines that intersect the boundary.
 
         Queries the 3D Hydrography Program MapServer (layer 50)
         page-by-page, creates Flowline records. Idempotent via
-        source_id+boundary uniqueness check.
+        source_id+boundary uniqueness check. ``progress``, when given, is called
+        after each page with ``(downloaded, created)`` so far (the Setup Wizard's
+        own process writes it into its row).
         """
         self.stdout.write("  Querying USGS 3DHP Flowlines MapServer...")
         esri_geom = geos_to_esri_geometry(boundary.geometry)
 
         out_fields = "id3dhp,gnisidlabel,featuretypelabel,lengthkm,streamorder"
         created_total = 0
+        downloaded = 0
         page_num = 0
 
         try:
@@ -547,10 +550,13 @@ class Command(BaseCommand):
 
             for features in pages:
                 page_num += 1
+                downloaded += len(features)
                 sid_map = self._flowlines_by_id(features)
 
                 if not sid_map:
                     self.stdout.write(f"  Page {page_num}: 0 valid flowlines, skipping.")
+                    if progress is not None:
+                        progress(downloaded, created_total)
                     continue
 
                 existing_sids = set(
@@ -565,6 +571,8 @@ class Command(BaseCommand):
                 created_total += self._store_flowline_page(
                     page_num, new_flowlines, existing_sids, dry_run
                 )
+                if progress is not None:
+                    progress(downloaded, created_total)
 
         except Exception as exc:
             # Propagate so a mid-pagination failure is reported incomplete, not a

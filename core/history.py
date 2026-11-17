@@ -57,7 +57,7 @@ from django.db import models
 UNATTRIBUTED_COMMANDS = frozenset(
     {
         "runserver", "migrate", "makemigrations", "test", "collectstatic", "check",
-        # Opens its own context naming the person who pressed Import.
+        # Opens its own context naming the person who pressed the button (Import, Finalize water year, Run setup).
         "run_pending_import",
     }
 )

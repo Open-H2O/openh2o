@@ -267,7 +267,9 @@ class SiteConfig(models.Model):
 
 
 class PendingImport(models.Model):
-    """A file uploaded to an import page, kept on disk until Import finishes.
+    """A file uploaded to an import page, kept on disk until Import finishes,
+    or a run of other work that outlasts a request (finalizing a water year, the
+    Setup Wizard's downloads), which has no file.
 
     The preview saves the upload once; the page then carries only this row's
     token and its settings, never the file's rows. Import re-reads the stored
@@ -290,6 +292,9 @@ class PendingImport(models.Model):
         ("setup_parcels", "List of parcel numbers"),
         ("zones", "Zone outlines"),
         ("accounts", "Accounts and their use areas"),
+        ("finalize", "Finalizing a water year"),
+        ("setup_flowlines", "Setup Wizard streams and canals"),
+        ("setup_stations", "Setup Wizard monitoring stations"),
     ]
     STATUS_CHOICES = [
         ("previewed", "Previewed"),

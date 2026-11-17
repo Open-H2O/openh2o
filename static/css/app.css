@@ -4785,6 +4785,15 @@ details[open] > summary .disclosure-mark {
 }
 .wizard-step-lines {
     line-height: 1.5;
+    max-width: 70ch;
+}
+/* What to do after a stopped stream or station step: under the stop, in the plain
+   colour, so the stop itself stays the one orange line. */
+.wizard-step--error .wizard-step-then {
+    color: var(--color-text-secondary);
+    max-width: 70ch;
+    margin-top: var(--space-xs);
+    line-height: 1.5;
 }
 .wizard-step-lines .nowrap {
     white-space: nowrap;

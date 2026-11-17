@@ -10,7 +10,8 @@ clean per-provider skip).
 {% endcomment %}
 {% if result.lines %}
 {% comment %}The parcel download's own sentences (parcels/download_words.py, ruling
-179), one a line; a number list never breaks inside a number.{% endcomment %}
+179), one a line; a number list never breaks inside a number. A stopped stream or
+station step adds what to do next as `then`, in the plain text colour.{% endcomment %}
 <div class="wizard-step {% if result.success %}wizard-step--complete{% else %}wizard-step--error{% endif %}">
   <div class="wizard-step-icon">{% if result.success %}✓{% else %}!{% endif %}</div>
   <div class="wizard-step-body">
@@ -18,6 +19,7 @@ clean per-provider skip).
     <div class="wizard-step-count wizard-step-lines">
       {% for line in result.lines %}{% if not forloop.first %}<br>{% endif %}{% if line.link and 'parcels' in enabled_modules %}{{ line.before }}<a href="{% url 'parcels:use_area_import' %}" class="text-accent">{{ line.link }}</a>{{ line.after }}{% else %}{{ line.text }}{% endif %}{% if line.numbers %} {% for n in line.numbers %}<span class="nowrap">{{ n }}</span>{% if not forloop.last %}, {% else %}.{% endif %}{% endfor %}{% endif %}{% endfor %}
     </div>
+    {% if result.then %}<div class="wizard-step-count wizard-step-then text-secondary">{{ result.then }}</div>{% endif %}
   </div>
 </div>
 {% elif result.success %}
