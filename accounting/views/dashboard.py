@@ -22,16 +22,13 @@ from accounting.models import (
 )
 from core.modules import is_enabled
 from accounting.services import (
-    account_parcel_ids,
     add_kind_terms,
     balance_state,
     runs_in_period,
     supply_kind_lines,
-    supply_kind_terms,
     unmet_demand_by_parcel,
-    zone_consumptive_balance,
-    zone_groundwater_budget,
 )
+from accounting.year_reading import YearReading
 from geography.models import Zone
 from parcels.models import Parcel, ParcelLedger
 from accounting.engine_run import months_in_span
@@ -76,9 +73,18 @@ def _resolve_selected_period(request: HttpRequest, periods) -> ReportingPeriod |
 
 
 def _account_rollup(
-    selected_period: ReportingPeriod, has_allocations: bool, groundwater_type: WaterType | None
+    selected_period: ReportingPeriod,
+    has_allocations: bool,
+    groundwater_type: WaterType | None,
+    reading: YearReading | None = None,
 ) -> dict[str, object]:
-    """The active-account rows and the grand totals and counts rolled up from them."""
+    """The active-account rows and the grand totals and counts rolled up from them.
+
+    Every row adds up from one ``YearReading`` of the period (``reading``, or one
+    made here), so the year's records are read once however many accounts there are.
+    """
+    if reading is None:
+        reading = YearReading(selected_period)
     account_summaries = []
     # The grand totals roll up ESTIMATED CONSUMPTIVE USE (gross ET) as
     # the demand line and the three SUPPLIES that met it (surface + groundwater +
@@ -120,10 +126,10 @@ def _account_rollup(
     active_accounts = WaterAccount.objects.filter(status="active").order_by("account_number")
     for account in active_accounts:
         row = _account_summary_row(
-            account, selected_period, has_allocations, groundwater_type
+            account, selected_period, has_allocations, groundwater_type, reading=reading
         )
         account_summaries.append(row)
-        kinds = supply_kind_terms(account_parcel_ids(account, selected_period), selected_period)
+        kinds = reading.supply_kind_terms(reading.account_parcel_ids(account))
         surface_terms = add_kind_terms(surface_terms, kinds["surface"])
         groundwater_terms = add_kind_terms(groundwater_terms, kinds["groundwater"])
         grand_consumptive_use += row["consumptive_use_gross"]
@@ -165,11 +171,15 @@ def _account_rollup(
     }
 
 
-def _zone_summary_rows(selected_period: ReportingPeriod, has_allocations: bool) -> list[dict[str, object]]:
-    """One row per zone with its consumptive-use figures and groundwater budget cells."""
+def _zone_summary_rows(
+    selected_period: ReportingPeriod, has_allocations: bool, reading: YearReading | None = None
+) -> list[dict[str, object]]:
+    """One row per zone with its consumptive-use figures and groundwater budget cells, from one reading of the year."""
+    if reading is None:
+        reading = YearReading(selected_period)
     zone_summaries = []
     for zone in Zone.objects.order_by("name"):
-        zcu = zone_consumptive_balance(zone, reporting_period=selected_period)
+        zcu = reading.zone_consumptive_balance(zone)
         # Groundwater plans only, and a zone that carries none (a surface
         # service area holds SW plans only) has no groundwater
         # budget. Its three budget cells are absent rather than zero, so the
@@ -181,7 +191,7 @@ def _zone_summary_rows(selected_period: ReportingPeriod, has_allocations: bool) 
         # budget computed twice cannot give two answers (carry-over added or
         # not, canal deliveries spent against it or not). One quantity, one
         # computation.
-        budget = zone_groundwater_budget(zone, selected_period)
+        budget = reading.zone_groundwater_budget(zone)
         zone_allocation = budget["allocation"] if has_allocations else None
         if zone_allocation is not None:
             zone_carryover_af = budget["carryover"]
@@ -330,7 +340,7 @@ def _last_calculation_finished(period: ReportingPeriod) -> datetime | None:
 
 
 def _period_budget_sections(
-    selected_period: ReportingPeriod | None,
+    selected_period: ReportingPeriod | None, reading: YearReading | None = None
 ) -> tuple[bool, dict[str, object], list, list[dict[str, object]]]:
     """Whether the period has allocations, the grand totals, the account rows and the zone rows."""
     account_summaries: list = []
@@ -368,15 +378,17 @@ def _period_budget_sections(
         # read as absent rather than guessed.
         groundwater_type = WaterType.objects.filter(code__iexact="GW").first()
 
-        totals = _account_rollup(selected_period, has_allocations, groundwater_type)
+        if reading is None:
+            reading = YearReading(selected_period)
+        totals = _account_rollup(selected_period, has_allocations, groundwater_type, reading)
         account_summaries = totals.pop("account_summaries")  # type: ignore[assignment]
-        zone_summaries = _zone_summary_rows(selected_period, has_allocations)
+        zone_summaries = _zone_summary_rows(selected_period, has_allocations, reading)
 
     return has_allocations, totals, account_summaries, zone_summaries
 
 
 def _unmet_demand(
-    selected_period: ReportingPeriod | None, engine_has_never_run: bool
+    selected_period: ReportingPeriod | None, engine_has_never_run: bool, reading: YearReading | None = None
 ) -> tuple[list, Decimal]:
     """The fields that recorded water use no reported supply explains, and their total."""
     # WHICH fields recorded water use that no reported supply
@@ -392,7 +404,7 @@ def _unmet_demand(
     unmet_demand_total = Decimal("0")
     if selected_period is not None and not engine_has_never_run:
         unmet_demand_rows, unmet_demand_total = unmet_demand_by_parcel(
-            selected_period
+            selected_period, reading
         )
     return unmet_demand_rows, unmet_demand_total
 
@@ -403,8 +415,10 @@ def dashboard(request):
     periods = ReportingPeriod.objects.order_by("-start_date")
     selected_period = _resolve_selected_period(request, periods)
 
+    # One reading of the year's records, which every figure below adds up from.
+    reading = YearReading(selected_period) if selected_period is not None else None
     has_allocations, totals, account_summaries, zone_summaries = _period_budget_sections(
-        selected_period
+        selected_period, reading
     )
 
     # The bottom line (supplies minus crop ET and the water not consumed) is
@@ -413,7 +427,7 @@ def dashboard(request):
     engine_has_never_run, has_calculation_plan = _engine_run_status(selected_period)
 
     unmet_demand_rows, unmet_demand_total = _unmet_demand(
-        selected_period, engine_has_never_run
+        selected_period, engine_has_never_run, reading
     )
     unmet_demand_count = len(unmet_demand_rows)
 

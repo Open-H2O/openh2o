@@ -36,6 +36,7 @@ from accounting.services import (
 from geography.models import ParcelZone
 from parcels.models import Parcel, ParcelLedger
 from accounting.statements import filed_line_context
+from accounting.year_reading import YearReading
 from accounting.views.common import _account_summary_row
 
 
@@ -100,6 +101,7 @@ def _account_rows_with_totals(
     selected_period: ReportingPeriod | None,
     has_allocations: bool,
     groundwater_type: WaterType | None,
+    searched: bool = False,
 ) -> tuple[list, dict[str, Decimal]]:
     """One summary row per account, and the grand totals (including grand_net) over them."""
     # Built regardless of whether a period is selected: `selected_period=None`
@@ -120,9 +122,16 @@ def _account_rows_with_totals(
     # Only an account with calculation runs has a balance (the table dashes the
     # others), so only those add to the balance in the footer.
     grand_net = Decimal("0")
-    for account in queryset:
+    # One reading of the year for every row; a search reads only the matched accounts' use areas.
+    accounts = list(queryset)
+    reading = YearReading(selected_period)
+    if searched:
+        reading = YearReading(
+            selected_period, {pid for a in accounts for pid in reading.account_parcel_ids(a)}
+        )
+    for account in accounts:
         row = _account_summary_row(
-            account, selected_period, has_allocations, groundwater_type
+            account, selected_period, has_allocations, groundwater_type, reading=reading
         )
         account_summaries.append(row)
         grand_consumptive_use += row["consumptive_use_gross"]
@@ -176,7 +185,7 @@ def accounts_list(request):
         selected_period
     )
     account_summaries, grand_totals = _account_rows_with_totals(
-        queryset, selected_period, has_allocations, groundwater_type
+        queryset, selected_period, has_allocations, groundwater_type, searched=bool(q)
     )
 
     context = {

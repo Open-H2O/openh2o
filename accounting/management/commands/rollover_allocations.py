@@ -45,13 +45,12 @@ from accounting.models import (
     WaterType,
 )
 from accounting.services import (
-    account_allocation,
-    account_consumptive_balance,
     account_parcel_ids,
     resolve_recovery_horizon,
     water_year_periods,
     water_year_usage_by_type,
 )
+from accounting.year_reading import YearReading
 from core.constants import CARRY_FORWARD, SAME_WATER_YEAR
 from core.models import SiteConfig
 from core.water_year import water_year_start_month
@@ -187,14 +186,16 @@ def _account_results(
     cfg = SiteConfig.objects.first()
     agency_default = cfg.default_recovery_horizon if cfg else CARRY_FORWARD
     results = []
+    # One reading of each period's records, shared by every account (accounting.year_reading).
+    readings = [YearReading(period) for period in periods]
     for account in WaterAccount.objects.order_by("account_number"):
         allocation = None
         used = Decimal("0")
-        for period in periods:
-            share = account_allocation(account, period)
+        for reading in readings:
+            share = reading.account_allocation(account)
             if share is not None:
                 allocation = (allocation or Decimal("0")) + share
-            used += account_consumptive_balance(account, period)["groundwater_charged"]
+            used += reading.account_consumptive_balance(account)["groundwater_charged"]
         if allocation is None:
             continue
         credits = AccountCredit.objects.filter(

@@ -56,7 +56,7 @@ from core.modules import is_enabled
 from core.water_year import water_year_start_month
 from core.write_changes import write_changes
 
-from accounting.carryover_math import available_with_carryover, water_year_of
+from accounting.carryover_math import water_year_of
 from accounting.ledger_import import import_ledger_rows
 from accounting.ledger_words import (
     INCIDENTAL_RECHARGE_WORDS,
@@ -66,7 +66,6 @@ from accounting.ledger_words import (
 from accounting.models import (
     AccountCredit,
     AllocationCarryover,
-    AllocationPlan,
     CalculationRun,
     ReportingPeriod,
     WaterAccount,
@@ -1580,6 +1579,7 @@ def parcel_water_use_months(
     parcel: Parcel,
     reporting_period: ReportingPeriod,
     with_groundwater: bool = True,
+    reading: Any = None,
 ) -> dict[str, Any]:
     """One use area's water use by calendar month over a reporting period, and the year's figures.
 
@@ -1605,73 +1605,11 @@ def parcel_water_use_months(
     ``kinds`` holds the lines ``supply_kind_lines`` gives for the year's rows, in
     order, for the pills under the lead figures.
     """
-    starts = _month_starts(reporting_period.start_date, reporting_period.end_date)
-    zero = Decimal("0")
-    exact: dict[str, dict[date, Decimal]] = {
-        key: {m: zero for m in starts} for key in ("et", "surface", "groundwater", "precip")
-    }
-    unmet_months: set[date] = set()
-    efficiencies: set[Decimal | None] = set()
-    for month_run in _calculation_runs_for_period(parcel, reporting_period):
-        month = month_run.period_start
-        if month not in exact["et"]:
-            continue
-        exact["et"][month] += month_run.gross_et_af or zero
-        exact["precip"][month] += month_run.effective_precip_af or zero
-        if month_run.residual_disposition == "unmet_demand" and (month_run.unmet_demand_af or zero) > 0:
-            unmet_months.add(month)
-        if month_run.surface_delivered_af:
-            efficiencies.add(month_run.surface_efficiency)
+    from accounting.year_reading import YearReading
 
-    billable = _billable_parcel_ledger(parcel, reporting_period)
-    by_month = (
-        billable.filter(source_type="surface_diversion")
-        .annotate(month=TruncMonth("effective_date"))
-        .order_by()
-        .values("month")
-        .annotate(total=Sum("amount_acre_feet"))
-    )
-    for row in by_month:
-        if row["month"] in exact["surface"]:
-            exact["surface"][row["month"]] = abs(row["total"] or zero)
-    if with_groundwater:
-        for month in starts:
-            exact["groundwater"][month] = _balance_dict(
-                billable.filter(
-                    effective_date__gte=month, effective_date__lt=_first_of_next_month(month)
-                )
-            )["usage"]
-
-    cents = Decimal("0.01")
-    totals = {
-        key: sum(exact[key].values(), zero).quantize(cents, rounding=ROUND_HALF_UP) for key in exact
-    }
-    shown = {key: round_to_total(exact[key][m] for m in starts) for key in exact}
-    gw_is_estimated, gw_is_metered = _groundwater_source_flags(billable)
-    months = []
-    for i, month in enumerate(starts):
-        months.append({
-            "month": month,
-            "last": _first_of_next_month(month) - timedelta(days=1),
-            "fallow": parcel.is_fallow_in(month),
-            "et": shown["et"][i],
-            "surface": shown["surface"][i],
-            "groundwater": shown["groundwater"][i],
-            "precip": shown["precip"][i],
-        })
-    return {
-        "months": months,
-        "totals": totals,
-        "unmet_months": sorted(unmet_months),
-        "efficiencies": efficiencies,
-        "gw_is_estimated": gw_is_estimated,
-        "gw_is_metered": gw_is_metered,
-        # The kinds present that year, for the pills under the lead figures.
-        "kinds": {
-            "surface": supply_kind_lines(surface_kind_terms(billable)),
-            "groundwater": supply_kind_lines(groundwater_kind_terms(billable)) if with_groundwater else [],
-        },
-    }
+    if reading is None:
+        reading = YearReading(reporting_period, [parcel.pk])
+    return reading.water_use_months(parcel, with_groundwater=with_groundwater)
 
 
 def balance_state(value: Decimal | float | str | None) -> str | None:
@@ -1695,7 +1633,7 @@ def balance_state(value: Decimal | float | str | None) -> str | None:
 
 
 def unmet_demand_by_parcel(
-    reporting_period: ReportingPeriod | None,
+    reporting_period: ReportingPeriod | None, reading: Any = None
 ) -> tuple[list[dict[str, Any]], Decimal]:
     """Fields whose water use no reported supply explains, one row per field.
 
@@ -1717,27 +1655,14 @@ def unmet_demand_by_parcel(
         ``{"parcel", "parcel_number", "gross_et", "unmet"}`` ordered by ``unmet``
         descending; ``total`` is the summed shortfall (``Decimal("0")`` when
         there are no rows). Plain dicts, not model instances, so the template
-        names no column of its own (DESIGN.md rule 9).
+        names no column of its own (DESIGN.md rule 9). Ties are ordered by use
+        area number.
+
+    ``reading`` is the page's ``YearReading`` of the period when it has one.
     """
-    grouped = (
-        runs_in_period(CalculationRun.objects.all(), reporting_period)
-        .filter(residual_disposition="unmet_demand", unmet_demand_af__gt=0)
-        .values("parcel_id", "parcel__parcel_number")
-        .annotate(unmet=Sum("unmet_demand_af"), gross_et=Sum("gross_et_af"))
-        .order_by("-unmet")
-    )
-    rows = []
-    total = Decimal("0")
-    for row in grouped:
-        unmet = row["unmet"] or Decimal("0")
-        rows.append({
-            "parcel": row["parcel_id"],
-            "parcel_number": row["parcel__parcel_number"],
-            "gross_et": row["gross_et"] or Decimal("0"),
-            "unmet": unmet,
-        })
-        total += unmet
-    return rows, total
+    from accounting.year_reading import YearReading
+
+    return (reading or YearReading(reporting_period)).unmet_demand_by_parcel()
 
 
 # ---------------------------------------------------------------------------
@@ -1760,27 +1685,6 @@ def unmet_demand_by_parcel(
 # (the dashboard, the per-parcel summary and the report) chooses the
 # framing; the service computes gross ET, net consumptive use, AND the three
 # supplies once, here.
-
-
-def _consumptive_supply_terms(
-    parcel_ids: list[int], reporting_period: ReportingPeriod | None
-) -> tuple[Decimal, Decimal, Decimal]:
-    """Ledger-sourced supplies: ``(groundwater_consumed, groundwater_charged, surface)``."""
-    # Ledger-sourced supplies, on the SAME billable basis as the mass balance.
-    qs = ParcelLedger.objects.current().filter(parcel_id__in=parcel_ids)
-    if reporting_period is not None:
-        qs = qs.filter(reporting_period=reporting_period)
-    billable = billable_ledger(qs)
-
-    groundwater = _recorded_usage(billable)
-    groundwater_charged = charged_groundwater(billable)
-    surface = abs(
-        billable.filter(source_type="surface_diversion").aggregate(
-            s=Sum("amount_acre_feet")
-        )["s"]
-        or Decimal("0")
-    )
-    return groundwater, groundwater_charged, surface
 
 
 #: The kinds a balance line can carry, each with the pill word and the pill's
@@ -1842,13 +1746,8 @@ def surface_kind_terms(billable: QuerySet[ParcelLedger]) -> list[tuple[str, Deci
     the surface module being off, is ``unknown``. Three queries however many rows.
     """
     surface = billable.filter(source_type="surface_diversion")
-    parts: dict[str, Decimal] = {}
-
-    def add(kind: str, amount: Decimal) -> None:
-        parts[kind] = parts.get(kind, Decimal("0")) + amount
-
     own = surface.filter(Q(divided_from_headgate=False) | Q(divided_from_point_pk__isnull=True))
-    add("unknown", own.aggregate(s=Sum("amount_acre_feet"))["s"] or Decimal("0"))
+    own_total = own.aggregate(s=Sum("amount_acre_feet"))["s"] or Decimal("0")
     groups = {
         (row["divided_from_point_pk"], row["month"]): row["s"]
         for row in surface.filter(divided_from_headgate=True, divided_from_point_pk__isnull=False)
@@ -1879,6 +1778,29 @@ def surface_kind_terms(billable: QuerySet[ParcelLedger]) -> list[tuple[str, Deci
             kind = SURFACE_METHOD_KINDS.get(row["method"], "unknown")
             by_kind = methods.setdefault((row["point_of_diversion_id"], month), {})
             by_kind[kind] = by_kind.get(kind, Decimal("0")) + (row["v"] or Decimal("0"))
+    return split_surface_kinds(own_total, groups, methods)
+
+
+def split_surface_kinds(
+    own: Decimal,
+    groups: dict[tuple[int, date], Decimal],
+    methods: dict[tuple[int, date], dict[str, Decimal]],
+) -> list[tuple[str, Decimal]]:
+    """The surface kinds from a parcel set's sums: ``(kind, exact AF)`` for every non-zero kind.
+
+    ``own`` is the sum of the deliveries no headgate's point divided (unknown);
+    ``groups`` the divided deliveries summed per (point, first of month); ``methods``
+    the volumes of that point's direct-use records in that month by kind. Each
+    group is split by those volumes, the last kind taking what is left, so the
+    parts add exactly to the group. ``surface_kind_terms`` and
+    ``accounting.year_reading`` both add up through here.
+    """
+    parts: dict[str, Decimal] = {}
+
+    def add(kind: str, amount: Decimal) -> None:
+        parts[kind] = parts.get(kind, Decimal("0")) + amount
+
+    add("unknown", own)
     for key, amount in groups.items():
         by_kind = methods.get(key, {})
         total = sum(by_kind.values(), Decimal("0"))
@@ -1905,14 +1827,10 @@ def supply_kind_terms(
     several parcel sets (the Dashboard adds its accounts) add these exact parts
     and then call ``supply_kind_lines`` once.
     """
-    qs = ParcelLedger.objects.current().filter(parcel_id__in=list(parcel_ids))
-    if reporting_period is not None:
-        qs = qs.filter(reporting_period=reporting_period)
-    billable = billable_ledger(qs)
-    return {
-        "surface": surface_kind_terms(billable),
-        "groundwater": groundwater_kind_terms(billable),
-    }
+    from accounting.year_reading import YearReading
+
+    parcel_ids = list(parcel_ids)
+    return YearReading(reporting_period, parcel_ids).supply_kind_terms(parcel_ids)
 
 
 def add_kind_terms(
@@ -1951,24 +1869,6 @@ def supply_kinds(
     return {key: supply_kind_lines(value) for key, value in terms.items()}
 
 
-def _metered_pumping_by_month(
-    parcel_ids: list[int], reporting_period: ReportingPeriod | None
-) -> dict[tuple[int, date], Decimal]:
-    """Metered groundwater (positive AF) per ``(parcel id, first of month)``."""
-    qs = ParcelLedger.objects.current().filter(
-        parcel_id__in=parcel_ids, source_type="meter_reading"
-    )
-    if reporting_period is not None:
-        qs = qs.filter(reporting_period=reporting_period)
-    rows = (
-        _groundwater_rows(qs)
-        .annotate(month=TruncMonth("effective_date"))
-        .values("parcel_id", "month")
-        .annotate(total=Sum("amount_acre_feet"))
-    )
-    return {(r["parcel_id"], r["month"]): abs(r["total"]) for r in rows}
-
-
 def _run_water_not_consumed(run: CalculationRun, metered: Decimal | None) -> Decimal:
     """Pumped water this run's crop did not consume (AF, never negative).
 
@@ -1985,29 +1885,6 @@ def _run_water_not_consumed(run: CalculationRun, metered: Decimal | None) -> Dec
         run.surface_water_af or Decimal("0")
     )
     return max(metered - max(need, Decimal("0")), Decimal("0"))
-
-
-def _consumptive_run_terms(
-    parcel_ids: list[int], reporting_period: ReportingPeriod | None
-) -> tuple[Decimal, Decimal, Decimal, int, Decimal]:
-    """CalculationRun-sourced terms: ``(gross, net, precip, run_count, not_consumed)``."""
-    # CalculationRun-sourced consumptive-use terms, summed per parcel-month.
-    gross = Decimal("0")
-    net = Decimal("0")
-    precip = Decimal("0")
-    not_consumed = Decimal("0")
-    run_count = 0
-    metered = _metered_pumping_by_month(parcel_ids, reporting_period)
-    for parcel in Parcel.objects.current().filter(id__in=parcel_ids):
-        for run in _calculation_runs_for_period(parcel, reporting_period):
-            gross += run.gross_et_af or Decimal("0")
-            net += run.net_consumptive_use_af or Decimal("0")
-            precip += run.effective_precip_af or Decimal("0")
-            not_consumed += _run_water_not_consumed(
-                run, metered.get((parcel.id, run.period_start))
-            )
-            run_count += 1
-    return gross, net, precip, run_count, not_consumed
 
 
 def consumptive_use_balance(
@@ -2067,44 +1944,15 @@ def consumptive_use_balance(
     publishing a claim the database never made. It costs nothing: the loop below
     already visits exactly these rows.
     """
-    parcel_ids = list(parcel_ids)
-
-    groundwater_consumed, groundwater_charged, surface = _consumptive_supply_terms(
-        parcel_ids, reporting_period
-    )
-    gross, net, precip, run_count, not_consumed = _consumptive_run_terms(
-        parcel_ids, reporting_period
-    )
-
     # Groundwater is counted as pumped on every field, metered or estimated, and
     # the pumped water the crop did not consume is a use beside crop ET, so two
-    # fields farmed alike balance alike.
-    groundwater = groundwater_charged
-    supply_total = surface + groundwater + precip
-    return {
-        "consumptive_use_gross": gross,
-        "consumptive_use_net": net,
-        "supplies": {
-            "surface": surface,
-            "groundwater": groundwater,
-            "precip": precip,
-        },
-        "supply_total": supply_total,
-        "groundwater_consumed": groundwater_consumed,
-        "water_not_consumed": not_consumed,
-        "uses_total": gross + not_consumed,
-        "net_vs_supply": supply_total - gross - not_consumed,
-        # The budget-spend figure, kept separate from
-        # `supplies["groundwater"]` above so a budget reader (zone_groundwater_budget,
-        # the account row's remaining) and a Supplies-panel reader can each call
-        # this ONE function and get the number that is actually theirs.
-        "groundwater_charged": groundwater_charged,
-        # Counted from the rows actually summed, NOT from a second query. A
-        # separate `.count()` could disagree with the loop the moment the
-        # membership rule in `runs_in_period` changes, and then the dashboard
-        # would claim a number was measured by rows it never added up.
-        "calculation_runs": run_count,
-    }
+    # fields farmed alike balance alike. The sums are added up by a reading of
+    # these use areas' rows (accounting.year_reading), the same reading a page
+    # that adds up many places shares, so one place and many agree.
+    from accounting.year_reading import YearReading
+
+    parcel_ids = list(parcel_ids)
+    return YearReading(reporting_period, parcel_ids).consumptive_use_balance(parcel_ids)
 
 
 def parcel_consumptive_balance(
@@ -2360,46 +2208,17 @@ def zone_groundwater_budget(
              "used":       Decimal,          # groundwater only, never canal water
              "remaining":  Decimal | None}   # available − used
     """
-    used = zone_consumptive_balance(zone, reporting_period=reporting_period)[
-        "groundwater_charged"
-    ]
-
-    # Resolved by CODE, not by id: the water types are seeded reference data and
-    # their primary keys differ between deployments.
-    groundwater_type = _groundwater_type()
-    allocation = None
-    if groundwater_type is not None:
-        allocation = AllocationPlan.objects.filter(
-            zone=zone,
-            reporting_period=reporting_period,
-            water_type=groundwater_type,
-        ).aggregate(total=Sum("allocation_acre_feet"))["total"]
-
-    if allocation is None:
-        return {
-            "allocation": None,
-            "carryover": None,
-            "available": None,
-            "used": used,
-            "remaining": None,
-        }
-
+    # The groundwater type is resolved by CODE, not by id: the water types are
+    # seeded reference data and their primary keys differ between deployments.
     # The carry-over is signed: positive is last year's surplus rolled in,
     # negative a debt borrowed against this year. `available_with_carryover`
     # applies the surplus-depreciates / debt-does-not rule centrally; periods
     # elapsed is 0 because this is the opening balance for the very next year.
-    end = reporting_period.end_date
-    carryover = zone_carryover(
-        zone, water_year_of(f"{end.year}-{end.month:02d}", water_year_start_month())
-    )
-    available = available_with_carryover(allocation, carryover)
-    return {
-        "allocation": allocation,
-        "carryover": carryover,
-        "available": available,
-        "used": used,
-        "remaining": available - used,
-    }
+    # The arithmetic is accounting.year_reading's, which the dashboard shares.
+    from accounting.year_reading import YearReading
+
+    reading = YearReading(reporting_period, zone_parcel_ids(zone, reporting_period))
+    return reading.zone_groundwater_budget(zone)
 
 
 def account_water_year(reporting_period: ReportingPeriod) -> int:
@@ -2426,34 +2245,9 @@ def account_allocation(
     of the zone has an area on record, fields are counted instead. ``None``
     when none of the account's zones has a groundwater plan.
     """
-    groundwater_type = _groundwater_type()
-    if groundwater_type is None:
-        return None
-    mine = set(account_parcel_ids(water_account, reporting_period))
-    zones = {
-        pz.zone_id: pz.zone
-        for pz in ParcelZone.objects.filter(parcel_id__in=mine).select_related("zone")
-    }
-    total = None
-    for zone in zones.values():
-        plans = AllocationPlan.objects.filter(
-            zone=zone, reporting_period=reporting_period, water_type=groundwater_type
-        ).aggregate(total=Sum("allocation_acre_feet"))["total"]
-        if plans is None:
-            continue
-        # The acres are of current use areas only, so a voided one, which keeps its
-        # zone and account links, is in no share.
-        acres = _field_acres(zone_parcel_ids(zone, reporting_period))
-        members = list(acres)
-        if not mine.intersection(members):
-            continue
-        zone_acres = sum(acres.values(), Decimal("0"))
-        if zone_acres > 0:
-            share = sum((acres[p] for p in members if p in mine), Decimal("0")) / zone_acres
-        else:
-            share = Decimal(len([p for p in members if p in mine])) / Decimal(len(members) or 1)
-        total = (total or Decimal("0")) + plans * share
-    return None if total is None else total.quantize(Decimal("0.0001"))
+    from accounting.year_reading import YearReading
+
+    return YearReading(reporting_period, []).account_allocation(water_account)
 
 
 def account_credits(water_account: WaterAccount, reporting_period: ReportingPeriod) -> list[AccountCredit]:
@@ -2479,18 +2273,10 @@ def account_groundwater_budget(
     used. ``allocation`` and ``remaining`` are ``None`` when no zone of the
     account has a groundwater plan.
     """
-    allocation = account_allocation(water_account, reporting_period)
-    credits = account_credits(water_account, reporting_period)
-    used = account_consumptive_balance(water_account, reporting_period)["groundwater_charged"]
-    if allocation is None:
-        return {"allocation": None, "credits": credits, "used": used, "remaining": None}
-    credit_total = sum((c.amount_af for c in credits), Decimal("0"))
-    return {
-        "allocation": allocation,
-        "credits": credits,
-        "used": used,
-        "remaining": allocation + credit_total - used,
-    }
+    from accounting.year_reading import YearReading
+
+    reading = YearReading(reporting_period, account_parcel_ids(water_account, reporting_period))
+    return reading.account_groundwater_budget(water_account)
 
 
 def resolve_recovery_horizon(zone: Zone, *, agency_default: str | None = None) -> str:

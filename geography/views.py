@@ -25,11 +25,9 @@ from django.views.decorators.http import require_POST
 
 from accounting.models import AllocationPlan
 from accounting.services import (
-    billable_ledger,
     current_period_id as compute_current_period_id,
-    supply_kinds,
+    supply_kind_lines,
     zone_credit_sources,
-    zone_groundwater_budget,
     zone_parcel_ids as parcels_in_zone,
     zone_pool_sources,
 )
@@ -278,22 +276,22 @@ def _zone_allocations(zone: Zone) -> QuerySet:
     return allocations
 
 
-def _zone_budget_row(alloc: AllocationPlan, zone: Zone, zone_parcel_ids: list[int]) -> dict:
+def _zone_budget_row(alloc: AllocationPlan, zone: Zone, zone_parcel_ids: list[int], reading=None) -> dict:
     """One allocation-versus-use row for the zone's budget table.
 
     The fields counted are the ones in the zone during the allocation's own
     period, read from their membership dates. ``zone_parcel_ids`` (the fields
     in the zone now) is accepted so callers need not change, and is not read.
+    ``reading`` is a ``YearReading`` of the allocation's period; without one, the
+    row reads the zone's use areas itself.
     """
-    zone_parcel_ids = parcels_in_zone(zone, alloc.reporting_period)
-    period_rows = billable_ledger(
-        ParcelLedger.objects.current().filter(
-            parcel_id__in=zone_parcel_ids,
-            reporting_period=alloc.reporting_period,
-        )
-    )
+    from accounting.year_reading import YearReading
+
+    if reading is None:
+        reading = YearReading(alloc.reporting_period, parcels_in_zone(zone, alloc.reporting_period))
+    zone_parcel_ids = reading.zone_parcel_ids(zone)
     if (alloc.water_type.code or "").upper() == "GW":
-        gw = zone_groundwater_budget(zone, alloc.reporting_period)
+        gw = reading.zone_groundwater_budget(zone)
         captions = _zone_budget_captions(True, alloc.reporting_period.name)
         return {
             "period": alloc.reporting_period,
@@ -311,7 +309,7 @@ def _zone_budget_row(alloc: AllocationPlan, zone: Zone, zone_parcel_ids: list[in
             "used": gw["used"],
             # The Used figure by kind of water, one line each with its pill,
             # on the same rows and basis as `used` (services.supply_kinds).
-            "used_lines": supply_kinds(zone_parcel_ids, alloc.reporting_period)["groundwater"],
+            "used_lines": supply_kind_lines(reading.groundwater_kind_terms(zone_parcel_ids)),
             "used_label": "pumped",
             "is_groundwater": True,
             # What the carry-over sum is made of, by kind.
@@ -327,12 +325,7 @@ def _zone_budget_row(alloc: AllocationPlan, zone: Zone, zone_parcel_ids: list[in
         # surface_diversion is stored NEGATIVE (production convention); the
         # delivered magnitude is its absolute value, so remaining =
         # budget − delivered reads correctly.
-        used = abs(
-            period_rows.filter(source_type="surface_diversion").aggregate(
-                s=Sum("amount_acre_feet")
-            )["s"]
-            or Decimal("0")
-        )
+        used = reading.surface_delivered(zone_parcel_ids)
         used_label = "delivered"
     budget = alloc.allocation_acre_feet or Decimal("0")
     captions = _zone_budget_captions(False, alloc.reporting_period.name)
@@ -347,7 +340,7 @@ def _zone_budget_row(alloc: AllocationPlan, zone: Zone, zone_parcel_ids: list[in
         # A surface allocation has nothing to add before it is spent.
         "available": budget,
         "used": used,
-        "used_lines": supply_kinds(zone_parcel_ids, alloc.reporting_period)["surface"],
+        "used_lines": supply_kind_lines(reading.surface_kind_terms(zone_parcel_ids)),
         "used_label": used_label,
         "remaining": budget - used,
         "available_caption": captions["available"],
@@ -371,8 +364,17 @@ def _zone_budgets(zone: Zone, allocations: QuerySet, parcel_zones: QuerySet) -> 
     # column headed *pumped* and misstate how far under or over its groundwater
     # allocation the zone is. The dashboard's zone row calls the same function, so
     # the two screens cannot print two different remainings for one zone-period.
+    from accounting.year_reading import YearReading
+
     zone_parcel_ids = list(parcel_zones.values_list("parcel_id", flat=True))
-    return [_zone_budget_row(alloc, zone, zone_parcel_ids) for alloc in allocations]
+    readings = {}
+    rows = []
+    for alloc in allocations:
+        period = alloc.reporting_period
+        if period.pk not in readings:
+            readings[period.pk] = YearReading(period, parcels_in_zone(zone, period))
+        rows.append(_zone_budget_row(alloc, zone, zone_parcel_ids, reading=readings[period.pk]))
+    return rows
 
 
 def _current_zone_budgets(zone: Zone, budgets: list[dict]) -> list[dict]:

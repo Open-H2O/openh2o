@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """A helper the dashboard and the account list both use: the one row of balance figures for a water account."""
-from accounting.services import account_consumptive_balance, account_groundwater_budget
+from accounting.services import account_parcel_ids
+from accounting.year_reading import YearReading
 
 
-def _account_summary_row(account, selected_period, has_allocations, groundwater_type):
+def _account_summary_row(account, selected_period, has_allocations, groundwater_type, reading=None):
     """One water account's row in the Active water accounts table: its
     consumptive balance, its supply breakdown, and (only when a groundwater
     budget exists this period) its pro-rated allocation and what remains.
@@ -14,8 +15,13 @@ def _account_summary_row(account, selected_period, has_allocations, groundwater_
     ``has_allocations`` / ``groundwater_type`` (the period-wide facts, not
     per-account) so a row never disagrees with its own page about whether a
     budget exists at all.
+
+    ``reading`` is the page's ``YearReading`` of the period, shared by every row
+    so the year is read once; without one, the row reads its own use areas.
     """
-    cu = account_consumptive_balance(account, reporting_period=selected_period)
+    if reading is None:
+        reading = YearReading(selected_period, account_parcel_ids(account, selected_period))
+    cu = reading.account_consumptive_balance(account)
 
     if has_allocations and groundwater_type is not None and selected_period is not None:
         # One computation of the account's groundwater budget, shared with the
@@ -28,7 +34,7 @@ def _account_summary_row(account, selected_period, has_allocations, groundwater_
         # calculated row at its run's EXTRACTED figure. An account whose zones
         # carry no groundwater plan has no groundwater budget: absent, not
         # zero, so the template dashes it.
-        budget = account_groundwater_budget(account, selected_period)
+        budget = reading.account_groundwater_budget(account)
         allocation = budget["allocation"]
         remaining = budget["remaining"]
     else:

@@ -267,14 +267,24 @@ def parcels_list(request):
 
 #: The month table's figure columns, in the order of its `All N months` row.
 
-def water_use_for(parcel, balance_period, related_wells=None):
+def water_use_for(parcel, balance_period, related_wells=None, reading=None):
     """``(water_use, has_well)`` for the Water use card: the card's figures, or None when it is not shown.
 
     Months this parcel was engine-run: none means ET was never computed, which the
     card says in a sentence rather than printing a table of zeros. The detail page
     and the filed figures (``accounting.statements``) both read the card through
-    here, so a statement keeps exactly the figures the card prints.
+    here, so a statement keeps exactly the figures the card prints. ``reading`` is
+    a ``YearReading`` of ``balance_period`` that holds this use area, when the
+    caller has one (the filed figures read every use area from one).
     """
+    if reading is not None:
+        has_well = is_enabled("wells") and parcel.pk in reading.well_parcels
+        water_use = None
+        if reading.has_runs(parcel.pk) and balance_period is not None:
+            water_use = parcel_water_use_months(
+                parcel, balance_period, with_groundwater=has_well, reading=reading
+            )
+        return water_use, has_well
     if related_wells is None:
         related_wells = parcel.wellirrigatedparcel_set.all()
     run_periods = parcel_run_periods(parcel, balance_period)

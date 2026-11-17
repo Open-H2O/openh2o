@@ -51,10 +51,7 @@ from accounting.models import (
     WaterType,
 )
 from accounting.services import (
-    account_consumptive_balance,
-    account_groundwater_budget,
     account_parcel_ids,
-    parcel_consumptive_balance,
     runs_in_period,
     zone_parcel_ids,
 )
@@ -153,11 +150,13 @@ class Figure:
 # -- Collecting what the pages print -------------------------------------------------------
 
 
-def _method(parcel_ids, period):
+def _method(parcel_ids, period, reading=None):
     """The calculation method and settings code every run behind a place came from, or "".
 
     Blank when the place has no run or its runs came from more than one method.
     """
+    if reading is not None:
+        return reading.method(parcel_ids)
     pairs = set(
         runs_in_period(CalculationRun.objects.filter(parcel_id__in=list(parcel_ids)), period)
         .order_by()
@@ -183,20 +182,20 @@ def _figure(scope, scope_id, scope_name, figure, value, *, method="", month=None
     )
 
 
-def _use_area_figures(period):
+def _use_area_figures(period, reading):
     """Each use area whose page shows the Water use card: its months, its year and its balance line."""
     from parcels.models import Parcel
     from parcels.views import _balance_line, water_use_for
 
     surface_on = is_enabled("surface")
     found = []
-    for parcel in Parcel.objects.current().order_by("parcel_number"):
-        consumptive = parcel_consumptive_balance(parcel, period)
-        water_use, has_well = water_use_for(parcel, period)
+    for parcel in Parcel.objects.current().order_by("parcel_number").only("pk", "parcel_number"):
+        water_use, has_well = water_use_for(parcel, period, reading=reading)
         if water_use is None:
             continue
+        consumptive = reading.consumptive_use_balance([parcel.pk])
         line = _balance_line(consumptive, water_use, has_well)
-        method = _method([parcel.pk], period)
+        method = _method([parcel.pk], period, reading)
 
         def add(figure, value, month=None, _parcel=parcel, _method_text=method):
             found.append(
@@ -224,19 +223,19 @@ def _use_area_figures(period):
     return found
 
 
-def _account_figures(period, rollup):
+def _account_figures(period, rollup, reading):
     found = []
     for row in rollup["account_summaries"]:
         account = row["account"]
         name = f"{account.account_number}{ACCOUNT_JOIN}{account.name}"
-        method = _method(account_parcel_ids(account, period), period)
+        method = _method(reading.account_parcel_ids(account), period, reading)
 
         def add(figure, value, _account=account, _name=name, _method_text=method, **extra):
             found.append(
                 _figure("account", _account.pk, _name, figure, value, method=_method_text, **extra)
             )
 
-        uses = account_consumptive_balance(account, reporting_period=period)["uses_total"]
+        uses = reading.account_consumptive_balance(account)["uses_total"]
         add("crop_et", row["consumptive_use_gross"])
         add("surface_delivered", row["surface"])
         add("groundwater_extraction", row["groundwater"])
@@ -245,7 +244,7 @@ def _account_figures(period, rollup):
         add("uses", uses)
         add("water_not_consumed", row["water_not_consumed"])
         add("balance", row["net_vs_supply"])
-        budget = account_groundwater_budget(account, period)
+        budget = reading.account_groundwater_budget(account)
         # The account page's Groundwater budget card: shown with a zone
         # ceiling, or with credits and no ceiling.
         if budget["allocation"] is not None or budget["credits"]:
@@ -259,17 +258,17 @@ def _account_figures(period, rollup):
     return found
 
 
-def _zone_figures(period, has_allocations):
+def _zone_figures(period, has_allocations, reading):
     from accounting.views import dashboard
     from geography.views import _zone_budget_row
 
     found = []
-    for row in dashboard._zone_summary_rows(period, has_allocations):
+    for row in dashboard._zone_summary_rows(period, has_allocations, reading):
         zone = row["zone"]
         # The Dashboard dashes a zone's crop ET, pumped water not consumed,
         # balance and remaining when no run is behind it: the row keeps the dash.
         measured = row["has_calculations"]
-        method = _method(zone_parcel_ids(zone, period), period)
+        method = _method(reading.zone_parcel_ids(zone), period, reading)
 
         def add(figure, value, _zone=zone, _method_text=method):
             found.append(_figure("zone", _zone.pk, _zone.name, figure, value, method=_method_text))
@@ -290,7 +289,7 @@ def _zone_figures(period, has_allocations):
         seen_groundwater = seen_surface = False
         plans = AllocationPlan.objects.filter(zone=zone, reporting_period=period)
         for plan in plans.select_related("water_type", "reporting_period").order_by("pk"):
-            budget_row = _zone_budget_row(plan, zone, [])
+            budget_row = _zone_budget_row(plan, zone, [], reading=reading)
             if (plan.water_type.code or "").upper() == "GW":
                 if not seen_groundwater:
                     seen_groundwater = True
@@ -302,11 +301,11 @@ def _zone_figures(period, has_allocations):
     return found
 
 
-def _district_figures(period, rollup):
+def _district_figures(period, rollup, reading):
     ids = set()
     for row in rollup["account_summaries"]:
-        ids.update(account_parcel_ids(row["account"], period))
-    method = _method(ids, period)
+        ids.update(reading.account_parcel_ids(row["account"]))
+    method = _method(ids, period, reading)
 
     def add(figure, value):
         return _figure("site", None, "", figure, value, method=method)
@@ -326,18 +325,22 @@ def _district_figures(period, rollup):
 def collect_figures(period):
     """Every figure the pages print for ``period``, as a list of :class:`Figure`.
 
-    The one collector behind :func:`take_statement` and :func:`figures_now`.
+    The one collector behind :func:`take_statement` and :func:`figures_now`. Every
+    figure adds up from one reading of the year's records (``YearReading``), the
+    same reading the Dashboard adds up from.
     """
     from accounting.views import dashboard
+    from accounting.year_reading import YearReading
 
+    reading = YearReading(period)
     has_allocations = AllocationPlan.objects.filter(reporting_period=period).exists()
     groundwater_type = WaterType.objects.filter(code__iexact="GW").first()
-    rollup = dashboard._account_rollup(period, has_allocations, groundwater_type)
+    rollup = dashboard._account_rollup(period, has_allocations, groundwater_type, reading)
     return [
-        *_use_area_figures(period),
-        *_account_figures(period, rollup),
-        *_zone_figures(period, has_allocations),
-        *_district_figures(period, rollup),
+        *_use_area_figures(period, reading),
+        *_account_figures(period, rollup, reading),
+        *_zone_figures(period, has_allocations, reading),
+        *_district_figures(period, rollup, reading),
     ]
 
 
@@ -387,18 +390,9 @@ def take_statement(period, *, kind, user=None, note=""):
 
 def statement_figures(statement):
     """The figures a statement holds, as :class:`Figure` in the order they were written."""
+    columns = ("scope", "scope_id", "scope_name", "month", "figure", "value", "method", "detail")
     return [
-        Figure(
-            scope=row.scope,
-            scope_id=row.scope_id,
-            scope_name=row.scope_name,
-            month=row.month,
-            figure=row.figure,
-            value=row.value,
-            method=row.method,
-            detail=row.detail,
-        )
-        for row in statement.rows.order_by("pk")
+        Figure(*row) for row in statement.rows.order_by("pk").values_list(*columns)
     ]
 
 
