@@ -12,6 +12,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+# A newer push to the same branch makes this run's answer out of date, so it is
+# cancelled: two pushes a minute apart cost one run, not two overlapping ones.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   clean-install:
     runs-on: ubuntu-latest
