@@ -286,13 +286,12 @@ class TestImportParcelsRunScoped:
 @pytest.mark.django_db
 class TestSyncOpenetIntraRunDedup:
     """ISS-030 (F-functional-26): two overlapping OpenETCache rows that both
-    contribute the same parcel-month in one run must produce exactly ONE
-    et_estimate ledger row, not two."""
+    contribute the same parcel-month must give exactly ONE by-ET line, at one
+    row's figure, not two."""
 
     def test_overlapping_cache_rows_create_one_row(self):
         from datasync.crop_et import record_fetched_months
         from datasync.models import OpenETCache
-        from parcels.models import ParcelLedger
         from tests.factories import ParcelFactory, _box
 
         parcel = ParcelFactory()
@@ -330,23 +329,14 @@ class TestSyncOpenetIntraRunDedup:
         record_fetched_months(parcel, {"2024-06"})
         record_fetched_months(solo, {"2024-06"})
 
-        call_command(
-            "sync_openet_to_ledger",
-            start_date="2024-06-01",
-            end_date="2024-06-30",
-            stdout=StringIO(),
-        )
-        rows = ParcelLedger.objects.filter(
-            parcel=parcel, source_type="et_estimate"
-        )
-        assert rows.count() == 1  # one row despite two overlapping cache rows
+        from reporting.generators import _gears_by_et_rows
+        from tests.factories import ReportingPeriodFactory
 
-        # F-math-08: and that row must carry the ONE-row VALUE. Row count alone
+        rows = {r["parcel_number"]: r for r in _gears_by_et_rows(ReportingPeriodFactory())}
+        assert [rows[parcel.parcel_number]["month"]] == ["2024-06"]  # one line despite two overlapping cache rows
+
+        # F-math-08: and that line must carry the ONE-row VALUE. A count alone
         # never caught the doubling — the duplicate coverage was summed into a
-        # single row of twice the magnitude. Compared against the control rather
+        # single figure of twice the magnitude. Compared against the control rather
         # than a hardcoded number so it stays true if the mm->AF math changes.
-        solo_rows = ParcelLedger.objects.filter(
-            parcel=solo, source_type="et_estimate"
-        )
-        assert solo_rows.count() == 1
-        assert rows.first().amount_acre_feet == solo_rows.first().amount_acre_feet
+        assert rows[parcel.parcel_number]["volume"] == rows[solo.parcel_number]["volume"] > 0

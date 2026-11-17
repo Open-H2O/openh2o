@@ -850,7 +850,7 @@ class TestNullWaterRightGuards:
 
 
 # ---------------------------------------------------------------------------
-# OpenET-to-ledger pipeline (Task 4)
+# OpenET millimeters to acre-feet
 # ---------------------------------------------------------------------------
 
 
@@ -872,108 +872,3 @@ class TestEtMmToAcreFeet:
         result_10 = et_mm_to_acre_feet(100, Decimal("10"))
         result_20 = et_mm_to_acre_feet(100, Decimal("20"))
         assert abs(result_20 / result_10 - Decimal("2")) < Decimal("0.0001")
-
-
-@pytest.mark.django_db
-class TestSyncOpenETToLedger:
-    def _make_cache(self, parcel, et_mm, month_str="2024-06"):
-        """Create an OpenETCache entry for a parcel with the given ET value."""
-        from django.contrib.gis.geos import MultiPolygon, Polygon
-        from datetime import date
-        from datasync.models import OpenETCache
-
-        geom = parcel.geometry or MultiPolygon(
-            Polygon.from_bbox((-119.3, 36.3, -119.2, 36.4)), srid=4326
-        )
-        et_row = OpenETCache.objects.create(
-            parcel=parcel,
-            geometry=geom,
-            start_date=date(2024, 1, 1),
-            end_date=date(2024, 12, 31),
-            variable="ET",
-            model_name="Ensemble",
-            et_data=[{"date": month_str, "et": et_mm, "unit": "mm"}],
-        )
-        from datasync.crop_et import months_of, record_fetched_months
-
-        record_fetched_months(et_row.parcel, months_of(et_row.et_data), model=et_row.model_name)
-        return et_row
-
-    def test_sync_openet_creates_ledger_entries(self):
-        """Running the command creates ParcelLedger entries from OpenETCache data."""
-        from django.core.management import call_command
-
-        parcel = ParcelFactory(area_acres=Decimal("80.00"))
-        self._make_cache(parcel, et_mm=150.0, month_str="2024-06")
-
-        call_command(
-            "sync_openet_to_ledger",
-            "--start-date=2024-01-01",
-            "--end-date=2024-12-31",
-        )
-
-        from parcels.models import ParcelLedger
-        entries = ParcelLedger.objects.filter(parcel=parcel, source_type="et_estimate")
-        assert entries.count() == 1
-        entry = entries.first()
-        assert entry.amount_acre_feet < 0  # consumption is negative
-        # 150mm * 80 acres / 304.8 = 39.37... AF
-        expected = -(Decimal("150") / Decimal("304.8")) * Decimal("80")
-        assert abs(entry.amount_acre_feet - expected.quantize(Decimal("0.0001"))) < Decimal("0.001")
-
-    def test_sync_openet_skips_duplicates(self):
-        """Running the command twice does not create duplicate ledger entries."""
-        from django.core.management import call_command
-
-        parcel = ParcelFactory(area_acres=Decimal("80.00"))
-        self._make_cache(parcel, et_mm=100.0, month_str="2024-06")
-
-        call_command(
-            "sync_openet_to_ledger",
-            "--start-date=2024-01-01",
-            "--end-date=2024-12-31",
-        )
-        call_command(
-            "sync_openet_to_ledger",
-            "--start-date=2024-01-01",
-            "--end-date=2024-12-31",
-        )
-
-        from parcels.models import ParcelLedger
-        count = ParcelLedger.objects.filter(parcel=parcel, source_type="et_estimate").count()
-        assert count == 1  # second run skipped the duplicate
-
-    def test_sync_openet_skips_parcel_without_area(self):
-        """Parcels with no area_acres are skipped with no ledger entry created."""
-        from django.core.management import call_command
-
-        parcel = ParcelFactory(area_acres=None, geometry=None)
-        self._make_cache(parcel, et_mm=100.0, month_str="2024-06")
-
-        call_command(
-            "sync_openet_to_ledger",
-            "--start-date=2024-01-01",
-            "--end-date=2024-12-31",
-        )
-
-        from parcels.models import ParcelLedger
-        count = ParcelLedger.objects.filter(parcel=parcel, source_type="et_estimate").count()
-        assert count == 0
-
-    def test_sync_openet_dry_run_creates_nothing(self):
-        """Dry run reports expected conversions but writes nothing to the database."""
-        from django.core.management import call_command
-
-        parcel = ParcelFactory(area_acres=Decimal("40.00"))
-        self._make_cache(parcel, et_mm=200.0, month_str="2024-06")
-
-        call_command(
-            "sync_openet_to_ledger",
-            "--start-date=2024-01-01",
-            "--end-date=2024-12-31",
-            "--dry-run",
-        )
-
-        from parcels.models import ParcelLedger
-        count = ParcelLedger.objects.filter(parcel=parcel, source_type="et_estimate").count()
-        assert count == 0  # nothing written in dry run

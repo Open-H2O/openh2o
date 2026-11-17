@@ -25,7 +25,7 @@ from django.db.models import Sum
 from accounting.allocation_math import apportion_shared_supply
 from accounting.ledger_words import DEMONSTRATION_FILE_LINE
 from accounting.models import CalculationRun, ReportingPeriod
-from accounting.services import billable_ledger, runs_in_period
+from accounting.services import runs_in_period
 from core.csv_safe import safe_row
 from core.models import SiteConfig
 from core.modules import is_enabled
@@ -67,9 +67,10 @@ def gears_method(source_type):
     visible in the file (and catchable by validate_report) rather than being
     silently relabeled to a wrong state value.
 
-    GEARS is a groundwater filing built only from ``ParcelLedger`` rows (see
-    ``generate_gears_csv`` below) -- it never reads a
-    ``surface.DiversionRecord``, so the label comes from the ledger source type alone.
+    GEARS is a groundwater filing built from ``ParcelLedger`` rows and the recorded
+    crop ET (see ``generate_gears_csv`` below) -- it never reads a
+    ``surface.DiversionRecord``, so the label comes from the source type alone (a
+    recorded crop ET line carries ``et_estimate``).
     """
     return GEARS_METHOD.get(source_type, source_type)
 
@@ -528,28 +529,31 @@ def _write_gears_by_well(writer: Any, reporting_period: ReportingPeriod) -> None
 
 
 def _gears_by_et_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any]]:
-    """Billable ET volume per (parcel, month), sorted for the file."""
-    # Query BOTH ET-family sources, then let billable_ledger() pick the
-    # netted ``calculated`` row where the engine ran and fall back to the raw
-    # ``et_estimate`` row where it didn't. This keeps the state filing
-    # consistent with the internal bill (same shared suppression helper, so
-    # they can never drift), and labels each surviving row by its own source.
-    entries = (
+    """ET volume per (parcel, month), sorted for the file.
+
+    A month the calculation ran for reads its netted ``calculated`` rows. Any other
+    month with recorded crop ET reads the record (``datasync.crop_et``), the figure
+    the calculation and the month's page read. ``et_estimate`` rows a site holds
+    from the retired ledger copy are not read: each equals the record it was copied
+    from. A use area-month the by-well file holds is metered and is left out.
+    """
+    from datasync.crop_et import recorded_acre_feet
+
+    calculated = (
         ParcelLedger.objects.current().filter(
-            source_type__in=["et_estimate", "calculated"],
+            source_type="calculated",
             effective_date__gte=reporting_period.start_date,
             effective_date__lte=reporting_period.end_date,
         )
         .select_related("parcel")
     )
-    entries = billable_ledger(entries)
 
     # A field-month the by-well file holds is metered: its water is written
     # there, so the by-ET file leaves it out.
     metered = _gears_by_well_build(reporting_period)[1]
 
     rows = {}
-    for entry in entries:
+    for entry in calculated:
         month_str = entry.effective_date.strftime("%Y-%m")
         key = (entry.parcel_id, month_str)
         if key in metered:
@@ -570,6 +574,24 @@ def _gears_by_et_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any]]
                 "method": entry.source_type,
             }
         rows[key]["volume"] += abs(entry.amount_acre_feet)
+
+    # The calculated rows above are keyed on the first of their month, as the
+    # calculation writes them; a record stands in only where none exists.
+    ran = {(entry.parcel_id, entry.effective_date) for entry in calculated}
+    for figure in recorded_acre_feet(reporting_period.start_date, reporting_period.end_date):
+        month_str = figure.month.strftime("%Y-%m")
+        key = (figure.parcel_id, month_str)
+        if key in metered or (figure.parcel_id, figure.month) in ran:
+            continue
+        if key not in rows:
+            rows[key] = {
+                "parcel_number": figure.parcel_number,
+                "area": figure.area_acres,
+                "month": month_str,
+                "volume": Decimal("0"),
+                "method": "et_estimate",
+            }
+        rows[key]["volume"] += figure.acre_feet
 
     return sorted(rows.values(), key=lambda r: (r["parcel_number"], r["month"]))
 

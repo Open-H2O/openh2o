@@ -102,7 +102,7 @@ class ReportSubmission(models.Model):
 
       draft               -> generated, not yet signed off internally
       internally_approved -> the GSA/agency approved it for filing (internal)
-      exported            -> the file was downloaded to upload into the portal
+      exported            -> the user marked the file downloaded or the worksheet opened
       filed               -> the user recorded that THEY filed and certified it
                              in the state portal (self-reported bookkeeping)
 
@@ -151,8 +151,7 @@ class ReportSubmission(models.Model):
         blank=True,
         help_text="User-edited OpenET pre-fill values, keyed by entity+month "
         "(e.g. 'well:12:2024-03'). These are the agency's reviewed figures for "
-        "data entry; they are NOT written back to the parcel ledger, so they "
-        "never double-count against the et_estimate entries the generators read.",
+        "data entry. Only the Prepare with OpenET page shows them.",
     )
     validation_warnings = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

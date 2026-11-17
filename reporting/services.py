@@ -2,18 +2,18 @@
 """
 OpenET pre-fill service.
 
-Derives labeled, monthly water-volume values from the OpenET evapotranspiration
-data that already lives in the parcel ledger (ParcelLedger entries with
-source_type="et_estimate", written by accounting.management.commands
-.sync_openet_to_ledger). The point is to save the user from typing twelve
-monthly numbers from scratch when they prepare a GEARS or CalWATRS filing.
+Derives labeled, monthly water-volume values from the crop ET OpenH2O records for
+each use area and month (datasync.crop_et.recorded_acre_feet: the record's depth
+over the use area's acres, the figure the calculation and the month's page read).
+The point is to save the user from typing twelve monthly numbers from scratch
+when they prepare a GEARS or CalWATRS filing.
 
 Three rules keep this honest — they are the whole reason the feature exists:
 
   1. Raw ET, no hidden math. The value is the satellite consumptive-use estimate
-     converted to acre-feet exactly as the ledger stores it. We do NOT subtract
-     precipitation or surface deliveries to "back-calculate" pumping. The honesty
-     comes from the label, not from a model the user can't see.
+     converted to acre-feet. We do NOT subtract precipitation or surface
+     deliveries to "back-calculate" pumping. The honesty comes from the label,
+     not from a model the user can't see.
 
   2. Every value carries OPENET_PREFILL_LABEL. ET (the water crops consumed) is
      NOT the same as metered pumping or a diverted volume — a well can pump less
@@ -22,19 +22,14 @@ Three rules keep this honest — they are the whole reason the feature exists:
      penalty of perjury, so the label travels with every single value.
 
   3. Read-only. This service never writes to ParcelLedger. The user's reviewed and
-     edited values are persisted on ReportSubmission.prefill_overrides instead, so
-     they can never double-count against the et_estimate entries the report
-     generators already read.
+     edited values are persisted on ReportSubmission.prefill_overrides instead,
+     which no report file reads.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Callable
-
-from django.db.models import QuerySet
-
-from parcels.models import ParcelLedger
 
 from reporting.generators import (
     build_normalized_pod_parcel_map,
@@ -64,17 +59,11 @@ def _month_key(d: date) -> str:
     return d.strftime("%Y-%m")
 
 
-def _et_estimate_entries(reporting_period: ReportingPeriod) -> QuerySet[ParcelLedger]:
-    """The et_estimate ledger entries inside the reporting period.
+def _recorded_months(reporting_period: ReportingPeriod) -> list[Any]:
+    """Each use area-month's recorded crop ET in the reporting period, in positive acre-feet."""
+    from datasync.crop_et import recorded_acre_feet
 
-    These are stored negative (ET is consumption); callers take abs() so the
-    pre-fill shows positive acre-feet, matching how the CSV generators report.
-    """
-    return ParcelLedger.objects.current().filter(
-        source_type="et_estimate",
-        effective_date__gte=reporting_period.start_date,
-        effective_date__lte=reporting_period.end_date,
-    ).select_related("parcel")
+    return recorded_acre_feet(reporting_period.start_date, reporting_period.end_date)
 
 
 def _value(month: str, value_af: Decimal) -> dict[str, Any]:
@@ -117,13 +106,12 @@ def _prefill_by_well(reporting_period: ReportingPeriod) -> list[dict[str, Any]]:
     """
     well_parcel_map = build_normalized_well_parcel_map(reporting_period)
     acc: dict[int, dict[str, Any]] = {}  # well_id → {"well": well, "months": {month: Decimal}}
-    for entry in _et_estimate_entries(reporting_period):
-        month = _month_key(entry.effective_date)
-        for well, fraction in well_parcel_map.get(entry.parcel_id, []):
+    for figure in _recorded_months(reporting_period):
+        month = _month_key(figure.month)
+        for well, fraction in well_parcel_map.get(figure.parcel_id, []):
             slot = acc.setdefault(well.pk, {"well": well, "months": {}})
             slot["months"][month] = (
-                slot["months"].get(month, Decimal("0"))
-                + abs(entry.amount_acre_feet) * fraction
+                slot["months"].get(month, Decimal("0")) + figure.acre_feet * fraction
             )
 
     entities = [
@@ -141,18 +129,16 @@ def _prefill_by_well(reporting_period: ReportingPeriod) -> list[dict[str, Any]]:
 
 
 def _prefill_by_parcel(reporting_period: ReportingPeriod) -> list[dict[str, Any]]:
-    """Per parcel: the raw et_estimate volume, ungrouped (GEARS by-ET)."""
-    acc: dict[int, dict[str, Any]] = {}  # parcel_id → {"parcel": parcel, "months": {month: Decimal}}
-    for entry in _et_estimate_entries(reporting_period):
-        month = _month_key(entry.effective_date)
-        slot = acc.setdefault(entry.parcel_id, {"parcel": entry.parcel, "months": {}})
-        slot["months"][month] = (
-            slot["months"].get(month, Decimal("0")) + abs(entry.amount_acre_feet)
-        )
+    """Per parcel: the recorded crop ET volume, ungrouped (GEARS by-ET)."""
+    acc: dict[int, dict[str, Any]] = {}  # parcel_id → {"number": str, "months": {month: Decimal}}
+    for figure in _recorded_months(reporting_period):
+        month = _month_key(figure.month)
+        slot = acc.setdefault(figure.parcel_id, {"number": figure.parcel_number, "months": {}})
+        slot["months"][month] = slot["months"].get(month, Decimal("0")) + figure.acre_feet
 
     entities = [
-        _entity("parcel", slot["parcel"].pk, slot["parcel"].parcel_number, "", slot["months"])
-        for slot in acc.values()
+        _entity("parcel", parcel_id, slot["number"], "", slot["months"])
+        for parcel_id, slot in acc.items()
     ]
     entities.sort(key=lambda e: e["entity_label"])
     return entities
@@ -181,7 +167,7 @@ def _prefill_calwatrs(reporting_period: ReportingPeriod) -> list[dict[str, Any]]
         ).select_related("water_right")
     }
     # Invert {pod_id: [(parcel_id, weight)]} → {parcel_id: [(pod, weight)]} so the
-    # per-parcel ET entries can be attributed to each POD they feed.
+    # per-parcel ET figures can be attributed to each POD they feed.
     parcel_pod_map: dict[int, list[tuple[Any, Decimal]]] = {}  # parcel_id → [(pod, weight)]
     for pod_id, weighted_parcels in pod_parcel_map.items():
         pod = pods_by_id.get(pod_id)
@@ -191,13 +177,12 @@ def _prefill_calwatrs(reporting_period: ReportingPeriod) -> list[dict[str, Any]]
             parcel_pod_map.setdefault(parcel_id, []).append((pod, weight))
 
     acc: dict[int, dict[str, Any]] = {}  # pod_id → {"pod": pod, "months": {month: Decimal}}
-    for entry in _et_estimate_entries(reporting_period):
-        month = _month_key(entry.effective_date)
-        for pod, weight in parcel_pod_map.get(entry.parcel_id, []):
+    for figure in _recorded_months(reporting_period):
+        month = _month_key(figure.month)
+        for pod, weight in parcel_pod_map.get(figure.parcel_id, []):
             slot = acc.setdefault(pod.pk, {"pod": pod, "months": {}})
             slot["months"][month] = (
-                slot["months"].get(month, Decimal("0"))
-                + abs(entry.amount_acre_feet) * weight
+                slot["months"].get(month, Decimal("0")) + figure.acre_feet * weight
             )
 
     entities = [
@@ -225,7 +210,7 @@ def build_openet_prefill(reporting_period: ReportingPeriod, method: str) -> dict
     """Build labeled, raw-ET monthly pre-fill values for a reporting period.
 
     Args:
-        reporting_period: accounting.ReportingPeriod to read et_estimate entries for.
+        reporting_period: accounting.ReportingPeriod to read the recorded crop ET for.
         method: "by_well" (GEARS by well), "by_parcel" (GEARS by ET), or
             "calwatrs" (per Point of Diversion).
 

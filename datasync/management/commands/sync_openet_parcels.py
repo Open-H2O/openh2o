@@ -10,21 +10,19 @@ This is the single live entry point for all three routes, chosen by `OPENET_MODE
   each month. A setup the monthly allowance stops picks up where it stopped.
 * "api": one request per use area. * "gee": the batched Earth Engine adapter.
 
-Populates the route's own tables. To go all the way to the ledger in one shot, pass
-`--to-ledger` and it chains `sync_openet_to_ledger` for the same window.
+Populates the route's own tables and records each month's crop ET the first time it
+arrives (`datasync/crop_et.py`). The calculation and the reports read that record.
 
 Usage:
   python manage.py sync_openet_parcels
   python manage.py sync_openet_parcels --start-date 2024-06-01 --end-date 2024-08-31
   python manage.py sync_openet_parcels --parcel-prefix KAW- --limit 5 --dry-run
-  python manage.py sync_openet_parcels --to-ledger
 """
 
 import logging
 from datetime import date, datetime
 
 from django.conf import settings
-from django.core.management import call_command
 from django.contrib.gis.geos import MultiPolygon
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
@@ -76,12 +74,6 @@ class Command(BaseCommand):
             default=False,
             help="Report what WOULD be asked of OpenET (no requests, no writes).",
         )
-        parser.add_argument(
-            "--to-ledger",
-            action="store_true",
-            default=False,
-            help="After the sync, chain sync_openet_to_ledger for the window.",
-        )
 
     def handle(self, *args, **options):
         mode = getattr(settings, "OPENET_MODE", "fields")
@@ -102,8 +94,8 @@ class Command(BaseCommand):
         if end_date < start_date:
             raise CommandError("--end-date must be >= --start-date.")
 
-        # Select use areas. area_acres is required because the ledger step converts
-        # mm -> acre-feet over the use area's area.
+        # Select use areas. area_acres is required because the calculation and the
+        # reports convert mm -> acre-feet over the use area's area.
         qs = Parcel.objects.filter(
             geometry__isnull=False, area_acres__isnull=False
         )
@@ -128,12 +120,11 @@ class Command(BaseCommand):
             f"({len(parcels)} parcel(s), {start_date} .. {end_date})"
         )
 
-        stopped = False
         if fields:
             if options["dry_run"]:
                 self._dry_run_fields(parcels, start_date, end_date)
                 return
-            stopped = self._sync_fields(parcels, start_date, end_date)
+            self._sync_fields(parcels, start_date, end_date)
         else:
             if options["dry_run"]:
                 self._dry_run(adapter, parcels, start_date, end_date)
@@ -159,14 +150,6 @@ class Command(BaseCommand):
             for line in lines:
                 self.stdout.write(self.style.WARNING(line) if line is lines[0] else line)
 
-        if options["to_ledger"] and not stopped:
-            self.stdout.write("")
-            self.stdout.write("Chaining sync_openet_to_ledger for the same window...")
-            call_command(
-                "sync_openet_to_ledger",
-                start_date=start_date.isoformat(),
-                end_date=end_date.isoformat(),
-            )
 
     # -- the field list route ------------------------------------------------------------------
 

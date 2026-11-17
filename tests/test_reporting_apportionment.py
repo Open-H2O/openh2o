@@ -75,13 +75,12 @@ def _meter(parcel, af):
 
 
 def _et(parcel, af):
-    """An et_estimate ledger entry, stored negative like sync_openet_to_ledger writes."""
-    return ParcelLedgerFactory(
-        parcel=parcel,
-        source_type="et_estimate",
-        amount_acre_feet=Decimal(af),
-        effective_date=JAN,
-        transaction_date=JAN,
+    """The month's recorded crop ET, as a depth that is ``abs(af)`` acre-feet over the use area's acres."""
+    from datasync.models import CropETFigure
+
+    return CropETFigure.objects.create(
+        parcel=parcel, month=JAN, variable="ET", model_name="Ensemble",
+        depth_mm=abs(Decimal(af)) * Decimal("304.8") / parcel.area_acres,
     )
 
 

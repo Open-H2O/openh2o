@@ -115,10 +115,12 @@ def test_a_metered_field_month_is_in_by_well_and_not_in_by_et():
     _, fields = _well_with_fields(2, "0.5000")
     metered, unmetered = fields
     _typed_meter_row(metered, 15)
+    from datasync.models import CropETFigure
+
     for f in fields:
-        ParcelLedgerFactory(
-            parcel=f, source_type="et_estimate", amount_acre_feet=-D("9"),
-            effective_date=JAN, transaction_date=JAN,
+        CropETFigure.objects.create(
+            parcel=f, month=JAN, variable="ET", model_name="Ensemble",
+            depth_mm=D("9") * D("304.8") / f.area_acres,
         )
     ParcelLedgerFactory(
         parcel=metered, source_type="calculated", amount_acre_feet=-D("7"),

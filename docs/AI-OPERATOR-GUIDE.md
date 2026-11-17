@@ -579,8 +579,7 @@ With `--dry-run`, the command prints what it would ask OpenET for and sends noth
 first run also looks up the OpenET fields around the use areas and asks for the fields'
 outlines, so it sends more requests than later runs. `--parcel-prefix` limits the run to
 use areas whose number starts with the letters you give, and `--limit` caps the number
-of use areas for a small first test. `--to-ledger` also writes each month's crop ET to
-the ledger.
+of use areas for a small first test.
 
 The first run to receive a month's figures records each use area's crop ET for that
 month. A later run leaves the recorded figure as it is and lists any month where OpenET

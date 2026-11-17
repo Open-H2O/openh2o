@@ -533,8 +533,10 @@ RECORDED_AT_UPGRADE = "Recorded at upgrade"
 class CropETFigure(CorrectableRecord):
     """OpenET's crop ET for one use area and month, recorded the first time it is fetched.
 
-    The calculation and the ledger's ET estimate entry read this record and nothing
-    else (``datasync/crop_et.py`` holds every reader and writer). A later fetch with a
+    The calculation, the GEARS by-ET report and the OpenET pre-fill read this record
+    and nothing else for crop ET (``datasync/crop_et.py`` holds every reader and
+    writer). An ET estimate entry a site holds from the retired ledger copy is
+    corrected along with it. A later fetch with a
     different figure writes no record: the month's page shows the newer figure beside
     this one, and a person may accept it with a reason, which replaces this record as a
     correction (``replaces``, ``change_reason``, ``replaced_at``). No form, import or

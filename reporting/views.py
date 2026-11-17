@@ -552,8 +552,8 @@ def report_prefill(request, pk):
     GET renders one editable input per entity-month, pre-populated with the raw
     OpenET consumptive-use estimate and tagged with its provenance. POST saves
     the (possibly edited) values onto ReportSubmission.prefill_overrides — never
-    the ledger — so a user's reviewed figures survive without double-counting
-    against the et_estimate entries the report generators read.
+    the ledger — so a user's reviewed figures survive without changing any
+    report file, which reads the recorded crop ET.
     """
     submission = get_object_or_404(
         ReportSubmission.objects.select_related("report_template", "reporting_period"),

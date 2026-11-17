@@ -3,7 +3,7 @@
 Tests for the OpenET pre-fill service (reporting.services.build_openet_prefill).
 
 These lock the three properties that keep the pre-fill honest:
-  1. Raw ET — returned values sum to the et_estimate ledger totals, with no
+  1. Raw ET — returned values sum to the recorded crop ET in acre-feet, with no
      scaling and no precip/delivery subtraction.
   2. Provenance — every value object carries the exact "not metered pumping" label.
   3. Read-only — the service never writes to ParcelLedger.
@@ -39,38 +39,40 @@ EXPECTED_LABEL = "OpenET consumptive-use estimate, not metered pumping"
 
 
 def _et_entry(parcel, month, af):
-    """An et_estimate ledger entry: stored negative, like sync_openet_to_ledger writes."""
-    return ParcelLedgerFactory(
-        parcel=parcel,
-        source_type="et_estimate",
-        amount_acre_feet=Decimal(af),
-        effective_date=date(2024, month, 1),
-        transaction_date=date(2024, month, 1),
+    """The month's recorded crop ET, as a depth that is ``abs(af)`` acre-feet over the use area's acres."""
+    from datasync.models import CropETFigure
+
+    return CropETFigure.objects.create(
+        parcel=parcel, month=date(2024, month, 1), variable="ET", model_name="Ensemble",
+        depth_mm=abs(Decimal(af)) * Decimal("304.8") / parcel.area_acres,
     )
 
 
 def test_by_parcel_sums_match_ledger_totals_raw():
-    """Returned values sum to the et_estimate totals — no scaling, no subtraction."""
+    """Returned values sum to the recorded crop ET — no scaling, no subtraction."""
     period = ReportingPeriodFactory()
     p1 = ParcelFactory()
     p2 = ParcelFactory()
     _et_entry(p1, 1, "-10.0000")
     _et_entry(p1, 2, "-5.5000")
     _et_entry(p2, 3, "-7.2500")
-    # Noise that must be excluded: a non-ET source, and an ET entry before the period.
+    # Noise that must be excluded: a ledger row of any source, and a record before the period.
     ParcelLedgerFactory(
         parcel=p1, source_type="meter_reading",
         amount_acre_feet=Decimal("-100"), effective_date=date(2024, 1, 1),
     )
     ParcelLedgerFactory(
         parcel=p2, source_type="et_estimate",
-        amount_acre_feet=Decimal("-99"), effective_date=date(2022, 1, 1),
+        amount_acre_feet=Decimal("-99"), effective_date=date(2024, 1, 1),
     )
+    from datasync.models import CropETFigure
+
+    CropETFigure.objects.create(parcel=p2, month=date(2022, 1, 1), depth_mm=Decimal("99"))
 
     result = build_openet_prefill(period, "by_parcel")
     total = sum(mv["value_af"] for e in result["entities"] for mv in e["months"])
 
-    # 10 + 5.5 + 7.25 = 22.75 (raw abs of in-period et_estimate only)
+    # 10 + 5.5 + 7.25 = 22.75 (the in-period records only)
     assert total == Decimal("22.75")
 
 
@@ -157,7 +159,7 @@ def test_unknown_method_raises():
 
 
 def _gears_submission_with_et(month_values):
-    """A draft gears_by_well submission whose single well has et_estimate data."""
+    """A draft gears_by_well submission whose single well irrigates a use area with recorded crop ET."""
     period = ReportingPeriodFactory()
     well = WellFactory()
     parcel = ParcelFactory()

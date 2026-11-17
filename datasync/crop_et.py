@@ -226,6 +226,76 @@ def recorded_mm(parcel, period, variable="ET", model="Ensemble"):
     return _tidy(record.depth_mm), 1
 
 
+@dataclass(frozen=True)
+class RecordedMonth:
+    """One use area-month's recorded crop ET in acre-feet, as the reports read it."""
+
+    parcel_id: int
+    parcel_number: str
+    area_acres: Decimal
+    month: dt.date
+    acre_feet: Decimal
+
+
+def recorded_acre_feet(start, end):
+    """Every current record (ET, Ensemble) whose month starts in ``start``..``end``, in acre-feet.
+
+    One query. The figure is the record's depth over the use area's acres, rounded to
+    four places and positive: ``et_mm_to_acre_feet(_tidy(depth), acres)``, the figure the
+    retired ledger copy wrote as an ``et_estimate`` row. A use area with no acres has no
+    figure and is left out, as the copy left it out. Ordered by use area number, then month.
+    """
+    from accounting.services import et_mm_to_acre_feet
+    from datasync.models import CropETFigure
+
+    rows = (
+        CropETFigure.objects.current()
+        .filter(
+            variable="ET",
+            model_name="Ensemble",
+            month__gte=start,
+            month__lte=end,
+            parcel__voided_at__isnull=True,
+            parcel__replaced_by__isnull=True,
+        )
+        .exclude(parcel__area_acres__isnull=True)
+        .exclude(parcel__area_acres=0)
+        .order_by("parcel__parcel_number", "month")
+        .values_list("parcel_id", "parcel__parcel_number", "parcel__area_acres", "month", "depth_mm")
+    )
+    return [
+        RecordedMonth(
+            parcel_id=pid,
+            parcel_number=number,
+            area_acres=acres,
+            month=month,
+            acre_feet=abs(et_mm_to_acre_feet(_tidy(depth), acres).quantize(Decimal("0.0001"))),
+        )
+        for pid, number, acres, month, depth in rows
+    ]
+
+
+def recorded_without_acres(start, end):
+    """The numbers of use areas with a current record in ``start``..``end`` and no acres on record."""
+    from django.db.models import Q
+
+    from datasync.models import CropETFigure
+
+    return set(
+        CropETFigure.objects.current()
+        .filter(
+            variable="ET",
+            model_name="Ensemble",
+            month__gte=start,
+            month__lte=end,
+            parcel__voided_at__isnull=True,
+            parcel__replaced_by__isnull=True,
+        )
+        .filter(Q(parcel__area_acres__isnull=True) | Q(parcel__area_acres=0))
+        .values_list("parcel__parcel_number", flat=True)
+    )
+
+
 def differs_as_printed(a_mm, b_mm, acres):
     """Whether two depths differ in acre-feet as the pages print them (two decimals).
 
@@ -286,7 +356,7 @@ def acre_feet(mm, acres):
 
 
 def estimate_words(depth_mm, acres, period, af):
-    """The ET estimate entry's description, as the ledger sync writes it."""
+    """The ET estimate entry's description, as the retired ledger copy wrote it."""
     return f"OpenET ET estimate: {depth_mm:.2f}mm over {acres} acres = {af:.4f} AF ({period})"
 
 

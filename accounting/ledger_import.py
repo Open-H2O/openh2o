@@ -66,9 +66,9 @@ from parcels.models import (
     ParcelLedger,
 )
 
-#: Nobody types an ET figure: an ET estimate entry is written only from the
-#: month's recorded OpenET figure (datasync/crop_et.py).
-ET_ESTIMATE_REFUSAL = "ET estimate entries come from OpenET's recorded figure."
+#: Nobody types an ET figure: crop ET is recorded only from OpenET's figures
+#: (datasync/crop_et.py), and no screen, import or admin form writes an ET estimate entry.
+ET_ESTIMATE_REFUSAL = "OpenH2O records crop ET only from OpenET. Choose another source type for this entry."
 
 REQUIRED_COLUMNS = {
     "parcel_number",

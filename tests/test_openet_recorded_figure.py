@@ -4,7 +4,7 @@
 What a correct site does (the plain write-up Brent approved, ruling 134):
 
 * the first fetch of a month records its figure and the day it was fetched;
-* the calculation and the ledger's ET estimate entry use only that record;
+* the calculation and the GEARS by-ET file read only that record;
 * a later fetch with a different figure changes nothing, and is shown beside it;
 * a person who can correct records may accept the newer figure with a reason: the record
   and the month's ET estimate entry are replaced as corrections (the old ones kept, struck)
@@ -139,10 +139,30 @@ def _hand_cache(parcel, months_mm, start, end, model="Ensemble", variable="ET", 
 
 
 def _sync():
-    call_command(
-        "sync_openet_to_ledger", "--start-date", "2025-07-01", "--end-date", "2025-09-30",
-        stdout=StringIO(),
-    )
+    """The ET estimate entries a site holds from the retired ledger copy, written as it wrote them.
+
+    One entry per use area-month with a current record in July to September 2025 and no
+    entry yet: the record's depth over the use area's acres, four places, negative.
+    """
+    from accounting.services import et_mm_to_acre_feet
+    from datasync.crop_et import _tidy, estimate_words, month_text
+    from datasync.models import CropETFigure
+
+    for record in CropETFigure.objects.current().filter(
+        variable="ET", model_name="Ensemble",
+        month__gte=dt.date(2025, 7, 1), month__lte=dt.date(2025, 9, 30),
+    ).select_related("parcel"):
+        parcel, period = record.parcel, month_text(record.month)
+        if not parcel.area_acres or ParcelLedger.objects.current().filter(
+            parcel=parcel, source_type="et_estimate", effective_date=record.month,
+        ).exists():
+            continue
+        af = et_mm_to_acre_feet(_tidy(record.depth_mm), parcel.area_acres).quantize(D("0.0001"))
+        ParcelLedger.objects.create(
+            parcel=parcel, transaction_date=record.month, effective_date=record.month,
+            amount_acre_feet=af, source_type="et_estimate", reporting_period=None, water_type=None,
+            description=estimate_words(_tidy(record.depth_mm), parcel.area_acres, period, abs(af)),
+        )
 
 
 def _estimate(parcel):
@@ -466,7 +486,7 @@ def test_in_a_finalized_year_an_administrators_accept_goes_through_the_recorded_
 
 # ---------------------------------------------------------------- 9. nobody types an ET figure
 
-ET_REFUSAL = "ET estimate entries come from OpenET's recorded figure."
+ET_REFUSAL = "OpenH2O records crop ET only from OpenET. Choose another source type for this entry."
 
 
 def test_the_hand_entry_form_refuses_an_et_estimate_entry():
@@ -544,17 +564,19 @@ def test_the_administration_site_cannot_change_an_et_estimate_entrys_amount():
     assert {"amount_acre_feet", "source_type"} <= set(model_admin.get_readonly_fields(request, entry))
 
 
-# ---------------------------------------------------------------- 10. the ledger's entry comes from the record
+# ---------------------------------------------------------------- 10. the by-ET file reads the record
 
 
-def test_the_ledger_sync_writes_the_et_estimate_entry_from_the_record_not_the_cache():
+def test_the_by_et_file_reads_the_record_not_the_newer_cache():
+    from reporting.generators import _gears_by_et_rows
+
     field = _corn_field()
     _fetch(field, FIRST, AUG_6)
     _fetch(field, NEWER, SEP_28)
 
-    _sync()
-
-    assert _estimate(field) == D("-30.0000")
+    year = ReportingPeriod.objects.get(name="WY 2024-2025")
+    july = [r for r in _gears_by_et_rows(year) if r["parcel_number"] == field.parcel_number and r["month"] == JULY]
+    assert [r["volume"] for r in july] == [D("30.0000")]  # 91.44 mm over 100 acres, not 121.92
 
 
 # ---------------------------------------------------------------- 11. two overlapping cache windows

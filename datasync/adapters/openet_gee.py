@@ -131,7 +131,7 @@ class GEEOpenETAdapter(OpenETAdapter):
 
         One Earth Engine compute job per month over ALL parcels that still need
         work, written into OpenETCache in the exact REST-shaped et_data so the
-        unchanged sync_openet_to_ledger contract consumes it as-is.
+        crop ET record (``datasync.crop_et.record_fetched_months``) reads it as-is.
 
         ``collect_spread`` defaults TRUE here and would default false on the REST
         tier: the spread bands ride along on images this reduce already touches,

@@ -8,8 +8,10 @@ What a correct upgrade does (the plain write-up Brent approved, ruling 134, sect
 * a month never calculated is recorded at the newest fetched figure, read the way the
   calculation reads it;
 * an ET estimate entry is never the source of a record; one that differs is shown;
-* the upgrade writes no ledger entry and no calculation: every balance, total, worksheet
-  pre-fill and state file is the same before it, after it, and after the next calculation;
+* the upgrade writes no ledger entry and no calculation: every balance, total and GEARS
+  by-well file is the same before it, after it, and after the next calculation; the GEARS
+  by-ET file and the OpenET pre-fill, which read the records, are the same after it and
+  after the next calculation;
 * a finalized year's months are recorded with no fetch date and the note "Recorded at
   upgrade", nothing in the year changes, and Check for changes still finds no change.
 
@@ -25,7 +27,6 @@ from io import StringIO
 
 import pytest
 from django.apps import apps
-from django.core.management import call_command
 from django.urls import reverse
 
 from accounting import services
@@ -144,7 +145,7 @@ def test_an_entry_typed_by_hand_never_becomes_the_record_and_both_figures_are_sh
 # ---------------------------------------------------------------- 17. no number moves
 
 
-def _figures_everywhere():
+def _figures_everywhere(*, from_records=False):
     """Every figure the write-up names, as plain values."""
     figures = {}
     for source in ParcelLedger.objects.values_list("source_type", flat=True).distinct():
@@ -169,30 +170,32 @@ def _figures_everywhere():
         for zone in Zone.objects.order_by("pk"):
             figures[f"zone {zone.pk} {name}"] = services.zone_balance(zone, period)
     for period in periods:
-        for method in ("by_well", "by_parcel", "calwatrs"):
-            figures[f"pre-fill {period.name} {method}"] = repr(build_openet_prefill(period, method))
-        for method in ("by_well", "by_et"):
-            figures[f"GEARS {period.name} {method}"] = generate_gears_csv(period, method).getvalue()
+        figures[f"GEARS {period.name} by_well"] = generate_gears_csv(period, "by_well").getvalue()
+    if from_records:
+        # The by-ET file and the pre-fill read the records, which the upgrade writes.
+        figures = {}
+        for period in periods:
+            for method in ("by_well", "by_parcel", "calwatrs"):
+                figures[f"pre-fill {period.name} {method}"] = repr(build_openet_prefill(period, method))
+            figures[f"GEARS {period.name} by_et"] = generate_gears_csv(period, "by_et").getvalue()
     return figures
 
 
 def test_the_upgrade_writes_no_ledger_entry_and_no_calculation_and_moves_no_figure():
     f4 = _as_the_earlier_version_left_it()["F4"]
-    call_command(
-        "sync_openet_to_ledger", "--start-date", "2025-07-01", "--end-date", "2025-09-30",
-        stdout=StringIO(),
-    )
     _set_cached(f4, JULY, 121.92)
     before = _figures_everywhere()
 
     _upgrade()
     after_upgrade = _figures_everywhere()
+    reports_after_upgrade = _figures_everywhere(from_records=True)
     ld.run_months(MONTHS)
     after_next_calculation = _figures_everywhere()
 
     assert _figure_model() is not None and _figure_model().objects.count() == 12
     assert after_upgrade == before
     assert after_next_calculation == before
+    assert _figures_everywhere(from_records=True) == reports_after_upgrade
 
 
 # ---------------------------------------------------------------- 18. a finalized year

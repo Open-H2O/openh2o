@@ -99,30 +99,25 @@ class TestVariableLeakRegression:
         assert not fetch.called, "fresh ET row should have served the request"
         assert result[0]["et"] == 42.5
 
-    def test_ledger_sync_ignores_non_et_rows(self, parcel, sample_geometry):
-        """sync_openet_to_ledger files what it reads as et_estimate.
+    def test_a_spread_bound_never_reaches_the_reports(self, parcel, sample_geometry):
+        """The by-ET file and the pre-fill read the recorded crop ET of variable ET only.
 
         The row here is deliberately hostile: variable="et_mad_max" but the
         payload keyed under "et", which is what any future writer reusing
-        build_et_data would produce. That defeats the `et_value is None`
-        fall-through that spared non-ET rows before, so this test fails unless
-        the QUERYSET itself scopes to variable="ET".
+        build_et_data would produce, and it is recorded. This test fails unless
+        the reports' read itself scopes to variable="ET".
         """
-        from django.core.management import call_command
+        from datasync.crop_et import record_fetched_months
+        from reporting.generators import _gears_by_et_rows
+        from reporting.services import build_openet_prefill
+        from tests.factories import ReportingPeriodFactory
 
         _row(parcel, sample_geometry, "et_mad_max", "et", 999.0)
+        assert record_fetched_months(parcel, {"2025-01"}, variable="et_mad_max")
+        period = ReportingPeriodFactory(start_date=date(2024, 10, 1), end_date=date(2025, 9, 30))
 
-        call_command(
-            "sync_openet_to_ledger",
-            "--start", "2025-01-01",
-            "--end", "2025-12-31",
-        )
-
-        from parcels.models import ParcelLedger
-
-        assert not ParcelLedger.objects.filter(
-            parcel=parcel, source_type="et_estimate"
-        ).exists(), "a spread bound was filed as consumptive use"
+        assert _gears_by_et_rows(period) == [], "a spread bound was filed as consumptive use"
+        assert build_openet_prefill(period, "by_parcel")["entities"] == []
 
 
 @pytest.mark.django_db

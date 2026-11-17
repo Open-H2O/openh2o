@@ -181,10 +181,7 @@ EXCEPTIONS: tuple = (
     ("templates/reporting/report_list.html", "Nothing here is submitted to the state",
      ("em dash",), _REPORTS),
     ("templates/reporting/report_prefill.html", "Prepare with OpenET", ("em dash",), _REPORTS),
-    ("reporting/validators.py", "No GEARS Correspondence ID on file", ("em dash",), _REPORTS),
-    ("reporting/validators.py", "the GEARS upload would be empty", ("em dash",), _REPORTS),
     ("reporting/validators.py", "GEARS by-well requires metered", ("em dash",), _REPORTS),
-    ("reporting/validators.py", "have no well registration ID", ("em dash",), _REPORTS),
     ("reporting/validators.py", "duplicate parcel-month reading", ("em dash",), _REPORTS),
     ("reporting/validators.py", "well(s) have a hand-set parcel split", ("em dash",), _REPORTS),
     ("reporting/validators.py", "metered parcel(s) have no well link", ("em dash",), _REPORTS),
@@ -195,7 +192,6 @@ EXCEPTIONS: tuple = (
     ("reporting/validators.py", "reported gross as the state requires",
      ("em dash", "negation frame"), _REPORTS),
     ("reporting/validators.py", "will only contain wells with readings", ("em dash",), _REPORTS),
-    ("reporting/validators.py", "leaves their Area blank", ("em dash", "negation frame"), _REPORTS),
     ("reporting/validators.py", "will only contain the diversions you entered", ("em dash",), _REPORTS),
     ("reporting/views.py", "can't be generated", ("em dash",), _REPORTS),
     # Strings in a screen file that no product page prints (ISS-261, 2026-10-20).

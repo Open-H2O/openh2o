@@ -62,7 +62,12 @@ def validate_report(reporting_period: ReportingPeriod, report_type: str) -> list
 
 
 def _gears_filing_warnings(reporting_period: ReportingPeriod) -> list[PreflightMessage]:
-    """Checks every GEARS filing needs: the Correspondence ID and some ledger entries at all."""
+    """The check every GEARS filing needs: the Correspondence ID.
+
+    Whether the file would be empty is each report's own check, from the lines it would
+    hold: a by-well file can hold the wells' own readings, and a by-ET file the recorded
+    crop ET, before the year has any ledger entry.
+    """
     warnings: list[PreflightMessage] = []
 
     # GEARS login requires the Correspondence ID the state mailed the agency.
@@ -71,20 +76,9 @@ def _gears_filing_warnings(reporting_period: ReportingPeriod) -> list[PreflightM
         warnings.append({
             "level": "warning",
             "message": (
-                "No GEARS Correspondence ID on file — you'll need it to log in and "
-                "upload. Add it to your Reporting Profile."
+                "Add your GEARS Correspondence ID to your Reporting Profile. "
+                "You need it to log into GEARS."
             ),
-        })
-
-    ledger_count = ParcelLedger.objects.current().filter(
-        effective_date__gte=reporting_period.start_date,
-        effective_date__lte=reporting_period.end_date,
-    ).count()
-
-    if ledger_count == 0:
-        warnings.append({
-            "level": "error",
-            "message": "No ledger entries for this period — the GEARS upload would be empty.",
         })
     return warnings
 
@@ -136,8 +130,13 @@ def _missing_registration_warnings() -> list[PreflightMessage]:
         return [{
             "level": "error",
             "message": (
-                f"{missing_reg} active well(s) have no well registration ID — GEARS "
-                "rejects well rows without one. Register them before you upload."
+                (
+                    "1 active well does not have a well registration ID. "
+                    if missing_reg == 1
+                    else f"{missing_reg} active wells do not have a well registration ID. "
+                )
+                + "GEARS requires a registration ID for every well. "
+                "Record each well's registration ID."
             ),
         }]
     return []
@@ -250,9 +249,9 @@ def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMe
         warnings.append({
             "level": "error",
             "message": (
-                "The by-ET file would be empty for this period. Either ET "
-                "estimates are not recorded, or every use area with one is metered "
-                "and is in the by-well file."
+                "The by-ET file would be empty for this water year. OpenH2O has not "
+                "recorded crop ET for any unmetered use area with a known acreage. "
+                "Metered use areas are in the by-well file."
             ),
         })
     else:
@@ -266,27 +265,33 @@ def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMe
             ),
         })
 
-    # A parcel with ET but no recorded acreage leaves a blank Area
-    # cell in the file (never a misleading 0). Name them so they get fixed.
+    # Without acres there is no acre-foot figure: a recorded month has no line,
+    # and a calculated month's line leaves its Area blank (never a misleading 0).
+    # Name them so they get fixed.
+    from datasync.crop_et import recorded_without_acres
+
     null_area_parcels = sorted(
         set(
             ParcelLedger.objects.current().filter(
-                source_type__in=["et_estimate", "calculated"],
+                source_type="calculated",
                 effective_date__gte=reporting_period.start_date,
                 effective_date__lte=reporting_period.end_date,
                 parcel__area_acres__isnull=True,
             ).values_list("parcel__parcel_number", flat=True)
         )
+        | recorded_without_acres(reporting_period.start_date, reporting_period.end_date)
     )
     if null_area_parcels:
-        names = ", ".join(null_area_parcels)
+        if len(null_area_parcels) == 1:
+            names, whose = null_area_parcels[0], "its"
+        else:
+            names = f"{', '.join(null_area_parcels[:-1])} and {null_area_parcels[-1]}"
+            whose = "their"
         warnings.append({
             "level": "warning",
             "message": (
-                f"{len(null_area_parcels)} parcel(s) with ET have no recorded "
-                f"acreage ({names}) — the GEARS by-ET file leaves their Area "
-                "blank rather than reporting a misleading 0. Record acreage for "
-                "each."
+                f"Record the acreage of {names}. Until then, OpenH2O cannot "
+                f"calculate {whose} crop ET in acre-feet for the by-ET file."
             ),
         })
     return warnings

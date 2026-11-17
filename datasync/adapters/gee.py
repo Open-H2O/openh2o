@@ -380,8 +380,8 @@ def build_et_data(et_by_month):
     """Convert a ``{YYYY-MM: et_mm}`` dict into the EXACT OpenETCache.et_data shape.
 
     The REST path writes ``[{"date": "YYYY-MM", "et": <float mm>, "unit": "mm"}]``
-    and ``sync_openet_to_ledger`` reads exactly that. The GEE path must emit the
-    same shape so the cache→ledger contract is satisfied unchanged.
+    and ``datasync.crop_et.record_fetched_months`` reads exactly that. The GEE path
+    must emit the same shape so the month is recorded the same way.
     """
     return [
         {"date": month, "et": mm, "unit": "mm"}

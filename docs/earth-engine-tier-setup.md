@@ -172,11 +172,10 @@ to the default field list, set `OPENET_MODE=fields` and restart the web containe
 ### 5. Get ET for every parcel
 
 On the Earth Engine tier, `sync_openet_parcels` needs the first and last day of the
-period you want. With `--to-ledger`, `sync_openet_parcels` also writes the crop ET to
-the ledger for the same period:
+period you want:
 
 ```bash
-docker compose exec web python manage.py sync_openet_parcels --start-date 2024-10-01 --end-date 2025-09-30 --to-ledger
+docker compose exec web python manage.py sync_openet_parcels --start-date 2024-10-01 --end-date 2025-09-30
 ```
 
 Then ask Earth Engine for the rain over the same period:

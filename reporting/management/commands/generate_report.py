@@ -3,8 +3,8 @@
 
 Runs the report validators, builds the GEARS (by-well or by-ET) or CalWATRS
 (A1/A2) CSV, writes it to --output or stdout, and records a draft
-ReportSubmission. Run it to produce the file an operator uploads to the Water
-Board for a given --period.
+ReportSubmission. Run it to produce the report file for a given --period.
+OpenH2O does not submit reports to the state.
 """
 import os
 

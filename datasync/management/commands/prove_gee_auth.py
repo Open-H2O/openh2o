@@ -14,9 +14,8 @@ This is the go/no-go gate for the GEE OpenET tier. It:
    et_ensemble_mad, ET in mm) via polygon reduceRegions, synchronously.
 4. Assembles per-parcel ET in the EXACT shape the REST path writes to
    OpenETCache.et_data, and prints a GEE-vs-REST comparison table.
-5. With --write-cache, writes those GEE results to OpenETCache so that the
-   existing `sync_openet_to_ledger --dry-run` can confirm the cache to ledger
-   contract is satisfied unchanged.
+5. With --write-cache, writes those GEE results to OpenETCache and records each
+   month that has no recorded crop ET yet (`datasync.crop_et.record_fetched_months`).
 
 Usage:
   python manage.py prove_gee_auth --limit 5
@@ -127,7 +126,7 @@ class Command(BaseCommand):
     def _rest_lookup(self, parcels):
         """Build {parcel_id: {YYYY-MM: et_mm}} from REST OpenETCache rows.
 
-        Mirrors how sync_openet_to_ledger reads et_data: month key = date[:7],
+        Mirrors how the crop ET record reads et_data: month key = date[:7],
         values summed per month.
         """
         lookup = defaultdict(lambda: defaultdict(Decimal))
@@ -221,9 +220,10 @@ class Command(BaseCommand):
             written += 1
         self.stdout.write(
             self.style.SUCCESS(
-                f"Wrote {written} GEE-sourced OpenETCache rows. Now run: "
-                f"python manage.py sync_openet_to_ledger --start-date "
-                f"{start.isoformat()} --end-date {end.isoformat()} --dry-run"
+                f"Wrote {written} GEE-sourced OpenETCache rows. OpenH2O recorded each "
+                "GEE figure above as its month's crop ET where the month had no recorded "
+                "figure. Where a month's recorded figure differs from the GEE figure, the "
+                "month's calculation page can now show the GEE figure as a newer one."
             )
         )
 
@@ -283,5 +283,6 @@ class Command(BaseCommand):
             self.stdout.write("")
             self.stdout.write(
                 "Read-only proof (no cache written). Re-run with --write-cache "
-                "to populate OpenETCache for the sync_openet_to_ledger dry-run."
+                "to write these figures to OpenETCache. OpenH2O then records each GEE "
+                "figure as its month's crop ET where the month has no recorded figure."
             )

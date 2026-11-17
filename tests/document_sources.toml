@@ -1725,7 +1725,7 @@ checked_at = "6419a322"
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
 heading = "5. Get ET for every parcel"
-files = ["datasync/management/commands/sync_openet_parcels.py", "datasync/adapters/__init__.py", "accounting/management/commands/sync_openet_to_ledger.py"]
+files = ["datasync/management/commands/sync_openet_parcels.py", "datasync/adapters/__init__.py"]
 labels = []
 checked_at = "6419a322"
 
@@ -1988,7 +1988,6 @@ files = [
   "datasync/views.py",
   "templates/datasync/partials/_monitoring_content.html",
   "datasync/management/commands/sync_openet_parcels.py",
-  "accounting/management/commands/sync_openet_to_ledger.py",
 ]
 labels = []
 checked_at = "6419a322"

@@ -15,7 +15,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from django.contrib.gis.geos import MultiPolygon, Polygon
-from django.core.management import call_command
 from django.test import override_settings
 from django.utils import timezone
 
@@ -104,13 +103,13 @@ class TestMonthsNeedingFetch:
 
 
 # ---------------------------------------------------------------------------
-# 2. sync_parcel_et writes REST-shaped cache, and the row flows to the ledger
+# 2. sync_parcel_et writes REST-shaped cache, and the month reaches the by-ET file
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.django_db
 class TestSyncParcelEt:
-    def test_writes_rest_shaped_cache_and_flows_to_ledger(self, parcel):
+    def test_writes_rest_shaped_cache_and_reaches_the_by_et_file(self, parcel):
         adapter = GEEOpenETAdapter()
         canned = {parcel.pk: {"2024-06": 142.23}}
 
@@ -129,19 +128,16 @@ class TestSyncParcelEt:
             {"date": "2024-06", "et": 142.23, "unit": "mm", "fetched": timezone.localdate().isoformat()}
         ]
 
-        # The unchanged sync_openet_to_ledger must consume that row as-is.
-        call_command(
-            "sync_openet_to_ledger",
-            start_date="2024-06-01",
-            end_date="2024-06-30",
-        )
-        from parcels.models import ParcelLedger
+        # The month is recorded from that row as-is, and the by-ET file carries it.
+        from reporting.generators import _gears_by_et_rows
+        from tests.factories import ReportingPeriodFactory
 
-        entry = ParcelLedger.objects.get(parcel=parcel, source_type="et_estimate")
-        # -(142.23 / 304.8) * 10 acres = -4.6664... AF
-        expected = -(Decimal("142.23") / Decimal("304.8")) * Decimal("10.00")
-        assert entry.amount_acre_feet == expected.quantize(Decimal("0.0001"))
-        assert entry.effective_date == date(2024, 6, 1)
+        period = ReportingPeriodFactory(start_date=date(2023, 10, 1), end_date=date(2024, 9, 30))
+        (line,) = _gears_by_et_rows(period)
+        # (142.23 / 304.8) * 10 acres = 4.6664... AF
+        expected = (Decimal("142.23") / Decimal("304.8")) * Decimal("10.00")
+        assert line["volume"] == expected.quantize(Decimal("0.0001"))
+        assert line["month"] == "2024-06"
 
     def test_full_cache_hit_skips_earth_engine(self, parcel, sample_geometry):
         # June 2024 cached AND finalized as of today -> nothing to fetch.

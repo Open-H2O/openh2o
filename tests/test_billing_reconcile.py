@@ -52,6 +52,16 @@ def _et(parcel, amount, effective_date=JUNE):
     )
 
 
+def _recorded(parcel, amount, month=JUNE):
+    """The month's recorded crop ET, as a depth that is ``abs(amount)`` acre-feet over the use area's acres."""
+    from datasync.models import CropETFigure
+
+    return CropETFigure.objects.create(
+        parcel=parcel, month=month, variable="ET", model_name="Ensemble",
+        depth_mm=abs(Decimal(amount)) * Decimal("304.8") / parcel.area_acres,
+    )
+
+
 def _calc(parcel, amount, effective_date=JUNE):
     """A netted calculation-engine row (stored negative)."""
     return ParcelLedgerFactory(
@@ -134,7 +144,7 @@ class TestBillableLedger:
         """Metered parcel-month with a synced et_estimate bills the METER only.
 
         58-03 makes the meter authoritative (the engine writes no calculated
-        row), but sync_openet_to_ledger still writes the et_estimate row —
+        row), but a site that ran the retired ledger copy holds the et_estimate row —
         before the meter joined the suppression keys, that month billed
         meter + estimate (~2x actual). The meter row carries its real
         mid-month reading date; the key normalizes to the first of the month.
@@ -263,7 +273,7 @@ class TestBalancesReconcile:
 
 
 # ---------------------------------------------------------------------------
-# GEARS by-ET CSV — switches to calculated, falls back to et_estimate
+# GEARS by-ET CSV — switches to calculated, falls back to the recorded crop ET
 # ---------------------------------------------------------------------------
 
 
@@ -288,9 +298,9 @@ class TestGearsByEtReconcile:
         p_calc = ParcelFactory()
         p_fallback = ParcelFactory()
         # gross 11, net 9 — distinct so we can prove the netted number is used
-        _et(p_calc, "-11")
+        _recorded(p_calc, "-11")
         _calc(p_calc, "-9")
-        _et(p_fallback, "-14")
+        _recorded(p_fallback, "-14")
 
         content = generate_gears_csv(period, method="by_et").read()
         _, rows = self._rows(content)
@@ -308,10 +318,10 @@ class TestGearsByEtReconcile:
         assert Decimal(fb_row[3]) == Decimal("14")
 
     def test_by_et_calculated_gross_not_duplicated(self):
-        """The calculated parcel's suppressed gross et_estimate must not appear."""
+        """The calculated parcel's gross recorded crop ET must not appear."""
         period = self._period()
         p_calc = ParcelFactory()
-        _et(p_calc, "-11")
+        _recorded(p_calc, "-11")
         _calc(p_calc, "-9")
 
         content = generate_gears_csv(period, method="by_et").read()

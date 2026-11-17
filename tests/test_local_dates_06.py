@@ -18,13 +18,11 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-from django.core.management import call_command
 from django.utils import timezone
 
 from accounting.models import CalculationRun
 from accounting.services import create_diversion_ledger_entries
-from datasync.models import OpenETCache
-from parcels.models import Parcel, ParcelLedger
+from parcels.models import ParcelLedger
 from surface.services import allocate_district_delivery
 from tests.factories import (
     DiversionRecordFactory,
@@ -133,26 +131,6 @@ def test_the_water_right_fallback_entry_is_stamped_with_the_site_date():  # line
         entries = create_diversion_ledger_entries(record)
     assert [e.transaction_date for e in entries] == [SITE_DAY]
     assert ParcelLedger.objects.get(pk=entries[0].pk).transaction_date == SITE_DAY
-
-
-# --------------------------------------------------------------- sync_openet_to_ledger
-def test_the_openet_sync_stamps_its_rows_with_the_site_date():  # command line 145
-    parcel = ParcelFactory(parcel_number="APN-ET")
-    Parcel.objects.filter(pk=parcel.pk).update(area_acres=Decimal("100"))
-    et_row = OpenETCache.objects.create(
-        parcel=parcel, geometry=parcel.geometry, start_date=dt.date(2025, 1, 1), end_date=dt.date(2025, 12, 31),
-        variable="ET", model_name="Ensemble", et_data=[{"date": "2025-07", "et": 30.48, "unit": "mm"}],
-    )
-    from datasync.crop_et import months_of, record_fetched_months
-
-    record_fetched_months(et_row.parcel, months_of(et_row.et_data), model=et_row.model_name)
-    with held_clock():
-        call_command("sync_openet_to_ledger", start_date="2025-01-01", end_date="2025-12-31")
-    rows = ParcelLedger.objects.filter(source_type="et_estimate", parcel=parcel)
-    assert rows.count() == 1
-    row = rows.get()
-    assert row.transaction_date == SITE_DAY
-    assert row.effective_date == dt.date(2025, 7, 1)
 
 
 # --------------------------------------------------------------- the guard

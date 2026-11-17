@@ -645,8 +645,8 @@ def billable_ledger(queryset: QuerySet[ParcelLedger]) -> QuerySet[ParcelLedger]:
     parcel-month alongside the pre-existing gross ``et_estimate`` row. Both are
     stored negative, so summing every row double-counts ET. A metered parcel has
     the same shape one layer down: the meter row is the authoritative usage
-    (the engine deliberately writes NO ``calculated`` row for it), yet
-    ``sync_openet_to_ledger`` still writes the parcel's ``et_estimate`` row, so
+    (the engine deliberately writes NO ``calculated`` row for it), yet a site
+    that ran the retired ledger copy holds the parcel's ``et_estimate`` row, so
     summing both double-counts the metered month. This applies the settled
     authority ladder — calculated ≻ meter_reading ≻ et_estimate:
 

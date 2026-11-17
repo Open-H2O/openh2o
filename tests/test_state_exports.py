@@ -45,6 +45,15 @@ from tests.factories import (
 )
 
 
+def _recorded(parcel, month, depth_mm):
+    """The month's recorded crop ET for a use area."""
+    from datasync.models import CropETFigure
+
+    return CropETFigure.objects.create(
+        parcel=parcel, month=month, variable="ET", model_name="Ensemble", depth_mm=depth_mm,
+    )
+
+
 def _period():
     return ReportingPeriodFactory(
         start_date=date(2024, 1, 1), end_date=date(2024, 12, 31)
@@ -378,8 +387,8 @@ class TestGearsByEtNullArea:
         parcel = ParcelFactory(area_acres=None, geometry=None)
         ParcelLedgerFactory(
             parcel=parcel,
-            source_type="et_estimate",
-            effective_date=date(2024, 6, 15),
+            source_type="calculated",
+            effective_date=date(2024, 6, 1),
             amount_acre_feet=Decimal("-12.0000"),
         )
 
@@ -394,12 +403,7 @@ class TestGearsByEtNullArea:
     def test_validate_report_warns_on_null_area_parcel_with_et(self):
         period = _period()
         parcel = ParcelFactory(area_acres=None, geometry=None)
-        ParcelLedgerFactory(
-            parcel=parcel,
-            source_type="et_estimate",
-            effective_date=date(2024, 6, 15),
-            amount_acre_feet=Decimal("-12.0000"),
-        )
+        _recorded(parcel, date(2024, 6, 1), Decimal("50"))
 
         messages = " ".join(
             w["message"] for w in validate_report(period, "gears_by_et")
@@ -443,12 +447,7 @@ class TestGearsMeasurementMethodVocab:
 
     def test_by_et_estimate_emits_unmetered_label(self):
         period = _period()
-        ParcelLedgerFactory(
-            parcel=ParcelFactory(area_acres=Decimal("10.0")),
-            source_type="et_estimate",
-            effective_date=date(2024, 6, 15),
-            amount_acre_feet=Decimal("-12.0000"),
-        )
+        _recorded(ParcelFactory(area_acres=Decimal("10.0")), date(2024, 6, 1), Decimal("50"))
 
         rows = _data_rows(generate_gears_csv(period, method="by_et").read())
         assert len(rows) == 1
@@ -501,14 +500,9 @@ def _gears_template():
 
 
 def _et_period_with_activity():
-    """A period plus one et_estimate ledger row so the generated CSV is non-empty."""
+    """A period plus one month of recorded crop ET so the generated CSV is non-empty."""
     period = _period()
-    ParcelLedgerFactory(
-        parcel=ParcelFactory(area_acres=Decimal("10.0")),
-        source_type="et_estimate",
-        effective_date=date(2024, 6, 15),
-        amount_acre_feet=Decimal("-12.0000"),
-    )
+    _recorded(ParcelFactory(area_acres=Decimal("10.0")), date(2024, 6, 1), Decimal("50"))
     return period
 
 
