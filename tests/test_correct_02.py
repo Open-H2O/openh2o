@@ -415,11 +415,9 @@ def test_a_use_area_cannot_be_corrected():
 def test_an_engine_written_row_cannot_be_corrected():
     user = _user("engine")
     ledger = ParcelLedgerFactory(source_type="calculated")
-    estimate = DiversionRecordFactory(method="estimated_from_use")
     well_share = ParcelLedgerFactory(source_type="meter_reading", description=f"{WELL_SHARE} MTR-1")
     for row, changes in (
         (ledger, {"amount_acre_feet": D("-1")}),
-        (estimate, {"volume_acre_feet": D("1")}),
         (well_share, {"amount_acre_feet": D("-1")}),
     ):
         with pytest.raises(NotCorrectable) as exc:

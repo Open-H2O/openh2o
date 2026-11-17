@@ -73,18 +73,6 @@ def test_an_entry_with_no_water_type_leaves_groundwater_and_remaining_unchanged(
     assert after["remaining"] == before["remaining"]
 
 
-def test_a_satellite_row_on_a_field_with_no_well_adds_nothing_to_used(d1):
-    f5 = ld.add_field("F5", 100, "Alfalfa", None, [d1["gsa"]], -120.47, 37.2, [{"2025-07": 91.44}])
-    assert ld.zone_budget(d1["gsa"], WY25)["used"] == D("105.0000")
-    _raw_row(f5, JUL, "-21.4209", "et_estimate")
-    assert ld.zone_budget(d1["gsa"], WY25)["used"] == D("105.0000")
-
-
-def test_a_satellite_row_on_a_field_with_a_well_is_still_pumping(d1):
-    _raw_row(d1["F3"], JUL, "-10.0000", "et_estimate")  # F3 has its own well W2
-    assert ld.zone_budget(d1["gsa"], WY25)["used"] == D("115.0000")
-
-
 def test_a_meter_row_with_no_water_type_is_pumping_but_one_typed_as_canal_water_is_not(d1):
     _raw_row(d1["F3"], dt.date(2025, 8, 15), "-10.0000", "meter_reading")
     assert ld.zone_budget(d1["gsa"], WY25)["used"] == D("115.0000")

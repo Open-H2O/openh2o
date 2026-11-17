@@ -485,8 +485,7 @@ def test_void_refuses_a_row_the_engine_wrote(person):
     calculated = ParcelLedgerFactory(source_type="calculated")
     share = ParcelLedgerFactory(source_type="meter_reading", description="From the well's meter: W1 pumped 5 AF")
     split = ParcelLedgerFactory(source_type="surface_diversion", divided_from_headgate=True)
-    estimated = DiversionRecordFactory(method="estimated_from_use")
-    for row in (calculated, share, split, estimated):
+    for row in (calculated, share, split):
         assert corrections.can_void(row) is False
         with pytest.raises(NotVoidable):
             void(row, user=person, reason=REASON)

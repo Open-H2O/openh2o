@@ -305,13 +305,11 @@ class TestAccessibility:
         assert h1 and "use ledger" in h1.group(1).lower()
 
 
-class TestAccountDetailBillableLedger:
-    """ISS-026: the per-parcel breakdown on account_detail must route through
-    billable_ledger so a netted `calculated` row suppresses its gross
-    `et_estimate` twin. Otherwise the same parcel-month is counted twice and the
-    per-parcel usage shows ~double the (correct) account total in the same table."""
+class TestAccountDetailPerParcelUsage:
+    """ISS-026: the per-parcel breakdown on account_detail counts a netted
+    `calculated` row once, and agrees with the account total in the same table."""
 
-    def test_per_parcel_usage_suppresses_et_estimate_twin(self, auth_client):
+    def test_per_parcel_usage_counts_the_calculated_row_once(self, auth_client):
         from datetime import date
         from decimal import Decimal
 
@@ -319,22 +317,15 @@ class TestAccountDetailBillableLedger:
         parcel = ParcelFactory()
         WaterAccountParcelFactory(water_account=account, parcel=parcel)
 
-        # The normal post-run state: a gross et_estimate row AND its netted
-        # calculated twin for the SAME (parcel, month), both stored negative.
+        # The post-run state: one netted calculated row, stored negative.
         eff = date(2024, 6, 1)
-        ParcelLedgerFactory(
-            parcel=parcel, source_type="et_estimate",
-            effective_date=eff, amount_acre_feet=Decimal("-10.0000"),
-        )
         ParcelLedgerFactory(
             parcel=parcel, source_type="calculated",
             effective_date=eff, amount_acre_feet=Decimal("-10.0000"),
         )
 
         # ?period= (empty value, non-empty querystring) yields selected_period=None
-        # and NO period filter — the state where summing both rows double-counts
-        # (et_estimate rows carry reporting_period=None, so a period filter would
-        # hide the bug).
+        # and NO period filter.
         response = auth_client.get(
             reverse("accounting:account_detail", kwargs={"pk": account.pk})
             + "?period="
@@ -344,9 +335,8 @@ class TestAccountDetailBillableLedger:
         pbs = response.context["parcel_balances"]
         match = [b for b in pbs if b["parcel"] == parcel]
         assert len(match) == 1
-        # 57-02: under the consumptive lens the groundwater SUPPLY is the billable
-        # _balance_dict usage term, so the suppression still shows here: the
-        # calculated row only -> groundwater 10, NOT 10 + 10 = 20.
+        # 57-02: under the consumptive lens the groundwater SUPPLY is the
+        # _balance_dict usage term: the calculated row -> groundwater 10.
         assert match[0]["groundwater"] == Decimal("10.0000")
         # And the per-parcel figure reconciles with the account-level total.
         assert response.context["balance"]["supplies"]["groundwater"] == Decimal(

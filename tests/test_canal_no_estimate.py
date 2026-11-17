@@ -103,28 +103,6 @@ def test_a_typed_delivery_still_comes_off_the_charge(ref):
     assert _pumped(field) == D("7.8089")
 
 
-def test_an_old_estimate_in_an_open_month_is_gone_after_the_month_runs_and_a_finalized_one_stays(ref):
-    _, _, point = _two_fields(with_point=True)
-
-    def estimate(month):
-        return DiversionRecord.objects.create(
-            point_of_diversion=point, month=month, volume_acre_feet=D("20.0000"),
-            diversion_type="direct_use", method="estimated_from_use", data_state="provisional",
-            reporting_period=ld.period_of(month),
-        )
-
-    open_month = estimate(dt.date(2025, 7, 1))
-    other_open_month = estimate(dt.date(2025, 8, 1))
-    finalized_month = estimate(dt.date(2025, 11, 1))
-    ReportingPeriod.objects.filter(name="WY 2025-2026").update(is_finalized=True)
-
-    ld.run_months(["2025-07"])
-
-    assert not DiversionRecord.objects.filter(pk=open_month.pk).exists()
-    assert DiversionRecord.objects.filter(pk=other_open_month.pk).exists()  # that month has not run
-    assert DiversionRecord.objects.filter(pk=finalized_month.pk).exists()
-
-
 def test_the_field_page_says_no_canal_delivery_is_recorded_and_never_says_estimated(ref):
     f1, _, _ = _two_fields(with_point=True)
     ld.run_months(["2025-07"])
@@ -247,30 +225,3 @@ def test_a_use_area_assignment_in_a_finalized_year_has_no_remove_control():
     assert reverse("accounting:remove_parcel", args=[account.pk, old.pk]) not in body
     assert reverse("accounting:remove_parcel", args=[account.pk, new.pk]) in body
     assert "Finalized" in body
-
-
-# ------------------------------------------------- a stored record of the old estimate
-
-
-def test_the_calwatrs_worksheet_still_marks_a_stored_estimated_month():
-    """A finalized year may hold a record of the retired estimate; it is never shown as a measurement."""
-    from tests.factories import ReportSubmissionFactory
-
-    rp = ReportingPeriodFactory()
-    pod = PointOfDiversionFactory()
-    DiversionRecord.objects.create(
-        point_of_diversion=pod, reporting_period=rp, month=dt.date(2024, 1, 1),
-        volume_acre_feet=D("12.5000"), diversion_type="direct_use",
-        method="estimated_from_use", data_state="provisional",
-    )
-    submission = ReportSubmissionFactory(reporting_period=rp)
-    html = _reader().get(reverse("reporting:calwatrs_worksheet", args=[submission.pk])).content.decode()
-    assert "12.50" in html
-    assert "Estimated</span>" in html
-
-
-def test_no_diversion_form_offers_the_retired_method():
-    assert "estimated_from_use" not in dict(DiversionRecord.OFFERED_METHOD_CHOICES)
-    from surface.forms import DiversionRecordForm
-
-    assert "estimated_from_use" not in dict(DiversionRecordForm().fields["method"].choices)

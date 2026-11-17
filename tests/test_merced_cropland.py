@@ -1,23 +1,17 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Land-use seed guard for the Merced demo (Phase 52.5-01).
 
-``seed_merced_cropland`` exists to unblock the real calculation engine: its
-``facility_only_zero`` step zeros any parcel with no ``UsageLocation`` carrying a
-non-null ``crop_type``, so without this seed every Merced parcel would compute to
-0. These tests assert the seed gives every IRRIGATED parcel a crop-type usage
-location, that the engine step now passes those parcels through, that crop
-assignment is deterministic, and that the command is idempotent (a re-run creates
-nothing and leaves counts and PKs unchanged).
+These tests assert ``seed_merced_cropland`` gives every IRRIGATED parcel a
+crop-type usage location, that crop assignment is deterministic, and that the
+command is idempotent (a re-run creates nothing and leaves counts and PKs
+unchanged).
 
 The fixture is the same hermetic Phase-51-03 physical slice the 52-01 invariant
 tests build (every parcel is irrigated — served by a well or a point of diversion).
 """
-from decimal import Decimal
-
 import pytest
 from django.core.management import call_command
 
-from accounting.steps import facility_only_zero
 from parcels.models import Parcel, UsageLocation
 from surface.models import PointOfDiversionParcel
 from wells.models import WellIrrigatedParcel
@@ -47,23 +41,7 @@ def test_every_irrigated_parcel_gets_a_crop_usage_location():
             continue
         assert UsageLocation.objects.filter(
             parcel=p, crop_type__isnull=False
-        ).exists(), (
-            f"{p.parcel_number} is irrigated but has no crop_type UsageLocation "
-            "— the engine's facility_only_zero step would zero it"
-        )
-
-
-@pytest.mark.django_db
-def test_facility_only_zero_passes_seeded_parcels():
-    """An irrigated, seeded parcel is no longer facility-only: the step preserves
-    the running magnitude instead of zeroing it."""
-    _build_physical_merced()
-    call_command("seed_merced_cropland")
-    p = Parcel.objects.filter(parcel_number__startswith=MER).first()
-    assert _irrigated(p)
-    new, record = facility_only_zero(Decimal("5"), p, "2025-06", {}, {})
-    assert new == Decimal("5")
-    assert record["detail"]["facility_only"] is False
+        ).exists(), f"{p.parcel_number} is irrigated but has no crop_type UsageLocation"
 
 
 @pytest.mark.django_db

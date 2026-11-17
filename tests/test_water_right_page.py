@@ -140,17 +140,11 @@ class TestWaterRightRecordOrder:
 
 # ---------------------------------------------------------------------------
 # 150-02 Task 5: the page by water year. Face value 100.00; WY 2023-2024 holds
-# 70.00 typed (January) and 50.00 held from the retired estimate (February, a
-# finalized year may still carry one), 120.00 in all, 20.00
+# 70.00 (January) and 50.00 (February), 120.00 in all, 20.00
 # over its face value; WY 2024-2025 holds 80.00 typed, 20.00 remaining. The
 # newer year is the current one (the most recent period, nothing on the
 # ledger), so the equation row reads 100.00 - 80.00 = 20.00.
 # ---------------------------------------------------------------------------
-ESTIMATED_BADGE = (
-    '<span class="badge badge-grey" title="OpenH2O estimated this delivery from '
-    "the ETAW of the use areas this point serves, before it stopped making "
-    'estimates. It is not a measurement.">Estimated</span>'
-)
 
 
 def _two_year_right(face_value=Decimal("100.0000")):
@@ -168,7 +162,7 @@ def _two_year_right(face_value=Decimal("100.0000")):
     )
     DiversionRecordFactory(
         point_of_diversion=pod, reporting_period=wy2024, month=date(2024, 2, 1),
-        volume_acre_feet=Decimal("50.0000"), method="estimated_from_use",
+        volume_acre_feet=Decimal("50.0000"), method="device",
     )
     DiversionRecordFactory(
         point_of_diversion=pod, reporting_period=wy2025, month=date(2025, 1, 1),
@@ -198,13 +192,12 @@ class TestWaterRightByWaterYear:
         assert "Face value less the volume recorded" not in html
 
     def test_the_year_with_a_stored_estimate_counts_no_months(self):
-        # 150.1-02: a month counted as estimated when any one record
-        # in it was, so the month count is deleted; the badge marks the record.
+        # 150.1-02: the month count is deleted.
         html = _right_page(_two_year_right())
 
         assert '<td colspan="4">WY 2023-2024 &middot; 2 records</td>' in html
         assert '<td colspan="4">WY 2024-2025 &middot; 1 record</td>' in html
-        assert html.count(ESTIMATED_BADGE) == 1
+        assert html.count("&middot;") >= 2
         assert "months estimated" not in html
         assert "1 of 2 months" not in html
         assert '<th class="th-right">Estimated</th>' not in html

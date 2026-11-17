@@ -22,7 +22,6 @@ import pytest
 from accounting.models import AllocationCarryover
 from accounting.services import (
     BASIN_RECHARGE_POOL,
-    INCIDENTAL_RECHARGE_POOL,
     deposit_to_basin_pool,
 )
 from tests.factories import WaterTypeFactory, ZoneFactory
@@ -62,11 +61,11 @@ def test_negative_delta_subtracts_so_a_rerun_can_stay_idempotent():
     zone = ZoneFactory(zone_type="management_area")
     gw = WaterTypeFactory(code="GW")
 
-    deposit_to_basin_pool(zone, gw, 2025, Decimal("12.57"), origin=INCIDENTAL_RECHARGE_POOL)
-    deposit_to_basin_pool(zone, gw, 2025, Decimal("-12.57"), origin=INCIDENTAL_RECHARGE_POOL)
+    deposit_to_basin_pool(zone, gw, 2025, Decimal("12.57"), origin=BASIN_RECHARGE_POOL)
+    deposit_to_basin_pool(zone, gw, 2025, Decimal("-12.57"), origin=BASIN_RECHARGE_POOL)
 
     row = AllocationCarryover.objects.get(
-        zone=zone, water_type=gw, water_year=2025, origin=INCIDENTAL_RECHARGE_POOL
+        zone=zone, water_type=gw, water_year=2025, origin=BASIN_RECHARGE_POOL
     )
     assert row.amount_af.quantize(Q) == Decimal("0.0000")
 

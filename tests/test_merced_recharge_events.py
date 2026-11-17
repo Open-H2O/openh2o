@@ -27,9 +27,8 @@ import pytest
 from django.core.management import call_command
 from django.utils import timezone
 
-from accounting.ledger_words import INCIDENTAL_RECHARGE_WORDS
-from accounting.models import AllocationCarryover, WaterType
-from accounting.services import BASIN_RECHARGE_POOL, INCIDENTAL_RECHARGE_POOL
+from accounting.models import AllocationCarryover
+from accounting.services import BASIN_RECHARGE_POOL
 from core.management.commands.seed_merced_recharge_events import FILL_SPAN_DAYS
 from parcels.models import ParcelLedger
 from recharge.models import RechargeEvent
@@ -152,39 +151,6 @@ def test_seed_is_idempotent_no_double_count():
             zone=zone, origin=BASIN_RECHARGE_POOL
         ).count()
         == 2
-    )
-
-
-@pytest.mark.django_db
-def test_flush_leaves_engine_incidental_pool_and_rows_untouched():
-    """The self-flush touches only the MANAGED origin / 'Recharge from <basin>'
-    rows, so the engine's incidental pool AND its 'Incidental recharge' ledger
-    rows survive a re-seed."""
-    _, zone, parcels, _ = _fixture()
-    # An engine-style incidental pool row (separate origin) + a personal-credit
-    # incidental ledger row, both pre-existing.
-    AllocationCarryover.objects.create(
-        zone=zone,
-        water_type=WaterType.objects.get(code="GW"),
-        water_year=EVENT_WY,
-        amount_af=Decimal("7.5000"),
-        origin=INCIDENTAL_RECHARGE_POOL,
-    )
-    incidental = ParcelLedger.objects.create(
-        parcel=parcels[0],
-        transaction_date=date(2025, 7, 1),
-        effective_date=date(2025, 7, 1),
-        amount_acre_feet=Decimal("2.5000"),
-        source_type="recharge",
-        description=INCIDENTAL_RECHARGE_WORDS,
-    )
-
-    call_command("seed_merced_recharge_events")
-    call_command("seed_merced_recharge_events")  # re-run: flush must spare both
-
-    assert ParcelLedger.objects.filter(pk=incidental.pk).exists()
-    assert _pool_total(zone, origin=INCIDENTAL_RECHARGE_POOL).quantize(Q) == Decimal(
-        "7.5000"
     )
 
 

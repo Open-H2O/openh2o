@@ -48,7 +48,7 @@ def _right_with_two_years(face_value=Decimal("100.0000")):
     )
     DiversionRecordFactory(
         point_of_diversion=pod, reporting_period=wy2024, month=date(2024, 2, 1),
-        volume_acre_feet=Decimal("50.0000"), method="estimated_from_use",
+        volume_acre_feet=Decimal("50.0000"), method="outage_estimate",
     )
     DiversionRecordFactory(
         point_of_diversion=pod, reporting_period=wy2025, month=date(2025, 1, 1),

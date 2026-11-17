@@ -88,17 +88,6 @@ def test_one_record_without_a_device_leaves_the_sum_without_a_band():
     assert sum_band([record_band(measured), record_band(no_device)]) is None
 
 
-# 4. an estimated_from_use record has no band, even with a device set
-def test_estimated_from_use_record_has_no_band_even_with_a_device():
-    record = _record(
-        Decimal("100.0000"),
-        _device(Decimal("5.00")),
-        method="estimated_from_use",
-    )
-
-    assert record_band(record) is None
-
-
 # 5. a share of 0.3 of a 100 AF record at 5%
 def test_a_fields_share_carries_the_headgate_records_percent():
     record = _record(Decimal("100.0000"), _device(Decimal("5.00")))

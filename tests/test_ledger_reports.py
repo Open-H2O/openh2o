@@ -156,7 +156,7 @@ def test_by_well_pre_flight_does_not_call_a_wells_reading_missing():
         current_value=D("40"), calculated_volume=D("40"),
     )
     ParcelLedgerFactory(
-        parcel=ParcelFactory(), source_type="et_estimate", amount_acre_feet=-D("1"),
+        parcel=ParcelFactory(), source_type="calculated", amount_acre_feet=-D("1"),
         effective_date=JAN, transaction_date=JAN,
     )
     messages = validate_report(period, "gears_by_well")

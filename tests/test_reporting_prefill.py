@@ -62,7 +62,7 @@ def test_by_parcel_sums_match_ledger_totals_raw():
         amount_acre_feet=Decimal("-100"), effective_date=date(2024, 1, 1),
     )
     ParcelLedgerFactory(
-        parcel=p2, source_type="et_estimate",
+        parcel=p2, source_type="calculated",
         amount_acre_feet=Decimal("-99"), effective_date=date(2024, 1, 1),
     )
     from datasync.models import CropETFigure

@@ -28,7 +28,7 @@ from the code under test.
 * (l) a correction touching no use area (a water level) links the count to Change history;
 * (m) a demonstration load answers "No changes found" at once;
 * (n) a stored code changed by hand is answered as disagreeing with its parts;
-* (o) on the six tables the demonstration has no rows for, the rule agrees with the lock;
+* (o) on the four tables the demonstration has no rows for, the rule agrees with the lock;
 * finalizing then Check for changes, through the real views, answers "No changes found" (the
   context row's metadata may not move under the code); a reopened year shows no card.
 
@@ -67,7 +67,7 @@ UNRECORDED = "Changes found with no correction on record."
 FORBIDDEN = ("tamper", "audit", "evidence", "proof", "certified", "attestation", "sworn", "verify")
 
 PART_NAMES = [
-    "Use ledger", "Account use areas", "Allocations", "Water credits", "Water credit draws",
+    "Use ledger", "Account use areas", "Allocations",
     "Carry-over", "Account credits", "Calculation results", "Diversion records",
     "Unallocated deliveries", "Canal losses", "Meter readings", "Water levels",
     "Recharge events", "Recharge measurements", "Fallow periods", "Station readings",
@@ -279,7 +279,7 @@ def test_the_covered_tables_are_the_locked_tables_and_the_correction_registry():
     registry = {kind["model"] for kind in KINDS.values()}
     assert covered == set(LOCKED_MODELS) | registry
     assert registry - set(LOCKED_MODELS) == {"parcels.Parcel"}
-    assert len(covered) == 22
+    assert len(covered) == 20
     links_and_settings = {
         "geography.ParcelZone", "geography.Zone", "accounting.WaterAccount", "wells.WellIrrigatedParcel",
         "wells.WellMeter", "surface.PointOfDiversionParcel", "core.SiteConfig",
@@ -517,7 +517,7 @@ def test_the_download_names_the_parts_with_the_counts_the_digest_used(d1, filed,
         if part["rows"]:
             assert re.search(rf"{re.escape(part['name'])} +{part['rows']:,}(\s|$)", text), part["name"]
     assert re.search(r"Meter readings +3(\s|$)", text) and re.search(r"Water levels +1(\s|$)", text)
-    assert "No rows in this year: Account use areas, Water credits, Water credit" in text
+    assert "No rows in this year: Account use areas, " in text
     assert "Check for changes runs inside OpenH2O, so it does not catch a change to the software." in text.replace("\n", " ")
 
 
@@ -587,8 +587,8 @@ card without changing this code.
   Canal losses                   76    Change history              3,888
   Meter readings                144
 
-  No rows in this year: Water credits, Water credit draws, Unallocated
-  deliveries, Fallow periods, Station readings, Production records.
+  No rows in this year: Unallocated deliveries, Fallow periods, Station
+  readings, Production records.
 
 How to check
 1. Open the water year page for WY 2024-2025 in OpenH2O.
@@ -620,7 +620,7 @@ def test_the_download_reads_word_for_word_as_the_approved_page():
     SiteConfig.objects.create(agency_name="Halvern Valley GSA")
     counts = [
         ("parcels.ParcelLedger", 1057), ("accounting.WaterAccountParcel", 76), ("accounting.AllocationPlan", 8),
-        ("accounting.WaterCredit", 0), ("accounting.WaterCreditDraw", 0), ("accounting.AllocationCarryover", 3),
+        ("accounting.AllocationCarryover", 3),
         ("accounting.AccountCredit", 28), ("accounting.CalculationRun", 912), ("surface.DiversionRecord", 84),
         ("surface.UnallocatedDelivery", 0), ("surface.CanalMonthLoss", 76), ("measurements.MeterReading", 144),
         ("measurements.WaterMeasurement", 20), ("recharge.RechargeEvent", 28), ("recharge.RechargeMeasurement", 84),
@@ -901,7 +901,7 @@ def test_a_demonstration_load_answers_no_changes_found_at_once_and_leaves_no_wat
     assert _answer(_client(administrator), year).startswith("No changes found since ")
 
 
-# -- (o) the six tables the demonstration has no rows for ------------------------------------------------------------------------
+# -- (o) the four tables the demonstration has no rows for ------------------------------------------------------------------------
 
 
 INSIDE, OUTSIDE = dt.date(2025, 3, 1), dt.date(2026, 3, 1)
@@ -909,7 +909,6 @@ INSIDE, OUTSIDE = dt.date(2025, 3, 1), dt.date(2026, 3, 1)
 
 def _rows_for(label):
     """``[(row, intended_in_year)]`` for one table: the lock's own cases, inside and outside."""
-    from accounting.models import WaterCredit, WaterCreditDraw
     from datasync.models import DataRecordStaging, TypedReading
     from drinking.models import SystemProduction
     from parcels.models import FallowPeriod
@@ -924,18 +923,6 @@ def _rows_for(label):
     def noon(day):
         return timezone.make_aware(dt.datetime(day.year, day.month, day.day, 12, 0))
 
-    month = lambda day: f"{day.year}-{day.month:02d}"  # noqa: E731
-    if label == "accounting.WaterCredit":
-        return [
-            (WaterCredit.objects.create(parcel=ParcelFactory(), origin_period=month(day), amount_af=D("2.5")), yes)
-            for day, yes in ((INSIDE, True), (OUTSIDE, False), (dt.date(2024, 9, 1), False), (dt.date(2024, 10, 1), True))
-        ]
-    if label == "accounting.WaterCreditDraw":
-        credit = WaterCredit.objects.create(parcel=ParcelFactory(), origin_period="2023-01", amount_af=D("2.5"))
-        return [
-            (WaterCreditDraw.objects.create(credit=credit, draw_period=month(day), amount_af=D("1")), yes)
-            for day, yes in ((INSIDE, True), (OUTSIDE, False))
-        ]
     if label == "surface.UnallocatedDelivery":
         return [
             (UnallocatedDelivery.objects.create(
@@ -985,9 +972,7 @@ def _rows_for(label):
     raise AssertionError(label)
 
 
-SIX = [
-    "accounting.WaterCredit",
-    "accounting.WaterCreditDraw",
+FOUR = [
     "surface.UnallocatedDelivery",
     "parcels.FallowPeriod",
     "datasync.TypedReading",
@@ -995,7 +980,7 @@ SIX = [
 ]
 
 
-@pytest.mark.parametrize("label", SIX)
+@pytest.mark.parametrize("label", FOUR)
 def test_the_rule_agrees_with_the_lock_on_a_table_the_demonstration_has_no_rows_for(label):
     from django.apps import apps
 

@@ -32,7 +32,6 @@ from django.urls import reverse
 from accounting.models import (
     CalculationPlan,
     CalculationRun,
-    WaterCredit,
 )
 from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation
 
@@ -74,7 +73,7 @@ def _parcel(number="MTH-1", acres="10"):
 
 
 def _irrigate(parcel):
-    """Give the parcel a crop so facility_only_zero does NOT zero it out."""
+    """Give the parcel a crop."""
     crop = CropType.objects.create(name=f"Crop-{parcel.parcel_number}")
     UsageLocation.objects.create(parcel=parcel, name="field", crop_type=crop)
 
@@ -306,7 +305,6 @@ def test_preview_writes_zero_rows_but_renders_the_final_number():
 
     runs_before = CalculationRun.objects.count()
     calc_before = ParcelLedger.objects.filter(source_type="calculated").count()
-    credits_before = WaterCredit.objects.count()
 
     resp = c.post(
         reverse("accounting:methodology_preview"),
@@ -321,7 +319,6 @@ def test_preview_writes_zero_rows_but_renders_the_final_number():
     assert (
         ParcelLedger.objects.filter(source_type="calculated").count() == calc_before
     )
-    assert WaterCredit.objects.count() == credits_before
 
 
 @pytest.mark.django_db

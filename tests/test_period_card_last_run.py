@@ -32,7 +32,7 @@ def year():
     )
     run = CalculationRun.objects.create(
         parcel=ParcelFactory(), period="2025-11", gross_et_af=0, net_consumptive_use_af=0,
-        residual_disposition="unmet_demand", unmet_demand_af=0, banked_af=0, drawn_af=0,
+        residual_disposition="unmet_demand", unmet_demand_af=0,
         final_af=0, breakdown=[],
     )
     CalculationRun.objects.filter(pk=run.pk).update(created_at=_at(dt.date(2025, 11, 3)))

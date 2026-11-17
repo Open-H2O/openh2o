@@ -3,9 +3,7 @@
 
 Each month's crop ET is recorded once (``datasync.models.CropETFigure``). The by-ET file, the
 three pre-fill builders and the by-ET acreage check read that record, converted to acre-feet
-with the use area's acres and rounded to four places, the way the retired ledger copy worked
-out its ``et_estimate`` rows. ``et_estimate`` rows a site already holds stay in its ledger, and
-the reports no longer read them.
+with the use area's acres and rounded to four places.
 
 **Every number in this file is made up.** The use areas, wells, points of diversion and depths
 are invented for the arithmetic. At 80.00 acres a depth of 38.1 mm is exactly 10 acre-feet
@@ -51,14 +49,6 @@ def _record(parcel, month, af):
     return CropETFigure.objects.create(
         parcel=parcel, month=month, variable="ET", model_name="Ensemble",
         depth_mm=D(af) * MM_PER_AF_AT_80_ACRES, fetched_on=month,
-    )
-
-
-def _held_row(parcel, month, af):
-    """An ``et_estimate`` row as the retired copy wrote it: negative, no water year."""
-    return ParcelLedgerFactory(
-        parcel=parcel, source_type="et_estimate", amount_acre_feet=-D(af),
-        effective_date=month, transaction_date=month, reporting_period=None,
     )
 
 
@@ -113,17 +103,6 @@ def test_the_three_pre_fill_builders_read_the_record(period):
     assert [[mv["value_af"] for mv in e["months"]] for e in calwatrs] == [[D("10"), D("2.5")]]
 
 
-def test_rows_the_site_already_holds_are_not_read_where_they_differ_from_the_record(period):
-    a = ParcelFactory(parcel_number="MADEUP-A")
-    _record(a, JAN, "10")
-    _held_row(a, JAN, "99")
-    _held_row(a, MAR, "5")  # a held row with no record behind it
-
-    assert _by_et(period) == [("MADEUP-A", "80.00", "2024-01", "10.0000", "Unmetered/Estimated")]
-    assert _prefill(period, "by_parcel") == {("MADEUP-A", "2024-01"): D("10")}
-    assert ParcelLedger.objects.filter(source_type="et_estimate").count() == 2
-
-
 def test_a_calculated_month_and_a_metered_month_read_as_before(period):
     a = ParcelFactory(parcel_number="MADEUP-A")
     _record(a, JAN, "10")
@@ -152,31 +131,6 @@ def test_a_finalized_years_file_is_full(period):
     period.refresh_from_db()
 
     assert [line[2] for line in _by_et(period)] == ["2024-01", "2024-02", "2024-03"]
-
-
-def test_a_sites_file_is_the_same_with_and_without_the_rows_the_copy_wrote(period):
-    """Where the copy ran, its rows equal the record; taking them out changes no line."""
-    from accounting.services import et_mm_to_acre_feet
-    from datasync.crop_et import _tidy
-
-    a = ParcelFactory(parcel_number="MADEUP-A")
-    b = ParcelFactory(parcel_number="MADEUP-B", area_acres=D("33.33"))
-    for parcel, month, af in ((a, JAN, "10"), (a, FEB, "2.5"), (b, JAN, "7.25"), (b, MAR, "0.1")):
-        record = _record(parcel, month, af)
-        copied = et_mm_to_acre_feet(_tidy(record.depth_mm), parcel.area_acres).quantize(D("0.0001"))
-        ParcelLedgerFactory(
-            parcel=parcel, source_type="et_estimate", amount_acre_feet=copied,
-            effective_date=month, transaction_date=month, reporting_period=None,
-        )
-    ParcelLedgerFactory(
-        parcel=a, source_type="calculated", amount_acre_feet=D("-6.1234"),
-        effective_date=FEB, transaction_date=FEB, reporting_period=period,
-    )
-    with_rows = generate_gears_csv(period, "by_et").getvalue()
-
-    ParcelLedger.objects.filter(source_type="et_estimate").delete()
-
-    assert generate_gears_csv(period, "by_et").getvalue() == with_rows
 
 
 def test_the_ledger_copy_is_not_a_command():

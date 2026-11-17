@@ -40,8 +40,6 @@ from accounting.models import (
     CalculationRun,
     ReportingPeriod,
     WaterAccount,
-    WaterCredit,
-    WaterCreditDraw,
 )
 from parcels.models import ParcelLedger
 from surface.models import DiversionRecord, UnallocatedDelivery
@@ -108,17 +106,6 @@ def _build(label, day, period):
         return WaterAccountParcelFactory(reporting_period=period)
     if label == "accounting.AllocationPlan":
         return AllocationPlanFactory(reporting_period=period)
-    if label == "accounting.WaterCredit":
-        return WaterCredit.objects.create(
-            parcel=ParcelFactory(), origin_period=_month(day), amount_af=Decimal("2.5000")
-        )
-    if label == "accounting.WaterCreditDraw":
-        credit = WaterCredit.objects.create(
-            parcel=ParcelFactory(), origin_period="2024-01", amount_af=Decimal("2.5000")
-        )
-        return WaterCreditDraw.objects.create(
-            credit=credit, draw_period=_month(day), amount_af=Decimal("1.0000")
-        )
     if label == "accounting.AllocationCarryover":
         return AllocationCarryover.objects.create(
             zone=ZoneFactory(), water_type=WaterTypeFactory(),
@@ -252,8 +239,8 @@ def test_every_locked_table_carries_the_trigger():
         )
         tables = [row[0] for row in cursor.fetchall()]
     assert tables == sorted(_table(label) for label in LOCKED_MODELS + FIRST_ROW_OPEN_MODELS)
-    assert len(LOCKED_MODELS) == 21
-    assert len(LOCK_TRIGGER_URIS) == len(LOCKED_MODELS) + len(FIRST_ROW_OPEN_MODELS) == 22
+    assert len(LOCKED_MODELS) == 19
+    assert len(LOCK_TRIGGER_URIS) == len(LOCKED_MODELS) + len(FIRST_ROW_OPEN_MODELS) == 20
 
 
 @pytest.mark.parametrize("label", UPDATABLE_LOCKED_MODELS)

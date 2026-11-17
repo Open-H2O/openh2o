@@ -61,7 +61,7 @@ class TestParcelLedgerSourceType:
 
         valid_codes = {c[0] for c in ParcelLedger.SOURCE_TYPE_CHOICES}
         expected = {
-            "meter_reading", "et_estimate", "manual_entry", "csv_import",
+            "meter_reading", "manual_entry", "csv_import",
             "surface_diversion", "recharge", "allocation", "adjustment",
             "calculated",
         }

@@ -67,7 +67,7 @@ def auth_client():
 
 
 def _run(parcel, period="2024-01", *, gross_et=0, net=0, precip=0, surface=0,
-         banked=0, drawn=0, final=0, incidental=0):
+         final=0, incidental=0):
     """A CalculationRun with known terms. ``net`` drives the ISS-056 demand."""
     return CalculationRun.objects.create(
         parcel=parcel,
@@ -76,8 +76,6 @@ def _run(parcel, period="2024-01", *, gross_et=0, net=0, precip=0, surface=0,
         net_consumptive_use_af=Decimal(str(net)),
         effective_precip_af=Decimal(str(precip)),
         surface_water_af=Decimal(str(surface)),
-        banked_af=Decimal(str(banked)),
-        drawn_af=Decimal(str(drawn)),
         final_af=Decimal(str(final)),
         breakdown=[
             {"step_type": "clamp_floor",

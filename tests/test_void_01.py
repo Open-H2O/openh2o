@@ -247,16 +247,6 @@ def test_a_finalized_diversion_row_reads_finalized_with_no_menu(operator):
     assert f"menu-record-diversion_record-{record.pk}" not in body
 
 
-def test_an_engine_diversion_row_has_edit_only(operator):
-    record = DiversionRecordFactory(method="estimated_from_use")
-
-    body = _client(operator).get(reverse("surface:pod_detail", args=[record.point_of_diversion_id])).content.decode()
-
-    menu = menu_of(body, "diversion_record", record)
-    assert "Edit" in menu
-    assert "Void this record" not in menu
-
-
 def test_the_well_menu_holds_correct_then_void_and_is_absent_for_a_viewer_and_a_voided_read(operator, viewer):
     well, reading = well_with_reading()
     page = reverse("wells:detail", args=[well.pk])

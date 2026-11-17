@@ -21,7 +21,6 @@ import re
 import pytest
 from django.urls import reverse
 
-from parcels.models import ParcelLedger
 from tests import ledger_districts as ld
 from tests.test_openet_recorded_figure import (  # noqa: F401  (fixtures)
     AUG_6,
@@ -35,7 +34,6 @@ from tests.test_openet_recorded_figure import (  # noqa: F401  (fixtures)
     _fetch,
     _fetched_twice,
     _finalize,
-    _sync,
     _words,
     boss,
     operator,
@@ -218,30 +216,6 @@ def test_after_accepting_the_earlier_figure_is_struck_with_who_when_and_why(oper
         segment,
     )
     assert 'id="crop-et-newer"' not in page
-
-
-# ---------------------------------------------------------------- the ledger entry that differs
-
-
-def test_a_ledger_entry_that_differs_gets_its_sentences_and_a_correct_button(operator):
-    field = _corn_field()
-    _fetch(field, FIRST, AUG_6)
-    _sync()
-    ld.run_months([JULY])
-    ParcelLedger.objects.filter(parcel=field, source_type="et_estimate", effective_date__month=7).update(
-        amount_acre_feet=-35
-    )
-
-    band = _band(_html(operator, field), "crop-et-entry")
-
-    assert (
-        "The ledger's ET estimate entry for this month reads 35.00 AF. OpenH2O calculates the month "
-        "from the recorded 30.00 AF. Correcting the entry to 30.00 AF recalculates the month."
-    ) in band
-    assert ">Correct the entry to 30.00 AF</button>" in band
-    assert "Bring to the recorded figure" not in band
-    opened = _band(_html(operator, field, open="entry"), "crop-et-entry")
-    assert '<input type="hidden" name="action" value="entry">' in opened
 
 
 # ---------------------------------------------------------------- a month with nothing to estimate

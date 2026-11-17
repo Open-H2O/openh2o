@@ -3,7 +3,7 @@
 
 The importer's sign convention itself is not changing (146-01 plan, "The
 ledger's sign"): SUPPLY rows credit and must be > 0 (`allocation`, `recharge`);
-USAGE rows debit and must be <= 0 (`meter_reading`, `et_estimate`,
+USAGE rows debit and must be <= 0 (`meter_reading`,
 `surface_diversion`, `calculated`); `manual_entry`, `csv_import` and
 `adjustment` carry the sign the operator gives them. What was wrong on shape 6
 (145-02 walk, S3) is that the count of coerced rows named none of them, the
@@ -138,7 +138,6 @@ def test_source_type_signs_matches_the_check_constraints():
     assert SOURCE_TYPE_SIGNS["allocation"] == "positive"
     assert SOURCE_TYPE_SIGNS["recharge"] == "positive"
     assert SOURCE_TYPE_SIGNS["meter_reading"] == "negative"
-    assert SOURCE_TYPE_SIGNS["et_estimate"] == "negative"
     assert SOURCE_TYPE_SIGNS["surface_diversion"] == "negative"
     assert SOURCE_TYPE_SIGNS["calculated"] == "negative"
     assert SOURCE_TYPE_SIGNS["manual_entry"] == "either"

@@ -471,8 +471,7 @@ def test_every_part_a_recalculation_writes_is_explained_by_a_correction_that_sta
 
     assert {
         "parcels.ParcelLedger", "accounting.CalculationRun", "surface.DiversionRecord", "surface.UnallocatedDelivery",
-        "surface.CanalMonthLoss", "accounting.WaterCredit", "accounting.WaterCreditDraw",
-        "accounting.AllocationCarryover", "accounting.AccountCredit",
+        "surface.CanalMonthLoss", "accounting.AllocationCarryover", "accounting.AccountCredit",
     } == RECALCULATION_PARTS
 
 

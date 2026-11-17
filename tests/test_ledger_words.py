@@ -24,8 +24,6 @@ from accounting.ledger_words import (
     DELIVERY_SHARE_BY_FIXED,
     DELIVERY_SHARE_SOURCE,
     DELIVERY_SHARE_BY_USE,
-    INCIDENTAL_RECHARGE_WORDS,
-    LEGACY_INCIDENTAL_RECHARGE_WORDS,
     NO_PUMPING_DERIVED_WORDS,
     PUMPING_ESTIMATE_WORDS,
     delivery_share_words,
@@ -185,13 +183,6 @@ def test_every_sentence_constant_carries_no_gated_phrase(name):
     text = getattr(lw, name)
     hits = [rule for rule in rules if rule.applies_to(location) and rule.pattern.search(text)]
     assert hits == [], (name, text, hits)
-
-
-def test_incidental_recharge_words_constants_are_distinct():
-    """The rename left the old and new sentences DIFFERENT strings, so a re-run's
-    `Q(startswith=OLD) | Q(startswith=NEW)` delete would silently become a
-    no-op filter if they ever collided."""
-    assert INCIDENTAL_RECHARGE_WORDS != LEGACY_INCIDENTAL_RECHARGE_WORDS
 
 
 def test_pumping_words_constants_are_distinct():

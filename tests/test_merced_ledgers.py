@@ -53,7 +53,7 @@ from surface.models import (
 from wells.models import Well, WellIrrigatedParcel, WellType
 
 # --- The accounting contract the seed must meet (independent of its internals) ---
-GW_EXTRACTION_SOURCES = {"meter_reading", "et_estimate"}
+GW_EXTRACTION_SOURCES = {"meter_reading"}
 # The full transactional ledger lives in the finalized prior water year, mirroring
 # the proven engine path (Oct 2024 – Sep 2025).
 PRIOR_WY = "WY 2024-2025"
@@ -318,18 +318,12 @@ def test_unmetered_wells_write_no_seed_groundwater_rows(seeded):
     """52.5-01 reconciliation: an UNMETERED well's groundwater is engine-owned
     (Plan 02 `calculated` rows), so the synthetic seed writes NONE of its
     extraction — otherwise the engine would double-count. Metered wells keep
-    their authoritative `meter_reading` rows; the old `et_estimate` synthetic
-    source is gone entirely.
+    their authoritative `meter_reading` rows.
     """
     wells = list(Well.objects.filter(well_registration_id__startswith="MER-W-"))
     unmetered = [w for w in wells if w.measurement_method == "unmetered_estimate"]
     metered = [w for w in wells if w.measurement_method == "certified_meter"]
     assert unmetered and metered, "fixture should exercise both metering methods"
-
-    # The unmetered synthetic source (et_estimate) is gone for the whole demo.
-    assert not ParcelLedger.objects.filter(
-        parcel__parcel_number__startswith="MER-APN-", source_type="et_estimate"
-    ).exists(), "unmetered seed groundwater rows (et_estimate) must be gone"
 
     # Each unmetered well's parcels carry NO seed extraction row.
     for w in unmetered:
@@ -878,7 +872,6 @@ def test_el_nido_point_carries_a_typed_zero_for_every_dry_month(seeded):
     # July 2025 through September 2026: fifteen months.
     assert after.count() == 15
     assert {r.volume_acre_feet for r in after} == {Decimal("0.0000")}
-    assert not after.filter(method="estimated_from_use").exists()
     assert DiversionRecord.objects.filter(
         point_of_diversion=pod, month__lt=FIRST_DRY_MONTH, volume_acre_feet__gt=0
     ).exists()

@@ -108,7 +108,7 @@ def build_world():
 
     for month, method in (
         (dt.date(2025, 7, 1), "device"),
-        (dt.date(2025, 8, 1), "estimated_from_use"),
+        (dt.date(2025, 8, 1), "outage_estimate"),
         (dt.date(2025, 10, 1), "methodology"),
     ):
         DiversionRecord.objects.filter(point_of_diversion=d3["P3"], month=month).update(method=method)

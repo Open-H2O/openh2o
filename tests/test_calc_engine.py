@@ -19,7 +19,7 @@ from accounting.calculation import evaluate_chain
 from accounting.ledger_words import NO_PUMPING_DERIVED_WORDS, PUMPING_ESTIMATE_WORDS
 from accounting.models import CalculationPlan, CalculationStep
 from accounting.services import et_mm_to_acre_feet
-from accounting.steps import STEP_REGISTRY, clamp_floor, facility_only_zero
+from accounting.steps import STEP_REGISTRY, clamp_floor
 from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation
 from tests.factories import WellIrrigatedParcelFactory
 
@@ -58,7 +58,7 @@ def _et_cache(parcel, period="2024-06", et_mm=100.0, variable="ET", model="Ensem
 
 
 def _irrigate(parcel):
-    """Give a parcel a UsageLocation with a crop_type (so it's not facility-only)."""
+    """Give a parcel a UsageLocation with a crop_type."""
     crop = CropType.objects.create(name=f"Crop-{parcel.parcel_number}")
     UsageLocation.objects.create(parcel=parcel, name="field", crop_type=crop)
 
@@ -68,12 +68,11 @@ def _irrigate(parcel):
 # --------------------------------------------------------------------------
 
 
-def test_registry_has_the_five_primitives():
+def test_registry_has_the_four_primitives():
     assert set(STEP_REGISTRY) == {
         "et_gross",
         "subtract_effective_precip",
         "subtract_surface_water",
-        "facility_only_zero",
         "clamp_floor",
     }
     # subtract_effective_precip joined the registry in 38-03 (TDD).
@@ -156,23 +155,6 @@ def test_subtract_surface_water_subtracts_absolute_and_can_go_negative():
     assert new == Decimal("-0.25")
     assert Decimal(record["detail"]["surface_water_af"]) == Decimal("2.25")
     assert Decimal(record["detail"]["delivered_af"]) == Decimal("3")
-
-
-@pytest.mark.django_db
-def test_facility_only_zero_no_longer_zeros_a_parcel_without_crop():
-    parcel = _parcel("FAC-1")  # no UsageLocation
-    new, record = facility_only_zero(Decimal("5"), parcel, "2024-06", {}, {})
-    assert new == Decimal("5")
-    assert record["detail"]["facility_only"] is False
-
-
-@pytest.mark.django_db
-def test_facility_only_zero_passes_through_irrigated_parcel():
-    parcel = _parcel("FAC-2")
-    _irrigate(parcel)
-    new, record = facility_only_zero(Decimal("5"), parcel, "2024-06", {}, {})
-    assert new == Decimal("5")
-    assert record["detail"]["facility_only"] is False
 
 
 @pytest.mark.django_db
@@ -282,18 +264,14 @@ def test_evaluate_chain_skips_disabled_steps():
         config={}, label="DISABLED surface water",
     )
     CalculationStep.objects.create(
-        plan=plan, order=3, step_type="facility_only_zero", enabled=True,
-        config={}, label="facility",
-    )
-    CalculationStep.objects.create(
-        plan=plan, order=4, step_type="clamp_floor", enabled=True,
+        plan=plan, order=3, step_type="clamp_floor", enabled=True,
         config={"floor": 0}, label="floor",
     )
 
     final_af, breakdown = evaluate_chain(parcel, "2024-06")
     step_types = [s["step_type"] for s in breakdown]
     assert "subtract_surface_water" not in step_types  # disabled -> skipped
-    assert step_types == ["et_gross", "facility_only_zero", "clamp_floor"]
+    assert step_types == ["et_gross", "clamp_floor"]
     # Surface step skipped, irrigated, no precip cache -> net == gross
     assert final_af == abs(et_mm_to_acre_feet(Decimal("100"), Decimal("10")))
 

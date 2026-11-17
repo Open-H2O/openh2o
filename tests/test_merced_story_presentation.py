@@ -172,9 +172,8 @@ def test_district_zones_have_parcel_links(seeded_site):
 # and by reading the zone's own AllocationPlan (GW = 500.0000) and its
 # AllocationCarryover rows for water year 2025 — of which this fixture has NONE,
 # so the carry-over is a real, observed 0.0000 rather than an absent value.
-# `seed_merced_ledgers` writes no `et_estimate` and no `calculated` rows here, so
-# the billable subset is the raw subset and the groundwater magnitude is the
-# meter total exactly.
+# `seed_merced_ledgers` writes no `calculated` rows here, so
+# the groundwater magnitude is the meter total exactly.
 #
 # ⛔ The old assertions were `used > 0` and `remaining == budget - used`. Both are
 # satisfied by the defect: they never look at WHICH rows landed in `used`, and the

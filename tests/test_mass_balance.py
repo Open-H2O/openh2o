@@ -55,7 +55,7 @@ def _clamp_floor_breakdown(incidental_af):
     ]
 
 
-def _run(parcel, period, *, gross_et, precip, surface, banked, drawn, final,
+def _run(parcel, period, *, gross_et, precip, surface, final,
          incidental):
     """Create one CalculationRun (a parcel-month audit row) with known terms.
 
@@ -70,8 +70,6 @@ def _run(parcel, period, *, gross_et, precip, surface, banked, drawn, final,
         gross_et_af=Decimal(str(gross_et)),
         effective_precip_af=Decimal(str(precip)),
         surface_water_af=Decimal(str(surface)),
-        banked_af=Decimal(str(banked)),
-        drawn_af=Decimal(str(drawn)),
         final_af=Decimal(str(final)),
         over_delivery_af=Decimal(str(incidental)),
         breakdown=_clamp_floor_breakdown(incidental),
@@ -108,7 +106,7 @@ def test_conjunctive_parcel_balance_closes():
 
     # gross ET 20 met by 10 surface + 3 precip + 7 pumped groundwater.
     _run(parcel, "2024-01", gross_et=20, precip=3, surface=10,
-         banked=0, drawn=0, final=7, incidental=0)
+         final=7, incidental=0)
     _surface_row(parcel, rp, date(2024, 1, 1), 10)
     _calculated_row(parcel, rp, date(2024, 1, 1), 7)
 
@@ -140,7 +138,7 @@ def test_no_well_flood_mar_closes_with_zero_personal_recharge():
 
     # 12 surface + 2 precip vs 10 ET => 4 AF over-delivery.
     run = _run(parcel, "2024-02", gross_et=10, precip=2, surface=12,
-               banked=0, drawn=0, final=0, incidental=4)
+               final=0, incidental=4)
     _surface_row(parcel, rp, date(2024, 2, 1), 12)
 
     result = parcel_mass_balance(parcel, rp)
@@ -174,7 +172,7 @@ def test_mer_apn_031_shape_no_personal_recharge_pooled():
 
     # 9 surface + 1 precip vs 7 ET => 3 AF over-delivery.
     run = _run(parcel, "2024-03", gross_et=7, precip=1, surface=9,
-               banked=0, drawn=0, final=0, incidental=3)
+               final=0, incidental=3)
     _surface_row(parcel, rp, date(2024, 3, 1), 9)
 
     result = parcel_mass_balance(parcel, rp)
@@ -192,59 +190,21 @@ def test_mer_apn_031_shape_no_personal_recharge_pooled():
     assert not personal_recharge.exists(), "no phantom personal recharge credit"
 
 
-def test_banked_then_drawn_across_months_closes():
-    """delta_storage absorbs banking timing so a full period still closes.
-
-    Month 1 banks a surface surplus; month 2 draws it back to cover a deficit.
-    Over the period the net storage change is zero and the books close.
-    """
-    rp = ReportingPeriodFactory()
-    parcel = ParcelFactory()
-    WellIrrigatedParcelFactory(parcel=parcel)  # conjunctive: banks and pumps
-
-    # Month 1: 8 surface vs 5 ET => 3 AF surplus banked.
-    _run(parcel, "2024-01", gross_et=5, precip=0, surface=8,
-         banked=3, drawn=0, final=0, incidental=0)
-    _surface_row(parcel, rp, date(2024, 1, 1), 8)
-
-    # Month 2: 5 ET, no surface; draw the 3 banked, pump the remaining 2.
-    _run(parcel, "2024-02", gross_et=5, precip=0, surface=0,
-         banked=0, drawn=3, final=5, incidental=0)
-    _calculated_row(parcel, rp, date(2024, 2, 1), 2)
-
-    result = parcel_mass_balance(parcel, rp)
-
-    # Period totals: surface 8, precip 0, gw 2 in; et 10, delta_storage net 0 out.
-    assert result["inputs"]["surface"] == Decimal("8")
-    assert result["inputs"]["gw_recovered"] == Decimal("2")
-    assert result["outputs"]["et"] == Decimal("10")
-    assert result["outputs"]["delta_storage"] == Decimal("0")
-    assert result["closes"] is True
-
-
 def test_gw_recovered_reconciles_with_balance_dict_usage():
     """gw_recovered MUST equal the existing _balance_dict usage term.
 
     Cross-check against parcel_balance_breakdown so the mass balance never
-    drifts from the billable ledger. The et_estimate row is suppressed by
-    billable_ledger (its calculated twin bills), so usage counts the calculated
-    magnitude only -- and gw_recovered must agree.
+    drifts from the balance. Usage counts the calculated magnitude, and
+    gw_recovered must agree.
     """
     rp = ReportingPeriodFactory()
     parcel = ParcelFactory()
     WellIrrigatedParcelFactory(parcel=parcel)
 
     _run(parcel, "2024-04", gross_et=12, precip=0, surface=0,
-         banked=0, drawn=0, final=7, incidental=0)
-    # calculated -7 (the netted bill) suppresses its gross et_estimate -9 twin.
+         final=7, incidental=0)
+    # calculated -7 is the netted bill.
     _calculated_row(parcel, rp, date(2024, 4, 1), 7)
-    ParcelLedgerFactory(
-        parcel=parcel,
-        reporting_period=rp,
-        effective_date=date(2024, 4, 1),
-        amount_acre_feet=Decimal("-9"),
-        source_type="et_estimate",
-    )
 
     result = parcel_mass_balance(parcel, rp)
     breakdown = parcel_balance_breakdown(parcel, rp)
@@ -266,7 +226,7 @@ def test_deep_percolation_surface_af_is_delivered_minus_consumed():
     # 9 AF gross ET, so the books close with the 3 AF difference named as
     # deep_percolation_surface_af rather than left to look like a phantom gain.
     run = _run(parcel, "2024-05", gross_et=9, precip=0, surface=9,
-               banked=0, drawn=0, final=0, incidental=0)
+               final=0, incidental=0)
     run.surface_delivered_af = Decimal("12")
     run.save()
     _surface_row(parcel, rp, date(2024, 5, 1), 12)
@@ -287,7 +247,7 @@ def test_deep_percolation_surface_af_is_zero_when_run_predates_the_knob():
     WellIrrigatedParcelFactory(parcel=parcel)
 
     _run(parcel, "2024-01", gross_et=20, precip=3, surface=10,
-         banked=0, drawn=0, final=7, incidental=0)
+         final=7, incidental=0)
     _surface_row(parcel, rp, date(2024, 1, 1), 10)
     _calculated_row(parcel, rp, date(2024, 1, 1), 7)
 

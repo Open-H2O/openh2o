@@ -7,8 +7,7 @@ What a correct site does (the plain write-up Brent approved, ruling 134):
 * the calculation and the GEARS by-ET file read only that record;
 * a later fetch with a different figure changes nothing, and is shown beside it;
 * a person who can correct records may accept the newer figure with a reason: the record
-  and the month's ET estimate entry are replaced as corrections (the old ones kept, struck)
-  and the month is recalculated at once;
+  is replaced as a correction (the old one kept, struck) and the month is recalculated at once;
 * in a finalized year only an administrator may accept, through the recorded door;
 * nobody can type an ET figure;
 * rainfall is not covered, and stays visible as a strict xfail.
@@ -28,7 +27,7 @@ import html
 import json
 import re
 from decimal import Decimal as D
-from io import BytesIO, StringIO
+from io import StringIO
 from unittest import mock
 
 import pytest
@@ -138,39 +137,6 @@ def _hand_cache(parcel, months_mm, start, end, model="Ensemble", variable="ET", 
     )
 
 
-def _sync():
-    """The ET estimate entries a site holds from the retired ledger copy, written as it wrote them.
-
-    One entry per use area-month with a current record in July to September 2025 and no
-    entry yet: the record's depth over the use area's acres, four places, negative.
-    """
-    from accounting.services import et_mm_to_acre_feet
-    from datasync.crop_et import _tidy, estimate_words, month_text
-    from datasync.models import CropETFigure
-
-    for record in CropETFigure.objects.current().filter(
-        variable="ET", model_name="Ensemble",
-        month__gte=dt.date(2025, 7, 1), month__lte=dt.date(2025, 9, 30),
-    ).select_related("parcel"):
-        parcel, period = record.parcel, month_text(record.month)
-        if not parcel.area_acres or ParcelLedger.objects.current().filter(
-            parcel=parcel, source_type="et_estimate", effective_date=record.month,
-        ).exists():
-            continue
-        af = et_mm_to_acre_feet(_tidy(record.depth_mm), parcel.area_acres).quantize(D("0.0001"))
-        ParcelLedger.objects.create(
-            parcel=parcel, transaction_date=record.month, effective_date=record.month,
-            amount_acre_feet=af, source_type="et_estimate", reporting_period=None, water_type=None,
-            description=estimate_words(_tidy(record.depth_mm), parcel.area_acres, period, abs(af)),
-        )
-
-
-def _estimate(parcel):
-    return ParcelLedger.objects.current().get(
-        parcel=parcel, source_type="et_estimate", effective_date__year=2025, effective_date__month=7,
-    ).amount_acre_feet
-
-
 def _run(parcel):
     return CalculationRun.objects.filter(parcel=parcel, period=JULY).order_by("-pk").first()
 
@@ -243,10 +209,8 @@ def _accept(user, parcel, reason=REASON, record=None):
 
 def _fetched_twice(field):
     _fetch(field, FIRST, AUG_6)
-    _sync()
     ld.run_months([JULY])
     _fetch(field, NEWER, SEP_28)
-    _sync()
     ld.run_months([JULY])
 
 
@@ -388,7 +352,6 @@ def test_a_viewer_sees_the_newer_figure_and_no_accept(viewer):
 def test_an_operator_accepts_the_newer_figure_and_the_month_recalculates_at_once(operator):
     field = _corn_field()
     _fetched_twice(field)
-    old_entry = ParcelLedger.objects.current().get(parcel=field, source_type="et_estimate", effective_date__month=7)
 
     response = _accept(operator, field)
 
@@ -397,10 +360,6 @@ def test_an_operator_accepts_the_newer_figure_and_the_month_recalculates_at_once
     assert old.replaced_at is not None and old.depth_mm == D("91.44") and old.fetched_on == AUG_6
     assert (new.depth_mm, new.fetched_on, new.change_reason) == (D("121.92"), SEP_28, REASON)
     assert new.replaces_id == old.pk and new.created_by == operator
-    old_entry.refresh_from_db()
-    assert old_entry.replaced_at is not None and old_entry.amount_acre_feet == D("-30.0000")
-    new_entry = ParcelLedger.objects.get(replaces=old_entry)
-    assert (new_entry.amount_acre_feet, new_entry.change_reason) == (D("-40.0000"), REASON)
     run = _run(field)
     assert (run.gross_et_af, run.gw_extracted_af) == (D("40.0000"), D("50.0000"))
 
@@ -485,84 +444,6 @@ def test_in_a_finalized_year_an_administrators_accept_goes_through_the_recorded_
 
 
 # ---------------------------------------------------------------- 9. nobody types an ET figure
-
-ET_REFUSAL = "OpenH2O records crop ET only from OpenET. Choose another source type for this entry."
-
-
-def test_the_hand_entry_form_refuses_an_et_estimate_entry():
-    from accounting.forms import ParcelLedgerForm
-
-    field = _corn_field()
-    form = ParcelLedgerForm(data={
-        "parcel": field.pk, "transaction_date": "2025-08-01", "effective_date": "2025-07-01",
-        "amount_acre_feet": "-30", "source_type": "et_estimate", "description": "typed",
-    })
-
-    assert not form.is_valid()
-    assert ET_REFUSAL in " ".join(form.errors.get("source_type", []))
-
-
-def test_the_ledger_import_refuses_an_et_estimate_entry():
-    from accounting.services import parse_ledger_csv
-
-    field = _corn_field()
-    text = (
-        "parcel_number,effective_date,amount_acre_feet,source_type,description\n"
-        f"{field.parcel_number},2025-07-01,-30,et_estimate,typed\n"
-    )
-    result = parse_ledger_csv(BytesIO(text.encode()))
-
-    assert result["created_count"] == 0
-    assert ET_REFUSAL in json.dumps(result["errors"])
-    assert not ParcelLedger.objects.filter(parcel=field, source_type="et_estimate").exists()
-
-
-def _admin_form(obj, data):
-    from django.contrib import admin
-    from django.test import RequestFactory
-
-    request = RequestFactory().post("/")
-    request.user = _user("site-admin", is_staff=True, is_superuser=True)
-    model_admin = admin.site._registry[ParcelLedger]
-    form_class = model_admin.get_form(request, obj, change=obj is not None)
-    return model_admin, request, form_class(data=data, instance=obj)
-
-
-def _admin_data(field, **over):
-    data = {
-        "parcel": field.pk, "transaction_date": "2025-08-01", "effective_date": "2025-07-01",
-        "amount_acre_feet": "-30", "source_type": "et_estimate", "description": "typed",
-    }
-    data.update(over)
-    return data
-
-
-def test_the_administration_site_cannot_add_an_et_estimate_entry():
-    field = _corn_field()
-    _, _, form = _admin_form(None, _admin_data(field))
-
-    assert not form.is_valid()
-    assert ET_REFUSAL in " ".join(form.errors.get("source_type", []))
-
-
-def test_the_administration_site_cannot_turn_another_entry_into_an_et_estimate():
-    field = _corn_field()
-    typed = ld.ledger(field, dt.date(2025, 7, 1), -5, "manual_entry", "GW")
-    _, _, form = _admin_form(typed, _admin_data(field, amount_acre_feet="-5"))
-
-    assert not form.is_valid()
-    assert ET_REFUSAL in " ".join(form.errors.get("source_type", []))
-
-
-def test_the_administration_site_cannot_change_an_et_estimate_entrys_amount():
-    field = _corn_field()
-    _fetch(field, FIRST, AUG_6)
-    _sync()
-    entry = ParcelLedger.objects.get(parcel=field, source_type="et_estimate", effective_date__month=7)
-    model_admin, request, _ = _admin_form(entry, _admin_data(field, amount_acre_feet="-99"))
-
-    assert {"amount_acre_feet", "source_type"} <= set(model_admin.get_readonly_fields(request, entry))
-
 
 # ---------------------------------------------------------------- 10. the by-ET file reads the record
 

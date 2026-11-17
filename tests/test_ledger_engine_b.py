@@ -11,8 +11,8 @@ calculator, never recomputed with the engine's formula.
   estimate that month.
 * A field that carries its own meter-reading row for the month keeps it, and
   the well's reading is not added on top of it.
-* The "credited" choice for canal water beyond crop need is gone: nothing is
-  credited to a field and nothing is pooled, whatever an older site stored.
+* Canal water beyond crop need is offered two choices, and a site stored with the removed
+  third one is moved to not credited by its migration.
 """
 
 import datetime as dt
@@ -24,7 +24,6 @@ from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
-from accounting.models import AllocationCarryover, CalculationRun
 from accounting.services import consumptive_use_balance
 from core.models import SiteConfig
 from measurements.models import Meter, MeterReading
@@ -179,13 +178,6 @@ def test_the_well_page_refuses_a_reading_with_no_date(d1):
 
 
 # ------------------------------------------------------------------ F-17
-def _s5b():
-    ld.seed_reference()
-    d3 = ld.build_d3(with_event=False)
-    ld.add_h3_h4(d3)
-    return d3
-
-
 def test_delivery_settings_offers_two_choices_for_canal_water_beyond_crop_need():
     from core.forms import DeliverySettingsForm
 
@@ -193,17 +185,6 @@ def test_delivery_settings_offers_two_choices_for_canal_water_beyond_crop_need()
     form = DeliverySettingsForm(instance=SiteConfig.objects.first())
     values = [value for value, _ in form.fields["over_delivery_treatment"].choices]
     assert values == ["not_credited", "named_line"]
-
-
-def test_a_site_stored_as_credited_writes_no_recharge_row_and_no_pool():
-    d3 = _s5b()
-    SiteConfig.objects.update(over_delivery_treatment="credited")
-    ld.run_months(["2025-01"])
-    assert ParcelLedger.objects.filter(source_type="recharge").count() == 0
-    assert AllocationCarryover.objects.count() == 0
-    run = CalculationRun.objects.get(parcel=d3["H3"], period="2025-01")
-    assert run.over_delivery_credited_af is None
-    assert run.over_delivery_credit_pooled is False
 
 
 def test_the_migration_moves_a_credited_site_to_not_credited():

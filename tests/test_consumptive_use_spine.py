@@ -20,10 +20,9 @@ import pytest
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 
-from accounting.models import AllocationCarryover, CalculationRun, CalculationStep
+from accounting.models import CalculationRun, CalculationStep
 from accounting.services import (
     _balance_dict,
-    billable_ledger,
     parcel_net_consumptive_use,
 )
 from geography.models import Boundary, ParcelZone, Zone
@@ -236,7 +235,7 @@ def test_well_parcel_residual_becomes_calculated_groundwater_row():
     assert run.residual_disposition == "groundwater"
     assert run.unmet_demand_af == Decimal("0")
     assert run.gw_extracted_af is not None
-    billable = billable_ledger(ParcelLedger.objects.filter(parcel=parcel))
+    billable = ParcelLedger.objects.filter(parcel=parcel).current()
     assert _balance_dict(billable)["usage"] == run.gw_extracted_af
 
 
@@ -259,7 +258,7 @@ def test_no_well_under_irrigation_records_unmet_demand_not_groundwater():
     assert run.unmet_demand_af == run.final_af
     assert run.unmet_demand_af > 0
     assert run.net_consumptive_use_af > 0  # spine still recorded
-    billable = billable_ledger(ParcelLedger.objects.filter(parcel=parcel))
+    billable = ParcelLedger.objects.filter(parcel=parcel).current()
     assert _balance_dict(billable)["usage"] == Decimal("0")
 
 
@@ -286,8 +285,6 @@ def test_no_well_over_delivery_preserves_flood_mar_basin_pool():
         parcel=parcel, source_type="calculated").exists()
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="recharge").exists()
-    assert not AllocationCarryover.objects.filter(
-        zone=zone, origin="incidental_recharge_pool").exists()
     run = CalculationRun.objects.get(parcel=parcel, period=PERIOD)
     assert run.residual_disposition == "unmet_demand"
     assert run.unmet_demand_af == Decimal("0")  # over-delivered → no shortfall
@@ -326,8 +323,6 @@ def test_no_well_residual_disposition_is_idempotent():
 
     call_command("run_calculations", "--period", PERIOD, "--parcel", "R-IDEM-FLOOD")
     call_command("run_calculations", "--period", PERIOD, "--parcel", "R-IDEM-SHORT")
-    assert not AllocationCarryover.objects.filter(
-        zone=zone, origin="incidental_recharge_pool").exists()
     assert CalculationRun.objects.filter(parcel=flood, period=PERIOD).count() == 1
     assert CalculationRun.objects.get(
         parcel=flood, period=PERIOD).over_delivery_af == flood_over_delivery_one

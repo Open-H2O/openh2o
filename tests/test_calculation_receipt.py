@@ -51,8 +51,6 @@ REJECTED = (
     "Left (AF)",
     "Clamp",
     "clamp at floor",
-    "facility-only",
-    "Zero out",
     "Groundwater consumed",
     "groundwater consumed",
     "no supply on record",
@@ -365,18 +363,6 @@ class TestAZeroMonth:
         assert "its own line" not in html
         assert "A meter reading for December 2025 would replace this estimate." in html
 
-    def test_under_the_credited_setting_the_two_parts_are_shown(self):
-        parcel = ParcelFactory(parcel_number="RCPT-APN-012")
-        _zero_run(
-            parcel,
-            over_delivery_treatment="credited",
-            over_delivery_leave_behind=Decimal("0.100"),
-            over_delivery_credited_af=Decimal("3.6000"),
-        )
-        html = _page(parcel, "2025-12")
-        assert "<span>Credited to this use area</span><b>3.60</b>" in html
-        assert "<span>Left in the basin (10%)</span><b>0.40</b>" in html
-
     def test_under_the_named_line_setting_the_excess_says_where_it_shows(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-013")
         _zero_run(parcel, over_delivery_treatment="named_line")
@@ -387,11 +373,10 @@ class TestAZeroMonth:
         parcel = ParcelFactory(parcel_number="RCPT-APN-014")
         _zero_run(parcel, over_delivery_treatment="not_credited")
         config, _ = SiteConfig.objects.get_or_create(defaults={"agency_name": "Receipt Test Agency"})
-        config.over_delivery_treatment = "credited"
-        config.over_delivery_leave_behind = Decimal("0.100")
+        config.over_delivery_treatment = "named_line"
         config.save()
         html = _page(parcel, "2025-12")
-        assert "Credited to this use area" not in html
+        assert "its own line" not in html
 
 
 class TestTheShortPage:

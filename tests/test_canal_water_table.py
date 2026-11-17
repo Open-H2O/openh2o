@@ -187,38 +187,6 @@ def test_a_month_not_yet_calculated_shows_its_consumed_total_and_invents_no_loss
     assert group["totals"]["headgate"] == Decimal("20.0000")
 
 
-# (d) the estimated flag ----------------------------------------------------------
-
-
-def test_a_month_with_an_estimated_record_carries_the_estimated_flag():
-    rp, pod, (a, b, c) = _canal()
-    DiversionRecord.objects.create(
-        point_of_diversion=pod,
-        reporting_period=rp,
-        month=FEB,
-        volume_acre_feet=Decimal("10"),
-        diversion_type="direct_use",
-        method="estimated_from_use",
-        data_state="provisional",
-    )
-    for parcel in (a, b, c):
-        CalculationRun.objects.create(
-            parcel=parcel,
-            period="2024-02",
-            gross_et_af=Decimal("10"),
-            net_consumptive_use_af=Decimal("10"),
-            final_af=Decimal("0"),
-        )
-    allocate_district_delivery(pod, rp, efficiency=EFF)
-
-    by_month = {r["month"]: r for r in _rows(pod)["rows"]}
-    assert set(by_month) == {JAN, FEB}
-    assert by_month[JAN]["estimated"] is False
-    assert by_month[FEB]["estimated"] is True
-    assert by_month[FEB]["adds_up"] is True
-    assert _rows(pod)["totals"]["estimated"] is True
-
-
 # (e) reporting periods, newest first ----------------------------------------------
 
 
@@ -261,7 +229,6 @@ def test_the_page_shows_the_headings_and_the_totals():
         month=FEB,
         volume_acre_feet=Decimal("10"),
         diversion_type="direct_use",
-        method="estimated_from_use",
     )
     allocate_district_delivery(pod, rp, efficiency=EFF)
 
@@ -284,7 +251,6 @@ def test_the_page_shows_the_headings_and_the_totals():
     assert "<details" in section and " open" in section
     assert "95.00" in section  # January's headgate figure
     assert "20.75" in section  # January's leftover
-    assert "Estimated" in section  # February's estimated record
     assert "nallocated" not in section
     assert "POD" not in section
 

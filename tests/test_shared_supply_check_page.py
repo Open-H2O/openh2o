@@ -42,7 +42,7 @@ def _run(parcel, period="2024-01", net=0):
         parcel=parcel, period=period,
         gross_et_af=Decimal("0"), net_consumptive_use_af=Decimal(str(net)),
         effective_precip_af=Decimal("0"), surface_water_af=Decimal("0"),
-        banked_af=Decimal("0"), drawn_af=Decimal("0"), final_af=Decimal("0"),
+        final_af=Decimal("0"),
         breakdown=[{"step_type": "clamp_floor", "detail": {"incidental_recharge_af": "0"}}],
     )
 

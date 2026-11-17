@@ -6,9 +6,8 @@ Every ``CalculationRun`` here is built directly with the ORM, never by
 running the engine — the sentence and the figures are read off the run's OWN
 stamped columns, so a fixture that sets those columns by hand is the whole
 test. Hand numbers, carried from the 148-04 plan and
-``tests/test_over_delivery_treatment.py`` (ET 10.0000, over 4.0000, share
-0.100 -> 3.6000 credited, 0.4000 left in the basin), so a reader can check
-the arithmetic without re-deriving it.
+``tests/test_over_delivery_treatment.py`` (ET 10.0000, over 4.0000), so a reader
+can check the arithmetic without re-deriving it.
 
 Runs in the web container (needs the DB).
 """
@@ -30,9 +29,9 @@ pytestmark = pytest.mark.django_db
 
 # 150.1-02 (2026-10-11): the calculation page is the equation panel. Under
 # ETAW met by surface water, the run's own surface water in excess of ETAW is
-# a breakdown row, and what happened to it is two more rows under the credited
-# setting or a note under the named-line setting only; under the default (not
-# credited) the figure stands and nothing more is said. Rain 8 against crop
+# a breakdown row, and what happened to it is a note under the named-line
+# setting only; under the default (not credited) the figure stands and nothing
+# more is said. Rain 8 against crop
 # ET 10 leaves an ETAW of 2, so 2 of the 6 acre-feet meets ETAW and 4 is the
 # excess.
 EXCESS_LABEL = "<span>Surface water in excess of ETAW"
@@ -41,13 +40,6 @@ ETAW_MET_BY_SURFACE = 'title="2.0000 acre-feet">2.00<'
 FIELD_LABEL = "Surface water in excess of ETAW came to"
 
 OVER = Decimal("4.0000")
-SHARE = Decimal("0.100")
-CREDITED = Decimal("3.6000")
-
-CREDITED_ROWS = (
-    "<span>Credited to this use area</span><b>3.60</b>",
-    "<span>Left in the basin (10%)</span><b>0.40</b>",
-)
 NAMED_LINE_NOTE = "shown on the use area's page as its own line"
 
 
@@ -69,9 +61,6 @@ def _run(
     *,
     over_delivery_af=OVER,
     treatment="not_credited",
-    credited_af=None,
-    leave_behind=None,
-    pooled=False,
 ):
     # A well month with no ETAW met by groundwater: crop ET 10.0000,
     # effective precipitation 8.0000 (ETAW 2.0000), delivery times efficiency
@@ -90,9 +79,6 @@ def _run(
         residual_disposition="groundwater",
         over_delivery_af=over_delivery_af,
         over_delivery_treatment=treatment,
-        over_delivery_leave_behind=leave_behind,
-        over_delivery_credited_af=credited_af,
-        over_delivery_credit_pooled=pooled,
     )
 
 
@@ -132,17 +118,6 @@ class TestCalculationPageSentenceByStamp:
         assert "Credited to this use area" not in html
         assert "its own line" not in html
 
-    def test_credited_to_the_use_area(self):
-        parcel = ParcelFactory(parcel_number="R148-04-B")
-        _run(
-            parcel, "2026-08", treatment="credited",
-            credited_af=CREDITED, leave_behind=SHARE, pooled=False,
-        )
-        html = _calc_page(parcel, "2026-08")
-        assert EXCESS_FIGURE in html
-        for row in CREDITED_ROWS:
-            assert row in html, row
-
     def test_named_line(self):
         parcel = ParcelFactory(parcel_number="R148-04-D")
         _run(parcel, "2026-08", treatment="named_line")
@@ -150,26 +125,12 @@ class TestCalculationPageSentenceByStamp:
         assert EXCESS_FIGURE in html
         assert NAMED_LINE_NOTE in html
 
-    def test_credited_with_nothing_actually_credited_reads_as_not_credited(self):
-        """`treatment` stamps "credited" but `over_delivery_credited_af` stays
-        None (148-04 Task 2's `_over_delivery_decision`, the "no zone to hold
-        it" branch). It must read the same as not_credited honestly does,
-        never crash and never claim a credit that was not made."""
-        parcel = ParcelFactory(parcel_number="R148-04-K")
-        _run(
-            parcel, "2026-08", treatment="credited",
-            credited_af=None, leave_behind=SHARE, pooled=False,
-        )
-        html = _calc_page(parcel, "2026-08")
-        assert EXCESS_FIGURE in html
-        assert "Credited to this use area" not in html
-
     def test_zero_over_delivery_shows_no_excess_row(self):
         parcel = ParcelFactory(parcel_number="R148-04-E")
-        _run(parcel, "2026-08", over_delivery_af=Decimal("0.0000"), treatment="credited")
+        _run(parcel, "2026-08", over_delivery_af=Decimal("0.0000"), treatment="named_line")
         html = _calc_page(parcel, "2026-08")
         assert EXCESS_LABEL not in html
-        assert "Credited to this use area" not in html
+        assert NAMED_LINE_NOTE not in html
 
 
 class TestSentenceIsTheRunsOwnStamp:
@@ -182,13 +143,12 @@ class TestSentenceIsTheRunsOwnStamp:
         config, _ = SiteConfig.objects.get_or_create(
             defaults={"agency_name": "148-04 Test Agency"}
         )
-        config.over_delivery_treatment = "credited"
-        config.over_delivery_leave_behind = SHARE
+        config.over_delivery_treatment = "named_line"
         config.save()
 
         html = _calc_page(parcel, "2026-08")
         assert EXCESS_FIGURE in html
-        assert "Credited to this use area" not in html
+        assert NAMED_LINE_NOTE not in html
 
 
 class TestFieldPageLine:
@@ -204,11 +164,10 @@ class TestFieldPageLine:
             parcel, "2026-02", over_delivery_af=Decimal("1.5000"),
             treatment="named_line",
         )
-        # Credited elsewhere the same month range; must not be counted here.
+        # Not credited, the same month range; must not be counted here.
         _run(
             parcel, "2026-03", over_delivery_af=Decimal("2.0000"),
-            treatment="credited", credited_af=Decimal("1.8000"),
-            leave_behind=SHARE, pooled=False,
+            treatment="not_credited",
         )
 
         html = _field_page(parcel)
@@ -216,14 +175,13 @@ class TestFieldPageLine:
         assert (
             "Surface water in excess of ETAW came to 5.50 AF. OpenH2O neither credits it to "
             "the landowner nor charges it to R148-04-G."
-        ) in " ".join(html.split()), "4.0000 + 1.5000 named_line AF, the credited run excluded"
+        ) in " ".join(html.split()), "4.0000 + 1.5000 named_line AF, the not_credited run excluded"
 
     def test_absent_for_a_field_with_no_named_line_run(self):
         parcel = ParcelFactory(parcel_number="R148-04-H")
         _run(
             parcel, "2026-01", over_delivery_af=Decimal("4.0000"),
-            treatment="credited", credited_af=Decimal("3.6000"),
-            leave_behind=SHARE, pooled=False,
+            treatment="not_credited",
         )
 
         html = _field_page(parcel)
@@ -246,8 +204,7 @@ class TestNoRecharge:
     def test_calculation_pages_new_card_says_nothing_about_recharge(self):
         parcel = ParcelFactory(parcel_number="R148-04-I")
         _run(
-            parcel, "2026-08", treatment="credited",
-            credited_af=CREDITED, leave_behind=SHARE, pooled=False,
+            parcel, "2026-08", treatment="named_line",
         )
         html = _calc_page(parcel, "2026-08")
         start = html.index('<div class="budget-panel ')

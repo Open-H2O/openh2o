@@ -10,8 +10,7 @@ calculator, never recomputed with the engine's formula.
   whole of its crop use over its efficiency. A typed record still comes off the
   charge.
 * A field's crop water use is counted unless the field is in a fallow period;
-  a field with no crop on record is charged like any other. A calculation plan
-  that still holds the old no-crop step no longer zeroes anything.
+  a field with no crop on record is charged like any other.
 * Canal delivery is always multiplied by the field's irrigation efficiency, with
   or without the setting in the plan.
 """
@@ -144,32 +143,8 @@ def test_a_field_marked_fallow_is_charged_nothing(ref):
     assert run.net_consumptive_use_af == D("0.0000")
 
 
-def test_a_plan_still_holding_the_no_crop_step_does_not_zero(ref):
-    plan = CalculationPlan.active()
-    CalculationStep.objects.filter(plan=plan, step_type="clamp_floor").update(order=6)
-    CalculationStep.objects.create(
-        plan=plan, order=5, step_type="facility_only_zero", enabled=True, config={}, label="Zero out facility-only parcels")
-    d1 = ld.build_d1()
-    ld.run_months(["2025-07"])
-    assert pumped(d1["F3"], "2025-07") == D("26.6667")
-
-
 def test_the_seeded_plan_has_no_no_crop_step(ref):
     types = list(CalculationPlan.active().steps.order_by("order").values_list("step_type", flat=True))
-    assert types == ["et_gross", "subtract_effective_precip", "subtract_surface_water", "clamp_floor"]
-
-
-def test_seeding_again_takes_the_old_step_out_of_an_existing_plan(ref):
-    from django.core.management import call_command
-
-    plan = CalculationPlan.active()
-    CalculationStep.objects.filter(plan=plan, step_type="clamp_floor").update(order=6)
-    CalculationStep.objects.create(
-        plan=plan, order=4, step_type="facility_only_zero", enabled=True, config={}, label="Zero out facility-only parcels")
-    CalculationStep.objects.filter(plan=plan, order=6).update(order=5)
-    assert plan.steps.count() == 5
-    call_command("seed_calculation_plan", stdout=ld.io.StringIO())
-    types = list(plan.steps.order_by("order").values_list("step_type", flat=True))
     assert types == ["et_gross", "subtract_effective_precip", "subtract_surface_water", "clamp_floor"]
 
 

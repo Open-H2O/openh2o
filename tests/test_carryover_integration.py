@@ -70,13 +70,13 @@ def usage_row(
     eff_date,
     af,
     *,
-    source_type="et_estimate",
+    source_type="calculated",
     water_type=None,
     reporting_period=None,
 ):
     """A negative (usage) ledger row dated to eff_date.
 
-    ``reporting_period`` defaults to None (matching real et_estimate rows, which
+    ``reporting_period`` defaults to None (matching real calculated rows, which
     the rollover catches via effective_date). The dashboard, however, filters
     usage by the reporting_period FK, so dashboard fixtures set it explicitly.
     """
@@ -118,7 +118,7 @@ class TestWaterYearPeriods:
 
 
 # ---------------------------------------------------------------------------
-# water_year_usage_by_type — engine rows -> GW, billable_ledger applied
+# water_year_usage_by_type — engine rows -> GW
 # ---------------------------------------------------------------------------
 
 
@@ -130,8 +130,8 @@ class TestUsageByType:
         ParcelZoneFactory(parcel=parcel, zone=zone)
         WellIrrigatedParcelFactory(parcel=parcel)  # a satellite row only counts on a field with a well
 
-        # et_estimate carries NULL water_type but is groundwater extraction.
-        usage_row(parcel, date(2024, 6, 1), 30, source_type="et_estimate")
+        # A calculated row carries NULL water_type but is groundwater extraction.
+        usage_row(parcel, date(2024, 6, 1), 30, source_type="calculated")
         # a metered groundwater pull, typed GW.
         usage_row(
             parcel, date(2024, 7, 1), 12, source_type="meter_reading", water_type=gw
@@ -140,27 +140,13 @@ class TestUsageByType:
         buckets = water_year_usage_by_type(zone, date(2024, 1, 1), date(2024, 12, 31))
         assert buckets["GW"] == Decimal("42.0000")
 
-    def test_calculated_row_suppresses_its_et_estimate_twin(self):
-        gw_type()
-        zone = ZoneFactory()
-        parcel = ParcelFactory()
-        ParcelZoneFactory(parcel=parcel, zone=zone)
-
-        # Gross ET 30 and a netted calculated 18 for the SAME parcel-month: only
-        # the calculated row should bill (no ET double-count), both -> GW.
-        usage_row(parcel, date(2024, 6, 1), 30, source_type="et_estimate")
-        usage_row(parcel, date(2024, 6, 1), 18, source_type="calculated")
-
-        buckets = water_year_usage_by_type(zone, date(2024, 1, 1), date(2024, 12, 31))
-        assert buckets["GW"] == Decimal("18.0000")
-
     def test_date_range_excludes_outside_months(self):
         zone = ZoneFactory()
         parcel = ParcelFactory()
         ParcelZoneFactory(parcel=parcel, zone=zone)
         WellIrrigatedParcelFactory(parcel=parcel)  # a satellite row only counts on a field with a well
-        usage_row(parcel, date(2024, 6, 1), 30, source_type="et_estimate")
-        usage_row(parcel, date(2025, 6, 1), 99, source_type="et_estimate")
+        usage_row(parcel, date(2024, 6, 1), 30, source_type="calculated")
+        usage_row(parcel, date(2025, 6, 1), 99, source_type="calculated")
 
         buckets = water_year_usage_by_type(zone, date(2024, 1, 1), date(2024, 12, 31))
         assert buckets["GW"] == Decimal("30.0000")
@@ -190,7 +176,7 @@ class TestRolloverCommand:
             allocation_acre_feet=Decimal(str(alloc)),
         )
         if usage:
-            usage_row(parcel, date(2024, 6, 1), usage, source_type="et_estimate")
+            usage_row(parcel, date(2024, 6, 1), usage, source_type="calculated")
         if finalized:
             ReportingPeriod.objects.filter(pk=period.pk).update(is_finalized=True)
         return zone, gw

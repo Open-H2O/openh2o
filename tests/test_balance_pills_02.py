@@ -49,9 +49,8 @@ the shares entered:
   July records, 30.0000 by a measuring device on the 1st and 10.0000 with no
   method on the 15th, so S4 receives 15.0000 + 5.0000 = 20.0000 and that share
   splits 30 : 10 by volume, Metered 15.0000 and Unknown 5.0000.
-* S6 (account S6): Old Canal's August record, 6.0000, estimated from crop water
-  use (a record only a finalized year still holds), with its share written by
-  hand after the runs.
+* S6 (account S6): Old Canal's August record, 6.0000, an outage estimate, with
+  its share written by hand after the runs.
 
 The Dashboard therefore reads
 Surface 56.75 = 27.50 Metered + 14.00 Estimated + 15.25 Unknown and
@@ -251,9 +250,9 @@ def district():
     ld.ledger(f7, AUG, "-5.0000", "manual_entry", "GW", "typed on the ledger (test input)")
     ld.ledger(d1["F1"], AUG, "0", "calculated", "GW", "calculated, nothing to estimate")
     _own_delivery(s["S2"], AUG, "-7.2500")
-    # A run deletes a record estimated from crop water use, so this one goes in after them.
+    # Entered after the runs, like the hand-entered rows above.
     old = _point("Old Canal", right, [(s["S6"], "1")])
-    _record(old, AUG, "6.0000", "estimated_from_use")
+    _record(old, AUG, "6.0000", "outage_estimate")
     _share_row(s["S6"], AUG, "-6.0000", old)
     accounts = {
         "A": WaterAccount.objects.get(account_number="D1-A"),
@@ -392,7 +391,7 @@ def test_a_share_of_an_outage_estimate_is_estimated(district, client):
     assert _supply_lines(page, "Surface") == [("Estimated", "8.00")]
 
 
-def test_a_share_of_a_record_estimated_from_crop_water_use_is_estimated(district, client):
+def test_a_share_of_a_second_outage_estimate_is_estimated(district, client):
     page = _account_page(client, district["accounts"]["S6"])
     assert _supply_lines(page, "Surface") == [("Estimated", "6.00")]
 
@@ -417,7 +416,6 @@ def test_a_share_that_names_no_point_is_unknown(district, client):
     ("device", "metered"),
     ("methodology", "metered"),
     ("outage_estimate", "estimated"),
-    ("estimated_from_use", "estimated"),
     ("", "unknown"),
     ("alternative_compliance", "unknown"),
     ("apportioned", "unknown"),

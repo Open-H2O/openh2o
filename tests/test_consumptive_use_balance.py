@@ -160,24 +160,16 @@ def test_empty_parcel_is_all_zero_no_divide():
 def test_groundwater_supply_reconciles_with_balance_dict_usage():
     """Case 4: groundwater supply == parcel_balance_breakdown usage (same period).
 
-    The new lens and the billable primitive must agree on the GW number. The
-    et_estimate twin is suppressed by billable_ledger (its calculated row bills),
-    so usage counts the calculated magnitude only — and so must the lens.
+    The new lens and the balance must agree on the GW number: usage counts the
+    calculated magnitude, and so must the lens.
     """
     rp = ReportingPeriodFactory()
     parcel = ParcelFactory()
     WellIrrigatedParcelFactory(parcel=parcel)
 
     _run(parcel, "2024-04", gross_et=12, net_cu=12, precip=0)
-    # calculated -7 (the netted bill) suppresses its gross et_estimate -9 twin.
+    # calculated -7 is the netted bill.
     _calculated_row(parcel, rp, date(2024, 4, 1), 7)
-    ParcelLedgerFactory(
-        parcel=parcel,
-        reporting_period=rp,
-        effective_date=date(2024, 4, 1),
-        amount_acre_feet=Decimal("-9"),
-        source_type="et_estimate",
-    )
 
     result = consumptive_use_balance([parcel.id], rp)
     breakdown = parcel_balance_breakdown(parcel, rp)

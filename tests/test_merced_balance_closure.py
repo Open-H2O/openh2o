@@ -62,7 +62,7 @@ import pytest
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 
-from accounting.models import AllocationCarryover, CalculationRun
+from accounting.models import CalculationRun
 from accounting.services import consumptive_use_balance, parcel_mass_balance
 from core.map_labels import map_label
 from core.models import SiteConfig
@@ -139,7 +139,7 @@ def _precip_cache(parcel, precip_mm, period=PERIOD):
 
 
 def _irrigate(parcel):
-    """Give the parcel a crop so facility_only_zero does not zero its ET."""
+    """Give the parcel a crop."""
     crop = CropType.objects.create(name=f"Crop-{parcel.parcel_number}")
     UsageLocation.objects.create(parcel=parcel, name="field", crop_type=crop)
 
@@ -316,9 +316,6 @@ def test_basin_parcel_mass_balance_closes_with_pooled_recharge():
     # No recharge ledger row — personal or otherwise.
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="recharge").exists()
-    # No basin-pool deposit either.
-    assert not AllocationCarryover.objects.filter(
-        zone=zone, origin="incidental_recharge_pool").exists()
     # And no phantom groundwater row (no well to pump it).
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="calculated").exists()
@@ -364,8 +361,6 @@ def test_no_well_flat_delivery_residual_equals_its_over_delivery():
     assert balance["deep_percolation_af"] >= run.over_delivery_af
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="recharge").exists()
-    assert not AllocationCarryover.objects.filter(
-        zone=zone, origin="incidental_recharge_pool").exists()
 
     # Unchanged across a re-run: no ledger row and no pool row appear, and the
     # run's own over_delivery_af is delete-then-insert idempotent.
@@ -374,8 +369,6 @@ def test_no_well_flat_delivery_residual_equals_its_over_delivery():
     assert run_again.over_delivery_af == run.over_delivery_af
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="recharge").exists()
-    assert not AllocationCarryover.objects.filter(
-        zone=zone, origin="incidental_recharge_pool").exists()
 
 
 def test_metered_parcel_mass_balance_within_band():
