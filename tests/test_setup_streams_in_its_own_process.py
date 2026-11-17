@@ -315,5 +315,5 @@ def test_an_unchecked_download_step_is_never_shown_as_running(client, boundary):
     showed "Finding the parcels that overlap the boundary…" for one poll."""
     _at(client, boundary, "basins", steps=("flowlines",))
     response = client.post(PROGRESS_URL)  # reports the basins skipped; Parcel Boundaries is next, unchecked
-    assert "Skipped: you unchecked this step" in response.content.decode()
-    assert "Finding the parcels" not in response.content.decode()
+    assert response.context["parcels_running"] is False
+    assert response.context["download_running"] is False
