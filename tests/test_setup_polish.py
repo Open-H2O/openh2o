@@ -311,11 +311,11 @@ def _discovery_adapter(code, *, raises=False):
 
 
 @override_settings(ACCESS_CONTROL_ENFORCED=False)
-def test_stations_phase_polls_one_provider_per_request(db, settings, monkeypatch):
-    """The wizard advances ONE provider per stations-phase poll, renders a labeled
-    row for each (a clean error row for one that raises), and reaches completion
-    with the station review attached — never a single all-providers request that
-    can outlast the worker timeout (ISS-051)."""
+def test_stations_phase_checks_every_provider_in_its_own_process(db, settings, monkeypatch):
+    """The stations step runs as its own process (here in this one, as the suite runs it),
+    checks every provider in turn, renders a labeled row for each (a clean error row for one
+    that raises), and reaches completion with the station review attached. A poll never
+    waits on a provider (ISS-051, then ISS-425)."""
     from geography.management.commands import auto_populate as ap
     from setup.services import STATION_PROVIDERS
 
@@ -332,7 +332,7 @@ def test_stations_phase_polls_one_provider_per_request(db, settings, monkeypatch
 
     client = Client()
     client.force_login(_admin())
-    # Start the run already at the stations phase — the three geographic steps
+    # Start the run already at the stations phase: the three geographic steps
     # call external ArcGIS services and are covered elsewhere.
     _seed_session(
         client,
@@ -346,31 +346,12 @@ def test_stations_phase_polls_one_provider_per_request(db, settings, monkeypatch
         ],
     )
 
-    n = len(STATION_PROVIDERS)  # 7
-    # DB count after each poll proves one provider advances per request: usgs
-    # raises (0 created), then each subsequent provider adds exactly one.
-    expected_counts = [0, 1, 2, 3, 4, 5, 6]
-    responses = []
-    for i in range(n):
-        resp = client.post(PROGRESS_URL)
-        assert resp.status_code == 200
-        assert MonitoredStation.objects.count() == expected_counts[i], (
-            f"after poll {i + 1} expected {expected_counts[i]} stations"
-        )
-        responses.append(resp.content.decode())
-
-    # Poll 1 — usgs raised → a clean labeled ERROR row, the run keeps going.
-    first = responses[0]
-    assert "USGS Service" in first
-    assert "wizard-step--error" in first
-    # The error message renders through a {{ }} variable, so its apostrophe is
-    # HTML-escaped — assert on the apostrophe-free part (cf. the upload tests).
-    assert "the stations from this data provider did not load." in first
-    assert "what's next" not in first.lower()  # still polling, not finished
-    assert "Checking" in first                  # spinner names the next provider
-
-    # Final poll — completion panel + station review attached for the 6 stations.
-    final = responses[-1]
+    final = client.post(PROGRESS_URL).content.decode()
+    assert MonitoredStation.objects.count() == len(STATION_PROVIDERS) - 1
+    # usgs raised: a clean labeled ERROR row, and the other providers still ran.
+    assert "USGS Service" in final
+    assert "wizard-step--error" in final
+    assert "the stations from this data provider did not load." in final
     assert "what's next" in final.lower()
     assert "Monitoring stations" in final       # build_station_review attached
     assert "Enable all 6" in final              # 6 inactive in-boundary stations

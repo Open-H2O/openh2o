@@ -35,9 +35,10 @@ CALIFORNIA_LINE = (
     "The basins and parcels come from the California Department of Water Resources and cover "
     "California only. For land outside California, uncheck Groundwater Basins and Parcel "
     "Boundaries and load your parcel outlines with")
+# wording approved: ruling 194 (row 10)
 LEAVE_LINE = (
-    "The parcel download continues if you leave this page, but Flowlines and Monitoring "
-    "Stations start only when you come back. Keep this page open until every step finishes.")
+    "Keep this page open until every step finishes. A step that has started keeps going if you "
+    "leave, but the next step starts only when you come back.")
 RERUN_LINES = (
     "To add the rest, open the Setup Wizard and choose this boundary under Select an existing "
     "boundary. On Populate, check only Parcel Boundaries and choose your list again if you used "
