@@ -308,3 +308,12 @@ def test_basins_still_run_inside_the_poll(client, boundary, settings, django_cap
     assert popen.call_count == 0
     assert not PendingImport.objects.exists()
     assert "1 record created" in _words(response)
+
+
+def test_an_unchecked_download_step_is_never_shown_as_running(client, boundary):
+    """Seen at Merced size: with Parcel Boundaries unchecked, the poll after the basins
+    showed "Finding the parcels that overlap the boundary…" for one poll."""
+    _at(client, boundary, "basins", steps=("flowlines",))
+    response = client.post(PROGRESS_URL)  # reports the basins skipped; Parcel Boundaries is next, unchecked
+    assert "Skipped: you unchecked this step" in response.content.decode()
+    assert "Finding the parcels" not in response.content.decode()

@@ -582,6 +582,8 @@ def setup_progress(request):
         boundary, steps, step_names, results, step_index, provider_index, all_done
     )
     running = None if all_done else step_names[step_index]
+    if selected_steps is not None and running not in selected_steps:
+        running = None  # an unchecked step is reported on the next poll; nothing runs
     context["parcels_running"] = running == "parcels"
     # The note under the steps and the 2-second poll, while a step runs in its own process.
     context["download_running"] = running in ("parcels", "flowlines", "stations")
