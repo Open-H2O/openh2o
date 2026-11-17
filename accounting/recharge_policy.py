@@ -66,15 +66,10 @@ def recharge_routes_to_personal(parcel_or_archetype):
     This is the guard: no parcel earns a personal groundwater credit
     without a well to pump it back.
 
-    An over-delivery is nobody's credit: ``run_calculations`` does not call
-    this to route an over-delivery anywhere, whatever
-    ``SiteConfig.over_delivery_treatment`` holds; that amount lands only on
-    ``CalculationRun.over_delivery_af``. This function stays for the
-    managed-recharge path (``accounting.services.create_recharge_ledger_entries``,
-    a real ``RechargeEvent`` deliberately spread onto a basin), which the
-    routing question still applies to unchanged, and for
-    ``run_calculations``'s own one-time reversal of an older engine's pool
-    deposit.
+    ``run_calculations`` calls this to decide whether a field's residual goes to
+    its own ledger, and the managed-recharge path
+    (``accounting.services.create_recharge_ledger_entries``, a real
+    ``RechargeEvent`` deliberately spread onto a basin) calls it to route its credit.
     """
     if isinstance(parcel_or_archetype, str):
         archetype = parcel_or_archetype

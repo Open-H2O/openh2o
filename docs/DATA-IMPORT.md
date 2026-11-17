@@ -387,7 +387,7 @@ Dry run.
 | `effective_date` | yes | The date the entry applies to. |
 | `amount_acre_feet` | yes | Its sign depends on `source_type`. |
 | `source_type` | yes | One of the codes in the sign table. |
-| `water_type_code` | no | The code of a water type on the site. A negative entry without a water type counts against a groundwater allocation only when its source type is `meter_reading` or `calculated`, or `et_estimate` on a field with a well. |
+| `water_type_code` | no | The code of a water type on the site. A negative entry without a water type counts against a groundwater allocation only when its source type is `meter_reading` or `calculated`. |
 | `transaction_date` | no | The date the entry was recorded. |
 | `description` | no | Any text. |
 
@@ -411,7 +411,6 @@ amount of 0 as an error and imports the file's other rows.
 | `source_type` code | Sign |
 |---|---|
 | `meter_reading` | negative |
-| `et_estimate` | negative |
 | `manual_entry` | either |
 | `csv_import` | either |
 | `surface_diversion` | negative |

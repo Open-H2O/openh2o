@@ -146,8 +146,6 @@ RECALCULATION_PARTS = frozenset(
         "surface.DiversionRecord",
         "surface.UnallocatedDelivery",
         "surface.CanalMonthLoss",
-        "accounting.WaterCredit",
-        "accounting.WaterCreditDraw",
         "accounting.AllocationCarryover",
         "accounting.AccountCredit",
     }

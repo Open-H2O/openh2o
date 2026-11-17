@@ -127,19 +127,11 @@
           </tr>
           <tr>
             <td class="col-name">Accepting a newer figure</td>
-            <td>A person who can correct records may accept the newer figure on the month&rsquo;s calculation page. Acceptance takes a reason of 10 to 500 characters. OpenH2O replaces the recorded figure as a correction. If the ledger holds an ET estimate entry for the month, OpenH2O corrects that entry the same way. The page keeps the earlier figure struck through with the day, the person and the reason. OpenH2O recalculates the month at once.</td>
+            <td>A person who can correct records may accept the newer figure on the month&rsquo;s calculation page. Acceptance takes a reason of 10 to 500 characters. OpenH2O replaces the recorded figure as a correction. The page keeps the earlier figure struck through with the day, the person and the reason. OpenH2O recalculates the month at once.</td>
           </tr>
           <tr>
             <td class="col-name">A finalized water year</td>
             <td>In a finalized water year the newer figure is shown and nothing changes. Only an administrator can accept it. The acceptance needs a reason and is recorded as an exception to the closed year.</td>
-          </tr>
-          <tr>
-            <td class="col-name">ET estimate entries</td>
-            <td>A person cannot type an ET figure. The hand entry form, the ledger import and the administration site cannot create or change one. An entry written before this version can differ from the recorded figure. The ledger and the month&rsquo;s calculation page then show both. A person who can correct records may correct the entry with a reason.</td>
-          </tr>
-          <tr>
-            <td class="col-name">The upgrade to this version</td>
-            <td>The upgrade recorded each month&rsquo;s figure from the crop ET its last calculation used. It recorded the newest figure OpenET had sent for any month never calculated. No figure changed. These months read &ldquo;date received not recorded&rdquo; on the calculation page.</td>
           </tr>
           <tr>
             <td class="col-name">Rainfall</td>
@@ -232,10 +224,6 @@
           <tr>
             <td class="col-name">No volume</td>
             <td>When a diversion has no meter reading and no volume entered for a month, OpenH2O does not record a delivery for it, and the use areas it serves do not receive canal water from it that month. OpenH2O does not estimate a delivery from the crop need of the use areas.</td>
-          </tr>
-          <tr>
-            <td class="col-name">An earlier estimate</td>
-            <td>An earlier version of OpenH2O estimated a delivery for such a month. Upgrading deletes those records from every water year that is not finalized, and the next calculation of that year removes the canal water divided from them. A finalized water year keeps them, marked as estimated, and its months keep the figures they were calculated with, in which the estimate was not subtracted from ETAW.</td>
           </tr>
         </tbody>
       </table>

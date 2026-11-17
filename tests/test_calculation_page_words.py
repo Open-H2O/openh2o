@@ -267,8 +267,3 @@ def test_floor_step_summary_says_banked_only_on_an_old_banking_run():
     assert _step_detail_summary(new) == (
         "floor 0.00; 1.5000 AF below the floor, not carried forward"
     )
-    old = {
-        "step_type": "clamp_floor",
-        "detail": {"floor": "0", "surplus_af": "1.5", "bank": True},
-    }
-    assert _step_detail_summary(old) == "floor 0.00; 1.5000 AF surplus banked"

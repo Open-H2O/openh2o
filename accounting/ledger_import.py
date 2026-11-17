@@ -66,10 +66,6 @@ from parcels.models import (
     ParcelLedger,
 )
 
-#: Nobody types an ET figure: crop ET is recorded only from OpenET's figures
-#: (datasync/crop_et.py), and no screen, import or admin form writes an ET estimate entry.
-ET_ESTIMATE_REFUSAL = "OpenH2O records crop ET only from OpenET. Choose another source type for this entry."
-
 REQUIRED_COLUMNS = {
     "parcel_number",
     "effective_date",
@@ -299,8 +295,6 @@ def _check_row(
     # Source type
     if not source_type:
         row_errors.append("missing source_type")
-    elif source_type == "et_estimate":
-        row_errors.append(ET_ESTIMATE_REFUSAL)
     elif source_type not in valid_source_types:
         row_errors.append(f"invalid source_type: {source_type}")
 

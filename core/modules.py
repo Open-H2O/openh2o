@@ -1137,7 +1137,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="ParcelLedger",
         field="water_type",
         target="accounting",
-        where="parcels/models.py:122",
+        where="parcels/models.py:120",
         why=(
             "A ledger row has to say which kind of water it moved, and that "
             "vocabulary belongs to accounting."
@@ -1181,7 +1181,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="ParcelLedger",
         field="reporting_period",
         target="accounting",
-        where="parcels/models.py:127",
+        where="parcels/models.py:125",
         why=(
             "A ledger row falls in a water year, and the water-year calendar "
             "belongs to accounting."
@@ -1196,7 +1196,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="WaterAccount",
         field="delivery_well",
         target="wells",
-        where="accounting/models.py:159",
+        where="accounting/models.py:158",
         why=(
             "An account delivered by groundwater names the well it draws "
             "from, and accounting is schema-resident so this arrow is safe: "

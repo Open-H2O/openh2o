@@ -591,11 +591,11 @@ def test_several_corrections_link_to_the_card_when_it_lists_at_least_one(d1, fil
 
 
 def test_the_part_names_still_feed_the_code_unchanged():
-    """Renaming a part would flip every stored code to "disagrees". This digest was computed on the base
-    commit (4c41acdf) from the 23 parts in their order, each given the digest of its position."""
+    """Renaming a part would flip every stored code to "disagrees". This digest was computed from the 21 parts
+    in their order, each given the digest of its position."""
     parts = {key: {"digest": f"{index:064x}"} for index, key in enumerate(fp().PART_KEYS)}
-    assert len(parts) == 23
-    assert fp().whole_digest(parts) == "9ec624555332b151e7d7491a610b0afa8a4881478cd507b9f0a304bdf95d510c"
+    assert len(parts) == 21
+    assert fp().whole_digest(parts) == "d3e9753a4f86e5c20c41f366f5ec1f427976e8befb990b5afcae62058f988ecc"
 
 
 def test_a_code_taken_before_this_change_still_answers_no_changes_found(year, administrator):

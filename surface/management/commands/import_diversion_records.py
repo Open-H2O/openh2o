@@ -13,7 +13,7 @@ import os
 from django.core.management.base import BaseCommand, CommandError
 
 from surface.diversion_import import import_diversion_rows, parse_csv
-from surface.models import PointOfDiversion
+from surface.models import DiversionRecord, PointOfDiversion
 
 #: The key `surface.diversion_import` files records under when no water year covers them.
 NO_WATER_YEAR = "No water year assigned"
@@ -35,6 +35,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--method", type=str, default="",
+            choices=[""] + [code for code, _label in DiversionRecord.METHOD_CHOICES],
             help="Method for every created record (blank = not stated).",
         )
         parser.add_argument(

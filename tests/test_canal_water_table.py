@@ -25,7 +25,7 @@ from django.contrib.auth.hashers import make_password
 from django.test import Client
 from django.urls import reverse
 
-from accounting.models import CalculationRun, ReportingPeriod
+from accounting.models import ReportingPeriod
 from health.models import HealthCheckResult
 from surface.models import DiversionRecord
 from surface.services import allocate_district_delivery, canal_water_by_month
@@ -99,7 +99,6 @@ def test_each_cell_is_the_stored_figure_and_the_row_adds_up():
     assert row["divided"] == Decimal("60.7500")
     assert row["beyond"] == Decimal("0")
     assert row["calculated"] is True
-    assert row["estimated"] is False
     assert row["adds_up"] is True
     assert (
         row["losses"] + row["own"] + row["divided"] + row["beyond"]

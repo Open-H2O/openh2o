@@ -106,12 +106,8 @@ def _step_detail_summary(step, *, delivery_split=None):
         method = detail.get("method", "usda_scs")
         method_label = METHOD_LABELS.get(method, "Method not recorded")
         af_clause = f"{_fmt(detail.get('effective_precip_af'))} AF subtracted"
-        # A pre-38 run recorded no precip_mm; fall back to the AF clause alone
-        # rather than printing a dash where an inches figure should be.
         pe_in = _mm_to_in(detail.get("effective_precip_mm"))
         p_in = _mm_to_in(detail.get("precip_mm"))
-        if pe_in is None or p_in is None:
-            return f"{method_label}: {af_clause}"
         return (
             f"{method_label}: {pe_in:.4f} in of the {p_in:.4f} in of rain "
             f"counted as effective; {af_clause}"
@@ -141,45 +137,13 @@ def _step_detail_summary(step, *, delivery_split=None):
                 f"= {_fmt(detail.get('consumed_af'))} AF"
             )
         return f"{_fmt(detail.get('surface_water_af'))} AF delivered and subtracted in full"
-    if step_type == "facility_only_zero":
-        return "no crop on record, set to zero" if detail.get("facility_only") else "has a crop on record, unchanged"
     if step_type == "clamp_floor":
         surplus = Decimal(str(detail.get("surplus_af", "0") or "0"))
         base = f"floor {_fmt(detail.get('floor'), 2)}"
         if surplus > 0:
-            # A run from an older engine with banking on did bank it; a new run
-            # carries the figure as information only.
-            if detail.get("bank"):
-                return f"{base}; {_fmt(surplus)} AF surplus banked"
             return f"{base}; {_fmt(surplus)} AF below the floor, not carried forward"
         return base
     return ""
-
-
-def _over_delivery_left_af(run):
-    """What the run's own two stamped figures leave in the basin.
-
-    ``over_delivery_af`` and ``over_delivery_credited_af`` are both read off
-    THIS run, never the live setting (the same rule that protects
-    ``gw_extracted_af``), so a later change to Delivery Settings moves
-    nothing this page says about a run already computed. None whenever
-    nothing was actually credited this run: not_credited, named_line, or a
-    "credited" run that credited nothing (no over-delivery to apply the
-    share to, or a no-well field with no zone to hold its share). The
-    template reads that state the same way it reads not_credited.
-    """
-    if run.over_delivery_treatment != "credited" or run.over_delivery_credited_af is None:
-        return None
-    return (run.over_delivery_af - run.over_delivery_credited_af).quantize(Decimal("0.0001"))
-
-
-def _over_delivery_share_pct(run):
-    """The stamped leave-behind share, as a percent number for the
-    template's own ``floatformat:0`` (never a pre-formatted string, so the
-    share is formatted the same way as every other number on this page)."""
-    if run.over_delivery_leave_behind is None:
-        return None
-    return run.over_delivery_leave_behind * 100
 
 
 def _breakdown_facts(run: CalculationRun) -> dict[str, object]:
@@ -382,10 +346,6 @@ def _receipt_context(parcel, run, period):
         # "use" / "fixed" / None, off the month's ledger rows (the run stores
         # no split flag): whether the delivery was a share of a headgate total.
         "delivery_split": _delivery_split_kind(parcel, period),
-        # What happened to surface water in excess of ETAW, by the
-        # run's own stamp. None whenever nothing was credited.
-        "over_delivery_left_af": _over_delivery_left_af(run),
-        "over_delivery_share_pct": _over_delivery_share_pct(run),
     }
 
 
@@ -488,9 +448,8 @@ def _crop_et_context(user, parcel, period, open_action=""):
     year = period_for(found["record"].month)
     closed = year is not None and year.is_finalized
     can_act = bool(getattr(user, "can_write", False)) and (not closed or may_override(user))
-    for band in (found["newer"], found["entry"]):
-        if band is None:
-            continue
+    band = found["newer"]
+    if band is not None:
         band["can_act"] = can_act
         band["open"] = bool(can_act and band["action"] == open_action)
     return found
@@ -499,9 +458,9 @@ def _crop_et_context(user, parcel, period, open_action=""):
 @login_required
 @require_POST
 def crop_et_accept(request, parcel_id, period):
-    """Accept OpenET's newer figure for the month, or bring its ET estimate entry to the record.
+    """Accept OpenET's newer figure for the month.
 
-    Either is a recorded correction with the person's reason, and the month is
+    It is a recorded correction with the person's reason, and the month is
     recalculated at once (the same request Correct this record starts). In a
     finalized year only an administrator, through the recorded door.
     """
@@ -531,15 +490,10 @@ def crop_et_accept(request, parcel_id, period):
             "An administrator can correct or void a record in it.",
         )
         return redirect(page)
-    act = (
-        crop_et.bring_entry_to_record
-        if request.POST.get("action") == "entry"
-        else crop_et.accept_newer_figure
-    )
     try:
         with _door(reason.strip() or "Reason not given.", closed):
             with transaction.atomic():
-                months = act(record, user=request.user, reason=reason)
+                months = crop_et.accept_newer_figure(record, user=request.user, reason=reason)
                 covered = _recalculate(
                     request, months, "record_corrected", reason.strip() if closed else ""
                 )

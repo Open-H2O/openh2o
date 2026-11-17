@@ -11,8 +11,6 @@ from .models import (
     ReportingPeriod,
     WaterAccount,
     WaterAccountParcel,
-    WaterCredit,
-    WaterCreditDraw,
     WaterType,
 )
 
@@ -94,26 +92,6 @@ class CalculationStepAdmin(admin.ModelAdmin):
     ordering = ["plan", "order"]
 
 
-@admin.register(WaterCredit)
-class WaterCreditAdmin(admin.ModelAdmin):
-    list_display = [
-        "parcel",
-        "origin",
-        "origin_period",
-        "amount_af",
-        "depreciation_rate",
-        "expires_period",
-    ]
-    list_filter = ["origin"]
-    raw_id_fields = ["parcel"]
-
-
-@admin.register(WaterCreditDraw)
-class WaterCreditDrawAdmin(admin.ModelAdmin):
-    list_display = ["credit", "draw_period", "amount_af"]
-    raw_id_fields = ["credit"]
-
-
 @admin.register(CalculationRun)
 class CalculationRunAdmin(admin.ModelAdmin):
     """Read-only audit record — the run reconstructs a bill, so it must not be
@@ -124,8 +102,6 @@ class CalculationRunAdmin(admin.ModelAdmin):
         "period",
         "gross_et_af",
         "final_af",
-        "banked_af",
-        "drawn_af",
         "created_at",
     ]
     list_filter = ["period"]
@@ -136,8 +112,6 @@ class CalculationRunAdmin(admin.ModelAdmin):
         "gross_et_af",
         "effective_precip_af",
         "surface_water_af",
-        "banked_af",
-        "drawn_af",
         "final_af",
         "breakdown",
         "created_at",

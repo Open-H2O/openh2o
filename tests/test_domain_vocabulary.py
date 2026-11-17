@@ -435,7 +435,9 @@ BASELINE: dict = {
     #   "...belongs to: a water year starting in October, ...", as
     #   approved, which the scanner reads as an appositive definition of a water
     #   year; it names a setting's three choices, a false positive.
-    "templates/help/*.html": 6,
+    #   2026-11-17: 6 -> 4. 153.9-01 removed passages for kinds of record no site
+    #   holds (ruling 200), and two flagged strings went with them.
+    "templates/help/*.html": 4,
     #   2026-10-09: 10 -> 11 because the surface now reads the words passed
     #   into included partials, not because a definition was added. The one
     #   new location is reporting/partials/_report_detail_pane.html, whose
@@ -484,7 +486,12 @@ BASELINE: dict = {
     #   downloads come from and where they stop, not what a basin is: a false positive
     #   (opening "basin").
     "templates/**/*.html": 17,
-    "help_text=": 4,
+    #   2026-11-17: 4 -> 5 for accounting/models.py, the over_delivery_af help text,
+    #   which now opens "The month's canal water the crop could use beyond its net
+    #   use, read off the clamp_floor step's incidental_recharge_af.", in the words
+    #   approved 2026-11-17 (ruling 200, row 43). It names which stored figure the
+    #   field holds, not what canal water is: a false positive (opening "canal").
+    "help_text=": 5,
 }
 
 

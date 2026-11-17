@@ -210,8 +210,6 @@ METHODS_SENTENCES = [
     "OpenH2O treats figures that match to the hundredth of an acre-foot as the same.",
     "The OpenET sync command lists every month with a different figure.",
     "Acceptance takes a reason of 10 to 500 characters.",
-    "A person who can correct records may correct the entry with a reason.",
-    "These months read “date received not recorded” on the calculation page.",
     "OpenH2O uses the latest rainfall figure each time it calculates a month.",
 ]
 

@@ -1186,7 +1186,7 @@ def allocate_district_delivery(
 
 
 def _consumed_by_month(pod: PointOfDiversion) -> dict[date, dict[str, Any]]:
-    """Per calendar month with a direct-use record: taken, returned, kept and whether any record is an estimate."""
+    """Per calendar month with a direct-use record: taken, returned and kept."""
     zero = Decimal("0")
     records = list(
         DiversionRecord.objects.current().filter(
@@ -1201,14 +1201,11 @@ def _consumed_by_month(pod: PointOfDiversion) -> dict[date, dict[str, Any]]:
                 "consumed": zero,
                 "taken": zero,
                 "returned": zero,
-                "estimated": False,
             },
         )
         entry["consumed"] += record.consumed_acre_feet()
         entry["taken"] += abs(record.volume_acre_feet)
         entry["returned"] += record.returned_af
-        if record.method == "estimated_from_use":
-            entry["estimated"] = True
     return by_month
 
 
@@ -1309,7 +1306,6 @@ def _canal_month_row(
             losses + row["own"] + row["divided"] + row["beyond"] + row["unserved"]
         )
         row["adds_up"] = abs(row["headgate"] - parts) <= tolerance
-    row["estimated"] = info["estimated"]
     return row
 
 
@@ -1325,7 +1321,6 @@ def _add_group_totals(ordered: list[dict[str, Any]]) -> None:
         totals = {key: sum((r[key] or zero for r in rows), zero) for key in figure_keys}
         totals["count"] = len(rows)
         totals["uncalculated"] = sum(1 for r in rows if not r["calculated"])
-        totals["estimated"] = any(r["estimated"] for r in rows)
         totals["unserved_to"] = rows[0]["unserved_to"] if rows else ""
         totals["adds_up"] = all(r["adds_up"] for r in rows)
         group["totals"] = totals
@@ -1349,7 +1344,7 @@ def canal_water_by_month(pod: PointOfDiversion) -> list[dict[str, Any]]:
          "losses" (their sum), "own", "divided", "beyond", "unserved":
          Decimal | None, "taken" and "returned" (the records' volume and what
          was returned; "headgate" is the volume less the return), "unserved_to"
-         (where a point that serves no use area delivers: a recharge site name, or "" for none), "estimated": bool, "calculated": bool, "adds_up": bool}
+         (where a point that serves no use area delivers: a recharge site name, or "" for none), "calculated": bool, "adds_up": bool}
 
     Every figure is read from a stored row: the headgate figure and the three
     losses from ``CanalMonthLoss``; ``divided`` is the magnitude of this

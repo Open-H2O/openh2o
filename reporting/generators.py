@@ -533,9 +533,7 @@ def _gears_by_et_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any]]
 
     A month the calculation ran for reads its netted ``calculated`` rows. Any other
     month with recorded crop ET reads the record (``datasync.crop_et``), the figure
-    the calculation and the month's page read. ``et_estimate`` rows a site holds
-    from the retired ledger copy are not read: each equals the record it was copied
-    from. A use area-month the by-well file holds is metered and is left out.
+    the calculation and the month's page read. A use area-month the by-well file holds is metered and is left out.
     """
     from datasync.crop_et import recorded_acre_feet
 

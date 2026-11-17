@@ -126,12 +126,6 @@ class TestDeliveryShareWordsPodName:
 def _public_word_constants():
     """Every public `*_WORDS` name plus the two `DELIVERY_SHARE_*` constants.
 
-    `LEGACY_INCIDENTAL_RECHARGE_WORDS` is excluded: it is the pre-143-11
-    sentence, kept only so a re-run can find and replace an agency's old
-    rows (never written by new code), and it measurably FAILS
-    `test_domain_vocabulary.py::scan` (two offences: "recharge" and
-    "percolation", both in a definitional construction) and is excluded
-    from this guard for exactly that reason, not by oversight.
     """
     import accounting.ledger_words as lw
 
@@ -140,7 +134,6 @@ def _public_word_constants():
         for name in dir(lw)
         if name.isupper()
         and not name.startswith("_")
-        and not name.startswith("LEGACY_")
         and isinstance(getattr(lw, name), str)
         and (name.endswith("_WORDS") or name.startswith("DELIVERY_SHARE"))
     ]
@@ -148,7 +141,6 @@ def _public_word_constants():
         "DELIVERY_SHARE_BY_FIXED",
         "DELIVERY_SHARE_BY_USE",
         "DELIVERY_SHARE_SOURCE",
-        "INCIDENTAL_RECHARGE_WORDS",
         "NO_PUMPING_DERIVED_WORDS",
         "PUMPING_ESTIMATE_WORDS",
     }, names  # a constant added later must be taught to this guard, not skip it

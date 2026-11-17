@@ -525,26 +525,21 @@ class OpenETRequest(models.Model):
         return f"{self.get_kind_display()} {self.sent_at:%Y-%m-%d %H:%M}"
 
 
-#: The note on a month recorded when a site upgraded to the version that keeps these records.
-RECORDED_AT_UPGRADE = "Recorded at upgrade"
-
-
 @track_changes()
 class CropETFigure(CorrectableRecord):
     """OpenET's crop ET for one use area and month, recorded the first time it is fetched.
 
     The calculation, the GEARS by-ET report and the OpenET pre-fill read this record
     and nothing else for crop ET (``datasync/crop_et.py`` holds every reader and
-    writer). An ET estimate entry a site holds from the retired ledger copy is
-    corrected along with it. A later fetch with a
+    writer). A later fetch with a
     different figure writes no record: the month's page shows the newer figure beside
     this one, and a person may accept it with a reason, which replaces this record as a
     correction (``replaces``, ``change_reason``, ``replaced_at``). No form, import or
     administration screen writes it.
 
     The depth is in millimeters, exactly as fetched. ``fetched_on`` is the site's date
-    on the day it was fetched; it is empty when that is not known (a month recorded at
-    the upgrade, or loaded from a file that carries no fetch dates). Inside a finalized
+    on the day it was fetched; it is empty when that is not known (loaded from a
+    file that carries no fetch dates). Inside a finalized
     water year a month may gain its first record; any other change there goes through
     the recorded override (``accounting.locks.FIRST_ROW_OPEN_MODELS``).
     """

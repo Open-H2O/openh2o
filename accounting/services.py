@@ -58,11 +58,6 @@ from core.write_changes import write_changes
 
 from accounting.carryover_math import water_year_of
 from accounting.ledger_import import import_ledger_rows
-from accounting.ledger_words import (
-    INCIDENTAL_RECHARGE_WORDS,
-    LEGACY_INCIDENTAL_RECHARGE_WORDS,
-    LEGACY_CANAL_CREDIT_WORDS,
-)
 from accounting.models import (
     AccountCredit,
     AllocationCarryover,
@@ -80,11 +75,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Basin-pool origins on AllocationCarryover. Managed and
-# incidental recharge are tracked as separate pool rows so each contributor can
+# Basin-pool origins on AllocationCarryover. Managed recharge and canal
+# seepage are tracked as separate pool rows so each contributor can
 # reset its own slice idempotently; they are summed for display/recovery.
 BASIN_RECHARGE_POOL = "basin_recharge_pool"
-INCIDENTAL_RECHARGE_POOL = "incidental_recharge_pool"
 CONVEYANCE_SEEPAGE_POOL = "conveyance_seepage_pool"
 
 
@@ -173,8 +167,7 @@ def deposit_to_basin_pool(
     """Add ``amount_af`` to the GSA basin recharge pool for a (zone, water_type, year).
 
     The basin pool is an ``AllocationCarryover`` row marked with a pool ``origin``
-    (default ``basin_recharge_pool`` for managed recharge; the engine passes
-    ``incidental_recharge_pool`` for deep-percolation). Recharge that infiltrates
+    (default ``basin_recharge_pool`` for managed recharge). Recharge that infiltrates
     the shared aquifer but belongs to no single parcel accumulates here instead of
     being smeared onto surface-only parcels.
 
@@ -186,13 +179,7 @@ def deposit_to_basin_pool(
     the engine's per-parcel loop can deposit many times for one key without losing
     an increment. Returns the pool row.
 
-    An over-delivery is nobody's credit by DEFAULT; the deployment setting
-    ``SiteConfig.over_delivery_treatment`` changes that. Under
-    "credited", ``run_calculations`` calls this again with
-    ``origin=incidental_recharge_pool`` for a no-well parcel's credited share,
-    always as a signed delta against what that parcel's prior run pooled (which
-    also covers the one-time reversal of an older engine's deposit), and deletes the
-    row if it nets to exactly zero. The managed-recharge path
+    The managed-recharge path
     (``create_recharge_ledger_entries``'s ``basin_recharge_pool`` deposit, a
     real ``RechargeEvent``) is unchanged.
     """
@@ -638,68 +625,6 @@ def et_mm_to_acre_feet(et_mm: Decimal | float | str, area_acres: Decimal) -> Dec
 # ---------------------------------------------------------------------------
 
 
-def billable_ledger(queryset: QuerySet[ParcelLedger]) -> QuerySet[ParcelLedger]:
-    """Return the billable subset of a ParcelLedger queryset.
-
-    The calculation engine writes a netted ``calculated`` row per
-    parcel-month alongside the pre-existing gross ``et_estimate`` row. Both are
-    stored negative, so summing every row double-counts ET. A metered parcel has
-    the same shape one layer down: the meter row is the authoritative usage
-    (the engine deliberately writes NO ``calculated`` row for it), yet a site
-    that ran the retired ledger copy holds the parcel's ``et_estimate`` row, so
-    summing both double-counts the metered month. This applies the settled
-    authority ladder — calculated ≻ meter_reading ≻ et_estimate:
-
-      - Where a ``calculated`` row exists for a ``(parcel_id, month)``, the
-        matching ``et_estimate`` row is suppressed (the netted row bills).
-      - Where a ``meter_reading`` row exists for a ``(parcel_id, month)``, the
-        matching ``et_estimate`` row is likewise suppressed (measured pumping
-        outranks the satellite estimate of the same month's use).
-      - Where neither exists, the ``et_estimate`` row stands in so no
-        parcel-month silently drops to zero (the fallback).
-      - Every other row (meter_reading itself, surface_diversion, recharge, the
-        calculated rows) passes through unchanged.
-
-    Join keys: ET-family rows are dated to the first of the month, so
-    ``calculated`` pairs on exact ``(parcel_id, effective_date)``;
-    ``meter_reading`` rows carry the reading's real in-month date, so their key
-    is normalized to the first of the month before matching. The suppression is
-    source-type-driven (not reporting-period-driven), so it holds whether or not
-    a period filter has already been applied to ``queryset``.
-
-    Rows that do not count (voided rows, and the rows of a voided use area) are
-    left out first, so a voided meter row does not suppress its month's
-    ``et_estimate`` row.
-
-    Empty queryset → empty.
-    """
-    queryset = queryset.current()
-    suppression_keys = set(
-        queryset.filter(source_type="calculated").values_list(
-            "parcel_id", "effective_date"
-        )
-    )
-    suppression_keys.update(
-        (parcel_id, effective_date.replace(day=1))
-        for parcel_id, effective_date in queryset.filter(
-            source_type="meter_reading"
-        ).values_list("parcel_id", "effective_date")
-    )
-    if not suppression_keys:
-        return queryset
-
-    # OR of EXACT (parcel_id, effective_date) pairs. A flat
-    # ``parcel_id__in + effective_date__in`` would over-exclude the cross-product
-    # (any suppressing parcel × any suppressing date), wrongly suppressing an
-    # et_estimate row that has no counterpart of its own. District scale is
-    # monthly and small, so the per-pair OR is cheap and correct.
-    suppression = Q()
-    for parcel_id, effective_date in suppression_keys:
-        suppression |= Q(parcel_id=parcel_id, effective_date=effective_date)
-
-    return queryset.exclude(Q(source_type="et_estimate") & suppression)
-
-
 # ---------------------------------------------------------------------------
 # The "current" reporting period
 # ---------------------------------------------------------------------------
@@ -840,7 +765,6 @@ def parcel_balance(parcel: Parcel, reporting_period: ReportingPeriod | None = No
     qs = ParcelLedger.objects.current().filter(parcel=parcel)
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
-    qs = billable_ledger(qs)
     result = qs.aggregate(total=Sum("amount_acre_feet"))
     return result["total"] or Decimal("0")
 
@@ -848,23 +772,18 @@ def parcel_balance(parcel: Parcel, reporting_period: ReportingPeriod | None = No
 def parcel_balance_breakdown(
     parcel: Parcel, reporting_period: ReportingPeriod | None = None
 ) -> dict[str, Decimal]:
-    """supply/usage/net for ONE parcel, routed through billable_ledger.
+    """supply/usage/net for ONE parcel.
 
     The per-parcel sibling of account_balance / zone_balance: it walks the SAME
-    filter -> billable_ledger -> _balance_dict path, so a parcel's figures sit on
-    the same billable basis as the account total it rolls up into. Because
-    billable_ledger suppresses per exact (parcel_id, effective_date), partitioning
-    an account's ledger by parcel and summing the per-parcel breakdowns reproduces
-    the account-level breakdown exactly — the per-parcel rows reconcile with the
-    account total instead of showing ~double it (a netted `calculated`
-    row suppresses its gross `et_estimate` twin; no ET double-count).
+    filter -> _balance_dict path, so a parcel's figures sit on the same basis as
+    the account total it rolls up into.
 
     Returns the same dict shape as _balance_dict: {total, supply, usage, net}.
     """
     qs = ParcelLedger.objects.current().filter(parcel=parcel)
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
-    return _balance_dict(billable_ledger(qs))
+    return _balance_dict(qs)
 
 
 _Q4 = Decimal("0.0001")
@@ -874,26 +793,19 @@ def _groundwater_rows(queryset: QuerySet[ParcelLedger]) -> QuerySet[ParcelLedger
     """The negative rows of a ledger queryset that are groundwater use.
 
     A row counts when it is of the groundwater water type, or is the engine's
-    own estimate: a ``calculated`` row (written only where a well exists) or
-    the satellite ``et_estimate`` row of a field that has a well. A satellite
-    row on a field with no well is unmet demand, never pumping. A meter
+    own estimate: a ``calculated`` row (written only where a well exists). A meter
     reading with no water type counts (the meter says which water it was). A
     canal delivery, a row of another water type and a hand entry or upload
     with no water type are not groundwater: with no type there is nothing to
     say which water it was.
     """
-    from wells.models import WellIrrigatedParcel
-
     groundwater_typed = Q(water_type__code__iexact="GW") & ~Q(
         source_type="surface_diversion"
     )
     # A meter reading is a well's pumping record whatever its label, so one with
     # no water type counts; one typed as another water does not.
     untyped_meter = Q(source_type="meter_reading", water_type__isnull=True)
-    engine_rows = untyped_meter | Q(source_type="calculated") | (
-        Q(source_type="et_estimate")
-        & Q(parcel_id__in=WellIrrigatedParcel.objects.values("parcel_id"))
-    )
+    engine_rows = untyped_meter | Q(source_type="calculated")
     return queryset.filter(amount_acre_feet__lt=0).filter(groundwater_typed | engine_rows)
 
 
@@ -981,7 +893,7 @@ def _balance_dict(queryset: QuerySet[ParcelLedger]) -> dict[str, Decimal]:
 
     Sign convention vs. semantics. Most rows split by sign: positive is supply
     (allocation, recharge), negative is usage (groundwater extraction —
-    meter_reading / et_estimate / calculated). The ONE exception is
+    meter_reading / calculated). The ONE exception is
     ``surface_diversion``: it is stored NEGATIVE (the production convention the
     calc engine and CSV importer share — a delivered magnitude as a negative
     number), but a canal delivery is a SUPPLY to the parcel that offsets
@@ -1034,7 +946,7 @@ def account_balance(
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
 
-    return _balance_dict(billable_ledger(qs))
+    return _balance_dict(qs)
 
 
 def zone_balance(zone: Zone, reporting_period: ReportingPeriod | None = None) -> dict[str, Decimal]:
@@ -1053,7 +965,7 @@ def zone_balance(zone: Zone, reporting_period: ReportingPeriod | None = None) ->
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
 
-    return _balance_dict(billable_ledger(qs))
+    return _balance_dict(qs)
 
 
 # ---------------------------------------------------------------------------
@@ -1206,7 +1118,7 @@ def _billable_parcel_ledger(
     qs = ParcelLedger.objects.current().filter(parcel=parcel)
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
-    return billable_ledger(qs)
+    return qs
 
 
 def _mass_balance_ledger_terms(
@@ -1220,18 +1132,11 @@ def _mass_balance_ledger_terms(
         )["s"]
         or Decimal("0")
     )
-    # Real recharge only (managed recharge's personal-path row), EXCLUDING
-    # an over-delivery credit row (either prefix) even when "credited"
-    # writes one: the physical balance never moves with the credit policy. abs() mirrors
+    # Real recharge only (managed recharge's personal-path row). abs() mirrors
     # `surface` above for the same defensive reason, though the
     # supply-row-positive constraint already keeps these rows non-negative.
     recharge = abs(
         billable.filter(source_type="recharge")
-        .exclude(
-            Q(description__startswith=INCIDENTAL_RECHARGE_WORDS)
-            | Q(description__startswith=LEGACY_INCIDENTAL_RECHARGE_WORDS)
-            | Q(description__startswith=LEGACY_CANAL_CREDIT_WORDS)
-        )
         .aggregate(s=Sum("amount_acre_feet"))["s"]
         or Decimal("0")
     )
@@ -1251,7 +1156,7 @@ def _mass_balance_run_terms(
     ``surface_crop_use`` is the canal water the crops used (the part they
     could use, less what exceeded their need), or ``None`` with no run.
     """
-    # CalculationRun-sourced terms: ET, effective precip, banking, percolation.
+    # CalculationRun-sourced terms: ET, effective precip, percolation.
     precip = Decimal("0")
     et = Decimal("0")
     delta_storage = Decimal("0")
@@ -1274,9 +1179,6 @@ def _mass_balance_run_terms(
             efficiencies.add(run.surface_efficiency)
         et += run.gross_et_af or Decimal("0")
         precip += run.effective_precip_af or Decimal("0")
-        delta_storage += (run.banked_af or Decimal("0")) - (
-            run.drawn_af or Decimal("0")
-        )
         # Pumped water that returned to the aquifer rather than reaching the
         # crop. Null on a metered or no-well run (same absent-term convention).
         deep_percolation_gw += run.deep_percolation_gw_af or Decimal("0")
@@ -1416,39 +1318,25 @@ def parcel_mass_balance(
       came out of the ground has to be accounted for, not just the part the
       crop used), and why ``deep_percolation_gw_af`` below exists: it is the
       output term that makes the identity close again now that the input grew
-      by the same amount. Credit-draw timing is carried by ``delta_storage``
-      (banked − drawn), not double-counted here.
+      by the same amount.
     * ``et`` (output): ``CalculationRun.gross_et_af`` (gross actual ET).
     * ``recharge`` (output): magnitude
       of real ``recharge`` ledger rows for the period — managed recharge
       deliberately spread onto a has-well parcel
       (``create_recharge_ledger_entries``'s personal path) — on the SAME
-      billable basis ``surface`` above reads, EXCLUDING any row whose
-      description starts with ``INCIDENTAL_RECHARGE_WORDS`` or
-      ``LEGACY_INCIDENTAL_RECHARGE_WORDS``. Under the default
-      ("not_credited") or "named_line" no such row exists to exclude: an
-      over-delivery is nobody's credit under the default, so it never
-      becomes a ledger row at all, and it is never added back as a
-      manufactured term either. The "credited" setting DOES write such a row (a has-well field's own
-      share, or a no-well field's pooled share) — the exclusion keeps it out
-      of this identity all the same: a credit is money-like, not water that
-      moved twice, so the physical balance must read identically under every
-      treatment value. The over-delivery is recorded only on the
-      run, as ``CalculationRun.over_delivery_af`` (the whole month's amount)
-      and, under "credited", ``over_delivery_credited_af`` (what was actually
-      credited) — informational, not part of this identity. A no-well
+      billable basis ``surface`` above reads. The over-delivery is recorded
+      only on the run, as ``CalculationRun.over_delivery_af`` (the whole
+      month's amount), informational, not part of this identity. A no-well
       over-delivered field-year's residual therefore equals the over-delivery
-      amount rather than closing to ~0 under EVERY treatment value.
+      amount rather than closing to ~0.
     * ``runoff`` (output): an explicit bookkeeping term, always Decimal("0") under
       the "no real hydrology" boundary (CONTEXT). Named, never silently dropped.
-    * ``delta_storage`` (output): change in banked credit over the period
-      (``banked_af − drawn_af`` netted). The closure term that absorbs the timing
-      between banking surplus in a wet month and recovering it later.
+    * ``delta_storage`` (output): always Decimal("0"), like ``runoff``.
     * ``deep_percolation_surface_af`` (output): the part of a canal
       delivery the crop could not use (``surface_delivered_af − surface_water_af``,
       summed over the period's runs). Neither crop use nor a credit; it is
-      never manufactured as either. 0 on a run whose knob was off or
-      that predates the efficiency step (``surface_delivered_af`` null), same as every other
+      never manufactured as either. 0 on a run with no
+      surface-water step (``surface_delivered_af`` null), same as every other
       absent CalculationRun term above. ``surface`` above stays the delivered
       magnitude; this is what the delivered figure did NOT become.
     * ``deep_percolation_gw_af`` (output): summed straight off
@@ -1528,7 +1416,7 @@ def parcel_over_delivery_shown(parcel: Parcel, reporting_period: ReportingPeriod
     because every row there is a credit or a debit. This is where a reader sees it instead: summed the same
     way ``parcel_unmet_demand`` sums its own figure, through
     ``_calculation_runs_for_period`` so it scopes identically to the balance
-    read beside it. A run stamped "not_credited" or "credited" never
+    read beside it. A run stamped "not_credited" never
     contributes here, whatever its own ``over_delivery_af`` reads.
 
     Returns:
@@ -1704,7 +1592,6 @@ SURFACE_METHOD_KINDS = {
     "device": "metered",
     "methodology": "metered",
     "outage_estimate": "estimated",
-    "estimated_from_use": "estimated",
     "": "unknown",
     "alternative_compliance": "unknown",
     "apportioned": "unknown",
@@ -1897,14 +1784,14 @@ def consumptive_use_balance(
     consumptive-use lens. Every term is sourced from an EXISTING helper so this read can
     never drift from the billable ledger or the mass balance:
 
-    * ``supplies["groundwater"]`` == ``charged_groundwater(billable_ledger(qs))``:
+    * ``supplies["groundwater"]`` == ``charged_groundwater(qs)``:
       groundwater as PUMPED (extraction) on a metered field and an estimated one
       alike. The consumed magnitude stays available as ``groundwater_consumed``
       (``_recorded_usage``). The pumped water the crop did not consume is
       ``water_not_consumed`` and is a use beside crop ET, so
       ``net_vs_supply`` = supplies - crop ET - water not consumed.
     * ``groundwater_charged``: the BUDGET figure —
-      ``charged_groundwater(billable_ledger(qs))`` — read by
+      ``charged_groundwater(qs)`` — read by
       ``zone_groundwater_budget`` and the account-row "remaining" arithmetic
       instead of ``supplies["groundwater"]``, so the Supplies panel and the
       budget can print two different numbers for the same field without
@@ -2021,14 +1908,11 @@ def water_year_usage_by_type(
 ) -> dict[str, Decimal]:
     """Billable usage (positive AF) in a zone over [date_start, date_end], by water-type code.
 
-    Mirrors the dashboard's basis: ``billable_ledger`` is applied so a netted
-    ``calculated`` row suppresses its gross ``et_estimate`` twin (no ET
-    double-count). Each usage row (negative amount) is attributed to a water type:
+    Each usage row (negative amount) is attributed to a water type:
 
-      - ``et_estimate`` and ``calculated`` rows are the engine's groundwater-
+      - ``calculated`` rows are the engine's groundwater-
         attributed usage (a ``calculated`` row is the derived groundwater estimate
-        — the ET-minus-supplies residual, written only where a well exists; its
-        gross ``et_estimate`` twin is the pre-netting source), so for per-type
+        — the ET-minus-supplies residual, written only where a well exists), so for per-type
         carryover they bucket to "GW" regardless of a possibly-null water_type
         column.
       - a ``meter_reading`` row with no water_type is groundwater (a meter is a
@@ -2049,17 +1933,11 @@ def water_year_usage_by_type(
         effective_date__lte=date_end,
         amount_acre_feet__lt=0,
     )
-    qs = billable_ledger(qs).select_related("water_type")
+    qs = qs.select_related("water_type")
 
-    from wells.models import WellIrrigatedParcel
-
-    well_parcel_ids = set(WellIrrigatedParcel.objects.values_list("parcel_id", flat=True))
     buckets: dict[str, Decimal] = {}
     for row in qs:
-        if row.source_type == "et_estimate" and row.parcel_id not in well_parcel_ids:
-            # Unmet demand on a field with no well, never pumping.
-            continue
-        if row.source_type in ("et_estimate", "calculated"):
+        if row.source_type == "calculated":
             code = "GW"
         elif row.source_type == "meter_reading" and not row.water_type_id:
             # A meter is a well's record: an untyped reading is pumping, as
@@ -2084,7 +1962,7 @@ def water_year_usage_by_type(
     # difference between the charged and recorded figures over just those
     # rows, in SQL. A metered GW-typed row stays in the bucket as recorded.
     if "GW" in buckets:
-        engine_rows = qs.filter(source_type__in=("et_estimate", "calculated"))
+        engine_rows = qs.filter(source_type="calculated")
         buckets["GW"] += charged_groundwater(engine_rows) - _recorded_usage(
             engine_rows
         )
@@ -2117,11 +1995,9 @@ def zone_carryover(zone: Zone, water_year: int) -> Decimal:
 #: `zone_carryover` adds into a zone's groundwater available.
 ZONE_CREDIT_LABELS = (("allocation_carryover", "Carried forward"),)
 
-#: What the zone page calls each pool it lists outside Available (the
-#: deep-percolation pool takes Delivery Settings' own words for that water).
+#: What the zone page calls each pool it lists outside Available.
 ZONE_POOL_LABELS = (
     (BASIN_RECHARGE_POOL, "Managed recharge"),
-    (INCIDENTAL_RECHARGE_POOL, "Surface water in excess of ETAW"),
     (CONVEYANCE_SEEPAGE_POOL, "Canal seepage"),
 )
 

@@ -382,8 +382,7 @@ class DeliverySettingsForm(forms.Form):
     under the ``shows_surface_settings`` gate. It is ``required=False`` at the
     Django level so a caller that does not offer it (an old test, or a
     deployment with ``surface`` off) leaves the stored value exactly as it
-    was. Two choices are offered; a site stored as "credited" by an older
-    version is moved to "not credited" by migration.
+    was.
 
     **The seepage choice belongs to ``surface`` the same way**, and the share
     left in the basin is shown when ``surface`` or ``recharge`` runs, because
@@ -427,7 +426,7 @@ class DeliverySettingsForm(forms.Form):
     # "use the default". Plain-language radio labels are set in __init__,
     # like `recovery_horizon`'s.
     over_delivery_treatment = forms.ChoiceField(
-        choices=SiteConfig.OVER_DELIVERY_TREATMENT_OFFERED,
+        choices=SiteConfig.OVER_DELIVERY_TREATMENT_CHOICES,
         required=False,
         label="Surface water in excess of ETAW",
         widget=forms.RadioSelect,

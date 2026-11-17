@@ -2,7 +2,7 @@
 """Pure demand-weighted, efficiency-capped allocation of a delivery total.
 
 Intentionally Django-free (imports only ``decimal`` + the standard library), the
-same split that keeps the effective-precip math and the WaterCredit banking
+same split that keeps the effective-precip math and the banking
 math testable in bare local Python. This is the heart of the unmetered-district
 case: an unmetered district records ONE surface
 delivery total for a period, but the parcels that diversion serves grow different

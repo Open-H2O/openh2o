@@ -1,20 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Seed crop land-use for the irrigated Merced parcels.
 
-WHY this command exists. The calc engine's ``facility_only_zero`` step
-(accounting/steps.py) forces a parcel's computed extraction to 0 unless the
-parcel has at least one ``UsageLocation`` carrying a non-null ``crop_type`` —
-those parcels are treated as facility-only and pump nothing billable. No
-other Merced seed writes ``CropType`` / ``UsageLocation`` rows (the ledger
-seed only reads the ones this command writes), so without this command EVERY
-Merced parcel reads as facility-only and a real ``run_calculations`` pass would zero all of them. This command closes that gap: it gives every IRRIGATED Merced
-parcel (one served by a well or a point of diversion) a ``UsageLocation`` with a
-``crop_type``, so the engine passes it through. It is the land-use prerequisite
-for routing Merced through the real engine.
-
-This is a thin demonstration seed, not a crop model. The exact crop mix is not
-load-bearing; what matters is only that each irrigated parcel carries SOME
-``crop_type`` so it is not facility-only.
+This command gives every IRRIGATED Merced parcel (one served by a well or a point
+of diversion) a ``UsageLocation`` with a ``crop_type``. No other Merced seed writes
+``CropType`` / ``UsageLocation`` rows (the ledger seed only reads the ones this
+command writes). This is a thin demonstration seed, not a crop model. The exact
+crop mix is not load-bearing.
 
 DETERMINISTIC + IDEMPOTENT + ADDITIVE. Crops are assigned by parcel index (no
 ``random``), so re-runs reproduce identical rows. The command keys its rows on
@@ -49,9 +40,8 @@ CROPS = [
 
 class Command(BaseCommand):
     help = (
-        "Give every irrigated Merced parcel a crop-type UsageLocation so the "
-        "calc engine's facility_only_zero step passes it through. Idempotent; "
-        "additive (MER-keyed)."
+        "Give every irrigated Merced parcel a crop-type UsageLocation. "
+        "Idempotent; additive (MER-keyed)."
     )
 
     def add_arguments(self, parser):

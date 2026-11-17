@@ -107,16 +107,12 @@ SOURCE_TYPE_SIGNS = {
 }
 
 #: Source types whose word pairs with the row's own water type name as
-#: "{Water type}, {word}". ``calculated`` and ``et_estimate`` are the same
-#: reader-facing word: both are the platform's own
-#: estimate of pumping, not a meter reading, so "estimated" is the honest
-#: word for either. ``manual_entry`` and ``csv_import`` are likewise one
+#: "{Water type}, {word}". ``manual_entry`` and ``csv_import`` are likewise one
 #: word, "entered": they are the same thing to a
 #: reader, whichever door the row came in through.
 _PAIRED_WORDS = {
     "meter_reading": "metered",
     "calculated": "estimated",
-    "et_estimate": "estimated",
     "surface_diversion": "diverted",
     "manual_entry": "entered",
     "csv_import": "entered",
@@ -219,42 +215,6 @@ DELIVERY_SHARE_BY_FIXED = "this use area's share of the canal on file"
 DELIVERY_SHARE_SOURCE = (
     "taken from the shares entered for the canal, or from each use area's "
     "acreage where none were entered"
-)
-
-#: A recharge row credited to a use area (or the basin pool) for canal water
-#: delivered beyond what the month's estimated use called for.
-#:
-#: Under the default ("not_credited") or "named_line", `run_calculations`
-#: writes no row carrying this text — the amount lives only on
-#: `CalculationRun.over_delivery_af`. Under "credited",
-#: `run_calculations` writes this row, always as this exact prefix
-#: (`over_delivery_credit_words`, below, composes it) so older rows and a
-#: "credited"-treatment row read the same way, and so
-#: `run_calculations`'s delete-by-prefix (which runs every time, on every
-#: treatment) still matches it.
-#:
-#: The wording is the term surface water in excess of ETAW. The earlier
-#: words are kept below as `LEGACY_CANAL_CREDIT_WORDS` for the
-#: delete-by-prefix.
-INCIDENTAL_RECHARGE_WORDS = "Credit for surface water in excess of ETAW"
-
-#: The prefix credit rows carried before the ETAW wording. Matched on
-#: delete, like `LEGACY_INCIDENTAL_RECHARGE_WORDS` below, so a re-run on a
-#: database whose rows were not reworded replaces them instead of doubling
-#: them. Never written by new code.
-LEGACY_CANAL_CREDIT_WORDS = (
-    "Credit for canal water delivered beyond the use area's estimated use "
-    "for the month"
-)
-
-#: The string incidental-recharge rows carried before the engine sentences
-#: were reworded. Matched on delete, alongside `INCIDENTAL_RECHARGE_WORDS`,
-#: so a re-run on an older database replaces its own rows instead of doubling
-#: them. Never written by new code: no over-delivery caller writes it and
-#: `INCIDENTAL_RECHARGE_WORDS` supersedes it, but it stays for the
-#: delete-by-prefix cleanup.
-LEGACY_INCIDENTAL_RECHARGE_WORDS = (
-    "Incidental recharge — deep percolation from surface over-delivery"
 )
 
 #: A `calculated` row's sentence when the month's residual is nonzero: the
@@ -360,21 +320,3 @@ def delivery_share_words(record, pod, *, fixed_share=None, loss_fraction=None):
         sentence += ", " + DELIVERY_SHARE_BY_USE
 
     return sentence
-
-
-def over_delivery_credit_words(share):
-    """The Description sentence for an over-delivery `recharge` row.
-
-    `share` is `SiteConfig.over_delivery_leave_behind` in force when the run
-    that writes this row was computed — the Decimal fraction (0..1) left in
-    the basin rather than credited to the field. Starts with
-    `INCIDENTAL_RECHARGE_WORDS` (the same constant older rows carry) so
-    `run_calculations`'s delete-by-prefix still matches this row on a re-run
-    or a later switch to "not_credited" / "named_line". The split is stated
-    in whole percent points, both reading off the one `share` value so they
-    always sum to 100%: `share=Decimal("0.100")` ->
-    "..., 90% credited and 10% left in the basin".
-    """
-    left = format(share, ".0%")
-    credited = format(Decimal("1") - share, ".0%")
-    return f"{INCIDENTAL_RECHARGE_WORDS}, {credited} credited and {left} left in the basin"

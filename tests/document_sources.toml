@@ -2825,7 +2825,6 @@ labels = [
   { text = "Surface water in excess of ETAW", where = "core/forms.py" },
   { text = "Not credited to anyone", where = "core/models.py" },
   { text = "Shown on the use area's page as its own line", where = "core/models.py" },
-  { text = "Credited to the landowner, less a share left in the basin", where = "core/models.py" },
   { text = "Share left in the basin", where = "core/forms.py" },
   { text = "What happens to a zone's unused allocation at the end of the water year?", where = "core/forms.py" },
   { text = "Which months does a reporting year cover?", where = "core/forms.py" },

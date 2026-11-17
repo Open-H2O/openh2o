@@ -25,11 +25,3 @@
   </div>
 </div>
 {% endwith %}{% endif %}
-{% if crop_et.entry %}{% with band=crop_et.entry %}
-<div class="{% if in_receipt %}budget-panel-row {% endif %}crop-et-band crop-et-band--words" id="crop-et-entry">
-  <div class="crop-et-band-words">
-    <p>{{ band.words }}</p>
-    {% include "accounting/partials/_crop_et_band_action.html" with band=band target="crop-et-entry" %}
-  </div>
-</div>
-{% endwith %}{% endif %}

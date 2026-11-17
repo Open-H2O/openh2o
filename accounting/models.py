@@ -7,8 +7,7 @@ WaterType and WaterAccountParcel define who is accounted and over what span;
 AllocationPlan and AllocationCarryover hold the per-zone allocation and the
 signed remainder rolled forward between water years. CalculationPlan/CalculationStep
 describe the configurable engine that reconciles estimated consumptive use (ET)
-against the available supplies, CalculationRun records each execution of it, and
-WaterCredit/WaterCreditDraw track banked credit drawn against that budget.
+against the available supplies, and CalculationRun records each execution of it.
 """
 from decimal import Decimal
 
@@ -339,7 +338,6 @@ class CalculationStep(models.Model):
         ("et_gross", "Gross ET"),
         ("subtract_effective_precip", "Subtract effective precipitation"),
         ("subtract_surface_water", "Subtract delivery × irrigation efficiency"),
-        ("facility_only_zero", "Zero out facility-only use areas"),
         ("clamp_floor", "Clamp at floor"),
     ]
 
@@ -363,93 +361,6 @@ class CalculationStep(models.Model):
 
 
 @track_changes()
-class WaterCredit(models.Model):
-    """An immutable surplus deposit — banked water carried forward to a later month.
-
-    When a parcel's chain nets out below the floor in a wet month (effective
-    precipitation + surface water exceeded gross ET), that surplus is banked here
-    as a positive ``amount_af`` rather than silently lost. The principal NEVER
-    mutates after deposit; consumption is recorded separately as WaterCreditDraw
-    rows so re-running a period is idempotent (delete the draws, recompute). The
-    depreciated, draw-net available value is computed by accounting.banking_math /
-    the runner — deliberately NOT a method here, to keep this a plain deposit row.
-    """
-
-    ORIGIN_CHOICES = [
-        ("precip_surplus", "Precip surplus"),
-        ("allocation_carryover", "Allocation carryover"),
-    ]
-
-    parcel = models.ForeignKey("parcels.Parcel", on_delete=models.CASCADE)
-    origin_period = models.CharField(
-        max_length=7, help_text="Month the surplus was banked, as YYYY-MM."
-    )
-    amount_af = models.DecimalField(
-        verbose_name="Amount (AF)",
-        max_digits=12,
-        decimal_places=4,
-        help_text="Surplus banked (acre-feet, positive). The principal — never mutated.",
-    )
-    origin = models.CharField(
-        max_length=24, choices=ORIGIN_CHOICES, default="precip_surplus"
-    )
-    depreciation_rate = models.DecimalField(
-        max_digits=5,
-        decimal_places=4,
-        default=Decimal("0"),
-        help_text="Per-period geometric decay (0 = no decay; >=1 = gone after one period).",
-    )
-    expires_period = models.CharField(
-        max_length=7,
-        null=True,
-        blank=True,
-        help_text="Month at or after which the credit expires, as YYYY-MM. Blank = never expires.",
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["origin_period"]
-        # A finalized water year is closed to change (accounting/locks.py).
-        triggers = [finalized_period_lock(month_text_column="origin_period")]
-
-    def __str__(self):
-        return f"{self.parcel} {self.amount_af} AF @ {self.origin_period}"
-
-
-@track_changes()
-class WaterCreditDraw(models.Model):
-    """A consumption record: how much of a WaterCredit a later deficit month drew.
-
-    Tracked as rows rather than a mutable balance so re-runs stay idempotent (the
-    runner deletes this period's draws then recomputes) and so the audit trail
-    has the per-period drawdown to read. ``amount_af`` is the depreciated value
-    actually drawn in ``draw_period`` (not the credit's full principal).
-    """
-
-    credit = models.ForeignKey(
-        WaterCredit, on_delete=models.CASCADE, related_name="draws"
-    )
-    draw_period = models.CharField(
-        max_length=7, help_text="Month the draw was applied, as YYYY-MM."
-    )
-    amount_af = models.DecimalField(
-        verbose_name="Amount (AF)",
-        max_digits=12,
-        decimal_places=4,
-        help_text="Depreciated value drawn in this period (acre-feet, positive).",
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["draw_period"]
-        # A finalized water year is closed to change (accounting/locks.py).
-        triggers = [finalized_period_lock(month_text_column="draw_period")]
-
-    def __str__(self):
-        return f"{self.amount_af} AF @ {self.draw_period} from {self.credit_id}"
-
-
-@track_changes()
 class AllocationCarryover(models.Model):
     """A closed water year's leftover (or over-drawn) budget, rolled forward.
 
@@ -466,7 +377,7 @@ class AllocationCarryover(models.Model):
     rollover of the closed WY ending 2025 writes rows with ``water_year=2026``.
     ``source_water_year`` records the closed year it was derived from (provenance
     for the audit trail). ``depreciation_rate`` / ``expires_period``
-    mirror WaterCredit so a carried-forward surplus can age or lapse on the same
+    let a carried-forward surplus age or lapse on the same
     levers — the decay itself is never re-derived here, it delegates to
     carryover_math.available_with_carryover (which delegates to banking_math).
 
@@ -484,9 +395,6 @@ class AllocationCarryover(models.Model):
 
     * ``basin_recharge_pool`` — managed recharge from a spreading basin (the
       seeder owns it: it deletes-then-redeposits its rows each run).
-    * ``incidental_recharge_pool`` — deep-percolation from surface over-delivery
-      on a no-well parcel (the calc engine owns it: per-parcel-month delta so a
-      re-run never double-increments).
     * ``conveyance_seepage_pool`` — water a canal loses to seepage on its way to
       the fields (the canal split owns it: a per point-and-month delta
       against ``surface.CanalMonthLoss`` so a re-run never double-deposits).
@@ -500,7 +408,6 @@ class AllocationCarryover(models.Model):
     ORIGIN_CHOICES = [
         ("allocation_carryover", "Allocation carryover"),
         ("basin_recharge_pool", "Basin recharge pool (managed)"),
-        ("incidental_recharge_pool", "Basin recharge pool (incidental)"),
         ("conveyance_seepage_pool", "Seepage pool (canal)"),
     ]
 
@@ -542,7 +449,7 @@ class AllocationCarryover(models.Model):
         choices=ORIGIN_CHOICES,
         default="allocation_carryover",
         help_text="What kind of row this is: a year-end allocation carryover, or "
-        "a GSA basin recharge pool (managed / incidental) or a canal seepage pool.",
+        "a GSA basin recharge pool or a canal seepage pool.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -621,16 +528,15 @@ class CalculationRun(models.Model):
     phantom groundwater extraction. A parcel skipped for no ET still gets neither.
     The run captures net consumptive use (the source-agnostic spine), the gross-ET
     starting magnitude, what each
-    subtraction step removed (effective precip, surface water), the WaterCredit
-    banking activity folded into the bill (deposited/drawn), the final billable
+    subtraction step removed (effective precip, surface water),  the final billable
     magnitude, and ``breakdown`` — the evaluate_chain per-step list stored VERBATIM
     so "How was this calculated?" can replay the gross->net waterfall without
     re-deriving anything. Decimal(4dp) throughout to match the ledger's quantize;
     a float column would reintroduce the drift the engine was built to avoid.
 
     No DB unique_together(parcel, period): the runner keeps one run per
-    (parcel, period) by comparing with the stored run in a transaction (mirroring the calculated ledger row and WaterCredit, which also
-    carry no unique constraint), so a hard constraint buys nothing and would only
+    (parcel, period) by comparing with the stored run in a transaction (mirroring the calculated ledger row, which also carries
+    no unique constraint), so a hard constraint buys nothing and would only
     complicate future multi-period scoping.
 
     Three provenance fields (methodology_plan_id, methodology_plan_name,
@@ -675,9 +581,8 @@ class CalculationRun(models.Model):
         null=True,
         blank=True,
         help_text="Surface water subtracted (AF); null if no surface-water step ran. "
-        "With the apply_efficiency knob on, this is the CONSUMED part of a canal "
-        "delivery (delivered x efficiency); with the knob off, or on an old run "
-        "that predates the efficiency step, it is the delivered magnitude itself.",
+        "It is the part of the canal delivery the crop could use: the delivery "
+        "times the use area's irrigation efficiency.",
     )
     surface_delivered_af = models.DecimalField(
         verbose_name="Delivered (AF)",
@@ -686,8 +591,7 @@ class CalculationRun(models.Model):
         null=True,
         blank=True,
         help_text="Recorded delivery for the month (AF), before the use area's "
-        "efficiency is applied. Null when no surface-water step ran or the run "
-        "predates the efficiency step.",
+        "efficiency is applied. Null when no surface-water step ran.",
     )
     surface_efficiency = models.DecimalField(
         max_digits=4,
@@ -695,22 +599,16 @@ class CalculationRun(models.Model):
         null=True,
         blank=True,
         help_text="The use-area efficiency factor applied to this run's surface "
-        "delivery. Null when the apply_efficiency knob is off, nothing was "
-        "delivered, or the step ran on a plan that predates the efficiency step.",
+        "delivery. Null when no surface-water step ran or the month had no delivery.",
     )
     over_delivery_af = models.DecimalField(
         verbose_name="Surface water in excess of ETAW (AF)",
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
-        help_text="Under the default, an over-delivery is not credited to anyone: "
-        "the month's canal water the crop could use beyond its net "
-        "use, read off the clamp_floor step's incidental_recharge_af. Under "
-        "the default (not_credited) and under named_line, the engine "
-        "does not write a ledger row for it and it is never a personal or pooled "
-        "deposit. The amount is recorded here only. Under 'credited', see "
-        "over_delivery_treatment / over_delivery_credited_af / "
-        "over_delivery_credit_pooled for what this run did with it. "
+        help_text="The month's canal water the crop could use beyond its net "
+        "use, read off the clamp_floor step's incidental_recharge_af. "
+        "The engine writes no ledger row for it, so the amount is recorded here only. "
         "0 on a run with no over-delivery.",
     )
     over_delivery_treatment = models.CharField(
@@ -721,42 +619,7 @@ class CalculationRun(models.Model):
         "force when THIS run was written. It is read once at compute time and not "
         "re-read, so a later change to the setting does not move a figure on this "
         "run until it is re-run (the same rule that protects "
-        "gw_extracted_af). Default 'not_credited' so a run written before "
-        "this setting existed reads as what it always was.",
-    )
-    over_delivery_leave_behind = models.DecimalField(
-        max_digits=4,
-        decimal_places=3,
-        null=True,
-        blank=True,
-        help_text="The SiteConfig.over_delivery_leave_behind share in "
-        "force when this run was written. Stamped whenever "
-        "over_delivery_treatment is 'credited' on this run, whether or not "
-        "there was an over-delivery to apply it to this month; null under "
-        "'not_credited' or 'named_line'.",
-    )
-    over_delivery_credited_af = models.DecimalField(
-        verbose_name="Credited to this use area (AF)",
-        max_digits=12,
-        decimal_places=4,
-        null=True,
-        blank=True,
-        help_text="The amount this run credited, to the "
-        "use area's own ledger (over_delivery_credit_pooled False) or to its "
-        "zone's shared pool (over_delivery_credit_pooled True). Null unless "
-        "'credited' treatment credited something this run: a month with no "
-        "over-delivery credits nothing, and a no-well use area with no "
-        "management-area zone has nowhere to credit it either.",
-    )
-    over_delivery_credit_pooled = models.BooleanField(
-        default=False,
-        help_text="True when over_delivery_credited_af went to the "
-        "use area's zone's shared basin pool, not to the use area's own ledger. "
-        "A no-well use area has no well to pump a personal credit back with, "
-        "so its credited share joins the zone's shared account. "
-        "(the same routing rule, applied under 'credited'). False "
-        "(the default) on every run that credited nothing, or credited the "
-        "use area itself.",
+        "gw_extracted_af).",
     )
     net_consumptive_use_af = models.DecimalField(
         verbose_name="ETAW (AF)",
@@ -813,7 +676,7 @@ class CalculationRun(models.Model):
         "ETAW met by groundwater by (its irrigation method's, else the Delivery "
         "Settings default, read when the run was computed). The same figure the "
         "use area's canal water is multiplied by: one use area, one irrigation system. "
-        "Null on a metered or no-well run, and on a run that predates this stamp.",
+        "Null on a metered or no-well run.",
     )
     groundwater_efficiency_source = models.CharField(
         max_length=10,
@@ -848,20 +711,6 @@ class CalculationRun(models.Model):
         help_text="Positive shortfall (ET − precip − surface) on a use area with no "
         "well: under-irrigation or a surface-allocation error. Recorded explicitly, "
         "NEVER written as a calculated groundwater row.",
-    )
-    banked_af = models.DecimalField(
-        verbose_name="Banked as credit (AF)",
-        max_digits=12,
-        decimal_places=4,
-        default=Decimal("0"),
-        help_text="Surplus deposited as a WaterCredit this period (AF).",
-    )
-    drawn_af = models.DecimalField(
-        verbose_name="Drawn from credit (AF)",
-        max_digits=12,
-        decimal_places=4,
-        default=Decimal("0"),
-        help_text="Credit drawn down to reduce the bill this period (AF).",
     )
     final_af = models.DecimalField(
         verbose_name="ETAW met by groundwater (AF)",

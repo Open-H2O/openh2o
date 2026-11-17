@@ -7,7 +7,7 @@ What a correct upgrade does (the plain write-up Brent approved, ruling 134, sect
   where the cache moved after that calculation; the month then shows the newer figure;
 * a month never calculated is recorded at the newest fetched figure, read the way the
   calculation reads it;
-* an ET estimate entry is never the source of a record; one that differs is shown;
+* an ET estimate entry is never the source of a record;
 * the upgrade writes no ledger entry and no calculation: every balance, total and GEARS
   by-well file is the same before it, after it, and after the next calculation; the GEARS
   by-ET file and the OpenET pre-fill, which read the records, are the same after it and
@@ -43,7 +43,6 @@ from tests.test_openet_recorded_figure import (
     _page,
     _recorded,
     _user,
-    _words,
 )
 
 pytestmark = pytest.mark.django_db
@@ -134,12 +133,7 @@ def test_an_entry_typed_by_hand_never_becomes_the_record_and_both_figures_are_sh
 
     assert _recorded(f4) == (D("91.44"), None)
     assert counts["entries_differ"] == 1
-    row = "The ledger's ET estimate entry for this month reads 33.00 AF."
-    page = _page(operator, f4)
-    assert row in page
-    assert '<div class="budget-seg-value" title="30.0000 acre-feet">30.00' in page
-    ledger_page = _words(_client(operator).get(reverse("accounting:ledger_list")))
-    assert "OpenET's recorded figure for this month is 30.00 AF." in ledger_page
+    assert '<div class="budget-seg-value" title="30.0000 acre-feet">30.00' in _page(operator, f4)
 
 
 # ---------------------------------------------------------------- 17. no number moves

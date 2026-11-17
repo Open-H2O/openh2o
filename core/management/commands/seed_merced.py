@@ -38,9 +38,8 @@ Order matters:
                               + Merced River Flood-MAR cropland (linked to the
                               existing MER-POD-009). Needs the PODs (4) + parcels
                               (5). Replaces the old hardcoded seed_merced_recharge.
-  8. seed_merced_cropland   — a crop-type UsageLocation per irrigated parcel, so
-                              the calc engine's facility_only_zero step does not
-                              zero every parcel. Land use is a prerequisite for
+  8. seed_merced_cropland   — a crop-type UsageLocation per irrigated parcel.
+                              Land use is a prerequisite for
                               the accounting layer, so it runs BEFORE the ledgers.
   9. seed_merced_ledgers    — the synthetic accounting layer (reporting periods,
                               two-authority Allocations, accounts, and the full
@@ -142,8 +141,7 @@ SEQUENCE = [
     # seepage share. Runs after the last command that creates a point (the
     # recharge intake above) and before the ledgers divide any delivery.
     ("seed_merced_pod_lining", {}),
-    # Land use BEFORE the accounting layer: the engine's facility_only_zero step
-    # zeros any parcel with no crop_type UsageLocation, so the ledgers' parcels
+    # Land use BEFORE the accounting layer: the ledgers' parcels
     # need crop land use first. Idempotent; MER-keyed.
     ("seed_merced_cropland", {}),
     # The accounting layer hangs off everything above (parcels, wells, rights,

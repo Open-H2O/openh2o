@@ -5,7 +5,7 @@ Parcels models.
 The parcel domain — the agricultural fields whose satellite-measured
 consumptive use (ET) is the spine of the accounting. Parcel is the spatial
 land unit; CropType and UsageLocation describe what is grown where on it;
-ParcelLedger is the per-parcel water-accounting ledger (ET estimates, surface
+ParcelLedger is the per-parcel water-accounting ledger (surface
 deliveries, recharge, allocations, and the calculated groundwater residual);
 ParcelStaging holds raw rows awaiting import.
 """
@@ -90,7 +90,6 @@ POSITIVE_SOURCE_TYPES = ("allocation", "recharge")
 # that did not advance, or a month with no measured diversion.
 NON_POSITIVE_SOURCE_TYPES = (
     "meter_reading",
-    "et_estimate",
     "surface_diversion",
     "calculated",
 )
@@ -105,7 +104,6 @@ class ParcelLedger(CorrectableRecord):
 
     SOURCE_TYPE_CHOICES = [
         ("meter_reading", "Meter Reading"),
-        ("et_estimate", "ET Estimate"),
         ("manual_entry", "Manual Entry"),
         ("csv_import", "CSV Import"),
         ("surface_diversion", "Surface Diversion"),

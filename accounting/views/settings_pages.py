@@ -287,7 +287,7 @@ def methodology_step_config(request, step_id):
     elif step.step_type == "clamp_floor":
         # The floor is the step's only knob.
         config["floor"] = _to_float(request.POST.get("floor"), config.get("floor", 0))
-    # et_gross / subtract_surface_water / facility_only_zero: no editable knobs;
+    # et_gross / subtract_surface_water: no editable knobs;
     # their config is left untouched (et_gross keeps its model/variable plumbing).
 
     step.config = config
@@ -348,7 +348,7 @@ def methodology_preview(request):
 
     Calls evaluate_chain, which is side-effect-FREE by contract:
     it reads the active DB plan and writes NOTHING — no ledger row, no
-    WaterCredit, no CalculationRun (run_calculations is the only writer). So the
+    CalculationRun (run_calculations is the only writer). So the
     self-serve loop is: edit a knob → Save → Preview, and the preview reflects the
     saved chain. Degrades to a friendly message (never a 500) on a missing parcel,
     a blank/malformed period, or a no-active-plan state.

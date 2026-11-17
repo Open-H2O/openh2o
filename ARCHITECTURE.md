@@ -108,25 +108,21 @@ records into a month's ledger.
   `run_accounting --request <pk>` as its own process (`start_calculation`), so the request returns
   at once.
 - **One month.** `engine_run.run_month` runs in one transaction. It runs the per-field
-  calculation; with the `surface` module on, it then deletes any diversion record of the retired
-  crop-need estimate left in that month, divides each point of diversion's water among the fields it
+  calculation; with the `surface` module on, it then divides each point of diversion's water among the fields it
   serves (`surface/services.py`; a field marked fallow that month gets no share of water divided by shares), stores what is left after canal losses at a point that serves no
   field as `CanalMonthLoss.unserved_af`, credited to no one, and runs the per-field calculation again
   with the divided water. A diversion record counts in its month whatever day it is dated.
 - **One field.** `accounting/management/commands/run_calculations.py` runs the methodology chain
   for each field through `accounting/calculation.py` (`evaluate_chain`). The steps are functions
   registered in `accounting/steps.py` (`STEP_REGISTRY`): gross crop water use (0 in a month the field
-  is marked fallow), less effective rain, less surface water, and a floor at zero. A retired facility-only
-  step stays registered so that a plan saved before it was retired still runs; it changes
-  nothing. Which steps run and in what order is data: `CalculationPlan` and `CalculationStep` rows in `accounting/models.py`. The
+  is marked fallow), less effective rain, less surface water, and a floor at zero. Which steps run and in what order is data: `CalculationPlan` and `CalculationStep` rows in `accounting/models.py`. The
   Methodology Settings page (`accounting/views/settings_pages.py`) turns steps on and off,
   reorders them and edits the settings of two of them (effective rain and the floor). On a
   site with no active plan it gives an administrator a button that loads the default plan
   (`methodology_load_default`, which runs `seed_calculation_plan`).
 - **What it writes.** A `CalculationRun` per field-month (with each step's result), calculated
   `ParcelLedger` rows, each field's share of a well's meter readings as a meter ledger row, the canal and delivery tables in `surface/` (with `surface` on), and the
-  request's status and notes. Re-running a month that an older version credited removes that
-  month's recharge ledger row and takes back its basin pool deposit. When Delivery Settings credit
+  request's status and notes. When Delivery Settings credit
   canal seepage to a water account, the canal division also writes `AccountCredit` rows
   (`surface/services.py`, `_store_seepage_credits`). With the `health` module on, a Site Health result is stored afterwards
   (`health/checks.py`, `check_calculation`).
@@ -251,7 +247,7 @@ door `override_open()` is true and the Python-side refusals (`refuse_if_finalize
 row errors of the water level, lab result and production imports) stand aside as the database lock does,
 which is how the demonstration seeds load their finalized year through the same importers. The diversion
 and ledger imports refuse a finalized-year row even inside the door. The lock itself (`accounting/locks.py`,
-`LOCKED_MODELS`) covers twenty-one tables: the ledger, allocations, credits and calculation results, every kind of record
+`LOCKED_MODELS`) covers nineteen tables: the ledger, allocations, credits and calculation results, every kind of record
 a person enters that feeds a figure except use areas, and the two tables of filed figures (the stored OpenET figures and settings such as
 irrigation methods are not locked). The recorded crop ET in `datasync.CropETFigure` is locked the same way, except that a month's first row may still be added in a finalized year (`FIRST_ROW_OPEN_MODELS`). A lab result takes its
 sample's date, a production record its year and month, a fallow period the months it covers (a running

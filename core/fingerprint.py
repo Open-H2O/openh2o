@@ -65,8 +65,6 @@ PARTS = (
     ("parcels.ParcelLedger", "Use ledger"),
     ("accounting.WaterAccountParcel", "Account use areas"),
     ("accounting.AllocationPlan", "Allocations"),
-    ("accounting.WaterCredit", "Water credits"),
-    ("accounting.WaterCreditDraw", "Water credit draws"),
     ("accounting.AllocationCarryover", "Carry-over"),
     ("accounting.AccountCredit", "Account credits"),
     ("accounting.CalculationRun", "Calculation results"),
@@ -237,8 +235,6 @@ def rules(period, water_year=None):
         "parcels.ParcelLedger": Q(effective_date__range=span) | Q(reporting_period=period),
         "accounting.WaterAccountParcel": Q(reporting_period=period),
         "accounting.AllocationPlan": Q(reporting_period=period),
-        "accounting.WaterCredit": Q(origin_period__in=months),
-        "accounting.WaterCreditDraw": Q(draw_period__in=months),
         "accounting.AllocationCarryover": Q(water_year=label),
         "accounting.AccountCredit": Q(water_year=label),
         "accounting.CalculationRun": Q(period_start__range=span)

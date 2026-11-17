@@ -15,9 +15,7 @@ every figure is still worked out from the records when it is read. The rules are
 the ones ``accounting.services`` states, applied to the same rows:
 
 * a ledger row counts through ``ParcelLedger.objects.current()`` and the year's
-  ``reporting_period``, and bills as ``billable_ledger`` says (a ``calculated``
-  row, or a meter reading moved to the 1st of its month, suppresses the
-  ``et_estimate`` row of the same use area and date);
+  ``reporting_period``;
 * groundwater rows are ``_groundwater_rows``'s, charged as ``charged_groundwater``
   charges them (a calculated row at its newest run's extraction figure), and every
   quantize happens where it happened before, on the same set's sum;
@@ -153,7 +151,7 @@ class YearReading:
 
     @cached_property
     def ledger(self) -> dict[int, _UseArea]:
-        """The year's billable ledger rows per use area, summed (``billable_ledger``, ``_groundwater_rows``)."""
+        """The year's billable ledger rows per use area, summed (``_groundwater_rows``)."""
         from accounting.models import CalculationRun
         from parcels.models import ParcelLedger
 
@@ -166,12 +164,6 @@ class YearReading:
                 "water_type_id", "divided_from_headgate", "divided_from_point_pk",
             )
         )
-        suppress = set()
-        for pid, source, day, *_ in rows:
-            if source == "calculated":
-                suppress.add((pid, day))
-            elif source == "meter_reading":
-                suppress.add((pid, _first(day)))
         # A calculated row charges its newest run's extraction figure, where the run stamped one.
         calculated_keys = {(pid, day) for pid, source, day, amount, *_ in rows if source == "calculated" and amount < 0}
         extracted: dict[tuple[int, date], Decimal | None] = {}
@@ -183,11 +175,8 @@ class YearReading:
                 if (pid, start) in calculated_keys:
                     extracted[(pid, start)] = figure  # oldest first, so the newest is kept
 
-        wells = self.well_parcels
         found: dict[int, _UseArea] = defaultdict(_UseArea)
         for pid, source, day, amount, code, type_id, divided, point in rows:
-            if source == "et_estimate" and (pid, day) in suppress:
-                continue
             area = found[pid]
             month = area.months.get(_first(day))
             if month is None:
@@ -214,7 +203,6 @@ class YearReading:
                 groundwater_typed
                 or (source == "meter_reading" and type_id is None)
                 or source == "calculated"
-                or (source == "et_estimate" and pid in wells)
             )
             if not is_groundwater:
                 continue

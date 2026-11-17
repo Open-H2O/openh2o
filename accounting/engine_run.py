@@ -250,16 +250,8 @@ def run_month(month, *, request=None):
     with transaction.atomic():
         _engine(text, out)
         if is_enabled("surface"):
-            from surface.models import DiversionRecord
             from surface.services import allocate_district_delivery
 
-            # A record the retired estimate left in this month goes first, so
-            # the month is divided from what was measured or typed only.
-            DiversionRecord.objects.filter(
-                month__gte=first,
-                month__lt=(first.replace(day=28) + dt.timedelta(days=4)).replace(day=1),
-                method="estimated_from_use",
-            ).delete()
             for pod in _points_of_diversion(first):
                 allocate_district_delivery(pod, None, months=[first], notes=raw)
             _engine(text, out)

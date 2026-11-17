@@ -16,9 +16,7 @@ subtract_surface_water always multiplies a canal delivery by the field's
 irrigation efficiency; its config carries no switch for it, and a plan that
 still holds the old ``apply_efficiency`` key behaves the same with it on or off.
 
-The chain has four steps. A plan saved with the older no-crop step has that
-step taken out when this command runs again (the step no longer zeroes
-anything in any case).
+The chain has four steps.
 """
 
 from django.core.management.base import BaseCommand
@@ -57,8 +55,7 @@ DEFAULT_STEPS = [
         "order": 4,
         "step_type": "clamp_floor",
         "enabled": True,
-        # The floor is the step's only knob (there is no bank, depreciation
-        # rate or expiry).
+        # The floor is the step's only knob.
         "config": {
             "floor": 0,
         },
@@ -76,11 +73,6 @@ class Command(BaseCommand):
             name=PLAN_NAME,
             defaults={"is_active": True},
         )
-
-        # The retired no-crop step: out of any plan that still holds it, and
-        # the final step takes the freed place so no order is skipped.
-        plan.steps.filter(step_type="facility_only_zero").delete()
-        plan.steps.filter(step_type="clamp_floor", order=5).update(order=4)
 
         created = 0
         updated = 0

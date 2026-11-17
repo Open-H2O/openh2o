@@ -571,34 +571,16 @@ def _always(row):
 def _ledger_entry_can_void(row):
     """Only a row a person entered. The engine keeps its own rows up to date every run."""
     source = row.source_type
-    if source in ("manual_entry", "adjustment", "csv_import", "allocation"):
+    if source in ("manual_entry", "adjustment", "csv_import", "allocation", "recharge"):
         return True
     description = row.description or ""
     if source == "meter_reading":
         return not description.startswith(_WELL_SHARE_WORDS)
-    if source == "recharge":
-        return not _is_engine_recharge_credit(description)
     if source == "surface_diversion":
         # A delivery typed on the use area's own ledger. The canal split's rows
         # carry the headgate mark and are brought up to date whenever the month runs.
         return not row.divided_from_headgate
     return False
-
-
-def _is_engine_recharge_credit(description):
-    from accounting.ledger_words import (
-        INCIDENTAL_RECHARGE_WORDS,
-        LEGACY_CANAL_CREDIT_WORDS,
-        LEGACY_INCIDENTAL_RECHARGE_WORDS,
-    )
-
-    return description.startswith(
-        (INCIDENTAL_RECHARGE_WORDS, LEGACY_INCIDENTAL_RECHARGE_WORDS, LEGACY_CANAL_CREDIT_WORDS)
-    )
-
-
-def _diversion_record_can_void(row):
-    return row.method != "estimated_from_use"
 
 
 def _default_can_correct(row):
@@ -782,7 +764,7 @@ KINDS = {
             "diversion_record", "surface.DiversionRecord", "surface", "diversion record",
             summary=_diversion_record_summary, page_url=_diversion_record_url,
             date_of=lambda row: row.month, months=_diversion_record_months,
-            use_areas=_diversion_record_use_areas, can_void=_diversion_record_can_void,
+            use_areas=_diversion_record_use_areas,
             correct_fields=(
                 "month", "volume_acre_feet", "returned_af", "max_flow_rate_cfs",
                 "diversion_type", "method", "device", "data_state", "notes",
@@ -1056,7 +1038,7 @@ def _set_changes(new, kind, changes):
         setattr(new, name, value)
 
 
-def correct(row, *, user, reason, changes, recorded_figure=False):
+def correct(row, *, user, reason, changes):
     """Replace ``row`` with a corrected record: write the new row, mark the old, return the months.
 
     ``changes`` maps field names to new values, only names in the kind's
@@ -1076,11 +1058,6 @@ def correct(row, *, user, reason, changes, recorded_figure=False):
     (``"YYYY-MM"``, oldest first, covering the old row's and the new row's).
     Inside ``accounting.locks.override`` a finalized year is written through the
     recorded door; nothing else lets a correction into one.
-
-    ``recorded_figure`` is the one named exception to the rule that the engine's
-    rows are never corrected: an ET estimate entry replaced when a person accepts
-    OpenET's newer figure for the month, or brings the entry to the recorded
-    figure (``datasync/crop_et.py``). It lets only that kind of row through.
     """
     from accounting.locks import refuse_if_finalized
 
@@ -1093,10 +1070,7 @@ def correct(row, *, user, reason, changes, recorded_figure=False):
             raise AlreadyVoided("This record is already voided.")
         if _is_replaced(locked):
             raise AlreadyReplaced(ALREADY_REPLACED_SENTENCE)
-        if recorded_figure:
-            if kind["key"] != "ledger_entry" or locked.source_type != "et_estimate":
-                raise NotCorrectable(_not_correctable_sentence(kind))
-        elif not kind["can_correct"](locked):
+        if not kind["can_correct"](locked):
             raise NotCorrectable(_not_correctable_sentence(kind))
         if not REASON_MIN_LENGTH <= len(text) <= REASON_MAX_LENGTH:
             raise ValueError(REASON_SENTENCE)

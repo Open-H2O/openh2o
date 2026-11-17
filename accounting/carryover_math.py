@@ -3,7 +3,7 @@
 
 Intentionally Django-free (imports only ``decimal`` + accounting.banking_math,
 itself Django-free), the same split that keeps the effective-precip math and
-the WaterCredit banking math testable in bare local Python. This
+the banking math testable in bare local Python. This
 is the money-sensitive core of multi-year allocations: at each water year's end
 the unused budget rolls FORWARD as a surplus (which may depreciate), and an
 overdraw becomes a DEBT borrowed against the next year (capped at what that year
@@ -18,8 +18,8 @@ Three deliberate rules, each encoded below:
      not two, so a surplus and a debt can never be double-counted.
 
   2. Surplus depreciates, debt does NOT. A carried-forward surplus loses value
-     over time if the agency opted into a decay rate (reusing the WaterCredit
-     geometric decay), but you do not get to depreciate away a debt — it hits
+     over time if the agency opted into a decay rate (reusing the
+     geometric decay of ``banking_math``), but you do not get to depreciate away a debt — it hits
      next year's budget at full magnitude. Aging a debt would quietly forgive
      part of it.
 
@@ -28,8 +28,8 @@ Three deliberate rules, each encoded below:
      not exist.
 
 Depreciation is NEVER re-derived here — it delegates to
-``banking_math.depreciated_value`` so the carry-over decay and the WaterCredit
-decay can never drift apart (negative-rate 0-floor, geometric shape, and all).
+``banking_math.depreciated_value`` so the carry-over decay can never drift
+from it (negative-rate 0-floor, geometric shape, and all).
 
 Periods are zero-padded "YYYY-MM" strings (the convention the ledger uses). Decimal
 throughout, quantized to 4 decimal places to match the ledger; a float anywhere
@@ -130,7 +130,7 @@ def available_with_carryover(
     prior = _dec(prior_carryover_af)
 
     if prior > 0:
-        # Surplus ages like a WaterCredit; debt below is left at full magnitude.
+        # Surplus ages; debt below is left at full magnitude.
         # Floor the rate at 0 BEFORE delegating: banking_math.depreciated_value
         # floors the decay factor (1 - rate) only at rate >= 1, so a NEGATIVE
         # rate would otherwise grow the surplus (factor > 1) — nonsense for a

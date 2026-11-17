@@ -353,45 +353,27 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
     )
 
 
-def facility_only_zero(running_af, parcel, period, ctx, config):
-    """Retired: a field with no crop on record is counted like any other.
-
-    Kept in the registry only so a calculation plan saved before it was
-    retired still runs; the step passes the running figure through unchanged.
-    A field that grows nothing is put in a fallow period instead (``et_gross``).
-    """
-    detail = {"facility_only": False, "retired": True}
-    return running_af, _record(
-        "facility_only_zero", running_af, running_af, detail
-    )
-
-
 def clamp_floor(running_af, parcel, period, ctx, config):
     """Floor running_af at config['floor'] (default 0), surfacing any surplus.
 
     Side-effect-FREE by contract: this primitive is also called by --dry-run and
     the live preview screen, so it must never write anything. It only SIGNALS
-    the surplus magnitude in step_record["detail"]; run_calculations reads that
-    and clears any legacy banking state inside its own transaction.
+    the surplus magnitude in step_record["detail"].
 
     A *total surplus* is the chain coming in BELOW the floor (effective precip +
     surface water exceeded gross ET): total_surplus = max(0, floor - running_af).
-    The total splits into two physically distinct parts, and there is no
-    bank under the first one:
+    The total splits into two physically distinct parts:
 
       - **rain_surplus_af** genuine
         rainfall that exceeded crop ET on its own (max(0, Pe - ET)). Under the
         extraction basis, rain-fed use is never extraction, so this is
-        information about the month, not a credit; nothing carries it forward as a WaterCredit (see
-        run_calculations._resolve_leftover). It is still computed and recorded
+        information about the month, not a credit. It is computed and recorded
         here so a reader can see that a below-floor month was genuine rain, not
         surface over-delivery.
       - **incidental_recharge_af** — the remainder, which is surface water
         delivered beyond crop demand. Physically this is deep percolation that
         recharges the aquifer, NOT crop use and NOT a credit. run_calculations
-        records it as ``over_delivery_af`` on the run and, under the
-        'credited' setting, writes it as a positive groundwater recharge
-        ledger row (or to the GSA basin pool for a no-well parcel).
+        records it as ``over_delivery_af`` on the run.
 
     The genuine-rain portion is CAPPED at the total surplus
     (min(total_surplus, max(0, Pe - ET))) so a parcel whose running was forced to
@@ -402,12 +384,6 @@ def clamp_floor(running_af, parcel, period, ctx, config):
     behavior: the whole surplus is treated as rain surplus and incidental
     recharge is zero, so existing chains and tests are unchanged.
 
-    The `bank`, `depreciation_rate` and `expiry_months` config keys are
-    gone: a below-floor month is no longer bankable, so those levers would do
-    nothing. An old plan whose config still carries them is unaffected; they
-    are simply never read, and none of the three appears in the detail below.
-
-    An over-delivery is nobody's credit under the default.
     `incidental_recharge_af` KEEPS its key here — an old run's stored breakdown
     still reads it, and `deposit_to_basin_pool` / `create_recharge_ledger_entries`'s
     managed-recharge callers keep reading it. `over_delivery_af` sits
@@ -415,11 +391,6 @@ def clamp_floor(running_af, parcel, period, ctx, config):
     (`CalculationRun.over_delivery_af`) is read off this key, not
     `incidental_recharge_af`, so the field name a reader sees on the run says
     what it is: canal water the crop could use beyond its net use.
-    This primitive stays side-effect-free either way — it only ever signals
-    the magnitude; whether that magnitude becomes a recharge credit (the
-    'credited' setting), stays informational only (the default, or
-    'named_line'), is decided by `run_calculations` reading
-    `SiteConfig.over_delivery_treatment`, never by this step.
     """
     floor = Decimal(str(config.get("floor", 0)))
 
@@ -572,6 +543,5 @@ STEP_REGISTRY = {
     "et_gross": et_gross,
     "subtract_effective_precip": subtract_effective_precip,
     "subtract_surface_water": subtract_surface_water,
-    "facility_only_zero": facility_only_zero,
     "clamp_floor": clamp_floor,
 }

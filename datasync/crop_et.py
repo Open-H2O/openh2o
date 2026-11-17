@@ -6,9 +6,8 @@ The record (:class:`datasync.models.CropETFigure`) is written in two ways only:
 * :func:`record_fetched_months`, called by every writer of crop ET into the cache
   right after it writes, records a month that has no record yet, at the figure
   just fetched and the day it was fetched. It never touches an existing record.
-* :func:`accept_newer_figure` and :func:`bring_entry_to_record`, a person's
-  decision with a written reason, replace the record and the month's ET estimate
-  entry as recorded corrections.
+* :func:`accept_newer_figure`, a person's decision with a written reason,
+  replaces the record as a recorded correction.
 
 The calculation reads :func:`recorded_mm` and nothing else for crop ET. The
 cache is read only through ``accounting.steps._cache_by_date``, the same
@@ -31,9 +30,6 @@ DIFFERENT_MM = Decimal("0.01")
 
 #: The sentence for an Accept press when OpenET reports no other figure.
 NO_NEWER_SENTENCE = "OpenET reports no other figure for this month. Nothing was changed."
-
-#: The sentence for bringing an entry into line when it already agrees.
-ENTRY_AGREES_SENTENCE = "The ET estimate entry already agrees with the recorded figure. Nothing was changed."
 
 
 @dataclass(frozen=True)
@@ -241,9 +237,8 @@ def recorded_acre_feet(start, end):
     """Every current record (ET, Ensemble) whose month starts in ``start``..``end``, in acre-feet.
 
     One query. The figure is the record's depth over the use area's acres, rounded to
-    four places and positive: ``et_mm_to_acre_feet(_tidy(depth), acres)``, the figure the
-    retired ledger copy wrote as an ``et_estimate`` row. A use area with no acres has no
-    figure and is left out, as the copy left it out. Ordered by use area number, then month.
+    four places and positive: ``et_mm_to_acre_feet(_tidy(depth), acres)``. A use area with no acres has no
+    figure and is left out. Ordered by use area number, then month.
     """
     from accounting.services import et_mm_to_acre_feet
     from datasync.models import CropETFigure
@@ -355,34 +350,6 @@ def acre_feet(mm, acres):
     return abs(et_mm_to_acre_feet(mm, acres or Decimal("0")))
 
 
-def estimate_words(depth_mm, acres, period, af):
-    """The ET estimate entry's description, as the retired ledger copy wrote it."""
-    return f"OpenET ET estimate: {depth_mm:.2f}mm over {acres} acres = {af:.4f} AF ({period})"
-
-
-def current_estimate_entry(parcel, period):
-    from parcels.models import ParcelLedger
-
-    first = month_first(period)
-    return (
-        ParcelLedger.objects.current()
-        .filter(
-            parcel=parcel,
-            source_type="et_estimate",
-            effective_date__year=first.year,
-            effective_date__month=first.month,
-        )
-        .order_by("pk")
-        .first()
-    )
-
-
-def entry_differs(entry, record):
-    """Whether the entry's acre-feet and the record's differ as the pages print them (two places)."""
-    recorded = acre_feet(record.depth_mm, record.parcel.area_acres)
-    return f"{abs(entry.amount_acre_feet):.2f}" != f"{recorded:.2f}"
-
-
 # -- A person's decision ------------------------------------------------------------------------
 
 
@@ -397,20 +364,10 @@ def _checked_reason(reason):
     return note
 
 
-def _entry_changes(record_depth, parcel, period):
-    from accounting.services import et_mm_to_acre_feet
-
-    af = et_mm_to_acre_feet(record_depth, parcel.area_acres).quantize(Decimal("0.0001"))
-    return {
-        "amount_acre_feet": af,
-        "description": estimate_words(record_depth, parcel.area_acres, period, abs(af)),
-    }
-
-
 def accept_newer_figure(record, *, user, reason):
-    """Replace ``record`` with OpenET's newer figure, and the month's ET estimate entry with it.
+    """Replace ``record`` with OpenET's newer figure.
 
-    Both are recorded corrections carrying ``reason``: the old record and entry stay,
+    A recorded correction carrying ``reason``: the old record stays,
     struck. Raises ``core.corrections.AlreadyVoided`` / ``AlreadyReplaced``, ``ValueError``
     (the reason sentence, or :data:`NO_NEWER_SENTENCE`) or
     ``accounting.locks.PeriodFinalized`` before anything is written. Inside a finalized
@@ -448,31 +405,6 @@ def accept_newer_figure(record, *, user, reason):
                 change_reason=note,
                 created_by=user if getattr(user, "is_authenticated", False) else None,
             )
-        entry = current_estimate_entry(locked.parcel, period)
-        if entry is not None:
-            corrections.correct(
-                entry, user=user, reason=note,
-                changes=_entry_changes(newer.mm, locked.parcel, period),
-                recorded_figure=True,
-            )
-    return [period]
-
-
-def bring_entry_to_record(record, *, user, reason):
-    """Replace the month's ET estimate entry with one at the recorded figure, as a correction."""
-    from core import corrections
-
-    period = month_text(record.month)
-    with transaction.atomic():
-        note = _checked_reason(reason)
-        entry = current_estimate_entry(record.parcel, period)
-        if entry is None or not entry_differs(entry, record):
-            raise ValueError(ENTRY_AGREES_SENTENCE)
-        corrections.correct(
-            entry, user=user, reason=note,
-            changes=_entry_changes(_tidy(record.depth_mm), record.parcel, period),
-            recorded_figure=True,
-        )
     return [period]
 
 
@@ -512,9 +444,6 @@ NEWER_WORDS = (
     "OpenH2O calculates the month from the recorded {recorded} AF until a person accepts the newer figure. "
     "Accepting it replaces the recorded figure and recalculates the month at once."
 )
-ENTRY_READS = "The ledger's ET estimate entry for this month reads {entry} AF."
-ENTRY_CALCULATES = "OpenH2O calculates the month from the recorded {recorded} AF."
-ENTRY_CORRECTING = "Correcting the entry to {recorded} AF recalculates the month."
 
 
 def _replaced_words(earlier, by):
@@ -533,8 +462,7 @@ def page_context(parcel, period):
     ``figure``, ``caption`` and ``pill`` are the Crop ET figure's value, caption and mark.
     ``earlier`` are its struck rows, one per figure an acceptance replaced, each with the
     site's line under a replaced record. ``newer`` is the band for a newer figure OpenET now
-    sends (its figure, received day, pill and sentences); ``entry`` the band for an ET
-    estimate entry that differs from the record. Each band's ``action`` is what its button
+    sends (its figure, received day, pill and sentences). The band's ``action`` is what its button
     opens; the view decides who sees the button.
     """
     from datasync.models import CropETFigure
@@ -555,18 +483,6 @@ def page_context(parcel, period):
             "button": "Accept the newer figure",
             "action": "accept",
         }
-    entry = current_estimate_entry(parcel, period)
-    entry_band = None
-    if entry is not None and entry_differs(entry, record):
-        words = [ENTRY_READS.format(entry=f"{abs(entry.amount_acre_feet):,.2f}")]
-        if newer_band is None:
-            words.append(ENTRY_CALCULATES.format(recorded=recorded))
-        words.append(ENTRY_CORRECTING.format(recorded=recorded))
-        entry_band = {
-            "words": " ".join(words),
-            "button": f"Correct the entry to {recorded} AF",
-            "action": "entry",
-        }
     earlier_rows = []
     later = record
     while later.replaces_id:
@@ -585,7 +501,6 @@ def page_context(parcel, period):
         "pill": _pill(mark(record)),
         "earlier": earlier_rows,
         "newer": newer_band,
-        "entry": entry_band,
     }
 
 
@@ -619,17 +534,15 @@ def no_figure_context(parcel, period):
     How measured pills. Nothing is calculated or estimated for the month.
     """
     from accounting.services import (
-        billable_ledger, groundwater_kind_terms, supply_kind_lines, surface_kind_terms,
+        groundwater_kind_terms, supply_kind_lines, surface_kind_terms,
     )
     from parcels.models import ParcelLedger
 
     if current_record(parcel, period) is not None or not asked_and_none_sent(parcel, period):
         return None
     first = month_first(period)
-    billable = billable_ledger(
-        ParcelLedger.objects.current().filter(
-            parcel=parcel, effective_date__year=first.year, effective_date__month=first.month
-        )
+    billable = ParcelLedger.objects.current().filter(
+        parcel=parcel, effective_date__year=first.year, effective_date__month=first.month
     )
     supplies = []
     for label, terms in (

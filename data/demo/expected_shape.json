@@ -134,26 +134,6 @@
       "tolerance": 0,
       "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
-    "accounting.WaterCredit": {
-      "expected": 0,
-      "tolerance": 0,
-      "reason": "MOVED 5 -> 0 by Plan 148-02, read off ONE candidate built at 7950c81 (66,316 rows across 121 models): the rain bank is retired (the Q3 ruling): no path writes a precip_surplus credit, and the five seeded banked-water credits are no longer written. The table stays for an older database; year-end carry-over writes AllocationCarryover, not this. Earlier history: Banked-water credits created by seed_merced to exercise the credit ledger. Fixed set."
-    },
-    "accounting.WaterCreditEvent": {
-      "expected": 0,
-      "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
-    },
-    "accounting.WaterCreditDraw": {
-      "expected": 0,
-      "tolerance": 0,
-      "reason": "Draws against credits are a visitor action, not seeded content. Non-zero in a candidate means the build captured somebody's session."
-    },
-    "accounting.WaterCreditDrawEvent": {
-      "expected": 0,
-      "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
-    },
     "accounting.WaterType": {
       "expected": 6,
       "tolerance": 0,

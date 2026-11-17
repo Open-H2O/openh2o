@@ -125,22 +125,13 @@ class SiteConfig(models.Model):
     # DeliverySettingsForm shows and saves both fields under its
     # `shows_surface_settings` gate. `run_calculations`
     # is the one reader; nothing here reaches the engine directly.
-    #: Every value a month's calculation has ever been stamped with. A run
-    #: written when "credited" was offered still reads "credited"; nothing
-    #: offers or applies it now.
     OVER_DELIVERY_TREATMENT_CHOICES = [
-        ("not_credited", "Not credited to anyone"),
-        ("credited", "Credited to the landowner, less a share left in the basin"),
-        ("named_line", "Shown on the use area's page as its own line"),
-    ]
-    #: What a site can choose now.
-    OVER_DELIVERY_TREATMENT_OFFERED = [
         ("not_credited", "Not credited to anyone"),
         ("named_line", "Shown on the use area's page as its own line"),
     ]
     over_delivery_treatment = models.CharField(
         max_length=20,
-        choices=OVER_DELIVERY_TREATMENT_OFFERED,
+        choices=OVER_DELIVERY_TREATMENT_CHOICES,
         default="not_credited",
         help_text="What happens to surface water in excess of ETAW on the "
         "month's calculation: not credited to anyone (the default), or shown "

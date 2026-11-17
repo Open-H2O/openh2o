@@ -55,7 +55,7 @@ operator names this demo used before its operator was renamed), their POD
 links, the recharge-intake PODs this command owns (MER-BPOD-*), the intake's
 own right (MER-WR-011-DEMO, so a reset never orphans it), and ONLY the
 managed ``basin_recharge_pool`` slice for the Merced GSA zones — never the
-engine's ``incidental_recharge_pool`` or the rollover's ``allocation_carryover``
+rollover's ``allocation_carryover``
 (RESEARCH Pitfall 1).
 """
 import json

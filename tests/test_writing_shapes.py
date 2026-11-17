@@ -140,10 +140,6 @@ EXCEPTIONS: tuple = (
     # A line that names a real thing, not the reader (150.1-03 plan).
     ("templates/about.html", "A groundwater agency, an irrigation district or a grower",
      ("district reader",), "a list of the kinds of organization that use OpenH2O."),
-    # Stored data.
-    ("accounting/ledger_words.py", "Incidental recharge \u2014 deep percolation",
-     ("em dash",), "LEGACY_INCIDENTAL_RECHARGE_WORDS matches the description older "
-     "ledger rows were written with; it is never printed as new copy."),
     # Approved word for word, and kept (2026-10-18 09:34).
     ("templates/drinking/partials/_onboard_review.html", "not for the agency that regulates it",
      ("negation frame",), _APPROVED.format("2026-10-13")),
@@ -195,8 +191,6 @@ EXCEPTIONS: tuple = (
     ("reporting/validators.py", "will only contain the diversions you entered", ("em dash",), _REPORTS),
     ("reporting/views.py", "can't be generated", ("em dash",), _REPORTS),
     # Strings in a screen file that no product page prints (ISS-261, 2026-10-20).
-    ("accounting/models.py", "Surplus banked (acre-feet, positive). The pr",
-     ("em dash",), _ADMIN_HELP),
     ("accounting/models.py", "Net consumptive use = gross ET − effective p",
      ("em dash",), _ADMIN_HELP),
     ("accounting/models.py", "How the ET − precip − surface residual was r",
@@ -205,6 +199,8 @@ EXCEPTIONS: tuple = (
      ("em dash",), _ADMIN_HELP),
     ("accounting/models.py", "The months to calculate, oldest first, each",
      ("filler",), _NOWHERE_HELP),
+    ("accounting/models.py", "The engine writes no ledger row for it",
+     ("no for not",), _APPROVED.format("2026-11-17 (ruling 200, row 43)")),
     ("core/modules.py", "core owns AUTH_USER_MODEL; disabling it is a",
      ("negation frame",), _START_UP),
     ("core/modules.py", "Move the join to the optional side — a wells",

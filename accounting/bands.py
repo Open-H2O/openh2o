@@ -26,7 +26,7 @@ applied to the share.
 
 If any summed record has no stated accuracy, the figure has NO band: ``None``,
 never "unknown" and never zero. A record has no stated accuracy when its
-method is ``estimated_from_use``, ``apportioned``, ``methodology``,
+method is ``apportioned``, ``methodology``,
 ``outage_estimate``, ``below_threshold`` or ``alternative_compliance`` (its
 number did not come off the device, even when one is linked), when it has no
 device, or when its device's ``accuracy_percent`` is blank. A record whose
@@ -56,11 +56,8 @@ _HUNDRED = Decimal("100")
 
 #: Methods whose number did not come off a device with a stated accuracy, so
 #: the record carries no band even if a device is linked to it.
-#: ``estimated_from_use`` is no longer written; a record of it that a finalized
-#: year still holds stays recognised as not measured.
 NO_BAND_METHODS = frozenset(
     {
-        "estimated_from_use",
         "apportioned",
         "methodology",
         "outage_estimate",

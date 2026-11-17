@@ -64,8 +64,6 @@ LOCKED_MODELS = (
     "parcels.ParcelLedger",
     "accounting.WaterAccountParcel",
     "accounting.AllocationPlan",
-    "accounting.WaterCredit",
-    "accounting.WaterCreditDraw",
     "accounting.AllocationCarryover",
     "accounting.AccountCredit",
     "accounting.CalculationRun",

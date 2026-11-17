@@ -82,12 +82,7 @@ class DiversionRecordForm(forms.ModelForm):
         # so existing entry flows are unchanged when the operator leaves it empty.
         self.fields["returned_af"].required = False
         self.fields["method"].required = False
-        # No form offers the retired estimate method; a record that already
-        # holds it keeps it in its own form so that saving does not blank it.
-        offered = [("", "---------")] + list(DiversionRecord.OFFERED_METHOD_CHOICES)
-        if self.instance.pk and self.instance.method == "estimated_from_use":
-            offered += [c for c in DiversionRecord.METHOD_CHOICES if c[0] == "estimated_from_use"]
-        self.fields["method"].choices = offered
+        self.fields["method"].choices = [("", "---------")] + list(DiversionRecord.METHOD_CHOICES)
         self.fields["device"].required = False
         # data_state has no blank choice (unlike method) since every record
         # DOES have a data state -- but the model's own default is

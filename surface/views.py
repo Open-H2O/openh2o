@@ -31,7 +31,7 @@ from django.core.paginator import Paginator
 from django.core.serializers import serialize
 from django.db import transaction
 from django.db.models import Count, Q
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 from core import pending_imports
@@ -1076,7 +1076,7 @@ def _diversion_import_settings_context(points, *, selected_point=None, method=""
         "selected_point": selected_point,
         "method": method,
         "data_state": data_state,
-        "method_choices": DiversionRecord.OFFERED_METHOD_CHOICES,
+        "method_choices": DiversionRecord.METHOD_CHOICES,
         "data_state_choices": DiversionRecord.DATA_STATE_CHOICES,
         "use_rule_choices": diversion_import_service.USE_RULE_CHOICES,
     }
@@ -1156,6 +1156,10 @@ def _posted_diversion_settings(data):
     }
 
 
+def _method_is_offered(method):
+    return method == "" or method in {code for code, _label in DiversionRecord.METHOD_CHOICES}
+
+
 def _diversion_whole_file_point(page_settings):
     point_pk = page_settings.get("point", "")
     return PointOfDiversion.objects.filter(pk=point_pk).first() if point_pk.isdigit() else None
@@ -1225,6 +1229,8 @@ def diversion_import_preview(request):
         )
 
     page_settings = _posted_diversion_settings(request.POST)
+    if not _method_is_offered(page_settings["method"]):
+        return HttpResponseBadRequest()
     pending.settings = page_settings
     pending.save(update_fields=["settings"])
     whole_file_point = _diversion_whole_file_point(page_settings)
@@ -1329,9 +1335,10 @@ def commit_stored_diversions(pending):
 @require_POST
 def diversion_import_commit(request):
     """Start writing the stored file with the confirmed settings."""
-    return pending_imports.start_import(
-        request, "diversions", _posted_diversion_settings(request.POST)
-    )
+    page_settings = _posted_diversion_settings(request.POST)
+    if not _method_is_offered(page_settings["method"]):
+        return HttpResponseBadRequest()
+    return pending_imports.start_import(request, "diversions", page_settings)
 
 
 def _water_right_detail_context(water_right):

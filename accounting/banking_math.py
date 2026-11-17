@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Pure WaterCredit banking math — depreciation, elapsed months, and expiry.
+"""Pure banking math — depreciation, elapsed months, and expiry.
 
 Intentionally Django-free (imports only ``decimal`` + the standard library), the
 same split that keeps the effective-precip math testable in bare local Python. This is the cross-month,
 money-sensitive core of the banking mechanism: how much a deposited surplus is worth after it has aged some months,
-and whether it has expired. The thin DB-bound orchestration that reads/writes
-WaterCredit + WaterCreditDraw rows lives in run_calculations (tested in the running container).
+and whether it has expired.
 
 Depreciation is GEOMETRIC (compound) per elapsed period:
     value = amount * (1 - rate) ** periods_elapsed      floored at 0

@@ -908,6 +908,8 @@ def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
     Validation runs in both modes, so a dry-run preview shows the same
     errors a real commit would refuse -- only the ``.save()`` is skipped.
     """
+    if method and method not in {code for code, _label in DiversionRecord.METHOD_CHOICES}:
+        raise ValueError(f"method {method!r} is not one of DiversionRecord.METHOD_CHOICES")
     errors = list(built["errors"])
     survivors, skipped_duplicates = _vet_candidates(
         built["candidates"], errors, method, data_state

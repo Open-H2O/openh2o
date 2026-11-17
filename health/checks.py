@@ -1092,7 +1092,7 @@ def _period_meter_comparison(period) -> tuple[Decimal, Decimal, int, list[dict]]
         return None
 
     # Meter rows are matched by the MONTH their effective_date falls in, the
-    # same normalization accounting.services.billable_ledger uses; the runs
+    # same normalization the ledger readers use; the runs
     # themselves are selected by runs_in_period so period membership has
     # exactly one definition (item 6).
     metered = {}

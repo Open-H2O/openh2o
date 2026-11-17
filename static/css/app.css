@@ -5921,7 +5921,6 @@ details[open] > summary .disclosure-mark {
    in, and a cell is about half of the span). */
 .receipt-panel .crop-et-band-op { visibility: hidden; }
 .receipt-panel .crop-et-band-words { grid-column: 3 / -1; margin-left: calc(3% - 1.5px); }
-.receipt-panel .crop-et-band--words .crop-et-band-words { grid-column: 1 / -1; margin-left: 0; }
 .crop-et-band-figure { min-width: 0; }
 .crop-et-band-words { max-width: 75ch; font-size: 0.875rem; line-height: 1.55; color: var(--color-text-secondary); }
 .crop-et-band-words p { margin: 0; }
@@ -5936,7 +5935,6 @@ details[open] > summary .disclosure-mark {
     border-bottom: 0;
     border-top: 1px solid var(--color-border);
 }
-.receipt-short .crop-et-band--words { grid-template-columns: minmax(0, 46ch); }
 /* The Crop ET figure's label, value and caption, kept together so the short page can set
    the OpenET fields list beside them. In the receipt's cell it adds nothing to the layout. */
 .crop-et-figure { min-width: 0; }
