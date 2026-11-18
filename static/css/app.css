@@ -6004,7 +6004,7 @@ details[open] > summary .disclosure-mark {
 .crop-et-supplies .budget-seg-value { display: flex; align-items: center; gap: 10px; }
 .crop-et-supplies .kind-pill { font-size: 0.75rem; }
 
-/* Prepare with OpenET, a page at a time (153.5-02, ruling 203): a dense table of
+/* Prepare with OpenET, a page at a time: a dense table of
    month boxes, 25 rows a page. The boxes fill their columns so each sits under its
    right-aligned month; every row keeps room under its boxes for OpenET's figure, so
    a row with a changed box is no taller than the rest. The table fits a 1,440

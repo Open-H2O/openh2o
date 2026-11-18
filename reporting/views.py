@@ -542,11 +542,11 @@ def _apply_prefill_overrides(prefill, overrides):
     return prefill
 
 
-# Rows a page on Prepare with OpenET (ruling 203): a full page of twelve months is 300
-# boxes, well under Django's 1,000-field limit on one Save (153.5 facts R22).
+# Rows a page on Prepare with OpenET: a full page of twelve months is 300 boxes, well
+# under Django's 1,000-field limit on one Save (DATA_UPLOAD_MAX_NUMBER_FIELDS, not raised).
 PREFILL_PAGE_SIZE = 25
 
-# What each kind of row is called, and what the search box matches (ruling 203 rows 8 to 15, 23).
+# What each kind of row is called, and what the search box matches.
 _PREFILL_KINDS = {
     "by_parcel": ("use area", "use areas", "Use area", "Use area number", "a use area number"),
     "by_well": ("well", "wells", "Well", "Well name or registration number",

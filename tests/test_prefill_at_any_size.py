@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The Prepare with OpenET page opens and saves at any size (153.5-02, ruling 203).
+"""The Prepare with OpenET page opens and saves at any size.
 
 The page lists its use areas (wells, points of diversion) 25 to a page with a search, and a
 Save, a search or a page turn posts only the boxes on the page in view, so no Save can pass
