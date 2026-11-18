@@ -40,7 +40,6 @@ from accounting.locks import demonstration_seed
 from accounting.models import AllocationCarryover, ReportingPeriod, WaterType
 from accounting.services import BASIN_RECHARGE_POOL, create_recharge_ledger_entries
 from geography.models import Zone
-from parcels.models import ParcelLedger
 
 # Wet-season recharge schedule PER WATER YEAR: storm-driven, weighted to
 # mid-winter. (event_date, fraction-of-capacity). A season's fractions sum to
@@ -72,11 +71,7 @@ RECHARGE_SEASONS = {
 # Merced recharge areas all carry this operator (set by the basin seed); the
 # single readable key that finds them without hardcoding names or hitting other
 # demos. Fictional: the recharge volumes below are invented, so
-# a real district must not be named as the operator they are attributed to. No
-# legacy-operator fallback here on purpose: the basin seed runs first and
-# migrates the old rows, so a database still carrying the earlier operator fails
-# loudly on the "no recharge areas found" branch instead of quietly writing
-# invented volumes onto rows the basin seed is about to delete.
+# a real district must not be named as the operator they are attributed to.
 DEMO_OPERATOR = "Halvern Irrigation District"
 # The district's water account, credited with the basins' recharge. The prefix is
 # the one every demonstration account carries (the teardown finds them by it).
@@ -171,10 +166,7 @@ class Command(BaseCommand):
                 basin.water_account = district
                 basin.save(update_fields=["water_account"])
 
-        # Self-flush: drop this seed's prior events (idempotency). Also clear any
-        # LEGACY per-parcel "Recharge from <basin>" ledger rows left by the old
-        # area-weighted smear — the rewritten service writes none — while leaving
-        # the engine's "Incidental recharge" rows untouched.
+        # Self-flush: drop this seed's prior events (idempotency).
         AccountCredit.objects.filter(
             origin="managed_recharge",
             source_key__in=[
@@ -185,11 +177,6 @@ class Command(BaseCommand):
             ],
         ).delete()
         RechargeEvent.objects.filter(recharge_site__in=basins).delete()
-        for basin in basins:
-            ParcelLedger.objects.filter(
-                source_type="recharge",
-                description__startswith=f"Recharge from {basin.name}",
-            ).delete()
 
         # Managed recharge now deposits to each zone's basin pool (an
         # AllocationCarryover row, origin=basin_recharge_pool) instead of smearing

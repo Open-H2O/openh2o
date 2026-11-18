@@ -11,9 +11,9 @@
 # Run again, it replaces its own block, so a changed crontab.txt takes effect and the jobs never
 # run twice. Lines outside the block are kept as they are.
 #
-# A schedule installed by an older version of this command holds the same jobs without the
-# markers. Adding the block beside them would run every job twice, so it stops and says what to
-# delete. Nothing is changed in that case.
+# When the installed schedule holds the OpenH2O jobs without the markers, adding the block
+# beside them would run every job twice. The command then stops and says which lines to delete.
+# It leaves the schedule as it was.
 #
 # CRONTAB names the command that reads and writes the schedule (default: crontab), so a test
 # can stand in for it.

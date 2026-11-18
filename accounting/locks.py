@@ -463,8 +463,7 @@ def finalized_response(request, message):
     )
 
 
-#: The reason every demonstration seed records on its writes into the
-#: finalized demonstration year.
+#: The reason every demonstration seed records on its writes.
 SEED_REASON = "demonstration seed"
 
 #: The reason the demonstration teardown records on the rows it removes.
@@ -491,6 +490,4 @@ def overriding(reason):
     return decorator
 
 
-#: The demonstration's prior water year (WY 2024-2025) is finalized on purpose,
-#: and the seeds that write its figures wear this decorator.
 demonstration_seed = overriding(SEED_REASON)

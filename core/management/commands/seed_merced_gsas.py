@@ -43,11 +43,6 @@ FIXTURE = os.path.join(
 )
 SUBBASIN = "Merced Subbasin"
 BASIN_CODE = "5-022.04"
-# Identity threshold for the one-time forward rename below: two footprints are
-# the same zone when their intersection-over-union clears this. The fixture
-# geometry is byte-identical to what seeded the row, so a genuine match scores
-# ~1.0 and a wrong pairing scores near 0 — there is no middle ground to tune.
-SAME_ZONE_IOU = 0.99
 
 
 def _fixture_geometry(ft):
@@ -78,8 +73,6 @@ class Command(BaseCommand):
         with open(FIXTURE) as f:
             features = json.load(f)["features"]
 
-        self._rename_forward(features)
-
         created = updated = 0
         for ft in features:
             name = ft["properties"]["GSA_Name"]
@@ -106,55 +99,3 @@ class Command(BaseCommand):
             f"\nMerced GSAs seeded: {created} created, {updated} updated "
             f"({Zone.objects.filter(basin_code=BASIN_CODE).count()} total)."
         ))
-
-    def _rename_forward(self, features):
-        """Rename a zone seeded under an earlier name onto its current fixture name.
-
-        One-time migration. Zones are keyed by NAME in
-        ``update_or_create``, so on a deployment seeded before the GSAs were
-        renamed, this command would simply CREATE three new zones and leave the
-        three originals behind, still carrying the real agency names the
-        fictional names replace, and still linked to every parcel, well, recharge site
-        and carryover row that references them. Six zones, half of them the
-        defect. Renaming the row forward keeps every one of those foreign keys.
-
-        Matching is by GEOMETRY, never by a table of the old names: writing the
-        old names into this file to migrate off them would put a real public
-        agency straight back into the repo. The fixture footprint is the same
-        one the stale row was seeded from, so intersection-over-union settles
-        identity outright.
-
-        Safe to leave in place; it is a no-op once every zone matches a fixture
-        name, which is the state of any deployment seeded with the fictional names.
-        """
-        fixture_names = {ft["properties"]["GSA_Name"] for ft in features}
-        stale = list(
-            Zone.objects.filter(
-                zone_type="management_area", basin_code=BASIN_CODE
-            ).exclude(name__in=fixture_names)
-        )
-        if not stale:
-            return
-
-        for ft in features:
-            name = ft["properties"]["GSA_Name"]
-            if not stale or Zone.objects.filter(name=name).exists():
-                continue
-            geom = _fixture_geometry(ft)
-            best, best_iou = None, 0.0
-            for zone in stale:
-                union = zone.geometry.union(geom).area
-                if not union:
-                    continue
-                iou = zone.geometry.intersection(geom).area / union
-                if iou > best_iou:
-                    best, best_iou = zone, iou
-            if best is None or best_iou < SAME_ZONE_IOU:
-                continue
-            best.name = name
-            best.save(update_fields=["name"])
-            stale.remove(best)
-            self.stdout.write(self.style.WARNING(
-                f"  Renamed retired zone identity -> {name} "
-                f"(footprint match {best_iou:.4f})"
-            ))

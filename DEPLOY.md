@@ -753,9 +753,9 @@ make upgrade
 `make upgrade` updates the code and the database tables and leaves the records as they
 are. It runs these steps in order and stops at the first one that fails:
 
-1. It fetches the new version and compares it with the files edited on this server; a
-   site set up with this version edits none. If the new version changes a file edited
-   here, `make upgrade` stops before changing anything and names the file.
+1. It fetches the new version and compares it with the files edited on this server. If
+   the new version changes a file edited here, `make upgrade` stops before changing
+   anything and names the file.
 2. It backs up the database and the uploaded files, as the nightly backup does
    (Database Backup, below). If the backup fails, it stops and changes nothing.
 3. It moves the code to the new version. If this checkout has commits of its own, it
@@ -772,61 +772,15 @@ are. It runs these steps in order and stops at the first one that fails:
 The footer of every page then shows the version the site runs. `make upgrade` runs on a
 site that carries `.production-lock` (below).
 
-After upgrading from a version that estimated a canal delivery for a diversion with no
-meter reading and no entered volume, run the calculation again for each open water year.
-The upgrade deletes those estimates from the open years, and the new run removes the
-canal water the calculation had divided out of them.
-
-After an upgrade to a version that keeps a finalized water year's figures, the first
-start records the figures of every water year already finalized, once each, as they
-stand that day. The water year's page says the figures were recorded at the upgrade.
-
-After an upgrade to a version that issues a code from each finalized water year's
-records, the same first start issues the code for each water year already finalized,
-from its records as they stand that day. Because the code comes from the records as they
-are on the day of the upgrade, Check for changes cannot show a change made between
-finalizing the year and the upgrade. The Changes to this year's records card on the
-water year page says so. It shows the code, a Download a copy to keep link to a one-page
-text file, and Check for changes, which computes the code again. OpenH2O does not send
-the file anywhere. An organization can file it with its board minutes or send it to its
-watermaster.
-
-When `make upgrade` stops at the first step, the file it names was edited on this server
-under an earlier version of this guide, in which every site edited `crontab.txt` and
-sites with a domain edited the `Caddyfile`. Save a copy of your edits, run
-`git checkout -- <file>` with that file's name and run `make upgrade` again. Do not copy
-the saved file over the new one, because that would undo the update's own changes. Then,
-depending on the file:
-
-- For `crontab.txt`, nothing needs to be carried over. The installed schedule is a copy
-  that already holds your paths, so it keeps working, though `make upgrade` does not
-  refresh it. To have `make install-cron` manage it and `make upgrade` refresh it from
-  now on, open the schedule with `crontab -e`, delete the OpenH2O lines (`OPENH2O_DIR`,
-  `OPENH2O_LOG_DIR` and every job), save, and run `make install-cron`.
-- For the `Caddyfile`, set `OPENH2O_SITE_ADDRESS` in `.env` as section 4 describes: the
-  bare domain on Branch B, or `http://` and the domain on Branch C. Then run
-  `docker compose up -d`.
+When `make upgrade` stops at the first step and names a file, that file has local edits on
+this server. Save a copy of your edits, run `git checkout -- <file>` with that file's name
+and run `make upgrade` again. Then make your edits again in the updated file. Do not copy
+the saved file over the new one, because that would undo the update's own changes.
 
 When the website does not answer after the rebuild, `make upgrade` prints the website's
 last 50 log lines, the version the site ran before and the names of the backup files it
 took before it changed anything. Read those lines for the error, correct it, and run
 `docker compose up -d`.
-
-A site installed before `make upgrade` existed has no `scripts/upgrade.sh`. Its first
-upgrade takes three commands:
-
-```bash
-git checkout -- crontab.txt
-git pull --ff-only
-make upgrade
-```
-
-The first command discards your edits to `crontab.txt`, which the installed schedule
-already holds. Leave it out on a site that never edited `crontab.txt`. If
-`git pull` names another file it would overwrite, such as the `Caddyfile`, treat it as
-above. On this first upgrade, `make upgrade` prints the same version as old and new,
-because `git pull` has already moved the code. Afterwards, add the nightly backup to the
-installed schedule (Scheduled Jobs, below).
 
 Never use `make deploy` to upgrade. It is the target for the project's own
 demonstration site, and it replaces that site's database with demonstration data.
@@ -955,9 +909,9 @@ make show-cron
 `# BEGIN OpenH2O schedule` and a line that begins `# END OpenH2O schedule`, and keeps
 every other line of the installed schedule. Running the command again replaces the
 block, so the jobs never run twice; run it again after changing `crontab.txt` or the log
-folder. Do not edit inside the block, because the next run replaces it. A schedule
-installed by an earlier version holds the same jobs without those two lines, and on it
-the command stops and changes nothing. Open that schedule with `crontab -e`, delete the
+folder. Do not edit inside the block, because the next run replaces it. When the
+installed schedule holds OpenH2O jobs without the BEGIN and END lines, the command stops
+and leaves the schedule as it was. Open that schedule with `crontab -e`, delete the
 OpenH2O lines (`OPENH2O_DIR`, `OPENH2O_LOG_DIR` and every job), and run
 `make install-cron` again. If `crontab -l` does not show a `backup.sh` line, run
 `make install-cron` again.
@@ -1092,8 +1046,10 @@ docker compose exec web python manage.py prune_old_data --confirm
 ```
 
 Pruning leaves the change history alone: the database refuses any command that would
-change or delete a recorded change. Two things still remove changes. Loading or removing
-the demonstration data deletes the changes that load or removal made, and no others.
+change or delete a recorded change. Three things still remove changes. Loading the
+demonstration data deletes the changes the load made, except those that finalized its
+water year WY 2024-2025. Removing the demonstration data deletes the changes the load
+and the removal made, and no others.
 `clear_change_history --golden-build`, used only to build the demonstration, empties the
 whole change history.
 
@@ -1127,8 +1083,7 @@ for a reading OpenH2O holds, the new value becomes the reading. The earlier valu
 on the station's list of revised readings until pruning removes it, struck on the
 station's page while the reading is among its ten newest. Calculations do not read
 station readings, so no water figure changes. A USGS sync with no start or end date asks
-USGS only for its changes of the last 7 days. After a site has been off longer, or for a
-change USGS made more than 7 days before this version was installed, run one sync with a
+USGS only for its changes of the last 7 days. After a site has been off longer, run one sync with a
 start date to catch up:
 
 ```bash

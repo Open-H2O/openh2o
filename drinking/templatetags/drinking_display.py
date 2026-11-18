@@ -50,8 +50,7 @@ def result_source(result):
     """One sample result's source: the lab file it was imported from.
 
     The file name and import date the importer stores on every row it writes
-    (``limits_source_file`` / ``limits_file_date``), or
-    ``provenance.LAB_FILE`` for a row imported before file names were kept.
+    (``limits_source_file`` / ``limits_file_date``).
     The label does not name the State Water Board for every result, which would be
     false of a lab's own file in the same format.
     """

@@ -665,10 +665,6 @@ def _batch_lookups() -> dict:
     # Existing results, keyed the way the duplicate guard keys them — through the
     # SAME helper the row side uses, so the two can never drift apart.
     #
-    # Mapped to (pk, whether the stored row predates the limits): a result
-    # imported before limits were stored has no `limits_file_date`, and
-    # re-importing its file is how it gets the limits the file carried.
-    # The measurement itself is never touched.
     existing_keys = {
         _result_identity(
             event_id,
@@ -676,9 +672,9 @@ def _batch_lookups() -> dict:
             dict(
                 zip(_IDENTITY_FIELDS, stored),
             ),
-        ): (pk, limits_date is None)
-        for pk, limits_date, event_id, analyte_id, *stored in SampleResult.objects.current().values_list(
-            "pk", "limits_file_date", "event_id", "analyte_id", *_IDENTITY_FIELDS
+        ): pk
+        for pk, event_id, analyte_id, *stored in SampleResult.objects.current().values_list(
+            "pk", "event_id", "analyte_id", *_IDENTITY_FIELDS
         )
     }
     existing_events = {
@@ -893,19 +889,10 @@ def _flag_result_on_file(
         )
         if match is not None:
             data["is_duplicate"] = True
-            stored_pk, predates_limits = match
-            if predates_limits:
-                data["fill_limits_pk"] = stored_pk
-                warnings.append(
-                    "The same result is already on file from before "
-                    "OpenH2O kept a lab file's MCL and DLR. OpenH2O "
-                    "will add this file's MCL and DLR to that result."
-                )
-            else:
-                warnings.append(
-                    "The same result is already on file, so OpenH2O "
-                    "will skip this row."
-                )
+            warnings.append(
+                "The same result is already on file, so OpenH2O "
+                "will skip this row."
+            )
 
 
 def _flag_repeat_in_file(
@@ -971,15 +958,12 @@ def _validate_row(
         )
     if not errors:
         _flag_repeat_in_file(data, event_key, analyte_name, seen_in_batch, warnings)
-    # A result already on file stays a duplicate to skip (and gains no limits
-    # from this file, because the stored row is locked); any other result
+    # A result already on file stays a duplicate to skip; any other result
     # sampled inside a finalized water year is refused, in the preview as on
     # commit (the database lock refuses the same rows).
     if not errors:
         locked = finalized_span_message(sample_date, lookups["finalized_spans"])
-        if locked and data.get("is_duplicate"):
-            data.pop("fill_limits_pk", None)
-        elif locked:
+        if locked and not data.get("is_duplicate"):
             errors.append(locked)
 
     return {"index": index, "data": data, "errors": errors, "warnings": warnings}
@@ -1027,7 +1011,6 @@ def _import_counts(valid_results: list) -> dict:
             1 for r in valid_results if r["data"].get("is_duplicate")
         ),
         "skipped": sum(1 for r in valid_results if r["errors"]),
-        "limits_filled": 0,
         # Of ``duplicates``, the rows that repeat an earlier row of this file
         # rather than a result on file.
         "repeats": sum(
@@ -1093,38 +1076,10 @@ def _event_id_for(data: dict, event_cache: dict, counts: dict) -> int:
     return event_id
 
 
-def _fill_limits_on_duplicates(
-    valid_results: list, source_file: str, imported_on: dt.date, counts: dict
-) -> None:
-    """Give results recorded before limits were kept the limits this file carried."""
-    # A duplicate is still never re-created; only its four
-    # `_NOT_IDENTITY_FIELDS` are written, and only on a row that has
-    # never had them (`limits_file_date` null), so a second re-import
-    # changes nothing.
-    fills = [
-        SampleResult(
-            pk=r["data"]["fill_limits_pk"],
-            **_limits_as_reported(r["data"], source_file, imported_on),
-        )
-        for r in valid_results
-        if not r["errors"] and r["data"].get("fill_limits_pk") is not None
-    ]
-    if fills:
-        counts["limits_filled"] = SampleResult.objects.filter(
-            pk__in=[f.pk for f in fills], limits_file_date__isnull=True
-        ).count()
-        SampleResult.objects.bulk_update(
-            fills, list(_NOT_IDENTITY_FIELDS), batch_size=1000
-        )
-
-
 def commit_rows(valid_results, source_file="", imported_on=None):
     """Create events + results from the coerced `data` of error-free rows.
 
-    Returns {"events", "results", "analytes", "duplicates", "skipped",
-    "limits_filled"}. A duplicate recorded before the limits were kept (no
-    ``limits_file_date``) is still skipped as a result but gains the file's
-    limits; ``limits_filled`` counts those.
+    Returns {"events", "results", "analytes", "duplicates", "skipped"}.
 
     ``source_file`` and ``imported_on`` (default: today) are written to every
     result created, as the file its limits (or its lack of them) came from.
@@ -1187,8 +1142,6 @@ def commit_rows(valid_results, source_file="", imported_on=None):
                 )
                 counts["skipped"] += 1
 
-        _fill_limits_on_duplicates(valid_results, source_file, imported_on, counts)
-
     return counts
 
 
@@ -1197,9 +1150,7 @@ def _limits_as_reported(data, source_file, imported_on):
 
     The file and date are written on EVERY row this importer creates, limit
     or none, because they are what tell two blank limits apart: a row with a
-    date and no MCL is one whose file carried none; a row with no date was
-    imported before the file's limits were kept at all, and the screens say
-    "not recorded" for it rather than claiming the file was silent.
+    date and no MCL is one whose file carried none.
     """
     return {
         "mcl_as_reported": data.get("mcl_as_reported"),
@@ -1310,8 +1261,6 @@ def preview_counts(validated):
     repeat an earlier row of the same file taken out; those are
     ``repeat_count``. ``new_analytes`` is the sorted names the commit would
     add. ``committable`` is the rows a commit would turn into results.
-    ``limits_fill_count`` is results already on file that would gain the
-    file's limits.
     """
     repeat_count = sum(
         1 for item in validated if item["data"].get("repeat_in_file")
@@ -1332,18 +1281,12 @@ def preview_counts(validated):
         for item in validated
         if not item["errors"] and not item["data"].get("is_duplicate")
     )
-    limits_fill_count = sum(
-        1
-        for item in validated
-        if not item["errors"] and item["data"].get("fill_limits_pk") is not None
-    )
     return {
         "error_count": sum(1 for item in validated if item["errors"]),
         "duplicate_count": duplicate_count,
         "repeat_count": repeat_count,
         "new_analytes": new_analytes,
         "committable": committable,
-        "limits_fill_count": limits_fill_count,
     }
 
 

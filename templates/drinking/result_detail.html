@@ -192,7 +192,6 @@
               {% if result.dlr_as_reported is not None %}<div class="budget-seg-caption"><abbr title="detection limit for purposes of reporting">DLR</abbr> {{ result.dlr_as_reported|plain_decimal }} {{ result.unit }}</div>{% endif %}
               {% else %}
               <div class="budget-seg-value text-tertiary">&mdash;</div>
-              <div class="budget-seg-caption">This result was imported before OpenH2O stored the file's MCL and DLR. Import the same file again to add the MCL and DLR.</div>
               {% endif %}
             </div>
             <div class="budget-op"></div>

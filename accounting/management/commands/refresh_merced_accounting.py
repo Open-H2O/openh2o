@@ -5,9 +5,7 @@ WHY this command exists — the ordering trap. The accounting model is built
 around estimated consumptive use: net consumptive use (gross ET minus
 effective precip) is the source-agnostic spine, unmetered district
 deliveries are allocated to crop-varied parcels BY ET demand, and the
-per-parcel books are meant to close (``parcel_mass_balance``). But a demo
-seeded before that model existed has persisted ``CalculationRun`` rows that
-carry ``net_consumptive_use_af = 0``. A naive single re-seed therefore CANNOT close the
+per-parcel books are meant to close (``parcel_mass_balance``). A naive single re-seed CANNOT close the
 per-parcel books, because of an ordering dependency:
 
   * Demand-weighted surface allocation (``allocate_district_delivery``) needs each
@@ -53,8 +51,7 @@ points of diversion, wells, boundaries) — those are stable and owned by
 ``seed_merced`` and its sub-commands. Run those first if the demo does not exist.
 
 Idempotent: every underlying command is delete-then-insert, so re-running this
-sequence reproduces the same end state. The Merced demo's prior water year
-(``WY 2024-2025``) is FINALIZED, so ``run_calculations`` is invoked with
+sequence reproduces the same end state. ``run_calculations`` is invoked with
 ``--force`` — this command deliberately recomputes the in-development demo's
 figures (the demo is framed as not-yet-submittable).
 """
@@ -156,8 +153,7 @@ class Command(BaseCommand):
             self._print_plan(label, months)
             return
 
-        # The demonstration's prior water year is finalized, and every pass
-        # below writes into it on purpose: through the recorded door
+        # Every pass below writes through the recorded door
         # (accounting/locks.py), with the same reason the engine's
         # own --force records.
         with override(FORCE_REASON):
@@ -203,8 +199,7 @@ class Command(BaseCommand):
     def _run_engine(self, months):
         """Run ``run_calculations --force`` for each month, threading stdout.
 
-        ``--force`` because the demo's prior water year is finalized; this command
-        deliberately recomputes the in-development demo (not a filed number).
+        This command deliberately recomputes the in-development demo (not a filed number).
         """
         for month in months:
             call_command(

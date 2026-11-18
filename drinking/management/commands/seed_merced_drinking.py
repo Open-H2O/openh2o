@@ -479,7 +479,7 @@ class Command(BaseCommand):
             )
 
         totals = {"events": 0, "results": 0, "analytes": 0,
-                  "duplicates": 0, "skipped": 0, "limits_filled": 0}
+                  "duplicates": 0, "skipped": 0}
         errors = []
 
         for start in range(0, len(rows), CHUNK_ROWS):
@@ -502,9 +502,7 @@ class Command(BaseCommand):
             f"{totals['events']} sample events; "
             f"{totals['analytes']} analytes learned from the file's own "
             f"vocabulary, {totals['duplicates']} already present, "
-            f"{totals['skipped']} rows skipped, "
-            f"{totals['limits_filled']} already-present results gained the "
-            "file's MCL and DLR."
+            f"{totals['skipped']} rows skipped."
         )
         if errors:
             # Loud, and capped. A committed file that starts producing row

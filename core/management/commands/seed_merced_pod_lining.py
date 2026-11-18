@@ -20,13 +20,10 @@ What the sources say, read 2026-10-11:
 - The Merced Falls hydroelectric diversion passes its water through the power
   plant and back to the river, which the demonstration takes as a pipe.
 
-Notes name no district. A re-run takes out every note an earlier version of
-this command wrote (``_RETIRED_NOTE``, ``_RETIRED_NOTES``) and appends the
+Notes name no district. A re-run appends the
 current note to the point's own notes once. Idempotent, keyed on the
 demonstration names, and touches no other point.
 """
-import re
-
 from django.core.management.base import BaseCommand
 
 from surface.models import PointOfDiversion
@@ -63,37 +60,6 @@ LINING_BY_POD = {
     "MER-BPOD-001 El Nido Canal Recharge Intake": ("unlined", _UNLINED),
 }
 
-# Every note an earlier version of this command wrote, so a re-run takes it out
-# and a point ends with one current note. The first build (2026-10-11 16:40 PDT)
-# named a real district in a paragraph opening with the comma form below,
-# matched by prefix so this file never has to spell the banned name. The five
-# notes that replaced it (2026-10-11 to 2026-11-14) are matched whole.
-_RETIRED_NOTE = re.compile(r"Demonstration data: lining set to unlined, [^\n]*")
-_MAJORITY_150_3 = (
-    "Demonstration data: lining set to unlined. A published water management "
-    "plan for this area counts 406 miles of unlined canal against 105 of lined "
-    "canal, and no published source read states this canal's own lining."
-)
-_RETIRED_NOTES = (
-    _MAJORITY_150_3,
-    _MAJORITY_150_3 + " A regional water plan from 2018 lists lining portions of this canal.",
-    "Demonstration data: lining not stated. This riparian take draws from the "
-    "Merced River with no canal of its own, and no published source describes "
-    "how its water reaches the fields, so it carries no seepage share.",
-    "Demonstration data: lining set to pipe. A hydroelectric diversion passes "
-    "its water through the power plant and back to the river.",
-    "Demonstration data: lining not stated. This re-diversion takes from the "
-    "Merced River with no canal of its own, and no published source describes "
-    "how its water reaches the fields, so it carries no seepage share.",
-)
-
-
-def _without_retired(notes):
-    """The notes with every paragraph an earlier version of this command wrote taken out."""
-    parts = [_RETIRED_NOTE.sub("", part).strip() for part in notes.split("\n\n")]
-    return "\n\n".join(part for part in parts if part and part not in _RETIRED_NOTES)
-
-
 def apply_demo_pod_lining():
     """Set each demonstration point's lining and note; return how many changed."""
     changed = 0
@@ -101,7 +67,7 @@ def apply_demo_pod_lining():
         pod = PointOfDiversion.objects.filter(name=name).first()
         if pod is None:
             continue
-        notes = _without_retired(pod.notes or "")
+        notes = pod.notes or ""
         if note not in notes:
             notes = f"{notes}\n\n{note}" if notes else note
         if pod.lining == lining and pod.notes == notes:

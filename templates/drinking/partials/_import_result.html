@@ -29,15 +29,11 @@
     {% if counts.analytes %}<span class="badge badge-blue">{{ counts.analytes }} new analyte{{ counts.analytes|pluralize }}</span>{% endif %}
     {% if on_file %}<span class="badge badge-orange">{{ on_file }} already on file</span>{% endif %}
     {% if counts.repeats %}<span class="badge badge-orange">{{ counts.repeats }} repeated in this file</span>{% endif %}
-    {% if counts.limits_filled %}<span class="badge badge-blue">MCL and DLR for {{ counts.limits_filled }} result{{ counts.limits_filled|pluralize }} on file</span>{% endif %}
     {% if counts.skipped %}<span class="badge badge-orange">{{ counts.skipped }} with errors</span>{% endif %}
     <span class="badge badge-grey">{{ total }} row{{ total|pluralize }} read</span>
   </div>
 
   <p class="text-base text-secondary mt-md">{% if counts.results %}OpenH2O imported {{ counts.results }} sample result{{ counts.results|pluralize }} and added {{ counts.events }} sample event{{ counts.events|pluralize }}.{% else %}OpenH2O did not import any sample results.{% endif %}</p>
-  {% if counts.limits_filled %}
-  <p class="text-base text-secondary mt-sm">OpenH2O added this file&rsquo;s MCL and DLR to {{ counts.limits_filled }} result{{ counts.limits_filled|pluralize }} already on file.</p>
-  {% endif %}
   {% if counts.analytes %}
   <p class="text-base text-secondary mt-sm">OpenH2O added {{ counts.analytes }} new analyte{{ counts.analytes|pluralize }} from this file.</p>
   {% endif %}

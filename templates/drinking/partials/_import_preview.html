@@ -26,7 +26,6 @@
     <span class="badge badge-green">{{ committable }} to import</span>
     {% if duplicate_count %}<span class="badge badge-orange">{{ duplicate_count }} already on file</span>{% endif %}
     {% if repeat_count %}<span class="badge badge-orange">{{ repeat_count }} repeated in this file</span>{% endif %}
-    {% if limits_fill_count %}<span class="badge badge-blue">MCL and DLR for {{ limits_fill_count }} result{{ limits_fill_count|pluralize }} on file</span>{% endif %}
     {% if error_count %}<span class="badge badge-orange">{{ error_count }} with errors</span>{% endif %}
     {% if new_analytes %}<span class="badge badge-blue">{{ new_analytes|length }} new analyte{{ new_analytes|length|pluralize }}</span>{% endif %}
   </div>
@@ -227,8 +226,8 @@
     {% csrf_token %}
     <input type="hidden" name="token" value="{{ token }}">
     <div class="row-start" style="gap: var(--space-sm);">
-      <button type="submit" class="btn-primary" {% if not committable and not limits_fill_count %}disabled{% endif %}>
-        {% if committable or not limits_fill_count %}Import {{ committable }} result{{ committable|pluralize }}{% else %}Add the MCL and DLR to {{ limits_fill_count }} result{{ limits_fill_count|pluralize }}{% endif %}
+      <button type="submit" class="btn-primary" {% if not committable %}disabled{% endif %}>
+        Import {{ committable }} result{{ committable|pluralize }}
       </button>
       <a href="{% url 'drinking:import' %}" class="btn-secondary">Choose a different file</a>
       <span id="commit-spinner" class="htmx-indicator text-tertiary text-sm">Saving&hellip;</span>

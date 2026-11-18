@@ -27,7 +27,7 @@
     "accounting.AccountCreditEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "accounting.AllocationCarryover": {
       "expected": 6,
@@ -37,7 +37,7 @@
     "accounting.AllocationCarryoverEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "accounting.AllocationPlan": {
       "expected": 16,
@@ -47,7 +47,7 @@
     "accounting.AllocationPlanEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "accounting.CalculationPlan": {
       "expected": 1,
@@ -57,7 +57,7 @@
     "accounting.CalculationPlanEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "accounting.CalculationRequest": {
       "expected": 0,
@@ -72,7 +72,7 @@
     "accounting.CalculationRunEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "accounting.CalculationStep": {
       "expected": 4,
@@ -82,17 +82,17 @@
     "accounting.CalculationStepEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "accounting.PeriodStatement": {
       "expected": 1,
       "tolerance": 0,
-      "reason": "ADDED by Plan 151.7-03: one filed-figures record per finalized water year, written by the record_filed_figures step that ends the demonstration build (kind recorded_at_upgrade, because the seed finalizes WY 2024-2025 directly and no person finalized it). Open WY 2025-2026 has none. The count is read off a rebuilt candidate and moves only if the number of finalized years changes."
+      "reason": "ADDED by Plan 151.7-03: one filed-figures record per finalized water year. Since Plan 153.9-02 the load finalizes WY 2024-2025 through accounting.finalize.finalize_year, which writes it with kind filed. Open WY 2025-2026 has none. The count is read off a rebuilt candidate and moves only if the number of finalized years changes."
     },
     "accounting.PeriodStatementEvent": {
-      "expected": 0,
+      "expected": 1,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "MOVED 0 -> 1 by Plan 153.9-02, read off scratch copy rss (a load at 4ff8858b, 2026-11-17): the load finalizes WY 2024-2025 through accounting.finalize.finalize_year, as the Finalize water year button does, and the year keeps the Change history that finalize wrote, which the year's code covers. One entry: the filed statement."
     },
     "accounting.PeriodStatementRow": {
       "expected": 3887,
@@ -100,9 +100,9 @@
       "reason": "ADDED by Plan 151.7-03: the figures of the finalized demonstration year as the pages print them, one row per use area month and year figure, per account, zone and district-wide figure, read off the same functions the pages call by accounting.statements. Read off a rebuilt candidate, never predicted; it moves when a page gains or loses a printed figure or the demonstration's accounts, use areas or zones change."
     },
     "accounting.PeriodStatementRowEvent": {
-      "expected": 0,
+      "expected": 3887,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "MOVED 0 -> 3887 by Plan 153.9-02, read off scratch copy rss (a load at 4ff8858b, 2026-11-17): the load finalizes WY 2024-2025 through accounting.finalize.finalize_year, as the Finalize water year button does, and the year keeps the Change history that finalize wrote, which the year's code covers. One entry per filed figure."
     },
     "accounting.ReportingPeriod": {
       "expected": 2,
@@ -110,9 +110,9 @@
       "reason": "The two water years the demonstration covers. BOTH carry accounting: the committed ET cache holds two adjacent windows of the figures OpenET and gridMET sent (WY 2024-25 and WY 2025-26, received 2026-11-12), the engine has run every month OpenET sent crop ET for, and 133-02 gave the second year its surface deliveries, metered groundwater and diversion records. A THIRD period would need its own cache window and its own supply season."
     },
     "accounting.ReportingPeriodEvent": {
-      "expected": 0,
+      "expected": 2,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "MOVED 0 -> 2 by Plan 153.9-02, read off scratch copy rss (a load at 4ff8858b, 2026-11-17): the load finalizes WY 2024-2025 through accounting.finalize.finalize_year, as the Finalize water year button does, and the year keeps the Change history that finalize wrote, which the year's code covers. The finalize's save of the water year writes a before-update and an update entry."
     },
     "accounting.WaterAccount": {
       "expected": 12,
@@ -122,7 +122,7 @@
     "accounting.WaterAccountEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "accounting.WaterAccountParcel": {
       "expected": 76,
@@ -132,7 +132,7 @@
     "accounting.WaterAccountParcelEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "accounting.WaterType": {
       "expected": 6,
@@ -152,7 +152,7 @@
     "core.RecordAttachmentEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "core.SiteConfig": {
       "expected": 1,
@@ -162,7 +162,7 @@
     "core.SiteConfigEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "core.User": {
       "expected": 0,
@@ -172,7 +172,7 @@
     "core.UserEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "datasync.DataRecordStaging": {
       "expected": 30951,
@@ -232,7 +232,7 @@
     "datasync.OpenETFieldMonthEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "datasync.OpenETRequest": {
       "expected": 0,
@@ -242,7 +242,7 @@
     "datasync.CropETFigureEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "drinking.Analyte": {
       "expected": 178,
@@ -272,12 +272,12 @@
     "drinking.SampleResultEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "drinking.SampleEventEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "ADDED by Plan 151.7-01: change history now records this model; it is cleared before the golden dump (clear_change_history --golden-build), and a demonstration carries no invented history, so the load leaves 0 of its events (forget_events removes the load's own)."
+      "reason": "ADDED by Plan 151.7-01: change history now records this model; it is cleared before the demonstration loads (clear_change_history --golden-build), and a demonstration carries no invented history, so the load leaves 0 of its events (forget_events removes the load's own)."
     },
     "drinking.SamplingPoint": {
       "expected": 27,
@@ -292,7 +292,7 @@
     "drinking.SamplingScheduleEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "drinking.SystemProduction": {
       "expected": 0,
@@ -302,7 +302,7 @@
     "drinking.SystemProductionEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "drinking.SystemFacility": {
       "expected": 61,
@@ -312,7 +312,7 @@
     "drinking.SystemFacilityEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "drinking.WaterSystem": {
       "expected": 1,
@@ -322,7 +322,7 @@
     "drinking.WaterSystemEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "feedback.Feedback": {
       "expected": 0,
@@ -352,7 +352,7 @@
     "geography.ParcelZoneEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "geography.Zone": {
       "expected": 8,
@@ -362,7 +362,7 @@
     "geography.ZoneEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "geography.ZoneGroup": {
       "expected": 0,
@@ -387,12 +387,12 @@
     "measurements.MeterReadingEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "measurements.MeterEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "ADDED by Plan 151.7-01: change history now records this model; it is cleared before the golden dump (clear_change_history --golden-build), and a demonstration carries no invented history, so the load leaves 0 of its events (forget_events removes the load's own)."
+      "reason": "ADDED by Plan 151.7-01: change history now records this model; it is cleared before the demonstration loads (clear_change_history --golden-build), and a demonstration carries no invented history, so the load leaves 0 of its events (forget_events removes the load's own)."
     },
     "measurements.Sensor": {
       "expected": 1,
@@ -412,7 +412,7 @@
     "measurements.WaterMeasurementEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "parcels.CropType": {
       "expected": 5,
@@ -427,7 +427,7 @@
     "parcels.ParcelEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "parcels.ParcelLedger": {
       "expected": 2033,
@@ -437,7 +437,7 @@
     "parcels.ParcelLedgerEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "parcels.ParcelStaging": {
       "expected": 0,
@@ -455,29 +455,29 @@
       "reason": "Managed aquifer recharge events across the seven sites, created by seed_merced_recharge_events from its own invented schedule. MOVED 28 -> 42 by Plan 133-02: 7 basins x (4 fills in WY 2024-25 + 2 in WY 2025-26). The open year's smaller schedule was drawn when that year's rainfall was generated as a dry year; the rainfall is now gridMET's for both years (Plan 153-05) and the schedule is unchanged until its maintainer decides otherwise."
     },
     "pghistory.Context": {
-      "expected": 0,
+      "expected": 1,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history, and pghistory_context is the table every event's who/command/note context row lives in."
+      "reason": "MOVED 0 -> 1 by Plan 153.9-02, read off scratch copy rss (a load at 4ff8858b, 2026-11-17): the load finalizes WY 2024-2025 through accounting.finalize.finalize_year, as the Finalize water year button does, and the year keeps the Change history that finalize wrote, which the year's code covers. The one context row those entries name: the load's, action load_demonstration."
     },
     "core.ChangeContext": {
-      "expected": 0,
+      "expected": 1,
       "tolerance": 0,
-      "reason": "ADDED by Plan 151.7-01: a proxy of pghistory.Context that carries the lock refusing DELETE on the who-did-it table. It has no table of its own, so it reads what pghistory.Context reads: 0, because clear_change_history --golden-build empties pghistory_context before the golden dump."
+      "reason": "A proxy of pghistory.Context that carries the lock refusing DELETE on the who-did-it table. It has no table of its own, so it reads what pghistory.Context reads: 1 (Plan 153.9-02)."
     },
     "pghistory.Events": {
-      "expected": 0,
+      "expected": 3890,
       "tolerance": 0,
-      "reason": "The unmanaged union of every pghistory event table -- it has no rows of its own to hold, so it reads 0 for the same reason every underlying event table does: clear_change_history --golden-build clears them all before the golden dump."
+      "reason": "The unmanaged union of every pghistory event table; it reads the sum of them: 3,890, the finalize's entries (Plan 153.9-02, read off scratch copy rss)."
     },
     "pghistory.MiddlewareEvents": {
-      "expected": 0,
+      "expected": 3890,
       "tolerance": 0,
-      "reason": "A proxy of pghistory.Events with no table of its own; empty for the same reason -- clear_change_history --golden-build clears every underlying event table before the golden dump."
+      "reason": "A proxy of pghistory.Events with no table of its own; it reads what pghistory.Events reads: 3,890 (Plan 153.9-02, read off scratch copy rss)."
     },
     "recharge.RechargeEventEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "recharge.RechargeMeasurement": {
       "expected": 126,
@@ -487,12 +487,12 @@
     "recharge.RechargeMeasurementEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "recharge.RechargeSiteEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "ADDED by Plan 151.7-01: change history now records this model; it is cleared before the golden dump (clear_change_history --golden-build), and a demonstration carries no invented history, so the load leaves 0 of its events (forget_events removes the load's own)."
+      "reason": "ADDED by Plan 151.7-01: change history now records this model; it is cleared before the demonstration loads (clear_change_history --golden-build), and a demonstration carries no invented history, so the load leaves 0 of its events (forget_events removes the load's own)."
     },
     "recharge.RechargeSite": {
       "expected": 7,
@@ -512,7 +512,7 @@
     "reporting.ReportSubmissionEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "reporting.ReportTemplate": {
       "expected": 4,
@@ -552,7 +552,7 @@
     "surface.CanalMonthLossEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "surface.DiversionRecord": {
       "expected": 164,
@@ -562,7 +562,7 @@
     "surface.DiversionRecordEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "parcels.IrrigationMethod": {
       "expected": 18,
@@ -572,7 +572,7 @@
     "parcels.IrrigationMethodEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "surface.MeasuringDevice": {
       "expected": 0,
@@ -582,7 +582,7 @@
     "surface.MeasuringDeviceEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "parcels.FallowPeriod": {
       "expected": 0,
@@ -592,7 +592,7 @@
     "parcels.FallowPeriodEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "parcels.ParcelIrrigationMethod": {
       "expected": 9,
@@ -602,7 +602,7 @@
     "parcels.ParcelIrrigationMethodEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "surface.PointOfDiversion": {
       "expected": 9,
@@ -612,7 +612,7 @@
     "surface.PointOfDiversionEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "surface.PointOfDiversionDevice": {
       "expected": 0,
@@ -622,7 +622,7 @@
     "surface.PointOfDiversionDeviceEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "surface.PointOfDiversionParcel": {
       "expected": 59,
@@ -632,7 +632,7 @@
     "surface.PointOfDiversionParcelEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "surface.UnallocatedDelivery": {
       "expected": 0,
@@ -642,7 +642,7 @@
     "surface.UnallocatedDeliveryEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "surface.WaterAccountDeliveryPoint": {
       "expected": 0,
@@ -652,7 +652,7 @@
     "surface.WaterAccountDeliveryPointEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "surface.WaterRight": {
       "expected": 7,
@@ -662,7 +662,7 @@
     "surface.WaterRightEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "surface.WaterRightParcel": {
       "expected": 59,
@@ -672,7 +672,7 @@
     "surface.WaterRightParcelEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "surface.WaterRightType": {
       "expected": 6,
@@ -692,7 +692,7 @@
     "wells.WellEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "wells.WellIrrigatedParcel": {
       "expected": 29,
@@ -702,7 +702,7 @@
     "wells.WellIrrigatedParcelEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "wells.WellMeter": {
       "expected": 12,
@@ -712,7 +712,7 @@
     "wells.WellMeterEvent": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+      "reason": "Change history is cleared before the demonstration loads (clear_change_history --golden-build), and the load deletes the history its steps wrote; a demonstration carries no invented history."
     },
     "wells.WellType": {
       "expected": 5,

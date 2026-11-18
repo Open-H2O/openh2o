@@ -6,10 +6,9 @@
 # own target and replaces the database with a canned one.
 #
 # In order:
-#   1. git fetch (changes nothing in the working tree). Local edits are normal on a real site: an
-#      older guide had every site edit the top of crontab.txt and some the Caddyfile. So a
-#      locally edited file only stops the upgrade when this update ALSO changes that file; the
-#      script names it and stops before the backup, before anything changes. Edited files the
+#   1. git fetch (changes nothing in the working tree). An operator can edit a tracked file by
+#      hand. The upgrade stops on a locally edited file only when this update also changes
+#      that file; the script names it and stops before the backup, before anything changes. Edited files the
 #      update does not touch are kept, and listed.
 #   2. scripts/backup.sh. If it fails: "Upgrade stopped: the backup failed. Nothing was changed."
 #   3. git merge --ff-only @{upstream} (the commit step 1 fetched, so there is no second fetch
@@ -91,8 +90,7 @@ APP_VERSION="$new_version" docker compose up -d --build \
   || { echo "Upgrade stopped: docker compose up --build failed. The backup is backups/$backup_file." >&2; exit 1; }
 # Caddy reads the Caddyfile only when it starts, and `up -d --build` leaves it running. Restart
 # it every time rather than only when the Caddyfile changed between old_sha and new_sha: on a
-# site that ran `git pull` by hand first (an older site's one-time path to this command),
-# both are the same commit and a changed Caddyfile would go unread.
+# site that ran `git pull` by hand first, both are the same commit and a changed Caddyfile would go unread.
 docker compose restart caddy
 
 # 5. Wait for the website to be healthy.

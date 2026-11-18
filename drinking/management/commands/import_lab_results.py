@@ -176,12 +176,6 @@ class Command(BaseCommand):
             )
 
         if dry_run:
-            if figures["limits_fill_count"]:
-                self.stdout.write(
-                    "OpenH2O would add this file's MCL and DLR to "
-                    f"{count(figures['limits_fill_count'], 'result', 'results')} "
-                    "already on file."
-                )
             n = figures["committable"]
             skipped = count(len(rows) - n, "row", "rows")
             self.stdout.write(
@@ -189,12 +183,6 @@ class Command(BaseCommand):
                 f"{'result' if n == 1 else 'results'} and skip {skipped}."
             )
         else:
-            if counts["limits_filled"]:
-                self.stdout.write(
-                    "OpenH2O added this file's MCL and DLR to "
-                    f"{count(counts['limits_filled'], 'result', 'results')} "
-                    "already on file."
-                )
             self.stdout.write(
                 "OpenH2O added "
                 f"{count(counts['events'], 'sample event', 'sample events')}."

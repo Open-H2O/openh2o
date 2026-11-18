@@ -401,7 +401,6 @@ def test_a_lab_result_already_on_file_in_a_finalized_year_is_skipped_not_rewritt
     with override(REASON):
         importer.commit_rows(importer.validate_rows(rows, mapping), source_file="first.csv")
     _finalized_year(periods)
-    SampleResult.objects.update  # the stored row stays untouched below
 
     validated = importer.validate_rows(rows, mapping)
     assert validated[0]["errors"] == []

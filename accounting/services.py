@@ -382,15 +382,6 @@ def create_diversion_ledger_entries(
     )
 
 
-# Backward-compatible alias
-def create_diversion_ledger_entry(
-    diversion_record: DiversionRecord, parcel: Parcel | None = None
-) -> ParcelLedger | None:
-    """Deprecated alias for create_diversion_ledger_entries. Returns a single entry."""
-    entries = create_diversion_ledger_entries(diversion_record, parcel=parcel)
-    return entries[0] if entries else None
-
-
 def create_recharge_ledger_entries(
     recharge_event: RechargeEvent,
     zone: Zone | None = None,

@@ -618,7 +618,7 @@ every other line already installed. Running the command again replaces the block
 the jobs never run twice; run it again after changing the log folder. Do not edit
 inside the block, because the next run replaces it. When the installed schedule holds
 OpenH2O jobs without those two lines, `make install-cron` changes nothing and says so;
-Upgrades in section 11 of DEPLOY.md gives the fix. The schedule runs these jobs:
+Scheduled Jobs in DEPLOY.md gives the fix. The schedule runs these jobs:
 
 - Every hour, it syncs CDEC and USGS.
 - Every day at 1:25, it backs up the database and the uploaded files into the

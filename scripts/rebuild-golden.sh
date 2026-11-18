@@ -161,8 +161,9 @@ run_step clear_change_history --golden-build
 # sequence the Demonstration data page's button loads, so what staging shows is
 # what an operator gets. The steps and the reasons for their order live in
 # core/demonstration.py (STEPS). Two facts about running it here:
-#   * It runs in one transaction, and it deletes the change history it wrote
-#     under its own context before it commits.
+#   * It runs in one transaction. It deletes the change history its steps wrote
+#     and keeps the history of finalizing WY 2024-2025, which that year's code
+#     covers.
 #   * --golden-build keeps it from writing a Site health record: the
 #     candidate must contain no health rows (data/demo/expected_shape.json).
 run_step load_demonstration --golden-build

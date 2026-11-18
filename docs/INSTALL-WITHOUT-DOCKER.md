@@ -349,9 +349,9 @@ of DEPLOY.md, under Email / Password Reset). Generate the password with the same
 `secrets.token_urlsafe` command, and store it in a password manager. Give the
 password to the organization through a channel the organization already trusts.
 
-### The six steps
+### The four steps
 
-Load `.env`, then run these six steps in order. The Docker container runs the same
+Load `.env`, then run these four steps in order. The Docker container runs the same
 steps each time it starts.
 
 ```bash
@@ -359,8 +359,6 @@ set -a && source .env && set +a
 
 .venv/bin/python manage.py collectstatic --noinput --clear
 .venv/bin/python manage.py migrate --noinput
-.venv/bin/python manage.py record_filed_figures
-.venv/bin/python manage.py record_fingerprints
 .venv/bin/python manage.py createcachetable
 .venv/bin/python manage.py ensure_superuser
 ```
@@ -368,17 +366,14 @@ set -a && source .env && set +a
 <!-- defines: migrations -->
 `collectstatic` gathers the static files into one folder. `migrate` runs the
 *migrations*, which create or update the database tables to match this version of
-OpenH2O. Run it after every install and every update. `record_filed_figures`
-records, once, the figures of each water year finalized before OpenH2O began keeping
-them. `record_fingerprints` computes the code on the Changes to this year's records
-card for each finalized water year that does not have one. `createcachetable`
+OpenH2O. Run it after every install and every update. `createcachetable`
 creates one more table, where OpenH2O keeps short-lived values. `ensure_superuser`
 creates the first account.
 
 `ensure_superuser` creates the account only when the site does not have an active
 host administrator. While the site has one, it does not change any account. After
 you first sign in, change the password on your profile page. Keep both account lines
-in `.env`: after the database is wiped, the next run of the six steps recreates the
+in `.env`: after the database is wiped, the next run of the four steps recreates the
 account. You can also create the account with
 `.venv/bin/python manage.py createsuperuser`, which asks for each value. Section 7
 of [DEPLOY.md](../DEPLOY.md) covers changing the account's email address later.
@@ -628,8 +623,6 @@ git pull
 ./tailwindcss -i static/css/input.css -o static/css/output.css --minify
 .venv/bin/python manage.py collectstatic --noinput --clear
 .venv/bin/python manage.py migrate --noinput
-.venv/bin/python manage.py record_filed_figures
-.venv/bin/python manage.py record_fingerprints
 sudo systemctl restart openh2o
 ```
 

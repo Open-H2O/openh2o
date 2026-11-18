@@ -627,10 +627,7 @@ class Command(BaseCommand):
                     )
                 elif m_idx >= len(WY_MONTHS) - 2:
                     # The last two months of the OPEN year have not been through
-                    # the district's annual review yet. WY 2024-2025 is
-                    # `is_finalized=True`, so its September read is no longer
-                    # provisional once a second year has passed — leaving it that
-                    # way would have a finalized year still awaiting review.
+                    # the district's annual review yet.
                     quality = "provisional"
                     notes = (
                         f"Totalizer read for {month_name}. Provisional until the "

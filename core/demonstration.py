@@ -26,9 +26,10 @@ Demonstration mode off. The site name is deleted only when it is the
 demonstration's own.
 
 **Change history.** The load writes some 66,000 changes and the removal writes
-as many deletions. Both run under their own change-history context and delete
-the changes made under that context, and no others, before their transaction
-ends, so a site's Change history does not carry invented changes in and out.
+as many deletions. Each runs under its own change-history context. The load
+deletes the changes its steps made and keeps the ones finalizing WY 2024-2025
+made, which that year's code covers. The removal deletes those and its own
+changes, and no others.
 
 **What is a content table.** :data:`CONTENT_LABELS`, :data:`REFERENCE_LABELS`
 and :data:`KEPT_LABELS` together name every model OpenH2O has. A test holds the

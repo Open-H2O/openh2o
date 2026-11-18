@@ -122,50 +122,13 @@ class Command(BaseCommand):
         The platform is single-tenant: exactly one SiteConfig names the deployed
         agency (and the singleton's save() refuses a second row). Only the
         nothing else creates one, so a fresh ``load_demonstration`` would have
-        NO identity. Create it if absent, or take over a row the demonstration
-        already owns (Demonstration mode on) — but never clobber an operator's
-        own custom agency name.
-
-        **Why the forward rename is gated on ownership, not on a name list.**
-        A deployment seeded earlier may carry a REAL agency's name as its demo
-        identity. A list of retired names cannot carry it: it would be matched
-        against whatever an operator typed, so a real agency that legitimately
-        chose that name would be silently renamed out from under them. But name
-        equality alone fails in the opposite direction: such a deployment matches
-        no branch and falls through to "kept (custom agency name)", which would
-        leave a real agency's name on a public demo permanently.
-
-        So the rename keys on ``demonstration_mode`` instead. This seed is the
-        only writer of that flag anywhere in the codebase, and it sets it True on
-        every identity it owns, so a True flag means "this row belongs to the
-        demonstration" regardless of what the row happens to be called. A real
-        agency running production has it False and is never touched. That also
-        keeps every removed real name OUT of this file, which a name table would
-        have put straight back in.
-
-        The one residual path is a staff user turning ``demonstration_mode`` on
-        in Django admin over a real agency name and then running this command.
-        That is acceptable: running a demonstration seed on a production instance
-        is already an explicit "make this a demo" action, and the flag it keys on
-        means exactly that.
+        NO identity. Create it if absent, but never clobber an operator's own custom
+        agency name.
         """
         from core.models import SiteConfig
 
         merced_name = "Halvern Valley GSA"
         merced_email = "info@halvernvalleygsa.example.com"
-        # Contact emails minted by retired demo seeds (Kaweah and the earlier
-        # Merced demo). An in-place rename moves the
-        # agency NAME off the retired identity but leaves these stale, so a
-        # long-lived demo would keep a retired-basin contact email in
-        # core_siteconfig.
-        # Heal only these known demo emails on a demo-owned identity, never an
-        # operator's real contact address. All three are RFC-2606 .example.com
-        # addresses: reserved, unroutable, nobody's real inbox.
-        retired_demo_emails = {
-            "info@kaweahgsa.example.com",
-            "info@mercedsubbasingsa.example.com",
-        }
-
         sc = SiteConfig.objects.first()
         if sc is None:
             SiteConfig.objects.create(
@@ -179,42 +142,13 @@ class Command(BaseCommand):
             )
             self.stdout.write(self.style.SUCCESS(
                 f"  Created SiteConfig: {merced_name}"))
-        elif sc.agency_name != merced_name and sc.demonstration_mode:
-            # A row the seed already owns — demonstration_mode proves ownership, which is
-            # what lets a deployment seeded under an earlier real agency name
-            # rename forward instead of being mistaken for an operator's own
-            # choice. See the ownership note in this method's docstring.
-            old = sc.agency_name
-            sc.agency_name = merced_name
-            # Renaming off a retired demo identity → still the seed's demo;
-            # turn on demonstration_mode alongside the name.
-            sc.demonstration_mode = True
-            # Heal a retired-basin contact email carried over from the old demo:
-            # this is the seed's own demo, so a known retired demo
-            # email is stale, never a real operator's address.
-            if not sc.contact_email or sc.contact_email in retired_demo_emails:
-                sc.contact_email = merced_email
-            sc.save()
-            self.stdout.write(
-                f"  Renamed SiteConfig: {old} -> {merced_name}")
         elif sc.agency_name == merced_name:
             # The seed's own demo identity is already in place (a re-seed of an
-            # existing Merced demo). Ensure demonstration_mode is on idempotently:
-            # a demo whose SiteConfig predates the field — migrated in as False —
-            # would otherwise never get stamped, since the name already matches and
-            # neither the create nor the rename branch fires.
+            # existing Merced demo). Ensure demonstration_mode is on idempotently.
             update_fields = []
             if not sc.demonstration_mode:
                 sc.demonstration_mode = True
                 update_fields.append("demonstration_mode")
-            # Heal a retired-basin contact email left behind by an earlier
-            # in-place rename. The name already matched Merced, so
-            # neither the create nor the rename branch ever corrected the email
-            # minted by a retired demo seed — it would persist
-            # for the life of the demo (and reseeding never touched it).
-            if sc.contact_email in retired_demo_emails:
-                sc.contact_email = merced_email
-                update_fields.append("contact_email")
             if update_fields:
                 sc.save(update_fields=update_fields)
                 self.stdout.write(self.style.SUCCESS(

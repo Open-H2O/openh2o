@@ -501,14 +501,7 @@ def test_a_single_token_banned_value_gets_no_slug_term():
 #: Merced Irrigation District's canal network" in the demo basin's description as
 #: "carried as published". The clause is removed either
 #: way, and the exception is why this test passed it.
-SEED_TEXT_EXCEPTIONS = {
-    "seed_merced_basins_from_selection.py": {
-        "Merced Irrigation District": (
-            "LEGACY_OPERATORS is a teardown key that deletes rows seeded under "
-            "the old operator; it is never written."
-        ),
-    },
-}
+SEED_TEXT_EXCEPTIONS = {}
 
 
 def _seed_strings(path):

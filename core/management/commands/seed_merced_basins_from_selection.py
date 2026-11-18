@@ -50,8 +50,7 @@ seed_merced_parcels_from_selection (it needs MER-POD-009) and BEFORE
 seed_merced_recharge_events (which deposits the managed/storm recharge).
 
 Idempotent + Merced-scoped. A re-run wipes the demo district's recharge areas
-(old hardcoded AND prior selection runs, keyed on operator — including the
-operator names this demo used before its operator was renamed), their POD
+(old hardcoded AND prior selection runs, keyed on operator), their POD
 links, the recharge-intake PODs this command owns (MER-BPOD-*), the intake's
 own right (MER-WR-011-DEMO, so a reset never orphans it), and ONLY the
 managed ``basin_recharge_pool`` slice for the Merced GSA zones — never the
@@ -84,14 +83,6 @@ RIVER_FIXTURE = os.path.join(DATA_DIR, "selected_river_ag_parcels.geojson")
 # recharge volumes are invented, so a real district must not be named as their
 # operator.
 DEMO_OPERATOR = "Halvern Irrigation District"
-# One-time migration key for the operator rename. The operator string IS
-# the teardown selection key, so renaming it alone would strand every row already
-# written under the old name: `_flush` could no longer see them, and the next seed
-# would ADD a second set of basins beside the orphans. Staging and production were
-# both already seeded under the old string. So the wipe deletes by the current
-# operator AND by every legacy operator. Removable once no deployment predates
-# this rename — until then it is what keeps a re-seed idempotent.
-LEGACY_OPERATORS = ("Merced Irrigation District",)
 # PODs this command owns (the El Nido recharge intakes). The wipe deletes these by
 # prefix so a removed basin never leaves an orphan intake behind. Distinct from
 # the operational MER-POD-### diversions, which this command never deletes.
@@ -409,9 +400,8 @@ class Command(BaseCommand):
     def _flush(self, gsa_zones):
         """Remove Merced recharge areas + the intakes/links/pool slice we own.
 
-        Scoped by operator (the current one plus LEGACY_OPERATORS) so it clears
-        BOTH the old hardcoded basins and any prior selection run — including
-        rows written before the operator rename, and by the MER-BPOD- prefix
+        Scoped by operator so it clears
+        BOTH the old hardcoded basins and any prior selection run, and by the MER-BPOD- prefix
         for the intakes — never the operational MER-POD-### diversions. The pool delete is scoped to ``basin_recharge_pool`` ONLY, so
         the engine's incidental pool and the rollover carryover survive.
         """
@@ -422,7 +412,7 @@ class Command(BaseCommand):
 
         site_ids = list(
             RechargeSite.objects.filter(
-                operator__in=(DEMO_OPERATOR,) + LEGACY_OPERATORS
+                operator=DEMO_OPERATOR
             ).values_list("id", flat=True)
         )
         intake_ids = list(

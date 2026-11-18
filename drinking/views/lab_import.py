@@ -164,7 +164,6 @@ def import_preview(request):
             "repeat_count": counts["repeat_count"],
             "new_analytes": counts["new_analytes"],
             "committable": counts["committable"],
-            "limits_fill_count": counts["limits_fill_count"],
             "unknown_ps_codes": _unknown_ps_code_routes(validated),
             # The regulating-agency line the commit will print,
             # decided by the same function the commit calls; nothing written.
