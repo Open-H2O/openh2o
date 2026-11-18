@@ -148,6 +148,19 @@ if [ -z "$img_id" ] || [ -z "$img_repo" ] || [ -z "$img_tag" ]; then
   say "REFUSING: no running web container to go back to (docker compose images web). Nothing changed."
   finish 1
 fi
+# The running image carries the version it was built with (the Dockerfile's APP_VERSION), and
+# that is what its page shows. A tag added to the same commit after the build makes git describe
+# name it differently (v3.0 on 9797dd60, 2026-11-10), so the image's version is used when it names
+# this same commit: for the check below, and for going back.
+img_desc=$(docker image inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$img_id" 2>/dev/null \
+  | sed -n 's/^APP_VERSION=//p' | head -1)
+if [ -n "$img_desc" ] && [ "$img_desc" != "$prev_desc" ]; then
+  img_sha=$(printf '%s' "$img_desc" | sed -n 's/.*-g\([0-9a-f]\{7,40\}\)\(-dirty\)\{0,1\}$/\1/p')
+  if [ -n "$img_sha" ] && [ "${prev_head#"$img_sha"}" != "$prev_head" ]; then
+    say "before: the running image carries $img_desc, the same commit git describe calls $prev_desc; the check and any rollback use $img_desc"
+    prev_desc=$img_desc
+  fi
+fi
 golden_before=$(sum "$golden")
 meta_before=$(sum "$meta")
 backups_before=$(ls -1 "$snapdir" 2>/dev/null | grep -E '^golden\.(dump|meta)\.bak-pre-')
