@@ -38,3 +38,12 @@ line rather than against the page body text.
 before they are built. `--since BASE` lists them, `--drawing FILES` lists a mock-up's, and `--rows FILES` exits 1 on any
 line that is not in the Proposed, Fixed or Draft column of an approved table. It needs git and the standard library, so
 it runs on the host; the script's header has the rest.
+
+## Listing the reasons a release will ask for
+
+`scripts/test_reasons.py check` lists the `Test-Change:` lines the release check will ask for, from git alone and without
+running a test: one line per old test file the range changed or deleted, plus the old tests that name a changed file under
+`tests/`. Write each line in the commit that changes the test, while the reason is known. `--base live` (the default) reads
+the commit on openh2o.com as `deploy.sh` does and keeps it for an hour; `--base COMMIT` needs no network; `--json` prints
+everything, asked-for files included. Exit 0 nothing missing, 1 lines missing, 3 the live commit cannot be read. It needs
+git and the standard library, so it runs on the host.
