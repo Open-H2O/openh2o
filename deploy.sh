@@ -22,6 +22,9 @@
 # the Test-Change: or Fix-Test: lines that would excuse each failure. The
 # candidate is resolved here, and that exact commit is what Butler checks and
 # releases. Needs `gh` logged in with access to the repository's Actions.
+# Before dispatching the deploy checks it runs scripts/test_reasons.py (read from origin/main) on the
+# same pair: an old test the candidate changed with no Test-Change: line refuses in seconds, with the
+# lines it needs, instead of after the 27-minute check; nothing else here changed with it.
 #
 # <commit> defaults to origin/main's commit. --drill-smoke-missing-page also
 # asks for a page that does not exist, so the smoke test fails and the rollback
@@ -64,6 +67,25 @@ elif [ "$live" = "$cand" ] || git -C "$here" merge-base --is-ancestor "$cand" "$
 else
   base=$(git -C "$here" merge-base "$live" "$cand")
   [ "$base" = "$live" ] || echo "deploy.sh: live ${live:0:12} is not on the candidate's line; deploy checks from the common ancestor ${base:0:12}"
+fi
+if [ -n "$base" ] && [ "$base" != last-checked ]; then
+  # Old tests the candidate changes need their Test-Change: lines; asked of git alone, in seconds,
+  # before the deploy checks are started. Read from origin/main so an older candidate is asked too.
+  reasons=$(mktemp)
+  if git -C "$here" show origin/main:scripts/test_reasons.py > "$reasons" 2>/dev/null; then
+    rc=0
+    (cd "$here" && python3 -I "$reasons" check --base "$base" --head "$cand") || rc=$?
+    rm -f "$reasons"
+    if [ "$rc" != 0 ]; then
+      [ "$rc" = 1 ] || echo "deploy.sh: the old-test reasons could not be read (exit $rc)." >&2
+      echo "deploy.sh: REFUSED: old tests changed without their lines; nothing on the server was changed." >&2
+      exit 1
+    fi
+  else
+    rm -f "$reasons"
+  fi
+elif [ "$base" = last-checked ]; then
+  echo "deploy.sh: no live commit, so the old-test reasons are not asked here; the deploy checks still decide"
 fi
 if [ -n "$base" ]; then
   gate=$(mktemp)
