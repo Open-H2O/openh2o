@@ -474,9 +474,10 @@ def crop_et_accept(request, parcel_id, period):
     if not request.user.can_write:
         return read_only_response(request)
     parcel = get_object_or_404(Parcel, pk=parcel_id)
+    # Only a crop ET record has a newer figure to accept; a month's rain record has none.
     record = get_object_or_404(
         CropETFigure, pk=request.POST.get("record") or 0, parcel=parcel,
-        month=crop_et.month_first(period),
+        month=crop_et.month_first(period), variable="ET", model_name="Ensemble",
     )
     page = reverse("accounting:calculation_run_detail", args=[parcel.pk, period])
     reason = request.POST.get("reason", "")

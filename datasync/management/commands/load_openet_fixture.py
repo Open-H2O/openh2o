@@ -11,8 +11,8 @@ the day the site received them.
 ``received``, written by the dump). A row without them, with a source that does
 not belong to its model, or received before its last month ended, is refused
 with nothing written, the same as a missing parcel. Each item is stamped with
-the row's received day as a fetch stamps it, so a recorded crop ET month carries
-that day.
+the row's received day as a fetch stamps it, so a recorded crop ET or rain month
+carries that day.
 
 **It resolves every parcel BEFORE it writes a single row.** If the fixture names
 a parcel the database does not have, the command raises ``CommandError`` naming
@@ -180,6 +180,12 @@ class Command(BaseCommand):
                 # the day it was received; a recorded month keeps its figure.
                 crop_et.record_fetched_months(
                     parcel, crop_et.months_of(row["et_data"]), model=row["model_name"]
+                )
+            elif row["variable"] == "precip":
+                # Rain is recorded the same way (ruling 208).
+                crop_et.record_fetched_months(
+                    parcel, crop_et.months_of(row["et_data"], "precip"),
+                    variable="precip", model=row["model_name"],
                 )
 
         self.stdout.write(

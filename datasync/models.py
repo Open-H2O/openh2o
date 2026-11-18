@@ -537,6 +537,12 @@ class CropETFigure(CorrectableRecord):
     correction (``replaces``, ``change_reason``, ``replaced_at``). No form, import or
     administration screen writes it.
 
+    Rain is recorded the same way. On a use area with OpenET fields, ``fields`` holds each
+    field's acres inside the use area, crop ET and rain from the same answer as the figure,
+    and the month's effective rain is worked out from them alone; accepting a newer figure
+    takes the newer answer's fields. On a use area with none, the month's rain is a record
+    of its own (``variable`` "precip", ``model_name`` "GRIDMET", ``depth_mm`` the rain).
+
     The depth is in millimeters, exactly as fetched. ``fetched_on`` is the site's date
     on the day it was fetched; it is empty when that is not known (loaded from a
     file that carries no fetch dates). Inside a finalized
@@ -553,6 +559,13 @@ class CropETFigure(CorrectableRecord):
     variable = models.CharField("OpenET variable", max_length=20, default="ET")
     model_name = models.CharField("OpenET model", max_length=50, default="Ensemble")
     depth_mm = models.DecimalField("crop ET (mm)", max_digits=40, decimal_places=20)
+    fields = models.JSONField(
+        "OpenET fields",
+        default=list,
+        blank=True,
+        help_text="Each OpenET field's acres inside the use area, crop ET and rain (mm) from the "
+        "same answer as the figure.",
+    )
     fetched_on = models.DateField("date received", null=True, blank=True)
     note = models.TextField("how it was recorded", blank=True)
     created_by = models.ForeignKey(

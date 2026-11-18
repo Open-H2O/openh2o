@@ -7,7 +7,10 @@ Unlike ET, precip has NO REST tier: GRIDMET ``pr`` is sampled per-parcel only vi
 Earth Engine, so this command always goes through GEE directly (it does NOT route
 on OPENET_MODE). It mirrors ``sync_openet_parcels`` flag-for-flag and writes
 ``OpenETCache`` rows with ``variable="precip"``, ``model_name="GRIDMET"``,
-idempotently per (parcel, window) so re-runs never duplicate.
+idempotently per (parcel, window) so re-runs never duplicate. Each month with no
+rain recorded yet is then recorded at the rain received
+(``datasync.crop_et.record_fetched_months``); the calculation reads only that record,
+so a later answer with other rain changes no figure.
 
 Usage:
   python manage.py sync_precip_parcels --start-date 2024-06-01 --end-date 2024-08-31
@@ -120,7 +123,7 @@ class Command(BaseCommand):
             precip_by_month = result.get(parcel.pk, {})
             if not precip_by_month:
                 continue
-            OpenETCache.objects.update_or_create(
+            row, _ = OpenETCache.objects.update_or_create(
                 parcel=parcel,
                 start_date=start_date,
                 end_date=end_date,
@@ -135,6 +138,11 @@ class Command(BaseCommand):
                     ),
                     "origin": "gee",
                 },
+            )
+            # A month with no rain recorded yet is recorded at the rain just received; a
+            # recorded month keeps its figure (datasync/crop_et.py, ruling 208).
+            crop_et.record_fetched_months(
+                parcel, crop_et.months_of(row.et_data, "precip"), variable="precip", model="GRIDMET"
             )
             written += 1
             parcel_months += len(precip_by_month)

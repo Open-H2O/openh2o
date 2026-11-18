@@ -77,7 +77,7 @@ def _precip_cache(parcel, period, precip_mm):
     from datasync.models import OpenETCache
 
     year, month = int(period[:4]), int(period[5:7])
-    return OpenETCache.objects.create(
+    row = OpenETCache.objects.create(
         parcel=parcel,
         geometry=_square(),
         start_date=dt.date(year, month, 1),
@@ -86,6 +86,11 @@ def _precip_cache(parcel, period, precip_mm):
         model_name="GRIDMET",
         et_data=[{"precip": precip_mm, "date": period, "unit": "mm"}],
     )
+    # Recorded the way the rain writers record a month they received (ruling 208).
+    from datasync.crop_et import months_of, record_fetched_months
+
+    record_fetched_months(parcel, months_of(row.et_data, "precip"), variable="precip", model="GRIDMET")
+    return row
 
 
 def _surface_row(parcel, period, af):

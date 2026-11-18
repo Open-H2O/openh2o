@@ -96,7 +96,8 @@ FIELD_WORD_KEPT: dict = {
     "core/demonstration.py": 6,
     "datasync/adapters/openet_fields.py": 1,
     "datasync/crop_et.py": 1,
-    "datasync/models.py": 13,
+    # 15 from 153-08: a recorded figure's "OpenET fields" (label and help text).
+    "datasync/models.py": 15,
     # The month page's list of the OpenET fields a crop ET figure came from, and the use
     # area page's acres in OpenET fields, its explainer and its no-field sentence
     # (153.2-02, ruling 168). Measured 2026-11-14.

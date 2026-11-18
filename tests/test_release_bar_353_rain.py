@@ -29,7 +29,7 @@ from django.db import DatabaseError, transaction
 
 from accounting.locks import LOCK_SQLSTATE
 from accounting.models import CalculationRun, ReportingPeriod
-from datasync.models import CropETFigure, OpenETCache, OpenETFieldMonth, OpenETFieldShare
+from datasync.models import CropETFigure, OpenETFieldMonth, OpenETFieldShare
 from tests import ledger_districts as ld
 from tests.test_openet_field_parts_page import MADE_UP_EAST, MADE_UP_WEST, _fields_over
 from tests.test_openet_recorded_figure import (  # noqa: F401  (fixtures)
@@ -107,6 +107,11 @@ def _by_hand(parcel, et, pr):
     return total
 
 
+def _same_af(a, b):
+    """Equal to a millionth of an acre-foot: the test works the figure by hand in another order."""
+    return abs(D(a) - D(b)) < D("0.000001")
+
+
 def _stamped_fields(parcel):
     run = _run(parcel)
     detail = next(s.get("detail") or {} for s in run.breakdown if s.get("step_type") == "et_gross")
@@ -126,7 +131,7 @@ def test_a_revised_rain_month_from_openet_leaves_the_months_effective_rain_as_it
     ld.run_months([JULY])
 
     assert _run(field).effective_precip_af == before
-    assert _rain_step(field) == _by_hand(field, (500, 400), (40, 20))
+    assert _same_af(_rain_step(field), _by_hand(field, (500, 400), (40, 20)))
 
 
 def test_a_rain_only_revision_shows_no_newer_figure_and_no_accept_button(operator):
@@ -155,7 +160,7 @@ def test_a_revised_crop_et_waits_for_a_person_and_accepting_it_takes_that_answer
 
     _accept(operator, field)
     # Accepting recalculates the month from the newer answer, its rain included.
-    assert _rain_step(field) == _by_hand(field, (550, 420), (80, 60))
+    assert _same_af(_rain_step(field), _by_hand(field, (550, 420), (80, 60)))
     assert abs(_run(field).effective_precip_af - _by_hand(field, (550, 420), (80, 60))) < D("0.0001")
 
 
@@ -196,14 +201,14 @@ def test_a_month_recorded_before_the_use_area_had_openet_fields_keeps_its_record
 
 
 def test_the_field_sync_records_each_fields_rain_crop_et_and_acres_from_the_first_answer():
+    from django.contrib.gis.geos import MultiPolygon
+
     from datasync.field_list import compute_shares
     from datasync.models import OpenETField
     from tests.test_openet_field_parts_page import _strip
 
     field = _corn_field()
     for number, (x0, x1) in ((MADE_UP_WEST, (0.0, 0.6)), (MADE_UP_EAST, (0.6, 0.9))):
-        from django.contrib.gis.geos import MultiPolygon
-
         OpenETField.objects.create(field_id=number, geometry=MultiPolygon(_strip(field, x0, x1), srid=4326),
                                    received_on=dt.date(2025, 8, 6))
     compute_shares(field)
@@ -329,4 +334,4 @@ def test_a_records_fields_cannot_be_changed_inside_a_finalized_year():
     with pytest.raises(DatabaseError) as refused, transaction.atomic():
         CropETFigure.objects.filter(pk=record.pk).update(fields=[])
 
-    assert getattr(refused.value.__cause__, "pgcode", None) == LOCK_SQLSTATE
+    assert getattr(refused.value.__cause__, "sqlstate", None) == LOCK_SQLSTATE

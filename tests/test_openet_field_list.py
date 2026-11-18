@@ -311,7 +311,7 @@ def test_raw_rain_counts_only_the_acres_inside_fields():
 
 
 def test_a_use_area_with_no_share_keeps_the_cached_rain_path():
-    """Without shares the step reads the cache's rain, as on a site using the older routes."""
+    """Without OpenET fields the step reads the month's recorded rain, as on a site using the older routes."""
     from accounting.steps import subtract_effective_precip
     from datasync import crop_et
     from datasync.models import OpenETCache
@@ -324,6 +324,7 @@ def test_a_use_area_with_no_share_keeps_the_cached_rain_path():
             et_data=[{key: value, "date": JULY, "unit": "mm"}],
         )
     crop_et.record_fetched_months(parcel, [JULY])
+    crop_et.record_fetched_months(parcel, [JULY], variable="precip", model="GRIDMET")
     _new, record = subtract_effective_precip(D("100"), parcel, JULY, {}, {"method": "raw"})
     assert record["detail"]["precip_mm"] == "30.0"
     # 30 mm over the whole 100 acres.
@@ -776,14 +777,15 @@ def test_the_stamped_rainfall_adds_to_the_rain_the_precip_step_counts():
     assert abs(stamped - rainfall_af) < D("0.0001")
 
 
-def test_no_stamp_when_a_newer_figure_has_not_been_accepted():
-    """The fields' figures as now held no longer add to the recorded figure: no list."""
+def test_the_stamp_lists_the_recorded_fields_when_a_newer_figure_has_not_been_accepted():
+    """A newer answer nobody accepted leaves the list as recorded (ruling 208)."""
     from accounting.steps import et_gross
 
     parcel, a, b = _sixty_thirty_july()
+    _, before = et_gross(D("0"), parcel, JULY, {}, {})
     _month(a, et_mm=550, pr_mm=40, received_on=LATER)
-    _, record = et_gross(D("0"), parcel, JULY, {}, {})
-    assert _stamped(record) is None
+    _, after = et_gross(D("0"), parcel, JULY, {}, {})
+    assert _stamped(before) and _stamped(after) == _stamped(before)
 
 
 def test_no_stamp_for_a_use_area_with_no_share():

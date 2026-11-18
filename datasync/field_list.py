@@ -411,34 +411,26 @@ def field_parts(parcel, period):
 
     ``[{"field_id", "acres", "crop_et_af", "rainfall_af"}]``: the field's acres inside the use
     area, and its crop ET and rain over those acres in acre-feet (depth x acres / 304.8), at
-    full precision. ``rainfall_af`` is None on every row when any field's rain is missing (the
-    month then counts no rain). None when the use area has no share, or any field has no crop
-    ET for the month.
+    full precision, from the month's record (``datasync.crop_et.recorded_fields``), never from
+    the field months as they now stand. ``rainfall_af`` is None on every row when any field's
+    rain is missing (the month then counts no rain). None when the record holds no OpenET
+    field, or any field has no crop ET in it.
     """
-    from datasync.models import OpenETFieldMonth, OpenETFieldShare
+    from datasync.crop_et import recorded_fields
 
-    shares = list(OpenETFieldShare.objects.filter(parcel=parcel).select_related("field"))
-    if not shares:
+    fields = recorded_fields(parcel, period)
+    if not fields or any(et_mm is None for _n, _a, et_mm, _p in fields):
         return None
-    month = _first(int(period[:4]), int(period[5:7]))
-    rows = {
-        row.field_id: row
-        for row in OpenETFieldMonth.objects.filter(field_id__in=[s.field_id for s in shares], month=month)
-    }
-    if any(rows.get(s.field_id) is None or rows[s.field_id].et_mm is None for s in shares):
-        return None
-    with_rain = all(rows[s.field_id].pr_mm is not None for s in shares)
-    shares.sort(key=lambda s: (-s.overlap_acres, s.field.field_id))
+    with_rain = all(pr_mm is not None for _n, _a, _e, pr_mm in fields)
     parts = []
     with localcontext() as context:
         context.prec = 60
-        for share in shares:
-            row, acres = rows[share.field_id], Decimal(share.overlap_acres)
+        for number, acres, et_mm, pr_mm in sorted(fields, key=lambda f: (-f[1], f[0])):
             parts.append({
-                "field_id": share.field.field_id,
+                "field_id": number,
                 "acres": acres,
-                "crop_et_af": Decimal(row.et_mm) * acres / MM_ACRES_PER_AF,
-                "rainfall_af": Decimal(row.pr_mm) * acres / MM_ACRES_PER_AF if with_rain else None,
+                "crop_et_af": et_mm * acres / MM_ACRES_PER_AF,
+                "rainfall_af": pr_mm * acres / MM_ACRES_PER_AF if with_rain else None,
             })
     return parts
 

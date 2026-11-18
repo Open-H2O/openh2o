@@ -13,6 +13,14 @@ The calculation reads :func:`recorded_mm` and nothing else for crop ET. The
 cache is read only through ``accounting.steps._cache_by_date``, the same
 "newest row wins" read the calculation used before records existed, so the
 record and the newer-figure check agree on which fetch is the newest.
+
+Rain is recorded with the same answer (ruling 208). On a use area with OpenET fields
+the record keeps, beside the crop ET, each field's acres inside the use area, crop
+ET and rain from that answer (``CropETFigure.fields``, :func:`recorded_fields`), and
+the effective rain step reads only those. On a use area with none, each rain writer
+records the month's rain once as a record of its own (variable "precip", model
+"GRIDMET"). A later answer with other rain changes nothing; accepting a newer crop
+ET figure takes that answer's fields, rain included.
 """
 
 import datetime as dt
@@ -106,15 +114,23 @@ def months_of(items, key="et"):
     }
 
 
+#: The key a cached month item holds its depth under, by variable.
+CACHE_KEYS = {"precip": "precip"}
+
+
 def newest_fetched(parcel, period, variable="ET", model="Ensemble"):
-    """The month's newest fetched figure, read the way the calculation read the cache; None when none."""
+    """The month's newest fetched figure, read the way the calculation read the cache; None when none.
+
+    On a use area with OpenET fields, crop ET is the newest answer from its fields (the live
+    field months), which the newer figure's band and Accept compare with the record.
+    """
     from accounting.steps import _cache_by_date
     from datasync import field_list
 
     if variable == "ET" and model == "Ensemble" and field_list.has_shares(parcel):
         return field_list.field_share_mm(parcel, period, "et")
 
-    by_date, _rows = _cache_by_date(parcel, period, variable, model, "et")
+    by_date, _rows = _cache_by_date(parcel, period, variable, model, CACHE_KEYS.get(variable, "et"))
     if not by_date:
         return None
     total = sum((value for value, _pk, _f in by_date.values()), Decimal("0"))
@@ -158,11 +174,62 @@ def record_fetched_months(parcel, months, variable="ET", model="Ensemble"):
                 variable=variable,
                 model_name=model,
                 depth_mm=newest.mm,
+                fields=fields_received(parcel, period) if from_fields else [],
                 fetched_on=newest.fetched_on,
                 note=note,
             )
         )
     return written
+
+
+def fields_received(parcel, period):
+    """Each OpenET field's part of the month as OpenET's newest answer holds it, for a record.
+
+    ``[{"field_id", "acres", "et_mm", "pr_mm"}]``: the field's acres inside the use area and its
+    crop ET and rain in millimetres, as full-precision strings (rain None when the answer has
+    none), in the order the use area's shares were made. Read from the same rows as
+    :func:`newest_fetched`, so the list is the answer the record's figure comes from.
+    """
+    from datasync.models import OpenETFieldMonth, OpenETFieldShare
+
+    shares = list(OpenETFieldShare.objects.filter(parcel=parcel).select_related("field").order_by("pk"))
+    rows = {
+        row.field_id: row
+        for row in OpenETFieldMonth.objects.filter(
+            field_id__in=[s.field_id for s in shares], month=month_first(period)
+        )
+    }
+    out = []
+    for share in shares:
+        row = rows.get(share.field_id)
+        out.append({
+            "field_id": share.field.field_id,
+            "acres": str(share.overlap_acres),
+            "et_mm": None if row is None or row.et_mm is None else str(row.et_mm),
+            "pr_mm": None if row is None or row.pr_mm is None else str(row.pr_mm),
+        })
+    return out
+
+
+def recorded_fields(parcel, period):
+    """The OpenET fields the month's record was made from, or None when it has none.
+
+    ``[(field number, acres, crop ET mm or None, rain mm or None)]`` in the record's order, as
+    Decimals. None when the month has no record or its record holds no fields (a use area with
+    no OpenET field when it was recorded).
+    """
+    record = current_record(parcel, period)
+    if record is None or not record.fields:
+        return None
+    return [
+        (
+            item["field_id"],
+            Decimal(item["acres"]),
+            None if item.get("et_mm") is None else Decimal(item["et_mm"]),
+            None if item.get("pr_mm") is None else Decimal(item["pr_mm"]),
+        )
+        for item in record.fields
+    ]
 
 
 #: The same function under the name the field-list route reads in its own words.
@@ -367,6 +434,8 @@ def _checked_reason(reason):
 def accept_newer_figure(record, *, user, reason):
     """Replace ``record`` with OpenET's newer figure.
 
+    On a use area with OpenET fields the new record keeps the newer answer's fields, so
+    the month's rain comes from the same answer as its crop ET (ruling 208).
     A recorded correction carrying ``reason``: the old record stays,
     struck. Raises ``core.corrections.AlreadyVoided`` / ``AlreadyReplaced``, ``ValueError``
     (the reason sentence, or :data:`NO_NEWER_SENTENCE`) or
@@ -377,6 +446,7 @@ def accept_newer_figure(record, *, user, reason):
     from accounting.locks import refuse_if_finalized
     from core import corrections
     from core.history import change_note
+    from datasync import field_list
     from datasync.models import CropETFigure
 
     note = None
@@ -400,6 +470,8 @@ def accept_newer_figure(record, *, user, reason):
                 variable=locked.variable,
                 model_name=locked.model_name,
                 depth_mm=newer.mm,
+                # The newer answer's fields, its rain included (ruling 208).
+                fields=fields_received(locked.parcel, period) if field_list.has_shares(locked.parcel) else [],
                 fetched_on=newer.fetched_on,
                 replaces=locked,
                 change_reason=note,

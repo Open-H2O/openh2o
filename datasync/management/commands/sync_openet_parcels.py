@@ -265,7 +265,9 @@ class Command(BaseCommand):
                         field_id=ids[number], month=month, et_mm=et_mm, pr_mm=pr_mm, received_on=today
                     )
                 elif row.et_mm != et_mm or row.pr_mm != pr_mm:
-                    row.et_mm, row.pr_mm = et_mm, pr_mm
+                    # The month's record keeps the first answer (datasync/crop_et.py); the
+                    # field month holds the newest, with the day it arrived.
+                    row.et_mm, row.pr_mm, row.received_on = et_mm, pr_mm, today
                     row.save()
         return sent_fields, sent_months
 
