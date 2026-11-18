@@ -31,12 +31,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='cropetfigure',
             name='fields',
-            field=models.JSONField(blank=True, default=list, help_text="Each OpenET field's acres inside the use area, crop ET and rain (mm) from the same answer as the figure.", verbose_name='OpenET fields'),
+            field=models.JSONField(blank=True, default=list, verbose_name='OpenET fields'),
         ),
         migrations.AddField(
             model_name='cropetfigureevent',
             name='fields',
-            field=models.JSONField(blank=True, default=list, help_text="Each OpenET field's acres inside the use area, crop ET and rain (mm) from the same answer as the figure.", verbose_name='OpenET fields'),
+            field=models.JSONField(blank=True, default=list, verbose_name='OpenET fields'),
         ),
         pgtrigger.migrations.AddTrigger(
             model_name='cropetfigure',

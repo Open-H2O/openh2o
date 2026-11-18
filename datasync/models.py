@@ -559,13 +559,9 @@ class CropETFigure(CorrectableRecord):
     variable = models.CharField("OpenET variable", max_length=20, default="ET")
     model_name = models.CharField("OpenET model", max_length=50, default="Ensemble")
     depth_mm = models.DecimalField("crop ET (mm)", max_digits=40, decimal_places=20)
-    fields = models.JSONField(
-        "OpenET fields",
-        default=list,
-        blank=True,
-        help_text="Each OpenET field's acres inside the use area, crop ET and rain (mm) from the "
-        "same answer as the figure.",
-    )
+    # Each OpenET field's acres inside the use area, crop ET and rain (mm) from the same
+    # answer as the figure (datasync/crop_et.py, fields_received).
+    fields = models.JSONField("OpenET fields", default=list, blank=True)
     fetched_on = models.DateField("date received", null=True, blank=True)
     note = models.TextField("how it was recorded", blank=True)
     created_by = models.ForeignKey(

@@ -96,8 +96,8 @@ FIELD_WORD_KEPT: dict = {
     "core/demonstration.py": 6,
     "datasync/adapters/openet_fields.py": 1,
     "datasync/crop_et.py": 1,
-    # 15 from 153-08: a recorded figure's "OpenET fields" (label and help text).
-    "datasync/models.py": 15,
+    # 14 from 153-08: a recorded figure's "OpenET fields".
+    "datasync/models.py": 14,
     # The month page's list of the OpenET fields a crop ET figure came from, and the use
     # area page's acres in OpenET fields, its explainer and its no-field sentence
     # (153.2-02, ruling 168). Measured 2026-11-14.
@@ -106,7 +106,7 @@ FIELD_WORD_KEPT: dict = {
     # "OpenET field" in the glossary's entry for it and in the Methods page's crop ET and
     # precipitation rows (153.2-03). Measured 2026-11-14.
     "config/views.py": 3,
-    "templates/help/methods.html": 9,
+    "templates/help/methods.html": 8,  # 8 from 153-08 (ruling 209: "the field's rainfall")
 }
 
 #: Titles that start "New " or "Create " and are not a new record, one reason

@@ -202,6 +202,7 @@ def test_a_month_openet_was_never_asked_about_stays_not_found(operator):
 # ---------------------------------------------------------------- words elsewhere
 
 
+# wording approved: ruling 151 (the section), ruling 209 (the two rainfall sentences)
 METHODS_SENTENCES = [
     "OpenH2O records a use area’s crop ET for a month the first time OpenET’s figures for that month arrive.",
     "A recorded figure is Provisional when OpenET sent it within 120 days of the month’s end.",
@@ -210,7 +211,10 @@ METHODS_SENTENCES = [
     "OpenH2O treats figures that match to the hundredth of an acre-foot as the same.",
     "The OpenET sync command lists every month with a different figure.",
     "Acceptance takes a reason of 10 to 500 characters.",
-    "OpenH2O uses the latest rainfall figure each time it calculates a month.",
+    "OpenH2O records a month’s rainfall with its crop ET, the first time the figures arrive.",
+    "Rainfall sent again later does not change the recorded rainfall.",
+    "When a person accepts a newer crop ET figure, OpenH2O replaces the recorded rainfall with the rainfall sent with that figure.",
+    "When only the rainfall changes, the month’s calculation page does not show a newer figure.",
 ]
 
 

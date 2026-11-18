@@ -59,7 +59,7 @@
           </tr>
           <tr>
             <td class="col-name">Precipitation on OpenET fields</td>
-            <td>OpenH2O applies the formula to each OpenET field on its own. P and ET are that field&rsquo;s latest rainfall and crop ET from OpenET. OpenH2O converts each result to acre-feet over the field&rsquo;s acres inside the use area and adds the results. For a use area with no OpenET field on record, P is its own rainfall and ET its recorded crop ET.</td>
+            <td>OpenH2O applies the formula to each OpenET field on its own. P and ET are the field&rsquo;s rainfall and crop ET as recorded for the month. OpenH2O converts each result to acre-feet over the field&rsquo;s acres inside the use area and adds the results. For a month whose record does not list an OpenET field, P is the use area&rsquo;s recorded rainfall and ET its recorded crop ET.</td>
           </tr>
           <tr>
             <td class="col-name">ETAW met by surface water</td>
@@ -135,7 +135,7 @@
           </tr>
           <tr>
             <td class="col-name">Rainfall</td>
-            <td>OpenH2O uses the latest rainfall figure each time it calculates a month. When OpenET sends a revised crop ET for an OpenET field, the next calculation uses it for effective precipitation at once. The use area&rsquo;s recorded crop ET changes only when a person accepts the newer figure.</td>
+            <td>OpenH2O records a month&rsquo;s rainfall with its crop ET, the first time the figures arrive. Rainfall sent again later does not change the recorded rainfall. When a person accepts a newer crop ET figure, OpenH2O replaces the recorded rainfall with the rainfall sent with that figure. When only the rainfall changes, the month&rsquo;s calculation page does not show a newer figure.</td>
           </tr>
         </tbody>
       </table>
