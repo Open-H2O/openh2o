@@ -95,6 +95,12 @@ if [ "$1" = tag ]; then
   echo "$img" > "$S/tag_$(key "$3")"
   exit 0
 fi
+if [ "$1" = image ] && [ "$2" = inspect ]; then
+  # The image's environment: the version it was built with, as the Dockerfile sets it.
+  img=${*: -1}
+  printf 'PATH=/usr/local/bin\nAPP_VERSION=%s\n' "$(cat "$S/imgver_$(key "$img")")"
+  exit 0
+fi
 [ "$1" = compose ] || exit 0
 shift
 case $1 in
@@ -260,6 +266,21 @@ check "12 the code and image still go back" 'called "git reset --hard $PREV" && 
 setup 13; echo guard_refuse > "$S/make_mode"; run REF=$NEW
 check "13 a refusal that names git reset --hard exits 1" '[ $RC = 1 ] && called "make deploy REF=$NEW"'
 check "13 no rollback" 'called "make deploy REF=$NEW" && not_called "git reset" && not_called "compose up"'
+
+# (14) a tag added after the running image was built (v3.0 on 9797dd60, 2026-11-10): git describe
+# names the commit by the tag while the image, and so the page, carry the version it was built
+# with. The run recognises the release by the image's version and goes back to it with that version.
+setup 14; echo v3.0 > "$S/describe_$PREV"; echo bad_page > "$S/make_mode"; run REF=$NEW
+check "14 a later tag on the same commit still releases, and rolls back" '[ $RC = 5 ] && called "make deploy REF=$NEW"'
+check "14 the rollback starts the image with the version it carries" 'called "docker compose up -d --no-build APP_VERSION=$PREV_DESC"'
+check "14 says which version it went by" 'says "the running image carries $PREV_DESC"'
+setup 14; echo v3.0 > "$S/describe_$PREV"; run REF=$NEW
+check "14 and a good deploy exits 0" '[ $RC = 0 ]'
+
+# (15) the running image carries the version of another commit: there is no release to recognise.
+setup 15; echo v3.0 > "$S/describe_$PREV"; echo v2.17-1-g99999999 > "$S/imgver_sha256_old"
+printf '%s</title>\n<footer>v2.17-1-g99999999</footer>\n' "$TITLE" > "$S/live.html"; run REF=$NEW
+check "15 an image built from another commit exits 1" '[ $RC = 1 ] && not_called "make " && not_called "docker tag"'
 
 echo "$pass passed, $fail failed"
 [ "$fail" = 0 ]
