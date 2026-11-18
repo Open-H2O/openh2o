@@ -176,7 +176,13 @@ jobs:
           dc build -q web || exit 3
           dc up -d --wait db web || { dc logs web --tail 100; exit 3; }
           mapfile -t leave < "$RUNNER_TEMP/release-deselect.txt"
-          dc exec -T -e OPENH2O_MODULES=all web python -m pytest "$@" "${leave[@]}" --ds=config.settings.local \
+          # Side by side when this tree's conftest.py deals tests to workers (pytest_xdist_make_scheduler,
+          # 357f0d8d, 2026-11-15, after the fixes that made the suite safe in parallel), as tests.yml does;
+          # a tree from before it (v3.0) runs one test at a time as before. Serial, the old tests took 30
+          # to 60 minutes (runs 42934541782, 43969792621, 44371300503). Brent 2026-11-18 11:46: "Make both changes".
+          par=()
+          grep -qs '^def pytest_xdist_make_scheduler' conftest.py && par=(-n auto --dist loadfile)
+          dc exec -T -e OPENH2O_MODULES=all web python -m pytest "$@" "${leave[@]}" ${par[@]+"${par[@]}"} --ds=config.settings.local \
             -m "not network and not release" -p no:cacheprovider -q -o junit_family=xunit1 --junitxml=/tmp/deploy-checks.xml
           rc=$?
           dc cp web:/tmp/deploy-checks.xml "$junit" >/dev/null 2>&1
@@ -249,7 +255,13 @@ jobs:
           trap 'dc down -v --rmi local >/dev/null 2>&1' EXIT
           dc build -q web || exit 3
           dc up -d --wait db web || { dc logs web --tail 100; exit 3; }
-          dc exec -T -e OPENH2O_MODULES=all web python -m pytest "$@" --ds=config.settings.local \
+          # Side by side when this tree's conftest.py deals tests to workers (pytest_xdist_make_scheduler,
+          # 357f0d8d, 2026-11-15, after the fixes that made the suite safe in parallel), as tests.yml does;
+          # a tree from before it (v3.0) runs one test at a time as before. Serial, the old tests took 30
+          # to 60 minutes (runs 42934541782, 43969792621, 44371300503). Brent 2026-11-18 11:46: "Make both changes".
+          par=()
+          grep -qs '^def pytest_xdist_make_scheduler' conftest.py && par=(-n auto --dist loadfile)
+          dc exec -T -e OPENH2O_MODULES=all web python -m pytest "$@" ${par[@]+"${par[@]}"} --ds=config.settings.local \
             -m "not network and not release" -p no:cacheprovider -q -o junit_family=xunit1 --junitxml=/tmp/deploy-checks.xml
           rc=$?
           dc cp web:/tmp/deploy-checks.xml "$junit" >/dev/null 2>&1
