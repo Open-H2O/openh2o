@@ -317,8 +317,12 @@ jobs:
       - name: The release tests on the candidate
         run: |
           set +e
+          # -v names each test as it starts; a test still running after 20 minutes prints every
+          # thread's stack (faulthandler). Both took 1.5 and 2.7 min on a developer's machine (2026-11-18),
+          # 7.5 min together here on 2026-11-16, and passed no line in 57 min on run 44319002865.
           docker compose exec -T -e OPENH2O_MODULES=all web python -m pytest tests/ --ds=config.settings.local \
-            -m "release and not network" -p no:cacheprovider -q -rA -o junit_family=xunit1 --junitxml=/tmp/release-tests.xml \
+            -m "release and not network" -p no:cacheprovider -v -rA --durations=5 -o faulthandler_timeout=1200 \
+            -o junit_family=xunit1 --junitxml=/tmp/release-tests.xml \
             | tee "$RUNNER_TEMP/release-tests.txt"
           rc=${PIPESTATUS[0]}
           # pytest's exit 5 is "no test collected": a candidate older than the marker has none.
@@ -331,8 +335,12 @@ jobs:
           exit "$rc"
 
       - name: Web log on failure
-        if: failure()
-        run: docker compose logs web --tail 200
+        if: failure() || cancelled()
+        run: |
+          docker compose logs web --tail 200
+          # What the database is doing, in case a test waits on a lock.
+          docker compose exec -T db psql -U openh2o -d postgres -c \
+            "select pid, datname, state, wait_event_type, wait_event, now() - query_start as for, left(query, 200) from pg_stat_activity where datname is not null" || true
 
       - name: Tear down
         if: always()
