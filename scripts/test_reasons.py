@@ -90,8 +90,12 @@ def resolve(repo, rev):
 
 
 def fetch_footer(url):
-    """The footer's version string, as deploy.sh reads it (app-footer-version element)."""
-    with urllib.request.urlopen(url, timeout=FOOTER_SECONDS) as page:
+    """The footer's version string, as deploy.sh reads it (app-footer-version element).
+
+    The site refuses Python's default agent (403), so the request names its own, as curl does.
+    """
+    request = urllib.request.Request(url, headers={"User-Agent": "openh2o-test-reasons"})
+    with urllib.request.urlopen(request, timeout=FOOTER_SECONDS) as page:
         text = page.read().decode("utf-8", errors="replace")
     m = re.search(r'app-footer-version"[^>]*>([^<]*)<', text)
     return m.group(1).strip() if m else ""

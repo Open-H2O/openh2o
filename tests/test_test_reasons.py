@@ -242,6 +242,31 @@ def test_an_unreachable_site_uses_the_cache_and_says_its_age(repo, capsys, monke
     assert "3 h old" in out
 
 
+def test_the_footer_is_asked_for_with_its_own_user_agent(monkeypatch):
+    # openh2o.com answers Python's default agent with 403 Forbidden (seen 2026-11-18), which
+    # would leave every live read on the cache or on exit 3.
+    seen = []
+
+    class Page:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self):
+            return b'<span class="app-footer-version">v3.0-106-g4c4ec105</span>'
+
+    def urlopen(request, timeout):
+        seen.append(request)
+        return Page()
+
+    monkeypatch.setattr(tr.urllib.request, "urlopen", urlopen)
+    assert tr.fetch_footer("https://example.test/") == "v3.0-106-g4c4ec105"
+    agent = seen[0].get_header("User-agent") or ""
+    assert agent and not agent.startswith("Python-urllib")
+
+
 def test_an_unreachable_site_with_no_cache_is_exit_three_and_ignores_tags(repo, capsys, monkeypatch):
     git(repo, "tag", "v9.9")
 
