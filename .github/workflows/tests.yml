@@ -50,6 +50,12 @@ jobs:
       # fall. Standard library only, so it needs nothing installed.
       - name: Colour literals
         run: python scripts/check_colour_literals.py
+      # scripts/test_reasons.py reads git, and the web image has no git, so its tests skip in the
+      # suite below; here, on the runner, they run. Its own tests make their own repositories.
+      - name: Git-only script tests
+        run: |
+          pip install pytest==9.1.1
+          python -m pytest tests/test_test_reasons.py -q -p no:cacheprovider -p no:django --noconftest
 
   # The suite runs as five jobs at once, and each job runs its tests in parallel
   # (pytest-xdist, one worker per CPU of the runner). As one serial job it took 37
