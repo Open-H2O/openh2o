@@ -882,8 +882,7 @@ class PeriodStatement(models.Model):
     """The figures of one water year as they stood on one day (``accounting.statements``).
 
     Finalizing a year writes one (``filed``, or ``restated`` when the year was
-    filed before); a year finalized before OpenH2O kept filed figures gets one
-    when the site is upgraded (``recorded_at_upgrade``). Its rows are the figures
+    filed before). Its rows are the figures
     the pages print, read off the same functions the pages call. A record is
     never changed after it is written, and reopening the year keeps it.
     """
@@ -891,7 +890,6 @@ class PeriodStatement(models.Model):
     KIND_CHOICES = [
         ("filed", "Filed"),
         ("restated", "Restated"),
-        ("recorded_at_upgrade", "Recorded at upgrade"),
     ]
 
     period = models.ForeignKey(

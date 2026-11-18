@@ -2582,7 +2582,6 @@ heading = "Figures as filed"
 files = [
   "accounting/statements.py",
   "accounting/views/periods.py",
-  "accounting/management/commands/record_filed_figures.py",
   "templates/accounting/partials/_figures_as_filed.html",
   "templates/accounting/partials/_figures_moved.html",
 ]
@@ -2596,7 +2595,6 @@ files = [
   "core/fingerprint.py",
   "accounting/fingerprints.py",
   "accounting/views/periods.py",
-  "accounting/management/commands/record_fingerprints.py",
   "templates/accounting/partials/_fingerprint.html",
   "templates/accounting/partials/_fingerprint_answer.html",
   "templates/accounting/fingerprint.txt",

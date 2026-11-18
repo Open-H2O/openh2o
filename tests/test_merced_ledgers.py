@@ -372,7 +372,7 @@ def test_seed_fills_the_three_dwr_fields_beside_the_method(seeded):
 # --------------------------------------------------------------------------
 @pytest.mark.django_db
 def test_both_reporting_periods_exist(seeded):
-    assert ReportingPeriod.objects.filter(name=PRIOR_WY, is_finalized=True).exists()
+    assert ReportingPeriod.objects.filter(name=PRIOR_WY).exists()
     assert ReportingPeriod.objects.filter(name=OPEN_WY).exists()
 
 

@@ -484,8 +484,7 @@ class Command(BaseCommand):
         # --- Reporting periods (global, agency-agnostic) ---
         prior, _ = ReportingPeriod.objects.get_or_create(
             name="WY 2024-2025",
-            defaults={"start_date": date(2024, 10, 1), "end_date": date(2025, 9, 30),
-                      "is_finalized": True},
+            defaults={"start_date": date(2024, 10, 1), "end_date": date(2025, 9, 30)},
         )
         open_wy, _ = ReportingPeriod.objects.get_or_create(
             name="WY 2025-2026",
@@ -1462,5 +1461,5 @@ class Command(BaseCommand):
             "surface allocations + GSA groundwater allocations, both periods\n"
             f"  {total_rows} ledger rows ({len(entries)} allocations + groundwater, "
             f"{len(surface_rows)} surface deliveries via allocate_district_delivery)\n"
-            "  2 reporting periods (WY 2024-2025 finalized, WY 2025-2026 open)"
+            "  2 reporting periods (WY 2024-2025, WY 2025-2026)"
         ))

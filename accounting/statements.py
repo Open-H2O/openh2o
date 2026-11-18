@@ -100,12 +100,6 @@ RUN_FIGURES = frozenset(
 #: What an account's name is joined to its number with in ``scope_name``.
 ACCOUNT_JOIN = " · "
 
-#: The sentence a statement of a year finalized before OpenH2O kept figures starts with.
-UPGRADE_HEAD = "Recorded when OpenH2O began keeping filed figures"
-
-#: The reason the upgrade and the demonstration record their statements under.
-UPGRADE_REASON = "Recorded when OpenH2O began keeping filed figures."
-
 _CENTS = Decimal("0.01")
 _FOUR = Decimal("0.0001")
 
@@ -421,41 +415,6 @@ def newest_statement(period):
     )
 
 
-def upgrade_note(period):
-    """The words stored with a statement recorded for a year finalized before this feature."""
-    if period.finalized_at:
-        when = _day(period.finalized_at)
-        return f"{UPGRADE_HEAD}; the year was finalized {when}."
-    return f"{UPGRADE_HEAD}. The date this year was finalized is not on record."
-
-
-def record_upgrade_statements():
-    """Record a ``recorded_at_upgrade`` statement for each finalized year with none. Returns them.
-
-    Runs inside ``accounting.locks.override``: the year is already finalized, so
-    its lock would refuse the rows. Does nothing on an empty database. Called by
-    the ``record_filed_figures`` command (the demonstration's last step, and an
-    upgraded site's one-time step); a migration does not call it, because a
-    migration never imports live code.
-    """
-    from accounting.locks import override
-    from accounting.models import ReportingPeriod
-
-    taken = []
-    with override(UPGRADE_REASON):
-        for pk in ReportingPeriod.objects.filter(is_finalized=True).order_by("start_date").values_list("pk", flat=True):
-            # The period row is held while its figures are written, so two starts
-            # at once (the container's boot and a person's command) write one record.
-            with transaction.atomic():
-                period = ReportingPeriod.objects.select_for_update().get(pk=pk)
-                if not period.is_finalized or PeriodStatement.objects.filter(period=period).exists():
-                    continue
-                taken.append(
-                    take_statement(period, kind="recorded_at_upgrade", note=upgrade_note(period))
-                )
-    return taken
-
-
 # -- Words ------------------------------------------------------------------------------------
 
 
@@ -486,13 +445,7 @@ def first_line(period, statements=None):
         return ""
     first = statements[0]
     when = _day(first.taken_at)
-    if first.kind == "recorded_at_upgrade":
-        note = (first.note or "").strip()
-        if note.startswith(UPGRADE_HEAD):
-            text = f"Recorded {when}, when{note[len('Recorded when'):]}"
-        else:
-            text = f"Recorded {when}. {note}".strip()
-    elif first.kind == "restated":
+    if first.kind == "restated":
         text = f"Restated {when} by {_who(first.taken_by)}." if first.taken_by else f"Restated {when}."
     elif first.taken_by:
         text = f"Filed {when} by {_who(first.taken_by)}."

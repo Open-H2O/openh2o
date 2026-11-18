@@ -143,8 +143,8 @@ def test_the_steps_are_the_sequence_the_build_runs():
     assert run == [
         "migrate",
         "createcachetable",
-        "load_demonstration",
         "clear_change_history",
+        "load_demonstration",
     ], "the build script runs a step of its own; add it to the demonstration's steps"
 
 

@@ -67,12 +67,17 @@ def start(request, period, note):
 
 
 def run_stored_finalize(pending):
-    """The process's work: statement, finalized mark and fingerprint, in one transaction."""
-    user = pending.user
-    with change_note(pending.settings.get("note")), transaction.atomic():
+    """The process's work: :func:`finalize_year` with the stored user and note."""
+    return finalize_year(pending.settings["period"], pending.user, pending.settings.get("note"))
+
+
+def finalize_year(period, user, note=""):
+    """Statement, finalized mark and fingerprint of ``period`` (a row or its pk), in one transaction."""
+    pk = getattr(period, "pk", period)
+    with change_note(note), transaction.atomic():
         # Held until the commit, so two runs cannot each write a statement; the
         # second finds the year already finalized.
-        period = ReportingPeriod.objects.select_for_update().get(pk=pending.settings["period"])
+        period = ReportingPeriod.objects.select_for_update().get(pk=pk)
         if period.is_finalized:
             return {"outcome": "already"}
         take_statement(period, kind="restated" if newest_statement(period) else "filed", user=user)

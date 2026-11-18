@@ -501,7 +501,7 @@ APPROVED_PAGE = """Halvern Valley GSA
 Changes to this year's records: water year WY 2024-2025
 (Oct 1, 2024 to Sep 30, 2025)
 
-Finalized   date not on record
+Finalized   Nov 4, 2026
 Code        32A8-3722-E3A1-FE4C-0109
 Full code   32A83722E3A1FE4C0109A0023F91C45E78056DBB3D4E14E49C8D2D9E9CD5901C
 Issued      Nov 4, 2026, when the year was finalized
@@ -576,10 +576,10 @@ def test_the_download_reads_word_for_word_as_the_approved_page():
         key: {"name": fp().PART_NAMES[key], "digest": "0" * 64, "rows": rows} for key, rows in counts
     }
     moment = dt.datetime(2026, 11, 4, 19, 0, tzinfo=dt.timezone.utc)
-    # The drawn example: a year whose finalized date is not on record.
     period = ReportingPeriod.objects.create(
         name="WY 2024-2025", start_date=dt.date(2024, 10, 1), end_date=dt.date(2025, 9, 30),
         is_finalized=True,
+        finalized_at=moment,
         fingerprint="32a83722e3a1fe4c0109a0023f91c45e78056dbb3d4e14e49c8d2d9e9cd5901c",
         fingerprint_at=moment,
         fingerprint_parts={"version": 1, "parts": parts, "columns": {}},

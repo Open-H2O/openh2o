@@ -61,6 +61,9 @@ DEMONSTRATION_NAME = "Halvern Valley GSA"
 #: The boundary the demonstration is built around.
 DEMONSTRATION_BOUNDARY = "Merced Subbasin"
 
+#: The water year the load finalizes once its steps have run.
+CLOSED_YEAR = "WY 2024-2025"
+
 #: Seconds between the page's refreshes while a run is under way.
 REFRESH_SECONDS = 10
 
@@ -100,9 +103,6 @@ STEPS = [
     # Re-seeded after the refresh on purpose: the meter reads are the sum of the
     # ledger rows, and the refresh rewrites the ledger.
     ("seed_merced_measurements", []),
-    # Last, so the figures a finalized year is recorded with are the figures the
-    # finished build prints: a fresh build and an upgraded site end alike.
-    ("record_filed_figures", []),
 ]
 
 
@@ -716,6 +716,15 @@ def forget_events(context_id):
             )
 
 
+def _load_contexts():
+    """The ids of the change-history contexts a load left."""
+    from pghistory.models import Context
+
+    return list(
+        Context.objects.filter(metadata__action="load_demonstration").values_list("id", flat=True)
+    )
+
+
 def _clear_cache():
     try:
         from django.core.cache import cache
@@ -746,15 +755,21 @@ def load(stdout=None):
             if site is not None and not site.demonstration_mode:
                 site.demonstration_mode = True
                 site.save(update_fields=["demonstration_mode"])
+            forget_events(context.id)
+            _finalize_closed_year()
             counts = content_counts()
-            forget_events(context.id)
-            # The fingerprint is taken after the history is forgotten, so it reads the
-            # year as the finished load leaves it. The write on the water year row is
-            # itself a recorded change, so it is forgotten as well.
-            call_command("record_fingerprints", stdout=stdout)
-            forget_events(context.id)
     _clear_cache()
     return counts
+
+
+def _finalize_closed_year():
+    """Finalize the demonstration's closed water year the way the Finalize water year button does."""
+    from accounting.finalize import finalize_year
+    from accounting.models import ReportingPeriod
+
+    period = ReportingPeriod.objects.filter(name=CLOSED_YEAR).first()
+    if period is not None:
+        finalize_year(period, None)
 
 
 def _kept_counts():
@@ -870,6 +885,8 @@ def remove(stdout=None):
                     "that are not part of it changed during the removal."
                 )
             forget_events(context.id)
+            for loaded in _load_contexts():
+                forget_events(loaded)
     _clear_cache()
     return removed
 

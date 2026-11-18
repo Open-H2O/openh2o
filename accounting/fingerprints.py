@@ -24,7 +24,6 @@ import datetime as dt
 import textwrap
 from dataclasses import dataclass, field
 
-from django.db import transaction
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
@@ -33,9 +32,6 @@ from django.utils.text import slugify
 from accounting.statements import _day, _who, cached_comparison, corrections_since
 from core import corrections, fingerprint
 from core.fingerprint import short_code
-
-#: The reason the upgrade records under, so Change history says why.
-UPGRADE_REASON = "Recorded when OpenH2O began keeping these codes."
 
 
 def has_fingerprint(period):
@@ -46,7 +42,7 @@ def has_fingerprint(period):
 # -- Taking ----------------------------------------------------------------------------------
 
 
-def take_fingerprint(period, *, at_upgrade=False):
+def take_fingerprint(period):
     """Compute the year's fingerprint and set it on ``period`` (not saved).
 
     A year that already carries a code keeps its earliest one as ``first``.
@@ -65,10 +61,7 @@ def take_fingerprint(period, *, at_upgrade=False):
         stored["first"] = {
             "digest": period.fingerprint,
             "at": period.fingerprint_at.isoformat() if period.fingerprint_at else "",
-            "at_upgrade": bool(period.fingerprint_parts.get("at_upgrade")),
         }
-    if at_upgrade:
-        stored["at_upgrade"] = True
     period.fingerprint = computed.digest
     period.fingerprint_at = timezone.now()
     period.fingerprint_parts = stored
@@ -78,39 +71,18 @@ def take_fingerprint(period, *, at_upgrade=False):
 FINGERPRINT_FIELDS = ["fingerprint", "fingerprint_at", "fingerprint_parts"]
 
 
-def record_upgrade_fingerprints():
-    """Take a fingerprint for each finalized year that has none. Returns the periods.
-
-    The period row is held while its code is taken, so two starts at once (the
-    container's boot and a person's command) write one. A year with a code is
-    left alone. Nothing is written for an open year.
-    """
-    from accounting.models import ReportingPeriod
-
-    taken = []
-    for pk in ReportingPeriod.objects.filter(is_finalized=True).order_by("start_date").values_list("pk", flat=True):
-        with transaction.atomic():
-            period = ReportingPeriod.objects.select_for_update().get(pk=pk)
-            if not period.is_finalized or period.fingerprint:
-                continue
-            take_fingerprint(period, at_upgrade=True)
-            period.save(update_fields=FINGERPRINT_FIELDS)
-            taken.append(period)
-    return taken
-
-
 # -- The line on the page --------------------------------------------------------------------
 
 
 def _first(period):
-    """``(digest, words, at_upgrade)`` of the first code a restated year had, or None."""
+    """``(digest, words)`` of the first code a restated year had, or None."""
     first = (period.fingerprint_parts or {}).get("first")
     if not first or not first.get("digest"):
         return None
     when = ""
     if first.get("at"):
         when = _day(dt.datetime.fromisoformat(first["at"]))
-    return first["digest"], when, bool(first.get("at_upgrade"))
+    return first["digest"], when
 
 
 def line_context(period):
@@ -124,9 +96,7 @@ def line_context(period):
         "restated": first is not None,
         "first_code": short_code(first[0]) if first else "",
         "first_taken": first[1] if first else "",
-        "first_label": ("first issued" if first[2] else "as filed") if first else "",
-        # A code the upgrade took, after the year was finalized: it reaches back only to that date.
-        "at_upgrade": bool((period.fingerprint_parts or {}).get("at_upgrade")),
+        "first_label": "as filed" if first else "",
     }
 
 
@@ -398,25 +368,16 @@ def file_text(period):
     stored = period.fingerprint_parts
     first = _first(period)
     taken = _day(period.fingerprint_at)
-    if period.finalized_at:
-        finalized = _day(period.finalized_at)
-        if period.finalized_by:
-            finalized += f" by {_who(period.finalized_by)}"
-    else:
-        finalized = "date not on record"
+    finalized = _day(period.finalized_at)
+    if period.finalized_by:
+        finalized += f" by {_who(period.finalized_by)}"
     if first:
         taken_line = f"{taken}, when the year was finalized again"
-    elif stored.get("at_upgrade"):
-        # The drawing breaks the line after "codes", then wraps the rest under the date.
-        taken_line = f"{taken}, when OpenH2O began keeping these codes\n" + _wrap(
-            "and after the year was finalized. Changes before that date do not show in this check.",
-            indent=" " * _LABEL,
-        )
     else:
         taken_line = f"{taken}, when the year was finalized"
     as_filed = ""
     if first:
-        label = "First code" if first[2] else "As filed"
+        label = "As filed"
         as_filed = (
             f"{label:<{_LABEL}}{short_code(first[0])}, issued {first[1]}\n"
             f"{label:<{_LABEL}}{first[0].upper()}\n"

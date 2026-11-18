@@ -153,6 +153,10 @@ run_step migrate --noinput
 # introduced, so the defect never reached production. Creating a TABLE adds no
 # user rows, so this does not weaken the zero-user-rows rule it sits beside.
 run_step createcachetable
+# --golden-build is required because on a real deployment the change history is
+# the record this feature exists to keep; this is the one caller allowed to
+# clear it.
+run_step clear_change_history --golden-build
 # The whole demonstration is ONE command, `load_demonstration`: the same
 # sequence the Demonstration data page's button loads, so what staging shows is
 # what an operator gets. The steps and the reasons for their order live in
@@ -162,18 +166,6 @@ run_step createcachetable
 #   * --golden-build keeps it from writing a Site health record: the
 #     candidate must contain no health rows (data/demo/expected_shape.json).
 run_step load_demonstration --golden-build
-
-# THE GOLDEN CARRIES NO INVENTED HISTORY. Every seed command above ran through
-# ordinary model saves, bulk_create and QuerySet.update() -- exactly the paths
-# django-pghistory tracks (core/history.py) -- so by this point the
-# candidate is full of change-history rows nobody's district actually made.
-# Gates 1 and 2 of verify-candidate.sh pin every pghistory event table (and
-# pghistory_context) at 0 in data/demo/expected_shape.json, so this MUST be the
-# last step before the dump: anything seeded after it would leave its own
-# history behind uncleared. --golden-build is required because on a real
-# deployment the change history is the record this feature exists to keep;
-# this is the one caller allowed to clear it.
-run_step clear_change_history --golden-build
 
 # ---------------------------------------------------------------------------
 # Dump the candidate.
