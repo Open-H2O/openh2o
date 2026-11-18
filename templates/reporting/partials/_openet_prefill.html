@@ -1,80 +1,99 @@
-{% load static %}
-
-{% if saved %}
-<div class="card-raised" style="border-left: 3px solid var(--forest-400);">
-  <p class="text-secondary text-sm m-0">
-    <strong style="color: var(--color-text-primary);">Saved.</strong>
-    These are your reviewed figures for data entry. Nothing was written to the
-    water-use ledger — you still type and certify your own numbers in the state portal.
-  </p>
-</div>
-{% endif %}
-
-<!-- Why this isn't the number you certify (persistent, prominent) -->
-<div class="card-raised" style="border-left: 3px solid var(--color-accent);">
-  <h3 class="section-header-sm" style="margin-top: 0;">Prepare with OpenET</h3>
-  <p class="text-secondary text-sm" style="margin: 0 0 var(--space-xs);">
-    These values come from <strong style="color: var(--color-text-primary);">OpenET
-    satellite evapotranspiration</strong>. ET is estimated crop water use, not
-    metered pumping or diversion. Review and adjust each value, then certify your own figures in the state portal.
-  </p>
-  <p class="text-tertiary text-xs m-0">
-    Every value below is labeled <em>{{ prefill.label }}</em>. An edit here saves to
-    this report only. It never changes your water-use ledger.
-  </p>
-</div>
-
-{% if prefill.entities %}
-<form hx-post="{% url 'reporting:report_prefill' pk=submission.pk %}"
-      hx-target="#prefill-wrap"
-      hx-swap="innerHTML"
-      class="page-stack" style="gap: var(--space-md);">
+{% comment %}
+  Prepare with OpenET, a page at a time (153.5-02, ruling 203). One form, the whole card:
+  25 rows of twelve month boxes, a search and the changed filter. Save, a search, the filter
+  and a page turn each post the boxes of the page in view (well under Django's 1,000-field
+  limit) and the view keeps changes saved on other pages; the form swaps itself, and htmx
+  keeps the search box's focus because it has an id.
+{% endcomment %}
+{% if total_count %}
+<form id="prefill-form" class="card-raised page-stack"
+      hx-post="{% url 'reporting:report_prefill' pk=submission.pk %}"
+      hx-target="this" hx-swap="outerHTML" hx-sync="this:replace">
   {% csrf_token %}
+  {% comment %} Enter in a box saves: the form's first submit button is the browser's default. {% endcomment %}
+  <button type="submit" name="action" value="save" class="sr-only" tabindex="-1" aria-hidden="true">Save</button>
+  <input type="hidden" name="page" value="{{ page_obj.number }}">
+  <input type="hidden" name="changed" value="{% if changed_only %}1{% endif %}">
+  <input type="hidden" name="shown_q" value="{{ q }}">
 
-  {% for entity in prefill.entities %}
-  <div class="card-raised">
-    <div class="row-start mb-md" style="gap: var(--space-sm); align-items: baseline;">
-      <span class="field-value-sm" style="font-weight: 600;">{{ entity.entity_label }}</span>
-      {% if entity.entity_sublabel %}
-      <span class="text-tertiary text-xs" style="font-family: var(--font-mono);">{{ entity.entity_sublabel }}</span>
+  <div class="row-between prefill-head">
+    <div>
+      <h2 class="section-header m-0">{% if shown_count == total_count %}{{ total_count }}{% else %}{{ shown_count }} of {{ total_count }}{% endif %} {% if total_count == 1 %}{{ kind_one }}{% else %}{{ kind_many }}{% endif %}</h2>
+      <p class="text-tertiary text-xs prefill-unit">All figures in acre-feet (AF).</p>
+    </div>
+    <div class="prefill-search">
+      <label class="sr-only" for="prefill-search">Search</label>
+      <input id="prefill-search" type="search" name="q" value="{{ q }}"
+             placeholder="{{ kind_hint }}" autocomplete="off"
+             class="form-input search-input-icon"
+             hx-post="{% url 'reporting:report_prefill' pk=submission.pk %}"
+             hx-trigger="input changed delay:400ms, search"
+             hx-include="#prefill-form" hx-target="#prefill-form" hx-swap="outerHTML">
+    </div>
+  </div>
+
+  {% if changed_figures %}
+  <p class="text-secondary text-sm m-0">
+    {{ changed_figures }} figure{{ changed_figures|pluralize }} in {{ changed_entities }} {% if changed_entities == 1 %}{{ kind_one }}{% else %}{{ kind_many }}{% endif %} differ{{ changed_figures|pluralize:"s," }} from OpenET's. OpenET's figure appears under each changed box. To undo a change, enter OpenET's figure again.
+    {% if changed_only %}
+    <button type="submit" name="show" value="all" class="prefill-link">Show every {{ kind_one }}</button>
+    {% else %}
+    <button type="submit" name="show" value="changed" class="prefill-link">Show only the changed {{ kind_many }}</button>
+    {% endif %}
+  </p>
+  {% endif %}
+
+  {% if rows %}
+  <div class="table-scroll">
+    <table class="data-table prefill-table">
+      <thead>
+        <tr>
+          <th>{{ kind_column }}</th>
+          {% for month in months %}
+          <th class="th-right"><span class="th-stack">{{ month|date:"M Y" }}</span></th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td class="prefill-entity">{{ row.entity.entity_label }}{% if row.entity.entity_sublabel %} <span class="prefill-sublabel">{{ row.entity.entity_sublabel }}</span>{% endif %}</td>
+          {% for mv in row.cells %}
+          {% if mv %}
+          <td class="prefill-cell{% if mv.modified %} prefill-cell--changed{% endif %}"><input name="val:{{ mv.field_key }}" value="{{ mv.display_value }}" type="number" step="0.01" inputmode="decimal" class="form-input prefill-input" aria-label="{{ row.entity.entity_label }}, {{ mv.month }}">{% if mv.modified %}<span class="prefill-was">{{ mv.openet_value }}</span>{% endif %}</td>
+          {% else %}
+          <td class="prefill-cell"></td>
+          {% endif %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="row-between prefill-foot">
+    {% if page_obj.has_other_pages %}
+    <div class="pagination-row prefill-pager">
+      {% if page_obj.has_previous %}
+      <button type="submit" name="goto" value="{{ page_obj.previous_page_number }}" class="btn-secondary btn-sm">Previous</button>
+      {% endif %}
+      <span class="pagination-label">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+      <button type="submit" name="goto" value="{{ page_obj.next_page_number }}" class="btn-secondary btn-sm">Next</button>
       {% endif %}
     </div>
-    <p class="text-tertiary text-xs mb-md" style="margin-top: 0;">
-      These values are OpenET consumptive-use estimates, not metered pumping. Adjust them to your own records.
-    </p>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-md);">
-      {% for mv in entity.months %}
-      <div class="field-group mb-0">
-        <label class="field-label" for="prefill-{{ mv.field_key }}">{{ mv.month }}</label>
-        <input id="prefill-{{ mv.field_key }}"
-               name="val:{{ mv.field_key }}"
-               type="number" step="0.01" inputmode="decimal"
-               class="form-input"
-               value="{{ mv.display_value }}">
-        <div class="row-start" style="gap: var(--space-xs); margin-top: 4px; flex-wrap: wrap;">
-          {% if mv.modified %}
-          <span class="badge badge-gold">Modified</span>
-          {% endif %}
-          <span class="badge badge-blue" title="OpenET consumptive-use estimate, not metered pumping">
-            OpenET · not pumping
-          </span>
-        </div>
-        {% if mv.modified %}
-        <div class="text-tertiary text-xs" style="margin-top: 2px;">
-          OpenET said {{ mv.openet_value }} AF
-        </div>
-        {% endif %}
-      </div>
-      {% endfor %}
+    {% else %}
+    <span></span>
+    {% endif %}
+    <div class="row-end prefill-save">
+      <span class="text-tertiary text-xs">OpenH2O saves the figures on this page when you search, show the changed {{ kind_many }} or turn the page.</span>
+      {% if saved %}<span class="text-secondary text-sm">Saved.</span>{% endif %}
+      <button type="submit" name="action" value="save" class="btn-primary">Save</button>
     </div>
   </div>
-  {% endfor %}
-
-  <div class="row-start" style="gap: var(--space-sm);">
-    <button type="submit" class="btn-primary btn-sm">Save my figures</button>
-    <a href="{% url 'reporting:report_detail' pk=submission.pk %}" class="btn-secondary btn-sm" style="text-decoration: none;">Back to report</a>
-  </div>
+  {% else %}
+  <p class="text-secondary text-sm m-0">OpenH2O did not find {{ kind_search }} that includes "{{ q }}".</p>
+  {% endif %}
 </form>
 {% else %}
 <div class="card-raised">

@@ -135,9 +135,7 @@ def measured() -> dict:
 #: em dashes on help/water_balances.html, so both entries came off the list.
 BASELINE: dict = {
     "em dash": {
-        "templates/reporting/partials/_openet_prefill.html": 1,
         "templates/reporting/report_list.html": 1,
-        "templates/reporting/report_prefill.html": 2,
     },
     "narrative verb": {},
     "contrast": {},

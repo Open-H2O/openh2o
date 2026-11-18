@@ -110,22 +110,22 @@
   </div>
   {% endif %}
 
-  {% comment %} Optional aid: pre-fill monthly numbers from OpenET satellite ET. Quiet,
-       inset block — a convenience, not a primary step in filing. {% endcomment %}
+  {% comment %} Optional aid: start a filing's monthly numbers from the recorded crop ET.
+       Quiet, inset block: a convenience, not a step in filing. Words: ruling 203, rows 25 to 28. {% endcomment %}
   <div class="card-raised card-inset">
     {% url 'methods' as methods_help_url %}
+    {% with rt=submission.report_template.report_type %}
     <div class="row-between" style="gap: var(--space-md); flex-wrap: wrap;">
       <div style="flex: 1; min-width: 16rem;">
-        <p style="margin: 0; font-weight: 600; color: var(--color-text-secondary); display: flex; align-items: center; gap: var(--space-xs);">Save typing: prepare with OpenET{% include "partials/_explainer_popout.html" with title="Where these numbers come from" text="The monthly values are your crops' consumptive use, estimated from OpenET satellite evapotranspiration — not what you pumped or diverted. Each is an editable estimate you review before certifying." link=methods_help_url link_label="Methods behind the numbers" %}</p>
+        <p style="margin: 0; font-weight: 600; color: var(--color-text-secondary); display: flex; align-items: center; gap: var(--space-xs);">Start from OpenET's figures{% include "partials/_explainer_popout.html" with title="Where these numbers come from" text="Each figure starts as the crop ET OpenH2O records from OpenET for that month. OpenH2O saves your changes only on the Prepare with OpenET page. The report's download file keeps the crop ET OpenH2O records." link=methods_help_url link_label="Methods behind the numbers" %}</p>
         <p class="text-tertiary text-xs" style="margin: var(--space-xs) 0 0;">
-          Pre-fill the monthly values from OpenET satellite evapotranspiration instead
-          of typing them. ET is estimated crop water use, not metered pumping or diversion;
-          each value is an estimate to review before certifying in the state portal.
+          On the Prepare with OpenET page, OpenH2O fills in {% if rt == "gears_by_well" %}each well's share of OpenET's monthly crop ET{% elif rt == "calwatrs_a1" or rt == "calwatrs_a2" %}each point of diversion's share of OpenET's monthly crop ET{% else %}OpenET's monthly crop ET for each use area{% endif %}. You can change any figure to match your own records before you file.
         </p>
       </div>
       <a href="{% url 'reporting:report_prefill' pk=submission.pk %}"
          class="btn-secondary btn-sm" style="text-decoration: none; flex-shrink: 0;">Prepare with OpenET</a>
     </div>
+    {% endwith %}
   </div>
 
   <!-- Per-system handoff: how to actually file this -->

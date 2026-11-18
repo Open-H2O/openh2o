@@ -10,6 +10,7 @@ deliveries against diversion records, and calwatrs_worksheet plus the prefill
 views stage OpenET-derived values for human review before filing.
 """
 import os
+from datetime import date
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 from django.conf import settings
@@ -541,15 +542,80 @@ def _apply_prefill_overrides(prefill, overrides):
     return prefill
 
 
+# Rows a page on Prepare with OpenET (ruling 203): a full page of twelve months is 300
+# boxes, well under Django's 1,000-field limit on one Save (153.5 facts R22).
+PREFILL_PAGE_SIZE = 25
+
+# What each kind of row is called, and what the search box matches (ruling 203 rows 8 to 15, 23).
+_PREFILL_KINDS = {
+    "by_parcel": ("use area", "use areas", "Use area", "Use area number", "a use area number"),
+    "by_well": ("well", "wells", "Well", "Well name or registration number",
+                "a well name or registration number"),
+    "calwatrs": ("point of diversion", "points of diversion", "Point of diversion",
+                 "Point of diversion or water right", "a point of diversion or water right"),
+}
+
+
+def _prefill_rows(entities, q, changed_only, overrides):
+    """The entities a search and the changed filter leave, in the page's order."""
+    if q:
+        needle = q.lower()
+        entities = [
+            e for e in entities
+            if needle in e["entity_label"].lower() or needle in (e["entity_sublabel"] or "").lower()
+        ]
+    if changed_only:
+        changed = {key.rsplit(":", 1)[0] for key in overrides}
+        entities = [e for e in entities if f"{e['entity_type']}:{e['entity_id']}" in changed]
+    return entities
+
+
+def _merge_prefill_post(post, prefill, overrides):
+    """Overlay the boxes one page posted onto the saved changes, and return the result.
+
+    Only the boxes posted are judged: a box whose figure differs from the one shown (same
+    2 dp rounding) is a change; a box at OpenET's figure, or left blank, is not, and drops
+    any change saved for it. A change saved for a box on another page is kept, because
+    that box was not posted. A key the page did not show, or junk, is ignored.
+    """
+    baseline = {
+        _field_key(entity, mv): _two_dp(mv["value_af"])
+        for entity in prefill["entities"]
+        for mv in entity["months"]
+    }
+    merged = dict(overrides)
+    for key, value in post.items():
+        if not key.startswith("val:"):
+            continue
+        field_key = key[len("val:"):]
+        base = baseline.get(field_key)
+        if base is None:
+            continue
+        raw = value.strip()
+        if not raw:
+            merged.pop(field_key, None)
+            continue
+        try:
+            entered = Decimal(raw)
+        except (InvalidOperation, ValueError):
+            continue
+        if _two_dp(entered) != base:
+            merged[field_key] = str(entered)
+        else:
+            merged.pop(field_key, None)
+    return merged
+
+
 @login_required
 def report_prefill(request, pk):
-    """Prepare a filing's monthly numbers from OpenET satellite ET.
+    """Prepare a filing's monthly numbers from OpenET satellite ET, a page at a time.
 
-    GET renders one editable input per entity-month, pre-populated with the raw
-    OpenET consumptive-use estimate and tagged with its provenance. POST saves
-    the (possibly edited) values onto ReportSubmission.prefill_overrides — never
-    the ledger — so a user's reviewed figures survive without changing any
-    report file, which reads the recorded crop ET.
+    GET shows one page of entities (use areas, wells or points of diversion), 25 rows of
+    twelve month boxes, narrowed by a search (``q``) or to the rows with a saved change
+    (``changed``). POST saves the boxes of the page in view onto
+    ReportSubmission.prefill_overrides (never the ledger, and no report file reads them),
+    keeping changes saved on other pages, then shows the page asked for: ``goto`` (a page
+    turn), ``show`` (the changed filter on or off) or the same page.
     """
     submission = get_object_or_404(
         ReportSubmission.objects.select_related("report_template", "reporting_period"),
@@ -570,46 +636,68 @@ def report_prefill(request, pk):
         )
 
     prefill = build_openet_prefill(submission.reporting_period, method)
+    params = request.POST if request.method == "POST" else request.GET
+    q = params.get("q", "").strip()
+    changed_only = params.get("changed") == "1"
+    page_number = params.get("page", 1)
 
     saved = False
     if request.method == "POST":
-        # The form posts every input on each save, so we compare each submitted
-        # value against the OpenET figure shown in that input (same 2dp rounding)
-        # and persist ONLY the ones the user actually changed. That keeps
-        # prefill_overrides — and the "Modified" pills — limited to real edits.
-        baseline = {
-            _field_key(entity, mv): _two_dp(mv["value_af"])
-            for entity in prefill["entities"]
-            for mv in entity["months"]
-        }
-        overrides = {}
-        for key, value in request.POST.items():
-            if not key.startswith("val:"):
-                continue
-            raw = value.strip()
-            if not raw:
-                continue
-            field_key = key[len("val:"):]
-            try:
-                entered = Decimal(raw)
-            except (InvalidOperation, ValueError):
-                # Junk input is ignored rather than persisted as a fake edit.
-                continue
-            base = baseline.get(field_key)
-            if base is None or _two_dp(entered) != base:
-                overrides[field_key] = str(entered)
-        submission.prefill_overrides = overrides
-        submission.save(update_fields=["prefill_overrides", "updated_at"])
-        saved = True
+        overrides = _merge_prefill_post(request.POST, prefill, submission.prefill_overrides or {})
+        if overrides != (submission.prefill_overrides or {}):
+            submission.prefill_overrides = overrides
+            submission.save(update_fields=["prefill_overrides", "updated_at"])
+        if "show" in request.POST:
+            changed_only = request.POST["show"] == "changed"
+            page_number = 1
+        elif "goto" in request.POST:
+            page_number = request.POST["goto"]
+        elif q != request.POST.get("shown_q", "").strip():
+            page_number = 1
+        else:
+            saved = True
 
-    prefill = _apply_prefill_overrides(prefill, submission.prefill_overrides or {})
+    overrides = submission.prefill_overrides or {}
+    if changed_only and not overrides:
+        changed_only = False
+    rows = _prefill_rows(prefill["entities"], q, changed_only, overrides)
+    page_obj = Paginator(rows, PREFILL_PAGE_SIZE).get_page(page_number)
+    shown = {"entities": list(page_obj.object_list)}
+    _apply_prefill_overrides(shown, overrides)
 
+    months = sorted({mv["month"] for e in prefill["entities"] for mv in e["months"]})
+    changed_entities = {key.rsplit(":", 1)[0] for key in overrides}
+    kind = _PREFILL_KINDS[method]
     context = {
         "submission": submission,
         "prefill": prefill,
+        "page_obj": page_obj,
+        "rows": [
+            {
+                "entity": entity,
+                "cells": [
+                    next((mv for mv in entity["months"] if mv["month"] == month), None)
+                    for month in months
+                ],
+            }
+            for entity in page_obj.object_list
+        ],
+        "months": [date(int(m[:4]), int(m[5:]), 1) for m in months],
+        "total_count": len(prefill["entities"]),
+        "shown_count": len(rows),
+        "q": q,
+        "changed_only": changed_only,
+        "changed_figures": len(overrides),
+        "changed_entities": len(changed_entities),
+        "kind_one": kind[0],
+        "kind_many": kind[1],
+        "kind_column": kind[2],
+        "kind_hint": kind[3],
+        "kind_search": kind[4],
         "report_type": report_type,
         "is_gears": report_type.startswith("gears"),
         "is_calwatrs": report_type.startswith("calwatrs"),
+        "method": method,
         "saved": saved,
     }
     if request.headers.get("HX-Request"):

@@ -1,8 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Prepare with OpenET — {{ submission.reporting_period.name }} - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Prepare with OpenET — {{ submission.reporting_period.name }}{% endblock %}
-{% block page_head_class %}page-head--medium{% endblock %}
+{% block title %}Prepare with OpenET for {{ submission.reporting_period.name }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Prepare with OpenET for {{ submission.reporting_period.name }}{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -13,21 +12,35 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Prepare with OpenET</span>
   </nav>
+  {% comment %} The page's words: ruling 203, rows 3 to 5 (3a by well, 3b CalWATRS). {% endcomment %}
+  <div class="page-description prefill-description">
+    <p>{% if method == "by_well" %}Each figure is a well's share of a month's crop ET on the use areas it irrigates. Where someone has set a share on the well's page, OpenH2O uses it; otherwise OpenH2O divides each use area's crop ET the way the by-well report does. The figure is crop ET, not metered pumping.{% elif method == "calwatrs" %}Each figure is a point of diversion's share of a month's crop ET on the use areas it serves. Where someone has set a share on the point of diversion's page, OpenH2O uses it; otherwise OpenH2O divides each use area's crop ET the way the CalWATRS report does. The figure is crop ET, not a measured diversion.{% else %}Each figure is a use area's crop ET for one month: the OpenET Ensemble depth that OpenH2O records, times the use area's acres.{% endif %} Change any figure to match your own records before you file this report.</p>
+    <p>OpenH2O saves your changes for this page only. The report's download file and the Use Ledger keep the crop ET OpenH2O records. OpenH2O does not submit reports to the state.</p>
+  </div>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-medium">
-
-  <div class="row-start">
-    <a href="{% url 'reporting:report_detail' pk=submission.pk %}" class="back-link text-sm">Back to report</a>
-    <span class="text-tertiary">/</span>
-    <span class="text-secondary text-sm">{{ submission.report_template.name }}</span>
-  </div>
-
-  <div id="prefill-wrap" class="page-stack" style="gap: var(--space-md);">
-    {% include "reporting/partials/_openet_prefill.html" %}
-  </div>
-
+<div class="page-stack page-wide">
+  {% include "reporting/partials/_openet_prefill.html" %}
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Figures typed and not yet saved: the browser asks before the page is left
+  // another way than Save, a search or a page turn (ruling 203 row 29).
+  (function () {
+    var unsaved = false;
+    document.addEventListener('input', function (e) {
+      if (e.target.classList && e.target.classList.contains('prefill-input')) { unsaved = true; }
+    });
+    document.body.addEventListener('htmx:beforeRequest', function (e) {
+      if (e.detail.elt.closest && e.detail.elt.closest('#prefill-form')) { unsaved = false; }
+    });
+    window.addEventListener('beforeunload', function (e) {
+      if (unsaved) { e.preventDefault(); e.returnValue = ''; }
+    });
+  })();
+</script>
 {% endblock %}
