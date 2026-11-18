@@ -32,7 +32,6 @@ from html import unescape
 from pathlib import Path
 
 import pytest
-from django.core.management import call_command
 from django.db import connection
 from django.urls import reverse
 
@@ -187,16 +186,6 @@ def _sql(statement):
     _meter_sql(sql=statement)
 
 
-@pytest.fixture
-def upgraded(year):
-    """WY 2024-2025 finalized with no code, then given one by the upgrade command, pinned to Oct 15, 2025."""
-    ReportingPeriod.objects.filter(pk=year.pk).update(is_finalized=True)
-    call_command("record_fingerprints")
-    _pin(year)
-    assert year.fingerprint_parts["at_upgrade"] is True
-    return year
-
-
 # -- The card -------------------------------------------------------------------------------------
 
 
@@ -263,18 +252,6 @@ def test_at_rest_an_ordinary_code_reads_code_and_the_day_it_was_taken(filed, adm
     assert "First code" not in text and "restated" not in text.lower()
 
 
-def test_at_rest_a_code_taken_by_the_upgrade_says_it_was_taken_after_the_year_was_finalized(upgraded, administrator):
-    card = _card(_detail(_client(administrator), upgraded))
-    code = _short(upgraded.fingerprint)
-    assert (
-        f'Code <span class="text-mono">{code}</span>, issued {TAKEN}, after the year was finalized. '
-        '<span class="text-primary">Changes before that date do not show here.</span>'
-    ) in card
-    assert _visible(card).endswith(
-        f"Code {code}, issued {TAKEN}, after the year was finalized. Changes before that date do not show here."
-    )
-
-
 def test_at_rest_a_year_finalized_again_keeps_the_older_code_as_a_quieter_line(filed, administrator):
     client = _client(administrator)
     old = _short(filed.fingerprint)
@@ -291,24 +268,13 @@ def test_at_rest_a_year_finalized_again_keeps_the_older_code_as_a_quieter_line(f
     assert "restated" not in text.lower() and "after the year was finalized" not in text
 
 
-def test_at_rest_a_first_code_taken_by_the_upgrade_reads_first_taken(upgraded, administrator):
-    client = _client(administrator)
-    old = _short(upgraded.fingerprint)
-    _reopen(client, upgraded)
-    _finalize(client, upgraded)
-    text = _visible(_card(_detail(client, upgraded)))
-    assert f"First code {old}, first issued {TAKEN}." in text
-    # The newest code was taken at a filing, so it carries the ordinary line.
-    assert "after the year was finalized" not in text
-
-
 # -- The old words are gone ----------------------------------------------------------------------------
 
 
 def test_no_old_word_and_no_banned_word_is_on_screen_in_any_state(d1, filed, administrator):
     """Fingerprint and matches appear in no visible text of the page, the answers or the file.
 
-    The states run one after another on the same year: at rest, ordinary and upgrade-taken,
+    The states run one after another on the same year: at rest,
     restated, a recorded correction, an unrecorded edit, a code that disagrees, a part that
     cannot be read. Ids and URLs are not visible text and are not read.
     """
@@ -330,10 +296,8 @@ def test_no_old_word_and_no_banned_word_is_on_screen_in_any_state(d1, filed, adm
 
     look("at rest")
     parts = copy.deepcopy(filed.fingerprint_parts)
-    ReportingPeriod.objects.filter(pk=filed.pk).update(fingerprint_parts={**parts, "at_upgrade": True})
-    look("taken by the upgrade")
     ReportingPeriod.objects.filter(pk=filed.pk).update(
-        fingerprint_parts={**parts, "first": {"digest": "1f0c" + "7" * 60, "at": PINNED.isoformat(), "at_upgrade": False}}
+        fingerprint_parts={**parts, "first": {"digest": "1f0c" + "7" * 60, "at": PINNED.isoformat()}}
     )
     look("restated")
     ReportingPeriod.objects.filter(pk=filed.pk).update(fingerprint_parts=parts)
@@ -634,18 +598,6 @@ def test_the_file_is_named_changes_code_and_reads_in_the_new_words(filed, admini
     flat = text.replace("\n", " ")
     assert "Press Check for changes. OpenH2O recomputes the code from the records now." in re.sub(r"\s+", " ", flat)
     assert "does not show that the records were right" in re.sub(r"\s+", " ", flat)
-
-
-def test_the_file_of_a_code_taken_by_the_upgrade_carries_the_two_added_lines(upgraded, administrator):
-    text = _client(administrator).get(_file_url(upgraded)).content.decode()
-    assert (
-        f"Issued      {TAKEN}, when OpenH2O began keeping these codes\n"
-        "            and after the year was finalized. Changes before that date do\n"
-        "            not show in this check.\n"
-    ) in text
-    assert "Finalized   date not on record\n" in text
-    assert max(len(line) for line in text.splitlines()) <= 76
-    assert "fingerprint" not in text.lower()
 
 
 def test_the_file_of_a_year_finalized_again_keeps_the_first_code_in_the_same_columns(filed, administrator):

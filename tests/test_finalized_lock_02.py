@@ -406,7 +406,6 @@ def test_a_lab_result_already_on_file_in_a_finalized_year_is_skipped_not_rewritt
     validated = importer.validate_rows(rows, mapping)
     assert validated[0]["errors"] == []
     assert validated[0]["data"]["is_duplicate"] is True
-    assert "fill_limits_pk" not in validated[0]["data"]
     assert importer.commit_rows(validated, source_file="again.csv")["results"] == 0
     assert SampleResult.objects.count() == 1
 

@@ -11,7 +11,6 @@ from accounting.services import (
     BASIN_RECHARGE_POOL,
     _balance_dict,
     account_balance,
-    create_diversion_ledger_entry,
     create_diversion_ledger_entries,
     create_recharge_ledger_entries,
     et_mm_to_acre_feet,
@@ -189,14 +188,6 @@ class TestCreateDiversionLedgerEntry:
         assert entries[0].parcel == parcel
         assert entries[0].amount_acre_feet == Decimal("-25.0000")
         assert entries[0].source_type == "surface_diversion"
-
-    def test_single_parcel_backward_compat(self):
-        """The old create_diversion_ledger_entry alias still works."""
-        parcel = ParcelFactory()
-        record = DiversionRecordFactory(volume_acre_feet=Decimal("25.0000"))
-        entry = create_diversion_ledger_entry(record, parcel=parcel)
-        assert entry.parcel == parcel
-        assert entry.amount_acre_feet == Decimal("-25.0000")
 
     def test_from_fk(self):
         """Falls back to WaterRightParcel when no POD-parcel links exist."""

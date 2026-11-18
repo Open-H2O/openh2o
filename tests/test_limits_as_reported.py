@@ -179,60 +179,6 @@ class TestTheImporterReadsTheLimitsAsReported:
         assert second["duplicates"] == LE_GRAND_ROWS
         assert SampleResult.objects.count() == LE_GRAND_ROWS
 
-    def test_re_importing_fills_results_recorded_before_the_limits_were_kept(
-        self, le_grand
-    ):
-        """The limits must show values. A result imported before the ruling has no limits; importing
-        the same file again adds them and changes nothing else."""
-        _import()
-        SampleResult.objects.update(
-            mcl_as_reported=None, dlr_as_reported=None,
-            limits_source_file="", limits_file_date=None,
-        )
-        before = list(SampleResult.objects.order_by("pk").values_list(
-            "pk", "result_value", "reporting_level", "less_than_rl", "unit"
-        ))
-
-        counts = _import(source_file="again.tab")
-        assert counts["results"] == 0
-        assert counts["duplicates"] == LE_GRAND_ROWS
-        assert counts["limits_filled"] == LE_GRAND_ROWS
-        assert SampleResult.objects.count() == LE_GRAND_ROWS
-        assert SampleResult.objects.filter(
-            mcl_as_reported__isnull=False
-        ).count() == LE_GRAND_MCL_ROWS
-        assert not SampleResult.objects.filter(limits_file_date__isnull=True).exists()
-        after = list(SampleResult.objects.order_by("pk").values_list(
-            "pk", "result_value", "reporting_level", "less_than_rl", "unit"
-        ))
-        assert after == before
-
-        third = _import(source_file="third.tab")
-        assert third["limits_filled"] == 0
-        assert SampleResult.objects.filter(
-            limits_source_file="again.tab"
-        ).count() == LE_GRAND_ROWS
-
-    def test_a_fill_only_file_can_be_committed_from_the_preview(
-        self, client_in, le_grand
-    ):
-        _import()
-        SampleResult.objects.update(limits_file_date=None, mcl_as_reported=None)
-        with LE_GRAND.open("rb") as handle:
-            preview = client_in.post(reverse("drinking:import_preview"), {"file": handle})
-        assert preview.context["committable"] == 0
-        assert preview.context["limits_fill_count"] == LE_GRAND_ROWS
-        body = preview.content.decode()
-        assert f"Add the MCL and DLR to {LE_GRAND_ROWS} results" in body
-        assert "disabled" not in body.split("Add the MCL and DLR to")[0].rsplit("<button", 1)[1]
-        commit = import_and_read(
-            client_in, reverse("drinking:import_commit"), token_of(preview)
-        )
-        assert commit.context["counts"]["limits_filled"] == LE_GRAND_ROWS
-        assert SampleResult.objects.filter(
-            mcl_as_reported__isnull=False
-        ).count() == LE_GRAND_MCL_ROWS
-
     def test_the_commit_view_carries_the_file_name_through(
         self, client_in, le_grand
     ):
@@ -242,7 +188,7 @@ class TestTheImporterReadsTheLimitsAsReported:
             client_in, reverse("drinking:import_commit"), token_of(preview)
         )
         # Recorded on every row, limit or none: the date is what tells "the
-        # file carried none" apart from "imported before limits were kept".
+        # file carried none" apart from "no lab file".
         assert SampleResult.objects.filter(
             limits_source_file=LE_GRAND.name
         ).count() == LE_GRAND_ROWS
@@ -278,25 +224,22 @@ class TestTheScreensShowTheLimitBeside:
         assert "no limit in the file" not in html
         assert '<div class="budget-seg-value text-tertiary">None</div>' in html
 
-    def test_a_row_imported_before_limits_were_kept_says_not_recorded(
+    def test_a_result_with_no_lab_file_shows_not_recorded_in_the_table_and_a_dash_on_its_page(
         self, client_in, le_grand
     ):
-        """Not "no limit in the file": nobody read the file's limit for it."""
         _import()
-        legacy = SampleResult.objects.filter(mcl_as_reported__isnull=True).first()
-        SampleResult.objects.filter(pk=legacy.pk).update(
+        stored = SampleResult.objects.filter(mcl_as_reported__isnull=True).first()
+        SampleResult.objects.filter(pk=stored.pk).update(
             limits_source_file="", limits_file_date=None
         )
-        html = client_in.get(
-            reverse("drinking:result_detail", args=[legacy.pk])
+        page = client_in.get(
+            reverse("drinking:result_detail", args=[stored.pk])
         ).content.decode()
-        assert '<div class="budget-seg-value text-tertiary">None</div>' not in html
-        assert (
-            "This result was imported before OpenH2O stored the file&#x27;s MCL and DLR."
-            in html
-            or "This result was imported before OpenH2O stored the file's MCL and DLR."
-            in html
-        )
+        segment = page.split("in the lab file</div>", 1)[1].split("budget-op", 1)[0]
+        assert "&mdash;" in segment
+        assert ">None<" not in segment
+        table = client_in.get(reverse("drinking:results"), {"page_size": 1000}).content.decode()
+        assert "Not recorded" in _row_for(table, stored.pk)
 
     def test_the_results_log_carries_the_column(self, client_in, le_grand):
         _import()

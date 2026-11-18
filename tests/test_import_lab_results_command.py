@@ -377,10 +377,10 @@ def test_preview_counts_match_the_screen(auth_client, system, lab_file):
 
     assert set(counts) >= {
         "error_count", "duplicate_count", "repeat_count", "new_analytes",
-        "committable", "limits_fill_count",
+        "committable",
     }
     for key in ("error_count", "duplicate_count", "repeat_count", "new_analytes",
-                "committable", "limits_fill_count"):
+                "committable"):
         assert counts[key] == preview.context[key], key
     assert counts["error_count"] == EXPECTED_ERRORS
     assert counts["repeat_count"] == EXPECTED_REPEATS

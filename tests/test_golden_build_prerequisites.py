@@ -166,26 +166,24 @@ def test_change_history_is_cleared_with_the_golden_build_flag():
     )
 
 
-def test_change_history_is_cleared_after_every_seed_step():
-    """Clearing has to be LAST — anything seeded after it leaves its own history.
+def test_change_history_is_cleared_before_the_demonstration_loads():
+    """The clear runs on the migrated, empty database, ahead of the load.
 
-    Mirrors the ordering guard above for `seed_merced_measurements`: the
-    candidate is only as history-free as its last write, so this step has to
-    follow every seed and refresh step, not merely some of them.
+    The load's finalize writes the history the year's code covers, so a clear
+    after it would leave the code reading rows the golden no longer holds.
     """
     steps = _steps(REBUILD_SCRIPT.read_text())
-    assert "clear_change_history" in steps and "seed_merced_measurements" in steps
-    assert steps.index("clear_change_history") > steps.index(
-        "seed_merced_measurements"
-    ), (
-        "`clear_change_history` must run after every seed step, including the "
-        "second `seed_merced_measurements` -- anything seeded after it would "
-        "leave its own change history in the candidate uncleared."
-    )
-    assert steps[-1] == "clear_change_history", (
-        "`clear_change_history` must be the LAST management command the "
-        "rebuild runs, immediately before `pg_dump`."
-    )
+    assert "clear_change_history" in steps
+    clear = steps.index("clear_change_history")
+    assert steps.index("migrate") < clear
+    assert steps.index("createcachetable") < clear
+    from core.demonstration import STEPS
+
+    for name, _ in STEPS:
+        assert clear < steps.index(name), name
+    text = REBUILD_SCRIPT.read_text()
+    assert text.index("run_step clear_change_history") < text.index("run_step load_demonstration")
+    assert steps[-1] != "clear_change_history"
 
 
 def test_change_history_is_cleared_before_the_dump():

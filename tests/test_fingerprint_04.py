@@ -14,8 +14,7 @@ from the code under test.
   digest and Check for changes says to look at meter readings;
 * (c) a correction through the correct route changes the digest and Check for changes
   counts it; a correction a figure moved for links to the Figures as filed card;
-* (d) finalizing sets the three fields; ``record_fingerprints`` sets them on a year
-  already finalized, once, and leaves a code alone;
+* (d) finalizing sets the three fields;
 * (e) the download names the parts with the counts the digest used and prints the
   short and the full code; its wording is the approved page's, byte for byte;
 * (f) voided and replaced rows are in the digest;
@@ -26,7 +25,6 @@ from the code under test.
 * (k) a later-added column is ignored, a vanished column or table is "can no longer
   read" and never a difference;
 * (l) a correction touching no use area (a water level) links the count to Change history;
-* (m) a demonstration load answers "No changes found" at once;
 * (n) a stored code changed by hand is answered as disagreeing with its parts;
 * (o) on the four tables the demonstration has no rows for, the rule agrees with the lock;
 * finalizing then Check for changes, through the real views, answers "No changes found" (the
@@ -44,7 +42,6 @@ from unittest import mock
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.core.management import call_command
 from django.db import DatabaseError, connection, transaction
 from django.test import Client
 from django.urls import reverse
@@ -336,44 +333,6 @@ def test_finalizing_sets_the_three_fields_and_reopening_keeps_them(year, adminis
     assert (year.fingerprint, year.fingerprint_at) == (code, at)
 
 
-def test_the_upgrade_command_fingerprints_a_finalized_year_once_and_leaves_a_code_alone(year):
-    other = ReportingPeriod.objects.get(name="WY 2025-2026")
-    ReportingPeriod.objects.filter(pk=year.pk).update(is_finalized=True)
-    ReportingPeriod.objects.filter(pk=other.pk).update(is_finalized=True, fingerprint="a" * 64)
-    open_year = ReportingPeriod.objects.create(
-        name="WY 2026-2027", start_date=dt.date(2026, 10, 1), end_date=dt.date(2027, 9, 30)
-    )
-
-    call_command("record_fingerprints")
-
-    year.refresh_from_db()
-    assert re.fullmatch(r"[0-9a-f]{64}", year.fingerprint)
-    assert year.fingerprint_parts["at_upgrade"] is True
-    taken_at = year.fingerprint_at
-    other.refresh_from_db()
-    assert other.fingerprint == "a" * 64 and other.fingerprint_at is None
-    open_year.refresh_from_db()
-    assert open_year.fingerprint == ""
-
-    events = ReportingPeriodEvent.objects.count()
-    call_command("record_fingerprints")
-    year.refresh_from_db()
-    assert year.fingerprint_at == taken_at
-    assert ReportingPeriodEvent.objects.count() == events
-
-
-def test_a_year_fingerprinted_at_the_upgrade_answers_no_changes_found_at_once(year, administrator):
-    ReportingPeriod.objects.filter(pk=year.pk).update(is_finalized=True)
-    call_command("record_fingerprints")
-    year.refresh_from_db()
-    assert _answer(_client(administrator), year).startswith("No changes found since ")
-
-
-def test_the_command_does_nothing_with_water_accounting_off():
-    with mock.patch("core.modules.is_enabled", return_value=False):
-        call_command("record_fingerprints")
-
-
 # -- finalize, then Check: the context row's metadata must not move under the code ---------------------
 
 
@@ -521,34 +480,21 @@ def test_the_download_names_the_parts_with_the_counts_the_digest_used(d1, filed,
     assert "Check for changes runs inside OpenH2O, so it does not catch a change to the software." in text.replace("\n", " ")
 
 
-def test_the_download_of_a_year_taken_at_the_upgrade_and_of_a_restated_year(year, administrator):
-    ReportingPeriod.objects.filter(pk=year.pk).update(is_finalized=True)
-    call_command("record_fingerprints")
-    year.refresh_from_db()
+def test_the_download_of_a_restated_year(filed, administrator):
     client = _client(administrator)
-    text = client.get(_file_url(year)).content.decode()
-    assert "Finalized   date not on record" in text
-    assert (
-        f"Issued      {_day(year.fingerprint_at)}, when OpenH2O began keeping these codes\n"
-        "            and after the year was finalized. Changes before that date do\n"
-        "            not show in this check.\n"
-    ) in text
-
-    first, first_at = year.fingerprint, year.fingerprint_at
-    _reopen(client, year)
-    _finalize(client, year)
-    year.refresh_from_db()
-    text = client.get(_file_url(year)).content.decode()
-    assert f"Issued      {_day(year.fingerprint_at)}, when the year was finalized again" in text
+    first, first_at = filed.fingerprint, filed.fingerprint_at
+    _reopen(client, filed)
+    _finalize(client, filed)
+    filed.refresh_from_db()
+    text = client.get(_file_url(filed)).content.decode()
+    assert f"Issued      {_day(filed.fingerprint_at)}, when the year was finalized again" in text
     short = first[:20].upper()
     code = "-".join(short[i:i + 4] for i in range(0, 20, 4))
-    # That first code was taken at the upgrade, not at a filing.
-    assert f"First code  {code}, issued {_day(first_at)}" in text
-    assert f"First code  {first.upper()}" in text
-    assert "As filed" not in text
-    body = unescape(re.sub(r"<[^>]+>", "", client.get(reverse("accounting:period_detail", args=[year.pk])).content.decode()))
-    assert f"First code {code}, first issued {_day(first_at)}." in re.sub(r"\s+", " ", body)
-    assert "as filed " + _day(first_at) not in body
+    assert f"As filed    {code}, issued {_day(first_at)}" in text
+    assert f"As filed    {first.upper()}" in text
+    assert "First code" not in text
+    body = unescape(re.sub(r"<[^>]+>", "", client.get(reverse("accounting:period_detail", args=[filed.pk])).content.decode()))
+    assert f"{code}, as filed {_day(first_at)}." in re.sub(r"\s+", " ", body)
 
 
 APPROVED_PAGE = """Halvern Valley GSA
@@ -558,9 +504,7 @@ Changes to this year's records: water year WY 2024-2025
 Finalized   date not on record
 Code        32A8-3722-E3A1-FE4C-0109
 Full code   32A83722E3A1FE4C0109A0023F91C45E78056DBB3D4E14E49C8D2D9E9CD5901C
-Issued      Nov 4, 2026, when OpenH2O began keeping these codes
-            and after the year was finalized. Changes before that date do
-            not show in this check.
+Issued      Nov 4, 2026, when the year was finalized
 
 What the code covers
 OpenH2O computed the code from every row below at the moment the code was
@@ -632,18 +576,18 @@ def test_the_download_reads_word_for_word_as_the_approved_page():
         key: {"name": fp().PART_NAMES[key], "digest": "0" * 64, "rows": rows} for key, rows in counts
     }
     moment = dt.datetime(2026, 11, 4, 19, 0, tzinfo=dt.timezone.utc)
-    # The drawn example: a code the upgrade took, on a year whose finalized date is not on record.
+    # The drawn example: a year whose finalized date is not on record.
     period = ReportingPeriod.objects.create(
         name="WY 2024-2025", start_date=dt.date(2024, 10, 1), end_date=dt.date(2025, 9, 30),
         is_finalized=True,
         fingerprint="32a83722e3a1fe4c0109a0023f91c45e78056dbb3d4e14e49c8d2d9e9cd5901c",
         fingerprint_at=moment,
-        fingerprint_parts={"version": 1, "parts": parts, "columns": {}, "at_upgrade": True},
+        fingerprint_parts={"version": 1, "parts": parts, "columns": {}},
     )
     text = fingerprints.file_text(period).rstrip() + "\n"
     assert text == APPROVED_PAGE
-    # One page: 59 lines, none wider than 76, and the old word nowhere.
-    assert len(text.splitlines()) == 59
+    # One page: 57 lines, none wider than 76, and the old word nowhere.
+    assert len(text.splitlines()) == 57
     assert max(len(line) for line in text.splitlines()) == 76
     assert "fingerprint" not in text.lower()
     assert fingerprints.file_name(period) == "changes-code-wy-2024-2025.txt"
@@ -869,36 +813,6 @@ def test_a_correction_that_touches_no_use_area_links_the_count_to_change_history
 def test_a_stored_code_changed_by_hand_is_answered_as_disagreeing_with_its_parts(filed, administrator):
     ReportingPeriod.objects.filter(pk=filed.pk).update(fingerprint="0" * 64)
     assert _answer(_client(administrator), filed) == "The stored code no longer agrees with its own parts."
-
-
-# -- (m) the demonstration ----------------------------------------------------------------------------------------------------
-
-
-def test_a_demonstration_load_answers_no_changes_found_at_once_and_leaves_no_water_year_history(
-    monkeypatch, administrator
-):
-    from core import demonstration as demo
-    from core.models import SiteConfig
-    from tests import factories as f
-
-    def small_year(stdout=None):
-        f.BoundaryFactory(name=demo.DEMONSTRATION_BOUNDARY)
-        SiteConfig.objects.create(agency_name=demo.DEMONSTRATION_NAME)
-        ReportingPeriod.objects.create(
-            name="WY 2024-2025", start_date=dt.date(2024, 10, 1), end_date=dt.date(2025, 9, 30)
-        )
-        f.ParcelLedgerFactory(effective_date=dt.date(2025, 3, 1), transaction_date=dt.date(2025, 3, 1))
-        ReportingPeriod.objects.update(is_finalized=True)
-        call_command("record_filed_figures")
-
-    monkeypatch.setattr(demo, "run_steps", small_year)
-    demo.load()
-
-    year = ReportingPeriod.objects.get(name="WY 2024-2025")
-    assert re.fullmatch(r"[0-9a-f]{64}", year.fingerprint)
-    assert year.fingerprint_parts["at_upgrade"] is True
-    assert ReportingPeriodEvent.objects.count() == 0
-    assert _answer(_client(administrator), year).startswith("No changes found since ")
 
 
 # -- (o) the four tables the demonstration has no rows for ------------------------------------------------------------------------

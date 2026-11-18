@@ -15,8 +15,6 @@ sit in WY 2024-2025.
   figures route shows them;
 * (c) reopening keeps the statement, finalizing again records a ``restated`` one,
   and the card shows As filed, Restated and Now;
-* (d) the upgrade records one ``recorded_at_upgrade`` statement for a finalized year
-  with none, none for an open one, with the two notes;
 * (e) the account and use area lines appear only when a figure differs and name only
   the ones that moved;
 * (f) a statement row is never updated, is not inserted or deleted in a finalized
@@ -30,7 +28,6 @@ from unittest import mock
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.core.management import call_command
 from django.db import DatabaseError, connection, transaction
 from django.test import Client
 from django.urls import reverse
@@ -440,74 +437,6 @@ def test_a_correction_inside_a_finalized_year_takes_no_statement(d1, year, admin
     _finalize(_client(administrator), year)
     _correct_july(d1, administrator)
     assert PeriodStatement.objects.filter(period=year).count() == 1
-
-
-# -- (d) the upgrade ----------------------------------------------------------------------------------
-
-
-def _finalized(name, start, end, finalized_at=None):
-    period = ReportingPeriodFactory(name=name, start_date=start, end_date=end)
-    ReportingPeriod.objects.filter(pk=period.pk).update(is_finalized=True, finalized_at=finalized_at)
-    period.refresh_from_db()
-    return period
-
-
-def test_the_upgrade_records_a_statement_for_each_finalized_year_with_none():
-    dated = _finalized(
-        "WY 2020-2021", dt.date(2020, 10, 1), dt.date(2021, 9, 30),
-        dt.datetime(2021, 10, 15, 19, 0, tzinfo=dt.timezone.utc),
-    )
-    undated = _finalized("WY 2021-2022", dt.date(2021, 10, 1), dt.date(2022, 9, 30))
-    kept = _finalized("WY 2022-2023", dt.date(2022, 10, 1), dt.date(2023, 9, 30))
-    with override("a test"):
-        existing = statements.take_statement(kept, kind="filed", note="")
-    open_year = ReportingPeriodFactory(
-        name="WY 2023-2024", start_date=dt.date(2023, 10, 1), end_date=dt.date(2024, 9, 30)
-    )
-
-    taken = statements.record_upgrade_statements()
-
-    assert sorted(s.period.name for s in taken) == ["WY 2020-2021", "WY 2021-2022"]
-    only = PeriodStatement.objects.get(period=dated)
-    assert (only.kind, only.taken_by) == ("recorded_at_upgrade", None)
-    assert only.note == (
-        "Recorded when OpenH2O began keeping filed figures; the year was finalized Oct 15, 2021."
-    )
-    assert PeriodStatement.objects.get(period=undated).note == (
-        "Recorded when OpenH2O began keeping filed figures. "
-        "The date this year was finalized is not on record."
-    )
-    assert list(PeriodStatement.objects.filter(period=kept)) == [existing]
-    assert not PeriodStatement.objects.filter(period=open_year).exists()
-    assert PeriodStatement.objects.get(period=dated).rows.exists()
-    # The change history says why: the recorded door and its reason.
-    event = PeriodStatementEvent.objects.filter(pgh_obj_id=only.pk, pgh_label="insert").get()
-    assert event.pgh_context.metadata["override"] is True
-    assert event.pgh_context.metadata["reason"] == statements.UPGRADE_REASON
-
-    assert statements.record_upgrade_statements() == []
-
-
-def test_the_upgrade_does_nothing_on_an_empty_database():
-    assert statements.record_upgrade_statements() == []
-    call_command("record_filed_figures")
-    assert not PeriodStatement.objects.exists()
-
-
-def test_the_card_prints_the_upgrade_line_as_drawn():
-    now = dt.datetime.now(dt.timezone.utc)
-    undated = _finalized("WY 2021-2022", dt.date(2021, 10, 1), dt.date(2022, 9, 30))
-    dated = _finalized("WY 2020-2021", dt.date(2020, 10, 1), dt.date(2021, 9, 30), now)
-    statements.record_upgrade_statements()
-    day = statements._day(PeriodStatement.objects.get(period=undated).taken_at)
-    assert statements.first_line(undated) == (
-        f"Recorded {day}, when OpenH2O began keeping filed figures. "
-        "The date this year was finalized is not on record."
-    )
-    assert statements.first_line(dated) == (
-        f"Recorded {day}, when OpenH2O began keeping filed figures; "
-        f"the year was finalized {statements._day(now)}."
-    )
 
 
 # -- (e) the lines on the account and use area pages ------------------------------------------------------

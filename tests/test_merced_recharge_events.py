@@ -14,8 +14,8 @@ Instead the whole volume deposits to the zone's GSA basin recharge pool — an
     receives nothing.
   - Idempotent — re-running resets the seed's pool slice and re-deposits, so the
     pool total is unchanged (no double-count).
-  - Distinct from incidental — the self-flush keys on the managed origin /
-    "Recharge from <basin>" description, so the engine's separate incidental pool
+  - Distinct from incidental — the self-flush keys on the managed origin,
+    so the engine's separate incidental pool
     and its "Incidental recharge" ledger rows survive untouched.
 
 Runs in the web container (needs the DB).

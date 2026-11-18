@@ -298,62 +298,6 @@ def test_demo_lining_command_sets_each_named_point_once():
     assert atwater.notes.count(LINING_BY_POD[atwater.name][1]) == 1
 
 
-def test_demo_lining_command_replaces_the_note_that_named_a_district():
-    """A re-run takes out the first-built note and keeps the point's own notes.
-
-    The first build appended a note naming a real district (since removed).
-    The El Nido intake's own description sat before it.
-    """
-    from core.management.commands.seed_merced_pod_lining import (
-        LINING_BY_POD,
-        apply_demo_pod_lining,
-    )
-
-    name = "MER-BPOD-001 El Nido Canal Recharge Intake"
-    own = "Shared recharge intake on the El Nido Canal."
-    retired = (
-        "Demonstration data: lining set to unlined, a real district's majority "
-        "(406 miles of unlined canal against 105 of lined canal). No published "
-        "source read states this canal's own lining."
-    )
-    intake = PointOfDiversionFactory(name=name, lining="unlined", notes=f"{own}\n\n{retired}")
-
-    assert apply_demo_pod_lining() == 1
-    intake.refresh_from_db()
-    assert intake.notes == f"{own}\n\n{LINING_BY_POD[name][1]}"
-    assert apply_demo_pod_lining() == 0
-
-
-# The notes the command wrote from 150.3-01 until 153.6-01, one text per kind of
-# point. A re-run must take each out, so a point ends with one current note.
-_WRITTEN_BEFORE_153_6 = {
-    "MER-POD-004-DEMO Atwater Canal Headgate": (
-        "Demonstration data: lining set to unlined. A published water management "
-        "plan for this area counts 406 miles of unlined canal against 105 of lined "
-        "canal, and no published source read states this canal's own lining."
-    ),
-    "MER-POD-005-DEMO Le Grand Canal Headgate": (
-        "Demonstration data: lining set to unlined. A published water management "
-        "plan for this area counts 406 miles of unlined canal against 105 of lined "
-        "canal, and no published source read states this canal's own lining. A "
-        "regional water plan from 2018 lists lining portions of this canal."
-    ),
-    "MER-POD-009-DEMO Bottomlands Riparian Take": (
-        "Demonstration data: lining not stated. This riparian take draws from the "
-        "Merced River with no canal of its own, and no published source describes "
-        "how its water reaches the fields, so it carries no seepage share."
-    ),
-    "MER-POD-010-DEMO Merced Falls Hydroelectric Diversion": (
-        "Demonstration data: lining set to pipe. A hydroelectric diversion passes "
-        "its water through the power plant and back to the river."
-    ),
-    "MER-POD-011-DEMO Snelling Re-Diversion": (
-        "Demonstration data: lining not stated. This re-diversion takes from the "
-        "Merced River with no canal of its own, and no published source describes "
-        "how its water reaches the fields, so it carries no seepage share."
-    ),
-}
-
 # The notes Brent approved as rows 1 to 5 of 153.6-01-ROWS.md (ruling 175).
 _UNLINED_NOTE_153_6 = (
     "The lining below is an assumption for the demonstration. An irrigation "
@@ -376,20 +320,6 @@ _APPROVED_153_6 = {
         "lining is not stated."
     ),
 }
-
-
-@pytest.mark.parametrize("name", sorted(_WRITTEN_BEFORE_153_6))
-def test_demo_lining_rerun_replaces_each_note_written_before(name):
-    """A re-run ends with the approved note only, after the point's own note (153.6-01)."""
-    from core.management.commands.seed_merced_pod_lining import apply_demo_pod_lining
-
-    own = "A note the point's keeper wrote."
-    pod = PointOfDiversionFactory(name=name, notes=f"{own}\n\n{_WRITTEN_BEFORE_153_6[name]}")
-
-    apply_demo_pod_lining()
-    pod.refresh_from_db()
-    assert pod.notes == f"{own}\n\n{_APPROVED_153_6[name]}"
-    assert apply_demo_pod_lining() == 0
 
 
 def test_demo_lining_notes_are_the_approved_rows():
