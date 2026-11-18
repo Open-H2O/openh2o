@@ -317,16 +317,36 @@ jobs:
       - name: The release tests on the candidate
         run: |
           set +e
-          # -v names each test as it starts; a test still running after 20 minutes prints every
-          # thread's stack (faulthandler). Both took 1.5 and 2.7 min on a developer's machine (2026-11-18),
-          # 7.5 min together here on 2026-11-16, and passed no line in 57 min on run 44319002865.
-          docker compose exec -T -e OPENH2O_MODULES=all web python -m pytest tests/ --ds=config.settings.local \
-            -m "release and not network" -p no:cacheprovider -v -rA --durations=5 -o faulthandler_timeout=1200 \
-            -o junit_family=xunit1 --junitxml=/tmp/release-tests.xml \
-            | tee "$RUNNER_TEMP/release-tests.txt"
-          rc=${PIPESTATUS[0]}
-          # pytest's exit 5 is "no test collected": a candidate older than the marker has none.
-          if [ "$rc" = 5 ]; then echo "no test marked release in this commit"; rc=0; fi
+          # Each release test in its own pytest process, so each loads the demonstration into a
+          # fresh test database, as the golden build does. Run together, the second load came
+          # after the first was rolled back: the planner took the tables for empty and the
+          # dashboard's drinking-water count ran past the job's hour (runs 44319002865 and
+          # 44343854587), and the higher ids moved a headgate's rounding leftover (ISS-442).
+          # -v names the test as it starts; past 20 minutes faulthandler prints every stack.
+          dc() { docker compose exec -T -e OPENH2O_MODULES=all web "$@"; }
+          dc python -m pytest tests/ --ds=config.settings.local -m "release and not network" \
+            -p no:cacheprovider -q --collect-only </dev/null > "$RUNNER_TEMP/release-collect.txt" 2>&1
+          rc=$?
+          grep '::' "$RUNNER_TEMP/release-collect.txt" > "$RUNNER_TEMP/release-ids.txt"
+          : > "$RUNNER_TEMP/release-tests.txt"
+          if [ "$rc" = 5 ]; then
+            # pytest's "no test collected": a candidate older than the marker has none.
+            echo "no test marked release in this commit" | tee "$RUNNER_TEMP/release-tests.txt"
+            rc=0
+          elif [ "$rc" != 0 ] || [ ! -s "$RUNNER_TEMP/release-ids.txt" ]; then
+            echo "could not list the release tests (pytest exit $rc):"; tail -30 "$RUNNER_TEMP/release-collect.txt"
+            rc=${rc/#0/1}
+          fi
+          n=0
+          while read -r id; do
+            n=$((n + 1))
+            dc python -m pytest "$id" --ds=config.settings.local -m "release and not network" \
+              -p no:cacheprovider -v -rA --durations=5 -o faulthandler_timeout=1200 \
+              -o junit_family=xunit1 --junitxml=/tmp/release-tests-$n.xml \
+              </dev/null | tee -a "$RUNNER_TEMP/release-tests.txt"
+            one=${PIPESTATUS[0]}
+            [ "$one" = 0 ] || rc=$one
+          done < "$RUNNER_TEMP/release-ids.txt"
           {
             echo '### Release tests'; echo; echo '```'
             grep -E '^(PASSED|FAILED|ERROR) | in [0-9.]+s|^no test marked release' "$RUNNER_TEMP/release-tests.txt" | head -40
