@@ -468,11 +468,18 @@ def _credit_event(event, lead):
 @login_required
 @require_POST
 def recharge_site_zone(request, pk):
-    """Set (or clear) the zone whose basin recharge pool records this site's events."""
+    """Set (or clear) the zone whose basin recharge pool records this site's events.
+
+    The recharge already recorded here moves to the new zone's pool with it,
+    except in a finalized water year (``move_site_recharge``).
+    """
+    from accounting.services import move_site_recharge
+
     site = get_object_or_404(RechargeSite, pk=pk)
     form = RechargeSiteZoneForm(request.POST, instance=site)
     if form.is_valid():
-        form.save()
+        with transaction.atomic():
+            move_site_recharge(form.save())
     return redirect("recharge:detail", pk=pk)
 
 

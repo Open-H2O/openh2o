@@ -11,6 +11,17 @@ class RechargeSiteAdmin(admin.ModelAdmin):
     list_filter = ["site_type", "status"]
     search_fields = ["name", "operator"]
 
+    def save_model(self, request, obj, form, change):
+        """Save the site; its recorded recharge follows a changed zone, as on the site's page."""
+        from django.db import transaction
+
+        from accounting.services import move_site_recharge
+
+        with transaction.atomic():
+            super().save_model(request, obj, form, change)
+            if change:
+                move_site_recharge(obj)
+
 
 @admin.register(RechargeEvent)
 class RechargeEventAdmin(admin.ModelAdmin):

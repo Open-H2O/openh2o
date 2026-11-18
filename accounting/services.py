@@ -408,7 +408,8 @@ def create_recharge_ledger_entries(
 
     Args:
         recharge_event: A recharge.models.RechargeEvent instance.
-        zone: Zone to pool into. If None, falls back to
+        zone: Zone to pool into. If None, the zone the event's water is
+            already in (a corrected or edited event stays in its pool), else
             ``recharge_event.recharge_site.zone``.
         parcel: Optional has-well Parcel the event is tied to (personal path).
 
@@ -421,7 +422,7 @@ def create_recharge_ledger_entries(
     from accounting.recharge_policy import recharge_routes_to_personal
 
     if zone is None:
-        zone = recharge_event.recharge_site.zone
+        zone = recharge_event.pool_zone or recharge_event.recharge_site.zone
         if zone is None:
             raise ValueError(
                 f"No zone supplied and recharge site "
@@ -466,6 +467,7 @@ def create_recharge_ledger_entries(
     deposit_to_basin_pool(
         zone, water_type, water_year, volume, origin=BASIN_RECHARGE_POOL
     )
+    _set_pool_zone(recharge_event, zone)
     account = recharge_event.recharge_site.water_account
     replace_account_credits(
         "managed_recharge",
@@ -480,15 +482,41 @@ def create_recharge_ledger_entries(
     return []
 
 
+def _set_pool_zone(recharge_event: RechargeEvent, zone: Zone | None) -> None:
+    """Write on the event the zone whose basin recharge pool holds its water."""
+    if recharge_event.pool_zone_id != (zone.pk if zone else None):
+        type(recharge_event).objects.filter(pk=recharge_event.pk).update(pool_zone=zone)
+        recharge_event.pool_zone = zone
+
+
+def _recharge_pool_key(recharge_event: RechargeEvent) -> tuple[WaterType | None, int]:
+    """The water type and water year of the pool row an event's volume is in."""
+    water_type = recharge_event.water_type or WaterType.objects.filter(code="GW").first()
+    water_year = water_year_of(
+        f"{recharge_event.start_date.year}-{recharge_event.start_date.month:02d}",
+        water_year_start_month(),
+    )
+    return water_type, water_year
+
+
+def _take_from_pool(zone: Zone, water_type: WaterType, water_year: int, amount: Decimal) -> None:
+    """Take ``amount`` out of a basin recharge pool row; the row goes when it nets to zero."""
+    row = deposit_to_basin_pool(zone, water_type, water_year, -amount, origin=BASIN_RECHARGE_POOL)
+    if row.amount_af == Decimal("0"):
+        row.delete()
+
+
 def remove_recharge_ledger_entries(
     recharge_event: RechargeEvent, zone: Zone | None = None
 ) -> None:
     """Take back what ``create_recharge_ledger_entries`` wrote for this event.
 
     Call it with the event as it was stored: its volume, start date, water
-    type and site decide the pool row and the credit to take back. The basin
-    pool row goes when it nets to zero. An event the personal path credited
-    (it left no pool deposit) takes only its credit back.
+    type and the zone written on it when its water went into a pool decide the
+    pool row and the credit to take back (never the site's zone now, which may
+    have been corrected since). The basin pool row goes when it nets to zero.
+    An event the personal path credited (it left no pool deposit) takes only
+    its credit back; an event no pool took takes only its credit back.
     """
     key = _recharge_source_key(recharge_event)
     personal = AccountCredit.objects.filter(
@@ -501,22 +529,71 @@ def remove_recharge_ledger_entries(
     if personal:
         return
     if zone is None:
-        zone = recharge_event.recharge_site.zone
+        zone = recharge_event.pool_zone
     if zone is None:
         return
-    water_type = recharge_event.water_type or WaterType.objects.filter(code="GW").first()
+    water_type, water_year = _recharge_pool_key(recharge_event)
     if water_type is None:
         return
-    water_year = water_year_of(
-        f"{recharge_event.start_date.year}-{recharge_event.start_date.month:02d}",
-        water_year_start_month(),
+    _take_from_pool(zone, water_type, water_year, recharge_event.volume_acre_feet)
+
+
+def move_site_recharge(site) -> None:
+    """Put a recharge site's recorded recharge in the pool of the zone it has now.
+
+    Called after a site's zone is set, corrected or cleared. Each current event
+    whose water is in another zone's pool moves there (its account credit is
+    left as it is); an event no pool took goes in and is credited as logging
+    it would; with the zone cleared, an event is taken back out of its pool and
+    its credit taken back, as a site with no zone credits no one. Each event
+    moves on its own: one the finalized-year lock refuses (its pool row, its
+    credit or the event itself is in a finalized water year) stays as it was
+    filed. Any other error stops the whole change.
+    """
+    from django.db import DatabaseError
+
+    from accounting.locks import lock_error_message
+    from recharge.models import RechargeEvent
+
+    new_zone = site.zone
+    events = (
+        RechargeEvent.objects.current()
+        .filter(recharge_site=site)
+        .select_related("recharge_site__water_account", "water_type", "pool_zone")
+        .order_by("pk")
     )
-    row = deposit_to_basin_pool(
-        zone, water_type, water_year, -recharge_event.volume_acre_feet,
-        origin=BASIN_RECHARGE_POOL,
+    for event in events:
+        if event.pool_zone_id == (new_zone.pk if new_zone else None):
+            continue
+        if AccountCredit.objects.filter(
+            origin="managed_recharge", source_key=_recharge_source_key(event) + ":field"
+        ).exists():
+            continue  # the personal path pooled nothing
+        try:
+            with transaction.atomic():
+                _move_event(event, new_zone)
+        except DatabaseError as exc:
+            if lock_error_message(exc) is None:
+                raise
+
+
+def _move_event(event: RechargeEvent, new_zone: Zone | None) -> None:
+    """One event's part of :func:`move_site_recharge`."""
+    if event.pool_zone is None:
+        create_recharge_ledger_entries(event, zone=new_zone)
+        return
+    if new_zone is None:
+        remove_recharge_ledger_entries(event)
+        _set_pool_zone(event, None)
+        return
+    water_type, water_year = _recharge_pool_key(event)
+    if water_type is None:
+        return
+    _take_from_pool(event.pool_zone, water_type, water_year, event.volume_acre_feet)
+    deposit_to_basin_pool(
+        new_zone, water_type, water_year, event.volume_acre_feet, origin=BASIN_RECHARGE_POOL
     )
-    if row.amount_af == Decimal("0"):
-        row.delete()
+    _set_pool_zone(event, new_zone)
 
 
 # ---------------------------------------------------------------------------

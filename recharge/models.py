@@ -97,7 +97,9 @@ class RechargeSitePOD(models.Model):
         return f"{self.recharge_site} ← {self.point_of_diversion}"
 
 
-@track_changes()
+# The pool's own rows keep the change history of the water; the event's link to
+# them is bookkeeping, so its Change history leaves it out.
+@track_changes(exclude=("pool_zone",))
 class RechargeEvent(CorrectableRecord):
     recharge_site = models.ForeignKey(RechargeSite, on_delete=models.CASCADE)
     start_date = models.DateField()
@@ -108,6 +110,12 @@ class RechargeEvent(CorrectableRecord):
     )
     source_description = models.CharField(max_length=200, blank=True)
     notes = models.TextField(blank=True)
+    # The zone whose basin recharge pool holds this event's water, written when
+    # the water goes in and read when it is taken back; empty when no pool holds it.
+    pool_zone = models.ForeignKey(
+        "geography.Zone", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+", editable=False,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

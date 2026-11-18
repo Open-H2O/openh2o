@@ -213,7 +213,7 @@ def _meter_follows(row):
 
 def _voided_sentence(request, kind_key, row, months, reason=""):
     if kind_key == "recharge_event":
-        if row.recharge_site.zone is None:
+        if row.pool_zone_id is None:
             return RECHARGE_EVENT_SENTENCE_NO_ZONE
         return RECHARGE_EVENT_SENTENCE_ZONE
     parts = ["Record voided."]
