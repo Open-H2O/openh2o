@@ -10,7 +10,7 @@ What a correct site does (the plain write-up Brent approved, ruling 134):
   is replaced as a correction (the old one kept, struck) and the month is recalculated at once;
 * in a finalized year only an administrator may accept, through the recorded door;
 * nobody can type an ET figure;
-* rainfall is not covered, and stays visible as a strict xfail.
+* rainfall is recorded the same way (ruling 208; tests/test_release_bar_353_rain.py).
 
 The worked example is the write-up's: a 100-acre corn field watered by sprinkler, with a
 well. July 2025 fetched at 91.44 mm (3.60 in, 30.00 AF crop ET, 37.50 AF pumped); OpenET
@@ -520,21 +520,19 @@ def test_the_recorded_figure_is_demonstration_content():
     assert "datasync.CropETFigure" in demonstration.CONTENT_LABELS
 
 
-# ---------------------------------------------------------------- 13. rainfall, not covered
+# ---------------------------------------------------------------- 13. rainfall, recorded the same way (ruling 208)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Rainfall is not recorded this way: a re-fetched rain month still moves the "
-    "calculation. It needs its own decision (ruling 134).",
-)
 def test_a_refetched_rain_month_leaves_the_calculation_as_it_was():
     from accounting.steps import subtract_effective_precip
+    from datasync.crop_et import record_fetched_months
 
     field = _corn_field()
     _fetch(field, FIRST, AUG_6)
     rain = _hand_cache(field, {JULY: 20.0}, dt.date(2025, 7, 1), dt.date(2025, 7, 31),
                        model="GRIDMET", variable="precip", key="precip")
+    # Recorded the way the rain writers record a month they fetched.
+    record_fetched_months(field, [JULY], variable="precip", model="GRIDMET")
     before, _ = subtract_effective_precip(D("30"), field, JULY, {}, {})
     OpenETCache.objects.filter(pk=rain.pk).update(et_data=[{"date": "2025-07-01", "precip": 40.0}])
     after, _ = subtract_effective_precip(D("30"), field, JULY, {}, {})
