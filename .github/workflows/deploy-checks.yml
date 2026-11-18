@@ -7,7 +7,8 @@
 #              and changes code: its test files run on the commit before it, where they must
 #              fail. Excused only by:  Fix-Test: <commit>: <reason>
 #   release    the candidate's own tests marked `release`, which take many minutes each, so
-#              tests.yml and `make test` leave them out. The other two checks leave them out too.
+#              tests.yml and `make test` leave them out. The other two checks leave them out too;
+#              the old tests leave out a test either the base or the candidate marks.
 #
 # deploy.sh asks for exactly its own pair (the candidate, and the commit in the live page footer)
 # through scripts/regress-gate.sh, which dispatches this workflow (inputs base and head, both
@@ -115,6 +116,48 @@ jobs:
           ref: ${{ needs.plan.outputs.head }}
           fetch-depth: 0
 
+      # A test the candidate marks `release` takes many minutes; release-tests runs it. The base
+      # may hold the same test unmarked (it was marked after the base), and a serial run of it
+      # once took the whole hour (ISS-429). So the old tests leave out every test the candidate
+      # marks release, as well as those the base marks (-m in suite.sh). Read from the
+      # candidate's test files with the standard library: a decorated test, a decorated class, or
+      # a file whose pytestmark names release. --deselect takes a node id prefix.
+      - name: The candidate's release tests, left out of the old tests
+        run: |
+          python3 -I - tests > "$RUNNER_TEMP/release-deselect.txt" <<'PY'
+          import ast, pathlib, sys
+
+          def release(node):
+              return any(isinstance(n, ast.Attribute) and n.attr == "release"
+                         and isinstance(n.value, ast.Attribute) and n.value.attr == "mark"
+                         for n in ast.walk(node))
+
+          for path in sorted(pathlib.Path(sys.argv[1]).rglob("test_*.py")):
+              tree = ast.parse(path.read_text(encoding="utf-8"), str(path))
+              ids = []
+              for node in tree.body:
+                  if isinstance(node, ast.Assign) and any(
+                      isinstance(t, ast.Name) and t.id == "pytestmark" for t in node.targets
+                  ) and release(node.value):
+                      ids = [str(path)]
+                      break
+                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                      if any(release(d) for d in node.decorator_list):
+                          ids.append(f"{path}::{node.name}")
+                      elif isinstance(node, ast.ClassDef):
+                          ids += [f"{path}::{node.name}::{m.name}" for m in node.body
+                                  if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef))
+                                  and any(release(d) for d in m.decorator_list)]
+              for node_id in ids:
+                  print(f"--deselect={node_id}")
+          PY
+          {
+            echo '### Left out of the old tests (marked release on the candidate)'; echo; echo '```'
+            sed 's/^--deselect=//' "$RUNNER_TEMP/release-deselect.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          wc -l < "$RUNNER_TEMP/release-deselect.txt"
+
       - name: The engine and the suite script
         run: |
           git show "$GITHUB_SHA:scripts/regress.py" > "$RUNNER_TEMP/regress.py"
@@ -132,7 +175,8 @@ jobs:
           trap 'dc down -v --rmi local >/dev/null 2>&1' EXIT
           dc build -q web || exit 3
           dc up -d --wait db web || { dc logs web --tail 100; exit 3; }
-          dc exec -T -e OPENH2O_MODULES=all web python -m pytest "$@" --ds=config.settings.local \
+          mapfile -t leave < "$RUNNER_TEMP/release-deselect.txt"
+          dc exec -T -e OPENH2O_MODULES=all web python -m pytest "$@" "${leave[@]}" --ds=config.settings.local \
             -m "not network and not release" -p no:cacheprovider -q -o junit_family=xunit1 --junitxml=/tmp/deploy-checks.xml
           rc=$?
           dc cp web:/tmp/deploy-checks.xml "$junit" >/dev/null 2>&1
