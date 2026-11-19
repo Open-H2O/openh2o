@@ -27,6 +27,14 @@
 # copied into the image, never mounted) and runs pytest inside it against PostGIS, as tests.yml
 # does. The engine is scripts/regress.py, a verbatim copy whose first comment line names its
 # source commit; it is read from the commit this workflow runs from, never from the candidate.
+#
+# Ahead runs: after a green push to main, tests.yml's release-check-ahead job dispatches this
+# workflow for that commit against the live one, with input ahead=true and the same title a release
+# would ask for. A later deploy.sh of that commit finds the run and waits only for what is left of it
+# (nothing, once it has finished), instead of about 27 minutes (Brent 2026-11-18 16:30, "yes").
+# Ahead runs queue one at a time and are never cancelled while running; GitHub replaces an older
+# WAITING ahead run with a newer one. The one trap: a release whose gate waited on a queued ahead
+# run that a newer push replaced is refused as cancelled; `gh run rerun <id>` on that run clears it.
 
 name: Deploy checks
 
@@ -41,10 +49,21 @@ on:
         description: the candidate commit (40 characters)
         required: true
         type: string
+      ahead:
+        description: started by tests.yml after a green main push, before any release asked for it
+        required: false
+        type: boolean
+        default: false
   schedule:
     - cron: '30 12 * * 1'
 
 run-name: ${{ github.event_name == 'schedule' && 'deploy checks weekly' || format('deploy checks {0} from {1}', inputs.head, inputs.base) }}
+
+# Ahead runs share one group and wait their turn (never cancelled while running: a release may be
+# waiting on one); release and weekly runs each have a group of their own, as before.
+concurrency:
+  group: ${{ inputs.ahead && 'deploy-checks-ahead' || format('deploy-checks-{0}', github.run_id) }}
+  cancel-in-progress: false
 
 defaults:
   run:

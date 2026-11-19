@@ -170,3 +170,56 @@ jobs:
       - name: Tear down
         if: always()
         run: docker compose down -v
+
+  # Starts the deploy checks (deploy-checks.yml) for this commit against the live one as soon as this
+  # push's tests are green, so a later release of the same commit (deploy.sh, through
+  # scripts/regress-gate.sh, which takes an existing run with the same title) waits on nothing
+  # instead of about 27 minutes (run 44386327795: 26.6). Brent 2026-11-18 16:30, "yes". Only for
+  # pushes to main, never a pull request. A site or GitHub outage here is a warning, never red:
+  # this workflow's colour means the code's tests.
+  release-check-ahead:
+    needs: [lint, pytest]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Start the deploy checks for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          # The pair is resolved as deploy.sh resolves it (its lines after "The deploy checks, before anything
+          # on the server changes."): the candidate, the commit named by the live page footer, and their merge
+          # base. If the two ever drift, the titles differ and a release simply dispatches its own run, which
+          # costs today's wait and nothing else.
+          set -uo pipefail
+          warn() { echo "::warning::release-check-ahead: $*"; echo "release-check-ahead: $*" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+          cand=$GITHUB_SHA
+          desc=$(curl -fsS --max-time 30 "${OPENH2O_SITE_URL:-https://openh2o.com/}" | sed -n 's/.*app-footer-version"[^>]*>\([^<]*\)<.*/\1/p' | head -1) || desc=""
+          desc=${desc%-dirty}
+          case $desc in *-g*) short=${desc##*-g} ;; *) short=$desc ;; esac
+          live=""
+          [ -n "$short" ] && live=$(git rev-parse --verify --quiet "$short^{commit}") || true
+          [ -n "$live" ] || warn "no live commit read from the page footer ('$desc'); nothing started"
+          if [ "$live" = "$cand" ] || git merge-base --is-ancestor "$cand" "$live"; then
+            echo "release-check-ahead: $cand is live or older than live ${live:0:12}; nothing to check" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          base=$(git merge-base "$live" "$cand") || warn "no merge base for live ${live:0:12} and $cand"
+          title="deploy checks $cand from $base"
+          runs=$(gh run list --workflow deploy-checks.yml -L 100 --json databaseId,displayTitle \
+            --jq ".[] | select(.displayTitle == \"$title\") | .databaseId") || warn "could not list deploy-checks runs"
+          if [ -n "$runs" ]; then
+            echo "release-check-ahead: run ${runs%%$'\n'*} already has '$title'; nothing started" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          gh workflow run deploy-checks.yml --ref main -f "base=$base" -f "head=$cand" -f ahead=true \
+            || warn "could not start the deploy checks for '$title'"
+          echo "release-check-ahead: started '$title' (live ${live:0:12})" | tee -a "$GITHUB_STEP_SUMMARY"
