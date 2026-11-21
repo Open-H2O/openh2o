@@ -195,7 +195,7 @@
 <div class="card-raised" id="active-accounts">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Active water accounts</h2>
-    <span class="text-tertiary text-xs">One row per active water account. Select an account number to open the account. Figures are acre-feet (AF) for {{ selected_period.name }}.</span>
+    <span class="text-tertiary text-xs">One row per active water account. Select an account number to open the account. Figures are acre-feet (AF) for {{ selected_period.name }}.{% if use_areas_waiting %} {% if selected_period.is_finalized %}Remaining counts meter readings for months with no crop ET when the year was finalized.{% else %}Remaining counts meter readings for months waiting for OpenET.{% endif %} Groundwater leaves those months out.{% endif %}</span>
   </div>
   {% include "accounting/partials/_active_accounts_table.html" %}
 </div>
@@ -203,7 +203,7 @@
 <div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Zones</h2>
-    <span class="text-tertiary text-xs">One row per zone. A use area can lie in more than one zone, so the table has no total row. Figures are acre-feet (AF) for {{ selected_period.name }}.</span>
+    <span class="text-tertiary text-xs">One row per zone. A use area can lie in more than one zone, so the table has no total row. Figures are acre-feet (AF) for {{ selected_period.name }}.{% if use_areas_waiting %} {% if selected_period.is_finalized %}Remaining counts meter readings for months with no crop ET when the year was finalized.{% else %}Remaining counts meter readings for months waiting for OpenET.{% endif %} Groundwater leaves those months out.{% endif %}</span>
   </div>
   {% if zone_summaries %}
   <div class="table-scroll">

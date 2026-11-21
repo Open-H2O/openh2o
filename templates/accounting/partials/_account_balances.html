@@ -110,7 +110,7 @@
 <div class="card-raised page-grid-account-full">
 <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
   <h3 class="section-header-sm">Groundwater budget</h3>
-  <span class="text-tertiary text-xs">{{ selected_period.name }}. All figures in acre-feet (AF).</span>
+  <span class="text-tertiary text-xs">{{ selected_period.name }}. All figures in acre-feet (AF).{% if use_areas_waiting %} {% if selected_period.is_finalized %}Used includes meter readings for months with no crop ET when the year was finalized.{% else %}Used includes meter readings for months waiting for OpenET.{% endif %} The Groundwater figures on this page leave those months out.{% endif %}</span>
 </div>
 <div class="table-scroll">
 <table class="data-table">
