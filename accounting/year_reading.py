@@ -75,6 +75,9 @@ class _Month:
     gw_other: Decimal = ZERO  # groundwater rows other than calculated ones, as stored (negative)
     gw_calculated: Decimal = ZERO  # calculated groundwater rows, as charged (positive)
     gw_calculated_stored: Decimal = ZERO  # the same rows as stored (negative)
+    gw_meter: Decimal = ZERO  # groundwater meter readings, as stored (negative)
+    gw_unknown: Decimal = ZERO  # other groundwater rows that are neither meter nor calculated (negative)
+    surface_own: Decimal = ZERO  # deliveries not divided from a headgate's point, as stored
     surface: Decimal = ZERO  # canal deliveries, as stored (negative)
     has_surface: bool = False
 
@@ -194,6 +197,7 @@ class YearReading:
                 if not divided or point is None:
                     area.surface_own += amount
                     area.has_surface_own = True
+                    month.surface_own += amount
                 else:
                     key = (point, _first(day))
                     area.surface_groups[key] = area.surface_groups.get(key, ZERO) + amount
@@ -220,9 +224,11 @@ class YearReading:
                 month.gw_other += amount
                 if source == "meter_reading":
                     area.gw_meter += amount
+                    month.gw_meter += amount
                     area.metered[_first(day)] = area.metered.get(_first(day), ZERO) + amount
                 else:
                     area.gw_unknown += amount
+                    month.gw_unknown += amount
         return found
 
     @cached_property
@@ -500,12 +506,28 @@ class YearReading:
                 total += area.surface
         return abs(total)
 
-    def groundwater_kind_terms(self, parcel_ids: Iterable[int]) -> list[tuple[str, Decimal]]:
-        """``groundwater_kind_terms`` over the set's billable rows: each kind's part charged and quantized on its own."""
+    def _run_months(self, pid: int) -> set[date]:
+        return {run.period_start for run in self.runs.get(pid, ())}
+
+    def groundwater_kind_terms(self, parcel_ids: Iterable[int], counted: bool = False) -> list[tuple[str, Decimal]]:
+        """``groundwater_kind_terms`` over the set's billable rows: each kind's part charged and quantized on its own.
+
+        ``counted``: only the months each use area has a calculation run in, the months the
+        balance counts (its Supplies lines); otherwise every month (the allocation's).
+        """
         meter = unknown = calculated = ZERO
         for pid in self._counted(parcel_ids):
             area = self.ledger.get(pid)
-            if area is not None:
+            if area is None:
+                continue
+            if counted:
+                months = self._run_months(pid)
+                for month, sums in area.months.items():
+                    if month in months:
+                        meter += sums.gw_meter
+                        unknown += sums.gw_unknown
+                        calculated += sums.gw_calculated
+            else:
                 meter += area.gw_meter
                 unknown += area.gw_unknown
                 calculated += area.gw_calculated_charged
@@ -516,8 +538,8 @@ class YearReading:
         ]
         return [(kind, amount) for kind, amount in terms if amount]
 
-    def surface_kind_terms(self, parcel_ids: Iterable[int]) -> list[tuple[str, Decimal]]:
-        """``surface_kind_terms`` over the set's billable rows."""
+    def surface_kind_terms(self, parcel_ids: Iterable[int], counted: bool = False) -> list[tuple[str, Decimal]]:
+        """``surface_kind_terms`` over the set's billable rows (``counted`` as for groundwater)."""
         from accounting.services import split_surface_kinds
 
         own = ZERO
@@ -526,15 +548,25 @@ class YearReading:
             area = self.ledger.get(pid)
             if area is None:
                 continue
-            own += area.surface_own
+            months = self._run_months(pid) if counted else None
+            if counted:
+                own += sum((sums.surface_own for m, sums in area.months.items() if m in months), ZERO)
+            else:
+                own += area.surface_own
             for key, amount in area.surface_groups.items():
+                if counted and key[1] not in months:
+                    continue
                 groups[key] = groups.get(key, ZERO) + amount
         methods = self.surface_methods if groups else {}
         return split_surface_kinds(own, groups, methods)
 
     def supply_kind_terms(self, parcel_ids: Iterable[int]) -> dict[str, list[tuple[str, Decimal]]]:
+        """The balance's Supplies lines: the months it counts only."""
         ids = list(parcel_ids)
-        return {"surface": self.surface_kind_terms(ids), "groundwater": self.groundwater_kind_terms(ids)}
+        return {
+            "surface": self.surface_kind_terms(ids, counted=True),
+            "groundwater": self.groundwater_kind_terms(ids, counted=True),
+        }
 
     # -- Accounts and zones -------------------------------------------------------------
 

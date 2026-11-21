@@ -195,7 +195,7 @@ class Command(BaseCommand):
         try:
             self._setup(parcels, today)
             # Filled as each request's answer is stored, so a run the allowance stops still
-            # records the months it received (ISS-444).
+            # records the months it received.
             self._figures(parcels, start_date, end_date, today, sent_fields, sent_months)
         except field_list.AllowanceUsed:
             stopped = True
