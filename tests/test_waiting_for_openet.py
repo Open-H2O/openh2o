@@ -408,3 +408,82 @@ def test_a_month_whose_crop_et_is_withdrawn_after_a_calculation_waits_again(worl
     covered = YearReading(world.period).covered([world.u2.pk])
     assert covered["last"] == date(2026, 7, 1)
     assert covered["waiting"] == [AUG, SEP]
+
+
+# -- (k) ISS-446: why a row's Groundwater and its Remaining differ while a month waits (ruling 217) -----
+
+GW_GAP_DASHBOARD = (
+    "Remaining counts meter readings for months waiting for OpenET. Groundwater leaves those months out."
+)
+GW_GAP_ACCOUNT = (
+    "Used includes meter readings for months waiting for OpenET. "
+    "The Groundwater figures on this page leave those months out."
+)
+
+
+def _budgeted_account(w):
+    """An account holding WAIT-1 and WAIT-2 inside a zone with a groundwater allocation."""
+    from accounting.models import WaterType
+    from tests.factories import AllocationPlanFactory, ParcelZoneFactory, ZoneFactory
+
+    groundwater = WaterType.objects.filter(code="GW").first() or WaterType.objects.create(
+        name="Groundwater", code="GW"
+    )
+    zone = ZoneFactory(name="Waiting GSA Zone", zone_type="management_area")
+    account = WaterAccountFactory(status="active")
+    for parcel in (w.u1, w.u2):
+        ParcelZoneFactory(parcel=parcel, zone=zone)
+        WaterAccountParcelFactory(water_account=account, parcel=parcel)
+    AllocationPlanFactory(
+        zone=zone, water_type=groundwater, reporting_period=w.period, allocation_acre_feet=Decimal("50.0000")
+    )
+    return account
+
+
+def _caption_words(client, w, account):
+    import re
+
+    def words(response):
+        assert response.status_code == 200
+        return " ".join(re.sub(r"<[^>]+>", " ", response.content.decode()).split())
+
+    dashboard = words(client.get(reverse("accounting:dashboard") + f"?period={w.period.pk}"))
+    account_page = words(client.get(reverse("accounting:account_detail", args=[account.pk]) + f"?period={w.period.pk}"))
+    return dashboard, account_page
+
+
+def _staff_client():
+    client = Client()
+    client.force_login(User.objects.create_user(
+        username="gap-reader", email="gap-reader@example.org", password="a-good-passw0rd", agency_admin=True
+    ))
+    return client
+
+
+def test_while_a_month_waits_the_dashboard_and_account_say_why_groundwater_and_remaining_differ(world):
+    account = _budgeted_account(world)
+    _run_year(world)
+
+    dashboard, account_page = _caption_words(_staff_client(), world, account)
+
+    # wording approved: ruling 218 (rows G1, G2, G3)
+    assert dashboard.count(GW_GAP_DASHBOARD) == 2  # the Active water accounts and Zones captions
+    assert account_page.count(GW_GAP_ACCOUNT) == 1  # the Groundwater budget caption
+
+
+def test_with_nothing_waiting_neither_page_carries_the_sentence(world):
+    account = _budgeted_account(world)
+    for parcel in (world.u1, world.u2):
+        field = OpenETFieldShare.objects.get(parcel=parcel).field
+        OpenETFieldMonth.objects.create(
+            field=field, month=SEP, et_mm=ET_MM, pr_mm=Decimal("0"), received_on=date(2026, 10, 2)
+        )
+        crop_et.record_received_months(parcel, [crop_et.month_text(SEP)])
+    _run_year(world)
+
+    dashboard, account_page = _caption_words(_staff_client(), world, account)
+
+    assert "Use areas with a month waiting for OpenET" not in dashboard
+    assert "meter readings for months" not in dashboard
+    assert "meter readings for months" not in account_page
+    assert "Groundwater budget" in account_page

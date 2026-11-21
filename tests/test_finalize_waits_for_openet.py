@@ -302,3 +302,30 @@ def test_an_operators_finalize_anyway_is_refused_as_today(world):
     assert response.status_code == 302
     assert ReportingPeriod.objects.get(pk=world.period.pk).is_finalized is False
     assert _finalize_runs().count() == 0
+
+
+# -- (k) ISS-446 on a year finalized with a month missing (ruling 217) -------------------------------
+
+
+def test_a_year_finalized_anyway_says_why_groundwater_and_remaining_differ_in_its_finalized_words(
+        world, admin_client, settings, django_capture_on_commit_callbacks):
+    from tests.test_waiting_for_openet import GW_GAP_ACCOUNT, GW_GAP_DASHBOARD, _budgeted_account, _caption_words
+
+    account = _budgeted_account(world)
+    _run_year(world)
+    _finalize_anyway(admin_client, world.period, settings, django_capture_on_commit_callbacks)
+    assert world.period.is_finalized is True
+
+    dashboard, account_page = _caption_words(admin_client, world, account)
+
+    # wording approved: ruling 218 (rows G1, G2, G3, finalized forms)
+    assert dashboard.count(
+        "Remaining counts meter readings for months with no crop ET when the year was finalized. "
+        "Groundwater leaves those months out."
+    ) == 2
+    assert account_page.count(
+        "Used includes meter readings for months with no crop ET when the year was finalized. "
+        "The Groundwater figures on this page leave those months out."
+    ) == 1
+    assert GW_GAP_DASHBOARD not in dashboard
+    assert GW_GAP_ACCOUNT not in account_page
