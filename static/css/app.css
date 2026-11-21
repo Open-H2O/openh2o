@@ -5737,7 +5737,7 @@ details[open] > summary .disclosure-mark {
     color: var(--color-text-tertiary);
     font-variant-numeric: tabular-nums;
 }
-/* A month a finalized year left out (153.1-02, row D1): on one line "No crop ET when finalized"
+/* A month a finalized year left out (ruling 215): on one line "No crop ET when finalized"
    widens the Crop ET column until the table runs past its card at 1,024 (clean from 1,153
    up), so below 1,100 it may wrap. Wrapping at every width put it on two lines at 1,730. */
 @media (max-width: 1100px) {

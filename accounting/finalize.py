@@ -56,7 +56,7 @@ def waiting(period):
     found = YearReading(period).waiting
     if not found:
         return {"months": [], "use_areas": 0}
-    numbers = dict(Parcel.objects.filter(pk__in=list(found)).values_list("pk", "parcel_number"))
+    numbers = dict(Parcel.objects.current().filter(pk__in=list(found)).values_list("pk", "parcel_number"))
     by_month = {}
     for pid, months in found.items():
         for month in months:
