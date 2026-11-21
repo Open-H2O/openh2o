@@ -40,6 +40,7 @@ class HealthCheckResult(models.Model):
         ("migrations", "Migrations"),
         ("calculation", "Calculation"),
         ("backup", "Backup"),
+        ("openet_waiting", "Waiting for OpenET"),
     ]
     STATUS_CHOICES = [
         ("green", "Green"),

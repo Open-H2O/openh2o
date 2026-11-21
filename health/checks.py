@@ -5,8 +5,8 @@ Each ``check_*`` function returns a category/status/message/details dict (green,
 yellow, or red) covering database connectivity, disk usage, data-sync freshness,
 ledger integrity, unassigned parcels, duplicated OpenET cache coverage,
 point-of-diversion fraction splits, unallocated surface deliveries,
-reporting-period month alignment, satellite-ET-versus-meter agreement, SSL
-certificate expiry, the expected database, and pending migrations;
+reporting-period month alignment, satellite-ET-versus-meter agreement, months waiting
+for OpenET, SSL certificate expiry, the expected database, and pending migrations;
 ``run_all_checks`` runs them all in order.
 """
 import ipaddress
@@ -1545,6 +1545,69 @@ def _successful_backup_card(finished: datetime, dump_bytes: int, entries: int, b
     }
 
 
+def check_openet_waiting():
+    """Months waiting for OpenET in the water years not finalized (ruling 212, rows 11a to 11c).
+
+    Counts each ended month with no recorded crop ET of each use area that lies in an OpenET
+    field (a use area in none never waits, ruling 160). Green while every waiting month is
+    younger than its overdue point; yellow once a month is still waiting more than two calendar
+    months after it ended (September from December 1), naming the first use area and how many
+    more. The site cannot read its own schedule, so the point is by the calendar.
+    """
+    if not is_enabled("datasync") or not is_enabled("accounting"):
+        return not_applicable("openet_waiting", "datasync", "months waiting for OpenET")
+    from accounting.models import ReportingPeriod
+    from datasync import crop_et
+    from parcels.models import Parcel
+
+    numbers = dict(Parcel.objects.current().values_list("pk", "parcel_number"))
+    waiting: dict[int, set] = {}
+    for period in ReportingPeriod.objects.filter(is_finalized=False).order_by("start_date"):
+        for pid, months in crop_et.waiting_months(numbers, period.start_date, period.end_date).items():
+            waiting.setdefault(pid, set()).update(months)
+    months_waiting = sum(len(m) for m in waiting.values())
+    overdue = {
+        pid: min(m for m in months if crop_et.is_overdue(m))
+        for pid, months in waiting.items()
+        if any(crop_et.is_overdue(m) for m in months)
+    }
+    details = {
+        "use_areas_waiting": len(waiting),
+        "months_waiting": months_waiting,
+        "use_areas_overdue": sorted(numbers[pid] for pid in overdue),
+    }
+    if overdue:
+        oldest = min(overdue.values())
+        first = sorted(numbers[pid] for pid in overdue)[0]
+        more = len(overdue) - 1
+        if more:
+            who = f"{first} and {_count(more, 'more use area', 'more use areas')} are"
+            whose = "their"
+        else:
+            who = f"{first} is"
+            whose = "its"
+        return {
+            "category": "openet_waiting",
+            "status": "yellow",
+            "message": (
+                f"{who} still waiting for OpenET for {oldest:%B %Y}, more than two months after "
+                f"it ended. Ask whoever runs the site to check OpenET's figures for {whose} fields "
+                "and the site's monthly OpenET requests."
+            ),
+            "details": details,
+        }
+    if not waiting:
+        message = "Every month that has ended has its crop ET from OpenET."
+    else:
+        latest = max(m for months in waiting.values() for m in months)
+        verb = "has" if len(waiting) == 1 else "have"
+        message = (
+            f"{_count(len(waiting), 'use area', 'use areas')} {verb} a month waiting for OpenET. "
+            f"The latest is {latest:%B %Y}."
+        )
+    return {"category": "openet_waiting", "status": "green", "message": message, "details": details}
+
+
 def run_all_checks():
     return [
         check_database(),
@@ -1557,6 +1620,7 @@ def run_all_checks():
         check_unallocated_delivery(),
         check_period_month_alignment(),
         check_et_meter_agreement(),
+        check_openet_waiting(),
         check_ssl(),
         check_docker(),
         check_migrations(),

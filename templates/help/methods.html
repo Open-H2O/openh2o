@@ -50,6 +50,10 @@
             <td>OpenH2O uses the crop ET from OpenET recorded for each use area and month. For a use area with OpenET fields on record, the recorded figure is the sum of each OpenET field&rsquo;s crop ET on that field&rsquo;s acres inside the use area. The next table says how a month&rsquo;s figure is recorded and how a newer one is accepted.</td>
           </tr>
           <tr>
+            <td class="col-name">A month waiting for OpenET</td>
+            <td>Until OpenET sends a month&rsquo;s crop ET, OpenH2O does not calculate the month for the use area. The month&rsquo;s meter readings, and canal water split by shares, are on the ledger. Canal water split by crop need waits with the month. The first calculation after the crop ET arrives counts the month in the balance.</td>
+          </tr>
+          <tr>
             <td class="col-name">ETAW</td>
             <td>ETAW is crop ET minus effective precipitation. By default, effective precipitation is estimated with the USDA-SCS method.</td>
           </tr>

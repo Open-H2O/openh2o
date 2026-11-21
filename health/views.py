@@ -56,6 +56,12 @@ WHERE_TO_LOOK = {
         "the water balance",
         "accounting",
     ),
+    "openet_waiting": (
+        "parcels:list",
+        None,
+        "the use areas",
+        "parcels",
+    ),
     "orphans": (
         "parcels:list",
         None,
