@@ -1025,6 +1025,15 @@ class Command(BaseCommand):
 
         assessment = _assess_et(parcel, period, site_config)
         if assessment is None:
+            # A month with no crop ET is not calculated for this use area. A run and a
+            # calculated row left from before its crop ET record was withdrawn are removed,
+            # so the month waits for OpenET again and the balance leaves it out.
+            if not dry_run:
+                with transaction.atomic():
+                    CalculationRun.objects.filter(parcel=parcel, period=period).delete()
+                    ParcelLedger.objects.filter(
+                        parcel=parcel, effective_date=eff_date, source_type="calculated"
+                    ).delete()
             return None, False
         (final_af, breakdown, gw_efficiency, gw_efficiency_source,
          incidental_af, months_matched, gross_af) = assessment
