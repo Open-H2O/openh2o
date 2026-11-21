@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% load humanize %}
+{% load accounting_extras %}
 {% load placeholders %}
 {% comment %}
   The calculation page for one field and one month.
@@ -173,6 +174,27 @@
       </div>
       {% endfor %}
     </div>
+    {% endif %}
+    {% if no_figure.entries %}
+    {% comment %} The month's ledger entries the lines name, as the use area page's Recent ledger entries shows them. {% endcomment %}
+    <table class="data-table text-sm" style="margin-top: var(--space-lg);">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th class="th-right">Amount</th>
+          <th>Water</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in no_figure.entries %}
+        <tr>
+          <td class="text-secondary">{{ entry.effective_date|date:"M d, Y" }}</td>
+          <td class="td-num {% if entry.amount_acre_feet >= 0 %}text-supply{% endif %}">{{ entry.amount_acre_feet|floatformat:2 }}</td>
+          <td class="text-tertiary">{{ entry|ledger_row_words }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
     {% endif %}
   </div>
   {% else %}

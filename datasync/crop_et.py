@@ -734,8 +734,14 @@ def no_figure_context(parcel, period):
                 "title": total,
                 "pills": supply_kind_lines([(kind, abs(amount)) for kind, amount in terms]),
             })
-    lines = _waiting_lines(first) + (" " + NO_FIGURE_ENTRIES if supplies else "")
-    return {"headline": f"Waiting for OpenET: {first:%B %Y}", "lines": lines, "supplies": supplies}
+    entries = list(billable.select_related("water_type").order_by("effective_date", "pk"))
+    lines = _waiting_lines(first) + (" " + NO_FIGURE_ENTRIES if entries else "")
+    return {
+        "headline": f"Waiting for OpenET: {first:%B %Y}",
+        "lines": lines,
+        "supplies": supplies,
+        "entries": entries,
+    }
 
 
 def _who(user):
