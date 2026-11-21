@@ -9,6 +9,7 @@ state, a kind, a count, a name.
 """
 import datetime as dt
 import inspect
+import re
 
 import pytest
 from django.core.management import get_commands
@@ -160,3 +161,32 @@ def test_finalize_year_finalizes_an_open_year_once(open_year):
 
     assert finalize.finalize_year(open_year, None)["outcome"] == "already"
     assert PeriodStatement.objects.filter(period=open_year).count() == 1
+
+
+# -- the whole demonstration: nothing waits for OpenET (153.1-02, ruling 214) ----------------------
+
+
+@pytest.mark.release
+def test_the_whole_demonstration_has_no_month_holding_finalize_back(monkeypatch, administrator):
+    import io
+
+    from django.core.management import call_command
+    from django.test import Client
+    from django.urls import reverse
+
+    from accounting import finalize
+    from datasync import crop_et
+
+    monkeypatch.setattr(crop_et, "today", lambda: dt.date(2026, 11, 21), raising=False)
+    call_command("load_demonstration", stdout=io.StringIO())
+
+    closed = ReportingPeriod.objects.get(name="WY 2024-2025")
+    open_year = ReportingPeriod.objects.get(name="WY 2025-2026")
+    assert closed.is_finalized is True
+    assert finalize.waiting(closed)["months"] == []
+    assert finalize.waiting(open_year)["months"] == []
+    client = Client()
+    client.force_login(administrator)
+    page = client.get(reverse("accounting:period_detail", args=[open_year.pk])).content.decode()
+    assert re.search(r"<button[^>]*>\s*Finalize water year\s*</button>", page)
+    assert "Finalize anyway" not in page
