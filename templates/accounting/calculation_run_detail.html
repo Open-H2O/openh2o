@@ -29,8 +29,9 @@
   the stored four-decimal value, printed as the Decimal so it adds no figure
   site of its own.
 {% endcomment %}
-{% block title %}Groundwater extraction (estimated), {{ parcel.parcel_number }}, {{ month_label }} - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Groundwater extraction (estimated){% endblock %}
+{% comment %} A month waiting for OpenET has no calculation, so its page is named by the use area and month alone. {% endcomment %}
+{% block title %}{% if no_figure %}{{ parcel.parcel_number }}, {{ month_label }}{% else %}Groundwater extraction (estimated), {{ parcel.parcel_number }}, {{ month_label }}{% endif %} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{% if no_figure %}{{ parcel.parcel_number }}, {{ month_label }}{% else %}Groundwater extraction (estimated){% endif %}{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">

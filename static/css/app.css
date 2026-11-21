@@ -2827,6 +2827,19 @@ html { color-scheme: dark; }
     font-size: 0.84rem;
     color: var(--color-text-secondary);
 }
+/* A group's title spans both tracks. Its longest word ("DESTINATION", "COVERAGE") went into
+   the figure track, the only one with a content-sized minimum, so a shrinkable label track
+   squeezed every label to about 40px: that is why one "wrapped every label". Contained, the
+   title adds nothing to either track and still fills the span, and the label track may give
+   way: "Use areas with a month waiting for OpenET" wraps inside its cell at every width
+   instead of running across the divider at 1,440 (153.1-01 sweep, 2026-11-21). */
+.budget-seg > .budget-breakdown-group > .budget-breakdown-title {
+    contain: inline-size;
+    white-space: nowrap;
+}
+.budget-seg > .budget-breakdown-group:not(.budget-breakdown-group--kinds):not(.budget-breakdown-group--fields) {
+    grid-template-columns: minmax(0, max-content) max-content;
+}
 /* A breakdown whose labels are names, not words (a point of diversion's id
    and name, "MER-POD-010-DEMO Merced Falls Hydroelectric Diversion") does
    not fit a segment: inside the Recorded cell it ran across the divider into

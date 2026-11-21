@@ -6219,12 +6219,6 @@
      "pill": "Estimated",
      "pill_class": "estimated",
      "amount": "D:136.71"
-    },
-    {
-     "kind": "unknown",
-     "pill": "Unknown",
-     "pill_class": "unknown",
-     "amount": "D:5.00"
     }
    ],
    "grand_not_consumed": "D:53.6767",
@@ -9473,7 +9467,7 @@
      "kind": "metered",
      "pill": "Metered",
      "pill_class": "metered",
-     "amount": "D:29.60"
+     "amount": "D:17.76"
     }
    ],
    "grand_groundwater_lines": [
@@ -9488,12 +9482,6 @@
      "pill": "Estimated",
      "pill_class": "estimated",
      "amount": "D:56.62"
-    },
-    {
-     "kind": "unknown",
-     "pill": "Unknown",
-     "pill_class": "unknown",
-     "amount": "D:2.50"
     }
    ],
    "grand_not_consumed": "D:14.4350",
