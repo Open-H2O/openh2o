@@ -387,14 +387,15 @@ def test_no_leaf_header_carries_a_unit_and_each_card_states_it_once():
 
 def test_the_footer_dashes_when_the_engine_never_ran():
     """ISS-099 reaches the footer: with no calculation run the use and balance
-    cells dash, while the supply cells keep the ledger's 37.50."""
+    cells dash, and the supply cells count none of the ledger's 37.50, because the
+    balance counts a month's water only in a month with a calculation run (ruling 211)."""
     period, _zone, _parcel, _account = _basin(with_run=False)
     html = _dashboard(period).content.decode()
 
     accounts = _accounts_table(html)
     tfoot = accounts[accounts.index("<tfoot>"):accounts.index("</tfoot>")]
-    assert '<td class="td-num-bold text-supply">37.50</td>' in tfoot
-    assert '<td class="td-num text-supply">37.50</td>' in tfoot
+    assert '<td class="td-num-bold text-supply">0.00</td>' in tfoot
+    assert "37.50" not in tfoot
     assert '<td class="td-num text-tertiary">&mdash;</td>' in tfoot
     assert '<td class="td-num-bold text-tertiary">&mdash;</td>' in tfoot
     assert "80.00" not in tfoot

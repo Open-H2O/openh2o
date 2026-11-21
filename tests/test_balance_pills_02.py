@@ -222,6 +222,26 @@ def _account(name, number, *parcels):
     return account
 
 
+def _calculate_every_month_with_water():
+    """A calculation run with no crop use for each use area's month that has water and no run.
+
+    The balance, and the Supplies lines beside it, count a month's water only in a month the
+    use area has a calculation run in (ruling 211). These tests are about how each kind of
+    water is measured, so every month with water is given a run that adds no crop use.
+    """
+    from accounting.models import CalculationRun
+
+    have = set(CalculationRun.objects.values_list("parcel_id", "period"))
+    for pid, day in set(ParcelLedger.objects.values_list("parcel_id", "effective_date")):
+        period = f"{day.year}-{day.month:02d}"
+        if (pid, period) not in have:
+            CalculationRun.objects.create(
+                parcel_id=pid, period=period, gross_et_af=D("0"), net_consumptive_use_af=D("0"),
+                final_af=D("0"),
+            )
+            have.add((pid, period))
+
+
 @pytest.fixture
 def district():
     ld.seed_reference()
@@ -254,6 +274,7 @@ def district():
     old = _point("Old Canal", right, [(s["S6"], "1")])
     _record(old, AUG, "6.0000", "outage_estimate")
     _share_row(s["S6"], AUG, "-6.0000", old)
+    _calculate_every_month_with_water()
     accounts = {
         "A": WaterAccount.objects.get(account_number="D1-A"),
         "B": WaterAccount.objects.get(account_number="D1-B"),
@@ -427,6 +448,7 @@ def test_every_measurement_method_gives_its_kind(method, kind):
     point = _point("Method Canal", _right("RM"), [(parcel, "1")])
     _record(point, JUL, "4.0000", method)
     _share_row(parcel, JUL, "-4.0000", point)
+    _calculate_every_month_with_water()
     period = ReportingPeriod.objects.get(name=WY)
     assert supply_kind_terms([parcel.pk], period)["surface"] == [(kind, D("4.0000"))]
 
@@ -460,6 +482,7 @@ def rounding_district():
     parcel = ld.add_field("R1", 100, None, None, [], -120.5, 37.2, [])
     ld.ledger(parcel, JUL, "-1.0070", "meter_reading", "GW", "meter reading entered on the use area")
     ld.ledger(parcel, AUG, "-2.0060", "calculated", "GW", "calculated test input")
+    _calculate_every_month_with_water()
     return _account("Rounding account", "R-1", parcel)
 
 

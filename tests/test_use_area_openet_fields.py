@@ -79,14 +79,16 @@ def test_no_run_and_no_openet_field_says_so(operator):
     assert f"{NO_RUN} {NO_FIELD} Recorded supplies:" in page
 
 
-def test_no_run_with_openet_fields_keeps_todays_wording(operator):
+# wording approved: ruling 212 (row 3c)
+def test_no_run_with_openet_fields_says_the_balance_starts_with_openets_first_month(operator):
     from datasync.models import CropETFigure
 
     field = _corn_field()
     _fields_over(field)
     CropETFigure.objects.filter(parcel=field).delete()
     page = _page(operator, field)
-    assert f"{NO_RUN} Recorded supplies:" in page
+    assert f"{NO_RUN} The balance starts with the first month OpenET sends." in page
+    assert "Recorded supplies:" in page
     assert NO_FIELD not in page
 
 

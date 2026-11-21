@@ -102,8 +102,10 @@ def test_account_detail_opens_on_a_period_that_has_usage(seeded_site):
     assert selected is not None, "account page should auto-select a period"
     assert selected.name in (PRIOR_WY, OPEN_WY)
     # 57-02: the page reads the consumptive lens, so "real activity" is proxied by
-    # the supplies total. An empty period would land this on zero.
-    assert resp.context["balance"]["supply_total"] > Decimal("0"), (
+    # the recorded supplies (the balance itself counts only calculated months, ruling 211,
+    # and this slice is not calculated). An empty period would land this on zero.
+    recorded = resp.context["balance"]["recorded"]
+    assert recorded["surface"] + recorded["groundwater"] > Decimal("0"), (
         "default account page should show non-zero supplies, not an empty period"
     )
 
@@ -119,9 +121,10 @@ def test_both_water_years_carry_account_usage(seeded_site):
     """
     account = _el_nido_account()
     for name in (PRIOR_WY, OPEN_WY):
-        supply = account_consumptive_balance(
+        recorded = account_consumptive_balance(
             account, reporting_period=ReportingPeriod.objects.get(name=name)
-        )["supply_total"]
+        )["recorded"]
+        supply = recorded["surface"] + recorded["groundwater"]
         assert supply > Decimal("0"), f"{name} shows no supplies on this account"
 
 
@@ -137,9 +140,13 @@ def test_dashboard_opens_on_a_period_with_nonzero_usage(seeded_site):
     selected = resp.context["selected_period"]
     assert selected is not None, "dashboard should auto-select a period"
     assert selected.name in (PRIOR_WY, OPEN_WY)
-    assert resp.context["grand_supply_total"] > Decimal("0"), (
-        "dashboard total supplies should be > 0, not an empty period"
-    )
+    # The balance counts only calculated months (ruling 211) and this slice is not
+    # calculated, so the period's recorded water is the proxy for real activity.
+    from parcels.models import ParcelLedger
+
+    assert ParcelLedger.objects.filter(reporting_period=selected).exclude(
+        source_type="allocation"
+    ).exists(), "dashboard should open on a period with recorded water, not an empty period"
 
 
 # ---------------------------------------------------------------------------

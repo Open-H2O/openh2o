@@ -95,6 +95,9 @@ FIELD_WORD_KEPT: dict = {
     # OpenET's data and not a use area. Measured 2026-11-14 on the field-list route.
     "core/demonstration.py": 6,
     "datasync/adapters/openet_fields.py": 1,
+    # Site Health's Waiting for OpenET card: "OpenET's figures for their fields", the OpenET
+    # fields a waiting use area lies in (ruling 212, row 11c).
+    "health/checks.py": 1,
     "datasync/crop_et.py": 1,
     # 14 from 153-08: a recorded figure's "OpenET fields".
     "datasync/models.py": 14,

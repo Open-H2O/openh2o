@@ -203,5 +203,7 @@ def test_the_dashboard_zone_row_reads_the_same_remaining(mixed_zone, viewer):
     row = rows[0]
     assert row["allocation"] == GW_ALLOCATION
     assert row["carryover"] == GW_CARRYOVER
-    assert row["groundwater"] == METERED_PUMPING
+    # The row's groundwater is the balance's, which counts no month without a calculation
+    # run (ruling 211); the remaining allocation keeps every month's pumping.
+    assert row["groundwater"] == Decimal("0")
     assert row["remaining"] == EXPECTED_REMAINING

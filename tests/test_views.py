@@ -323,6 +323,14 @@ class TestAccountDetailPerParcelUsage:
             parcel=parcel, source_type="calculated",
             effective_date=eff, amount_acre_feet=Decimal("-10.0000"),
         )
+        # The month's calculation run: the balance counts a month's ledger water only in a
+        # month the use area has a run in (ruling 211).
+        from accounting.models import CalculationRun
+
+        CalculationRun.objects.create(
+            parcel=parcel, period="2024-06", gross_et_af=Decimal("10.0000"),
+            net_consumptive_use_af=Decimal("10.0000"), final_af=Decimal("10.0000"),
+        )
 
         # ?period= (empty value, non-empty querystring) yields selected_period=None
         # and NO period filter.

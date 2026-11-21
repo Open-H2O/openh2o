@@ -40,6 +40,8 @@ from decimal import Decimal
 
 import factory
 import pytest
+
+from accounting.models import CalculationRun
 from django.contrib.auth.hashers import make_password
 from django.test import Client
 from django.urls import reverse
@@ -128,6 +130,13 @@ def account_with_three_use_areas():
                 parcel=parcel, reporting_period=period,
                 source_type="meter_reading", amount_acre_feet=groundwater,
                 transaction_date=date(2026, 5, 15), effective_date=date(2026, 5, 15),
+            )
+        # A calculation run in each month with water, with no crop use: the balance counts a
+        # month's water only in a month the use area has a run in (ruling 211).
+        for month in ("2026-04", "2026-05"):
+            CalculationRun.objects.create(
+                parcel=parcel, period=month, gross_et_af=Decimal("0"),
+                net_consumptive_use_af=Decimal("0"), final_af=Decimal("0"),
             )
     return account, period
 

@@ -64,6 +64,8 @@ def _raw_row(parcel, date, amount, source, wtype=None, desc="hand-entered test i
 
 # ------------------------------------------------------------------ groundwater
 def test_an_entry_with_no_water_type_leaves_groundwater_and_remaining_unchanged(d1):
+    # The balance counts a month's water only in a month with a calculation run (ruling 211).
+    ld.run_months(["2025-07", "2025-08", "2025-09"])
     account = WaterAccount.objects.get(account_number="D1-A")
     before = ld.account_row(account, WY25)
     assert before["groundwater"] == D("105.0000")  # 45 + 36 + 24 AF of meter rows on F1 and F2
@@ -118,7 +120,8 @@ def test_an_account_with_supply_and_no_runs_adds_nothing_to_the_footer_balance()
     period = ReportingPeriod.objects.get(name=WY25)
     rows, totals = _account_rows_with_totals(WaterAccount.objects.filter(pk=account.pk), period, False, None)
     assert rows[0]["has_calculations"] is False
-    assert rows[0]["surface"] == D("50.0000")
+    # With no calculation run, the balance counts none of the delivery (ruling 211).
+    assert rows[0]["surface"] == D("0")
     assert totals["grand_net"] == D("0")
 
 
