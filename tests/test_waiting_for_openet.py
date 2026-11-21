@@ -391,3 +391,20 @@ def test_a_month_with_crop_et_is_calculated_exactly_as_before(world):
     )
     assert before == after
     assert {gross for _p, gross, _n, _f in after} == {Decimal("10.0000")}
+
+
+# -- (k) a month whose crop ET record is withdrawn waits again ----------------------------------
+
+
+def test_a_month_whose_crop_et_is_withdrawn_after_a_calculation_waits_again(world):
+    _run_year(world)
+    assert CalculationRun.objects.filter(parcel=world.u2, period="2026-08").exists()
+
+    _drop_month(world.u2, AUG)
+    _run_year(world)
+
+    assert not CalculationRun.objects.filter(parcel=world.u2, period="2026-08").exists()
+    assert not ParcelLedger.objects.filter(parcel=world.u2, source_type="calculated", effective_date=AUG).exists()
+    covered = YearReading(world.period).covered([world.u2.pk])
+    assert covered["last"] == date(2026, 7, 1)
+    assert covered["waiting"] == [AUG, SEP]
