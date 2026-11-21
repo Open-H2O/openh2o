@@ -146,9 +146,10 @@ def test_an_operators_press_creates_one_request_and_runs_it(world, operator):  #
     assert calculation.requested_by == operator
     assert calculation.reporting_period == world.period
     assert calculation.status == "succeeded"
-    assert calculation.months == ["2024-01", "2024-02"]
-    assert calculation.months_done == 2
-    assert calculation.outcome == "Calculated 2 months, January 2024 to February 2024."
+    # March has ended, so it runs too (ruling 211); no field has crop ET for it.
+    assert calculation.months == ["2024-01", "2024-02", "2024-03"]
+    assert calculation.months_done == 3
+    assert calculation.outcome == "Calculated 3 months, January 2024 to March 2024."
     assert calculation.notes[0] == NO_DATA_MARCH
     # The run did its work: three fields, two months, each read exactly 10.0000 AF.
     assert ParcelLedger.objects.filter(source_type="calculated").count() == 6
@@ -161,7 +162,7 @@ def test_the_card_says_what_happened_when_it_finishes(world, operator):  # noqa:
     html = client.get(_detail_url(world.period)).content.decode()
 
     assert "Run the calculation" in html
-    assert "Calculated 2 months, January 2024 to February 2024." in html
+    assert "Calculated 3 months, January 2024 to March 2024." in html
     assert NO_DATA_MARCH in html
     assert f", {operator}</p>" in html  # the person who pressed it
     assert "Finished" in html
