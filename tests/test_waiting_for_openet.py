@@ -483,6 +483,7 @@ def test_with_nothing_waiting_neither_page_carries_the_sentence(world):
 
     dashboard, account_page = _caption_words(_staff_client(), world, account)
 
+    # wording approved: ruling 218 (rows G1 to G3 are absent with nothing waiting; ruling 212 row 9)
     assert "Use areas with a month waiting for OpenET" not in dashboard
     assert "meter readings for months" not in dashboard
     assert "meter readings for months" not in account_page
