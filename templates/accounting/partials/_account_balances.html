@@ -86,6 +86,7 @@
           <div class="budget-breakdown-title">Estimate coverage</div>
           <div class="budget-breakdown-row"><span>Use areas</span><b>{{ use_areas_estimated }} of {{ parcel_balances|length }}</b></div>
           <div class="budget-breakdown-row"><span>Calculation runs</span><b>{{ balance.calculation_runs }}</b></div>
+          {% if use_areas_waiting %}<div class="budget-breakdown-row"><span>Use areas with a month waiting for OpenET</span><b>{{ use_areas_waiting }}</b></div>{% endif %}
         </div>
       </div>
       <div class="budget-op">&equals;</div>
@@ -227,9 +228,13 @@
       <td class="td-num text-usage">
         {{ pb.water_not_consumed|floatformat:2|intcomma }}
       </td>
+      {% if pb.calculation_runs %}
       <td class="td-num-bold col-sep {{ pb.net_vs_supply|balance_class }}">
         {{ pb.net_vs_supply|floatformat:2|intcomma }}
       </td>
+      {% else %}
+      <td class="td-num-bold col-sep">&mdash;</td>
+      {% endif %}
     </tr>
     {% endfor %}
   </tbody>

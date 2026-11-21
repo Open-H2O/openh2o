@@ -349,6 +349,8 @@ def _parcel_detail_context(parcel, period_id=None, can_write=True):
         "water_use": water_use,
         "water_use_lines": water_use_lines,
         "balance_line": balance_line,
+        # With nothing counted yet, the warning says the balance starts with OpenET's first month.
+        "balance_starts": coverage_sentence(consumptive_balance) if water_use is None else "",
         "filed_line": _filed_line(balance_period, parcel, balance_line),
         "serving_points": _serving_points(parcel),
         "receipt_periods": receipt_periods,
@@ -525,12 +527,51 @@ def _balance_line(consumptive_balance, water_use, has_well):
     uses = "crop ET"
     if not_consumed > 0:
         uses = f"crop ET and the pumped water not consumed, {not_consumed:,.2f} AF"
+    sentence = f"Supplies are {named}. Uses are {uses}."
+    covers = coverage_sentence(consumptive_balance)
     return {
         "supplies": consumptive_balance["supply_total"],
         "uses": consumptive_balance["uses_total"],
         "balance": consumptive_balance["net_vs_supply"],
-        "sentence": f"Supplies are {named}. Uses are {uses}.",
+        "sentence": f"{sentence} {covers}" if covers else sentence,
     }
+
+
+def coverage_sentence(consumptive_balance):
+    """What the balance covers when a month waits for OpenET (ruling 212, rows 3a to 3c); "" otherwise.
+
+    The latest months waiting: "The balance runs through August 2026. September 2026 is
+    waiting for OpenET and is left out." A month waiting before the last month counted:
+    "August 2026 is waiting for OpenET and is left out of the balance." Nothing counted yet:
+    "The balance starts with the first month OpenET sends. October 2026 is waiting for OpenET."
+    """
+    from datasync.crop_et import month_list
+
+    waiting = consumptive_balance.get("waiting") or []
+    if not waiting:
+        return ""
+    last = consumptive_balance.get("last_counted")
+    if last is None:
+        verb = "is" if len(waiting) == 1 else "are"
+        return (
+            "The balance starts with the first month OpenET sends. "
+            f"{month_list(waiting)} {verb} waiting for OpenET."
+        )
+    parts = []
+    later = [m for m in waiting if m > last]
+    earlier = [m for m in waiting if m < last]
+    if later:
+        verb = "is" if len(later) == 1 else "are"
+        parts.append(
+            f"The balance runs through {last:%B %Y}. {month_list(later)} {verb} waiting for "
+            f"OpenET and {verb} left out."
+        )
+    if earlier:
+        verb = "is" if len(earlier) == 1 else "are"
+        parts.append(
+            f"{month_list(earlier)} {verb} waiting for OpenET and {verb} left out of the balance."
+        )
+    return " ".join(parts)
 
 
 def _filed_line(balance_period, parcel, balance_line):

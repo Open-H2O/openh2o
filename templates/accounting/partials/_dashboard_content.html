@@ -92,6 +92,7 @@
           <div class="budget-breakdown-title">Estimate coverage</div>
           <div class="budget-breakdown-row"><span>Accounts with estimates</span><b>{{ accounts_with_estimates }} of {{ account_summaries|length }}</b></div>
           <div class="budget-breakdown-row"><span>Calculation runs</span><b>{{ grand_calculation_runs|intcomma }}</b></div>
+          {% if use_areas_waiting %}<div class="budget-breakdown-row"><span>Use areas with a month waiting for OpenET</span><b>{{ use_areas_waiting|intcomma }}</b></div>{% endif %}
         </div>
       </div>
       <div class="budget-op">&equals;</div>

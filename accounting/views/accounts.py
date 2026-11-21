@@ -338,6 +338,7 @@ def _parcel_balance_rows(
             "water_not_consumed": pcb["water_not_consumed"],
             "net_vs_supply": pcb["net_vs_supply"],
             "calculation_runs": pcb["calculation_runs"],
+            "waiting": pcb["waiting"],
         })
     return parcel_balances
 
@@ -350,8 +351,11 @@ def _use_area_state_counts(parcel_balances: list[dict]) -> dict[str, int]:
     # the per-use-area rows the table below already renders, so they cannot
     # disagree with it.
     use_areas_estimated = sum(1 for pb in parcel_balances if pb["calculation_runs"])
-    # Judged on the two decimals the page prints; 0.00 is balanced.
-    use_area_states = [balance_state(pb["net_vs_supply"]) for pb in parcel_balances]
+    # Judged on the two decimals the page prints; 0.00 is balanced. A use area with nothing
+    # counted yet has no balance (its cell is a dash), so it is in none of the three.
+    use_area_states = [
+        balance_state(pb["net_vs_supply"]) for pb in parcel_balances if pb["calculation_runs"]
+    ]
     use_areas_in_surplus = use_area_states.count("surplus")
     use_areas_in_deficit = use_area_states.count("deficit")
     use_areas_balanced = use_area_states.count("balanced")
@@ -360,6 +364,7 @@ def _use_area_state_counts(parcel_balances: list[dict]) -> dict[str, int]:
         "use_areas_in_surplus": use_areas_in_surplus,
         "use_areas_in_deficit": use_areas_in_deficit,
         "use_areas_balanced": use_areas_balanced,
+        "use_areas_waiting": sum(1 for pb in parcel_balances if pb["waiting"]),
     }
 
 

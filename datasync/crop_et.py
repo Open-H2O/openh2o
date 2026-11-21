@@ -680,24 +680,44 @@ def asked_and_none_sent(parcel, period, variable="ET", model="Ensemble"):
     return rows.exists() and not any(period in months_of(row.et_data) for row in rows)
 
 
-NO_FIGURE_LINES = "OpenH2O calculates a month from its crop ET. It has not calculated this month."
+def _waiting_lines(first):
+    """The lines under the waiting month's heading (ruling 212, rows 6 and 6b)."""
+    import os
+
+    if not os.environ.get("OPENET_API_KEY", ""):
+        return (
+            "OpenH2O cannot ask OpenET for crop ET until whoever runs the site sets its OpenET "
+            "key. The month is left out of this use area's balance until then. Its meter "
+            "readings still count against the groundwater allocation."
+        )
+    return (
+        f"OpenET has not sent crop ET for {first:%B %Y} yet. The month is left out of this use "
+        "area's balance until it arrives. Its meter readings still count against the "
+        "groundwater allocation."
+    )
+
+
 NO_FIGURE_ENTRIES = "The month's ledger entries are below."
 
 
 def no_figure_context(parcel, period):
-    """The page of a month OpenET was asked about and sent no crop ET for; None otherwise.
+    """The page of a month waiting for OpenET; None otherwise.
 
-    It names the month and lists the month's ledger supplies as figures, each with the site's
-    How measured pills. Nothing is calculated or estimated for the month.
+    A month is waiting when it has ended, has no recorded crop ET, and the use area lies in an
+    OpenET field (or, on the older per-use-area route, OpenET was asked and sent nothing). The
+    page names the month and lists the month's ledger supplies as figures, each with the
+    site's How measured pills. Nothing is calculated or estimated for the month.
     """
     from accounting.services import (
         groundwater_kind_terms, supply_kind_lines, surface_kind_terms,
     )
     from parcels.models import ParcelLedger
 
-    if current_record(parcel, period) is not None or not asked_and_none_sent(parcel, period):
-        return None
     first = month_first(period)
+    if first >= this_month() or current_record(parcel, period) is not None:
+        return None
+    if not (is_waiting(parcel, period) or asked_and_none_sent(parcel, period)):
+        return None
     billable = ParcelLedger.objects.current().filter(
         parcel=parcel, effective_date__year=first.year, effective_date__month=first.month
     )
@@ -714,8 +734,8 @@ def no_figure_context(parcel, period):
                 "title": total,
                 "pills": supply_kind_lines([(kind, abs(amount)) for kind, amount in terms]),
             })
-    lines = NO_FIGURE_LINES + (" " + NO_FIGURE_ENTRIES if supplies else "")
-    return {"headline": f"No crop ET from OpenET for {first:%B %Y}", "lines": lines, "supplies": supplies}
+    lines = _waiting_lines(first) + (" " + NO_FIGURE_ENTRIES if supplies else "")
+    return {"headline": f"Waiting for OpenET: {first:%B %Y}", "lines": lines, "supplies": supplies}
 
 
 def _who(user):

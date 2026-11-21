@@ -156,6 +156,7 @@ def _no_figure_field(well=True):
     return field
 
 
+# wording approved: ruling 212 (rows 5 and 6b)
 def test_a_month_openet_sent_no_crop_et_for_has_a_page_that_says_so(operator):
     field = _no_figure_field()
     ld.ledger(field, dt.date(2025, 7, 15), -4.8, "surface_diversion", "SW")
@@ -164,10 +165,11 @@ def test_a_month_openet_sent_no_crop_et_for_has_a_page_that_says_so(operator):
     main = _main(response)
 
     assert response.status_code == 200
-    assert '<h2 class="receipt-headline">No crop ET from OpenET for July 2025</h2>' in main
+    assert '<h2 class="receipt-headline">Waiting for OpenET: July 2025</h2>' in main
     assert (
-        "OpenH2O calculates a month from its crop ET. It has not calculated this month. "
-        "The month's ledger entries are below."
+        "OpenH2O cannot ask OpenET for crop ET until whoever runs the site sets its OpenET key. "
+        "The month is left out of this use area's balance until then. Its meter readings still "
+        "count against the groundwater allocation. The month's ledger entries are below."
     ) in main
     assert re.search(r'<div class="budget-seg-label">Surface water delivered</div>\s*<div class="budget-seg-value"><span[^>]*>4\.80', main)
     assert re.search(r'<span class="kind-pill kind-pill--unknown">Unknown</span>', main)
@@ -189,7 +191,7 @@ def test_a_month_with_no_crop_et_and_no_ledger_entry_says_only_what_is_true(oper
 
     main = _main(_page(operator, field))
 
-    assert "It has not calculated this month." in main
+    assert "Waiting for OpenET: July 2025" in main
     assert "ledger entries are below" not in main
 
 

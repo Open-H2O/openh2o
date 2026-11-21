@@ -74,6 +74,7 @@ class _Month:
 
     gw_other: Decimal = ZERO  # groundwater rows other than calculated ones, as stored (negative)
     gw_calculated: Decimal = ZERO  # calculated groundwater rows, as charged (positive)
+    gw_calculated_stored: Decimal = ZERO  # the same rows as stored (negative)
     surface: Decimal = ZERO  # canal deliveries, as stored (negative)
     has_surface: bool = False
 
@@ -213,6 +214,7 @@ class YearReading:
                 area.gw_calculated_charged += charged
                 area.has_gw_calculated = True
                 month.gw_calculated += charged
+                month.gw_calculated_stored += amount
             else:
                 area.has_gw_other = True
                 month.gw_other += amount
@@ -365,6 +367,16 @@ class YearReading:
             found[pid].append((start, end))
         return found
 
+    @cached_property
+    def waiting(self) -> dict[int, list[date]]:
+        """Each use area's months of the year waiting for OpenET (``datasync.crop_et.waiting_months``)."""
+        if self.period is None or not is_enabled("datasync"):
+            return {}
+        from datasync.crop_et import waiting_months
+
+        ids = self.scope if self.scope is not None else self.current
+        return waiting_months(ids, self.period.start_date, self.period.end_date)
+
     # -- Adding up -------------------------------------------------------------------------
 
     def _counted(self, parcel_ids: Iterable[int]) -> list[int]:
@@ -385,7 +397,16 @@ class YearReading:
         return (abs(other) + calculated).quantize(_Q4)
 
     def consumptive_use_balance(self, parcel_ids: Iterable[int]) -> dict[str, Any]:
-        """``accounting.services.consumptive_use_balance`` for the set, from this reading."""
+        """``accounting.services.consumptive_use_balance`` for the set, from this reading.
+
+        The balance counts a use area's ledger water only in the months it has a calculation
+        run in: a month waiting for OpenET is left out whole, its canal water and meter
+        readings with its rain and crop use (ruling 211). ``groundwater_charged``, the
+        allocation's figure, keeps every month. ``recorded`` is every month's canal water and
+        groundwater, for a page that lists the recorded supplies of a use area with nothing
+        counted. ``last_counted`` is the latest month with a run and ``waiting`` the months
+        waiting for OpenET, for the line that says what the balance covers.
+        """
         from accounting.services import _run_water_not_consumed
 
         ids = frozenset(parcel_ids)
@@ -393,18 +414,30 @@ class YearReading:
         if found is None:
             counted = self._counted(ids)
             consumed = other = calculated_charged = surface = ZERO
+            all_other = all_calculated_charged = all_surface = ZERO
             gross = net = precip = not_consumed = ZERO
             run_count = 0
+            last_counted = None
+            waiting: set[date] = set()
+            use_areas_waiting = 0
             ledger = self.ledger
             for pid in counted:
                 area = ledger.get(pid)
+                runs = self.runs.get(pid, ())
+                run_months = {run.period_start for run in runs}
                 if area is not None:
-                    consumed += area.gw_meter + area.gw_unknown + area.gw_calculated
-                    other += area.gw_meter + area.gw_unknown
-                    calculated_charged += area.gw_calculated_charged
-                    surface += area.surface
+                    all_other += area.gw_meter + area.gw_unknown
+                    all_calculated_charged += area.gw_calculated_charged
+                    all_surface += area.surface
+                    for month, sums in area.months.items():
+                        if month not in run_months:
+                            continue
+                        consumed += sums.gw_other + sums.gw_calculated_stored
+                        other += sums.gw_other
+                        calculated_charged += sums.gw_calculated
+                        surface += sums.surface
                 metered = area.metered if area is not None else {}
-                for run in self.runs.get(pid, ()):
+                for run in runs:
                     gross += run.gross_et_af or ZERO
                     net += run.net_consumptive_use_af or ZERO
                     precip += run.effective_precip_af or ZERO
@@ -413,6 +446,12 @@ class YearReading:
                         run, None if month_metered is None else abs(month_metered)
                     )
                     run_count += 1
+                    if last_counted is None or run.period_start > last_counted:
+                        last_counted = run.period_start
+                months_waiting = self.waiting.get(pid)
+                if months_waiting:
+                    waiting.update(months_waiting)
+                    use_areas_waiting += 1
             charged = (abs(other) + calculated_charged).quantize(_Q4)
             surface = abs(surface)
             supply_total = surface + charged + precip
@@ -425,11 +464,32 @@ class YearReading:
                 "water_not_consumed": not_consumed,
                 "uses_total": gross + not_consumed,
                 "net_vs_supply": supply_total - gross - not_consumed,
-                "groundwater_charged": charged,
+                "groundwater_charged": (abs(all_other) + all_calculated_charged).quantize(_Q4),
+                "recorded": {
+                    "surface": abs(all_surface),
+                    "groundwater": (abs(all_other) + all_calculated_charged).quantize(_Q4),
+                },
                 "calculation_runs": run_count,
+                "last_counted": last_counted,
+                "waiting": sorted(waiting),
+                "use_areas_waiting": use_areas_waiting,
             }
             self._balances[ids] = found
-        return {**found, "supplies": dict(found["supplies"])}
+        return {
+            **found,
+            "supplies": dict(found["supplies"]),
+            "recorded": dict(found["recorded"]),
+            "waiting": list(found["waiting"]),
+        }
+
+    def covered(self, parcel_ids: Iterable[int]) -> dict[str, Any]:
+        """What the set's balance covers: the latest month counted and the months waiting for OpenET."""
+        balance = self.consumptive_use_balance(parcel_ids)
+        return {
+            "last": balance["last_counted"],
+            "waiting": balance["waiting"],
+            "use_areas_waiting": balance["use_areas_waiting"],
+        }
 
     def surface_delivered(self, parcel_ids: Iterable[int]) -> Decimal:
         """The magnitude of the set's billable canal deliveries."""
@@ -641,12 +701,14 @@ class YearReading:
         cents = Decimal("0.01")
         totals = {key: sum(exact[key].values(), ZERO).quantize(cents, rounding=ROUND_HALF_UP) for key in exact}
         shown = {key: round_to_total(exact[key][m] for m in starts) for key in exact}
+        waiting = set(self.waiting.get(parcel.pk, ()))
         months = []
         for i, month in enumerate(starts):
             months.append({
                 "month": month,
                 "last": _first_of_next_month(month) - timedelta(days=1),
                 "fallow": self.is_fallow_in(parcel.pk, month),
+                "waiting": month in waiting,
                 "et": shown["et"][i],
                 "surface": shown["surface"][i],
                 "groundwater": shown["groundwater"][i],
