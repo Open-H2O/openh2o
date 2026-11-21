@@ -697,6 +697,25 @@ def _waiting_lines(first):
     )
 
 
+def _finalized_lines(first):
+    """The lines under the month's heading when its water year was finalized without it
+    (ruling 215, row D8): one form, with or without an OpenET key, since it says what OpenH2O had."""
+    return (
+        f"OpenH2O had no crop ET for {first:%B %Y} when this water year was finalized. The month "
+        "is left out of this use area's balance. Its meter readings still count against the "
+        "groundwater allocation."
+    )
+
+
+def in_finalized_year(first):
+    """Whether the month starting ``first`` lies in a finalized water year."""
+    from accounting.models import ReportingPeriod
+
+    return ReportingPeriod.objects.filter(
+        start_date__lte=first, end_date__gte=first, is_finalized=True
+    ).exists()
+
+
 NO_FIGURE_ENTRIES = "The month's ledger entries are below."
 
 
@@ -735,9 +754,15 @@ def no_figure_context(parcel, period):
                 "pills": supply_kind_lines([(kind, abs(amount)) for kind, amount in terms]),
             })
     entries = list(billable.select_related("water_type").order_by("effective_date", "pk"))
-    lines = _waiting_lines(first) + (" " + NO_FIGURE_ENTRIES if entries else "")
+    # A finalized year is never asked for or calculated again (ruling 215, rows D7 and D8).
+    finalized = in_finalized_year(first)
+    lines = (_finalized_lines(first) if finalized else _waiting_lines(first)) + (
+        " " + NO_FIGURE_ENTRIES if entries else ""
+    )
     return {
-        "headline": f"Waiting for OpenET: {first:%B %Y}",
+        "headline": (
+            f"No crop ET when finalized: {first:%B %Y}" if finalized else f"Waiting for OpenET: {first:%B %Y}"
+        ),
         "lines": lines,
         "supplies": supplies,
         "entries": entries,

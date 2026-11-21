@@ -38,6 +38,58 @@ STOPPED_AFTER = timedelta(minutes=1)
 ACTIVE = ("waiting", "running")
 
 
+#: The Finalize card names this many use areas per waiting month, then counts the rest
+#: (the Site Health card's pattern).
+NAMED = 5
+
+
+def waiting(period):
+    """The year's months waiting for OpenET, oldest first, each with its use areas by number.
+
+    ``{"months": [{"month": first, "use_areas": [the first NAMED, by number], "more": the rest
+    counted}], "use_areas": how many use areas wait}``; no months when nothing waits (a use area
+    in no OpenET field, a month not ended, datasync off: ``YearReading.waiting``).
+    """
+    from accounting.year_reading import YearReading
+    from parcels.models import Parcel
+
+    found = YearReading(period).waiting
+    if not found:
+        return {"months": [], "use_areas": 0}
+    numbers = dict(Parcel.objects.filter(pk__in=list(found)).values_list("pk", "parcel_number"))
+    by_month = {}
+    for pid, months in found.items():
+        for month in months:
+            by_month.setdefault(month, []).append(pid)
+    months = []
+    for month in sorted(by_month):
+        ids = sorted(by_month[month], key=lambda pid: numbers.get(pid, ""))
+        months.append({
+            "month": month,
+            "use_areas": [{"pk": pid, "number": numbers.get(pid, "")} for pid in ids[:NAMED]],
+            "more": max(len(ids) - NAMED, 0),
+        })
+    return {"months": months, "use_areas": len(found)}
+
+
+def month_line(entry):
+    """One waiting month's line (ruling 215, row A2): ``September 2026: A, B and 71 more use areas``."""
+    names = [area["number"] for area in entry["use_areas"]]
+    more = entry["more"]
+    if more:
+        listed = f"{', '.join(names)} and {more} more use area{'' if more == 1 else 's'}"
+    elif len(names) > 1:
+        listed = f"{', '.join(names[:-1])} and {names[-1]}"
+    else:
+        listed = "".join(names)
+    return f"{entry['month']:%B %Y}: {listed}."
+
+
+def note_for(found):
+    """The note OpenH2O records when a year is finalized anyway (ruling 215, row C1)."""
+    return " ".join(["Finalized with months waiting for OpenET."] + [month_line(m) for m in found["months"]])
+
+
 def _rows(period):
     return PendingImport.objects.filter(kind=KIND, settings__period=period.pk)
 

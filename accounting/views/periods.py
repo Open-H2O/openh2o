@@ -115,7 +115,8 @@ def _calculation_card_context(period):
     return context
 
 
-def _period_detail_context(period, finalize_form=None, comparison=None, fingerprint_answer=None):
+def _period_detail_context(period, finalize_form=None, comparison=None, fingerprint_answer=None,
+                           finalize_waiting=None, finalize_refused=False):
     """The period page's context, shared by ``period_detail`` and by
     ``period_finalize`` re-rendering the same page on a rejected note.
 
@@ -124,8 +125,12 @@ def _period_detail_context(period, finalize_form=None, comparison=None, fingerpr
     ``comparison`` is the figures-as-filed comparison when the page prints it in
     place (the figures route opened without scripts); otherwise the card loads it.
     ``fingerprint_answer`` is Check's answer when the page prints it in place (Check
-    pressed without scripts).
+    pressed without scripts). ``finalize_waiting`` is ``finalize.waiting`` when the caller
+    has read it already; an open year reads it here, a finalized year never does.
+    ``finalize_refused``: Finalize water year was pressed while a month waits (row B1).
     """
+    if finalize_waiting is None and not period.is_finalized:
+        finalize_waiting = finalize.waiting(period)
     allocations = AllocationPlan.objects.filter(
         reporting_period=period
     ).select_related("zone", "water_type").order_by("water_type__name", "zone__name")
@@ -153,6 +158,8 @@ def _period_detail_context(period, finalize_form=None, comparison=None, fingerpr
         "fingerprint_answer": fingerprint_answer,
         **_calculation_card_context(period),
         "finalizing": finalize.state(period),
+        "finalize_waiting": finalize_waiting if not period.is_finalized else None,
+        "finalize_refused": finalize_refused,
     }
 
 
@@ -264,9 +271,23 @@ def period_finalize(request, pk):
         )
 
     if not reopening:
+        # Ruling 214: while a month of the year waits for OpenET, Finalize water year
+        # finalizes nothing (a page loaded before the month ended still shows it) and the
+        # page comes back naming the months; Finalize anyway closes the year and the change
+        # history records the months left out.
+        waiting = finalize.waiting(period)
+        note = form.cleaned_data.get("note")
+        if waiting["months"]:
+            if not form.cleaned_data.get("anyway"):
+                return render(
+                    request,
+                    "accounting/period_detail.html",
+                    _period_detail_context(period, finalize_waiting=waiting, finalize_refused=True),
+                )
+            note = finalize.note_for(waiting)
         # Finalizing runs as its own process (accounting/finalize.py): at 8,906 use
         # areas it takes over a minute. A press while a run is under way starts nothing.
-        finalize.start(request, period, form.cleaned_data.get("note"))
+        finalize.start(request, period, note)
         return redirect("accounting:period_detail", pk=period.pk)
 
     with change_note(form.cleaned_data.get("note")), transaction.atomic():

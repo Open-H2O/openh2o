@@ -126,7 +126,7 @@
             {% for m in water_use.months %}
             <tr>
               <td><a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number|urlencode }}&amp;start_date={{ m.month|date:'Y-m-d' }}&amp;end_date={{ m.last|date:'Y-m-d' }}{% as_of_more %}" class="data-table-link">{{ m.month|date:"M Y" }}</a></td>
-              {% if m.fallow %}<td class="td-fallow">Fallow</td>{% elif m.waiting %}<td class="td-num">{% if as_of_value %}Waiting for OpenET{% else %}<a href="{% url 'accounting:calculation_run_detail' parcel.pk m.month|date:'Y-m' %}" class="data-table-link">Waiting for OpenET</a>{% endif %}</td>{% else %}<td class="td-num">{% if m.et %}{{ m.et|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
+              {% if m.fallow %}<td class="td-fallow">Fallow</td>{% elif m.waiting %}<td class="td-num">{% if as_of_value %}{% if balance_period.is_finalized %}No crop ET when finalized{% else %}Waiting for OpenET{% endif %}{% else %}<a href="{% url 'accounting:calculation_run_detail' parcel.pk m.month|date:'Y-m' %}" class="data-table-link">{% if balance_period.is_finalized %}No crop ET when finalized{% else %}Waiting for OpenET{% endif %}</a>{% endif %}</td>{% else %}<td class="td-num">{% if m.et %}{{ m.et|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
               {% if 'surface' in enabled_modules %}<td class="td-num">{% if m.surface %}{{ m.surface|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
               {% if 'wells' in enabled_modules and related_wells %}<td class="td-num">{% if m.groundwater %}{{ m.groundwater|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
               <td class="td-num">{% if m.precip %}{{ m.precip|floatformat:2|intcomma }}{% endif %}</td>
@@ -154,7 +154,11 @@
           <span><span class="statement-balance-label">Uses</span> <b>{{ balance_line.uses|floatformat:2|intcomma }}</b> <span class="statement-balance-unit">AF</span></span>
           <span class="statement-balance-op">=</span>
           <span><span class="statement-balance-label">Balance</span> <b class="statement-balance-value{% with cls=balance_line.balance|balance_class %}{% if cls %} {{ cls }}{% endif %}{% endwith %}">{{ balance_line.balance|floatformat:2|intcomma }}</b> <span class="statement-balance-unit">AF</span></span>
+          {% if balance_period.is_finalized %}
+          {% include "partials/_explainer_popout.html" with title="Water balance" text="This use area's supplies minus its uses for the water year: crop ET and the pumped water it did not consume. A month with no crop ET when the year was finalized is left out. The account page and the Dashboard show the same figure." link=wb_help_url link_label="How water balances work" %}
+          {% else %}
           {% include "partials/_explainer_popout.html" with title="Water balance" text="This use area's supplies minus its uses for the water year: crop ET and the pumped water it did not consume. A month waiting for OpenET is left out. The account page and the Dashboard show the same figure." link=wb_help_url link_label="How water balances work" %}
+          {% endif %}
         </div>
         <p class="statement-balance-note">{{ balance_line.sentence }}</p>
         {% if filed_line %}{% include "accounting/partials/_filed_line.html" %}{% endif %}
@@ -174,7 +178,7 @@
         </div>
         {% endif %}
         <div class="statement-foot">
-          <p>Acre-feet. {% if water_use_lines.efficiency %}{{ water_use_lines.efficiency }} {% endif %}Choose a month to open its ledger entries. An empty cell is a month with nothing on record.{% if consumptive_balance.waiting %} A month waiting for OpenET is left out of the balance until its crop ET arrives. Its meter readings still count against the groundwater allocation.{% endif %}</p>
+          <p>Acre-feet. {% if water_use_lines.efficiency %}{{ water_use_lines.efficiency }} {% endif %}Choose a month to open its ledger entries. An empty cell is a month with nothing on record.{% if consumptive_balance.waiting %}{% if balance_period.is_finalized %} A month with no crop ET when the year was finalized is left out of the balance. Its meter readings still count against the groundwater allocation.{% else %} A month waiting for OpenET is left out of the balance until its crop ET arrives. Its meter readings still count against the groundwater allocation.{% endif %}{% endif %}</p>
           <a href="{{ methods_help_url }}" class="text-tertiary back-link text-xs" style="white-space: nowrap;">Methods behind the numbers &rarr;</a>
         </div>
         {% else %}

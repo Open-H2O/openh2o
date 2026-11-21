@@ -56,6 +56,12 @@ def _words(response):
     return " ".join(text.split()).replace("&#x27;", "'")
 
 
+def _text(response):
+    """The page's words with tags removed in place (so a linked name keeps the comma after it)."""
+    text = re.sub(r"<[^>]+>", "", response.content.decode())
+    return " ".join(text.split()).replace("&#x27;", "'")
+
+
 def _page(client, period):
     return client.get(reverse("accounting:period_detail", args=[period.pk]))
 
@@ -227,7 +233,7 @@ def test_a_month_with_seven_use_areas_waiting_names_five_and_counts_two_more(mon
     for n in range(7, 0, -1):
         _use_area(f"SEV-{n}")
 
-    text = _words(_page(admin_client, period))
+    text = _text(_page(admin_client, period))
 
     for n in range(1, 6):
         assert f"SEV-{n}" in text

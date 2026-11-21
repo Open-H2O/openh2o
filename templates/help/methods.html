@@ -54,6 +54,10 @@
             <td>Until OpenET sends a month&rsquo;s crop ET, OpenH2O does not calculate the month for the use area. The month&rsquo;s meter readings, and canal water split by shares, are on the ledger. Canal water split by crop need waits with the month. The first calculation after the crop ET arrives counts the month in the balance.</td>
           </tr>
           <tr>
+            <td class="col-name">A year finalized with a month waiting</td>
+            <td>OpenH2O does not finalize a water year while a month of it is waiting for OpenET. An administrator may finalize the year anyway. The waiting month is then left out of the balance. OpenH2O does not ask OpenET for a month in a finalized year. Once the year is reopened, the next monthly request asks for it.</td>
+          </tr>
+          <tr>
             <td class="col-name">ETAW</td>
             <td>ETAW is crop ET minus effective precipitation. By default, effective precipitation is estimated with the USDA-SCS method.</td>
           </tr>

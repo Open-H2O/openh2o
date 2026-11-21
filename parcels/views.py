@@ -330,7 +330,10 @@ def _parcel_detail_context(parcel, period_id=None, can_write=True):
     editable_fields = _editable_fields()
     editable_fields_with_values = _editable_fields_with_values(parcel, editable_fields)
     mark_actions([parcel], can_write=can_write, finalized=corrections.finalized_ranges())
-    balance_line = _balance_line(consumptive_balance, water_use, has_well)
+    # A finalized year is never asked for or calculated again: its missing months read as
+    # finalized without them (ruling 215, rows D1 to D6), not as waiting.
+    finalized = bool(balance_period and balance_period.is_finalized)
+    balance_line = _balance_line(consumptive_balance, water_use, has_well, finalized)
 
     context = {
         "parcel": parcel,
@@ -350,7 +353,7 @@ def _parcel_detail_context(parcel, period_id=None, can_write=True):
         "water_use_lines": water_use_lines,
         "balance_line": balance_line,
         # With nothing counted yet, the warning says the balance starts with OpenET's first month.
-        "balance_starts": coverage_sentence(consumptive_balance) if water_use is None else "",
+        "balance_starts": coverage_sentence(consumptive_balance, finalized) if water_use is None else "",
         "filed_line": _filed_line(balance_period, parcel, balance_line),
         "serving_points": _serving_points(parcel),
         "receipt_periods": receipt_periods,
@@ -513,7 +516,7 @@ def _water_use_lines(parcel, balance_period, water_use, has_well):
     return lines
 
 
-def _balance_line(consumptive_balance, water_use, has_well):
+def _balance_line(consumptive_balance, water_use, has_well, finalized=False):
     """The Water use card's balance line: the account page's figures and one sentence naming each side."""
     if water_use is None:
         return None
@@ -528,7 +531,7 @@ def _balance_line(consumptive_balance, water_use, has_well):
     if not_consumed > 0:
         uses = f"crop ET and the pumped water not consumed, {not_consumed:,.2f} AF"
     sentence = f"Supplies are {named}. Uses are {uses}."
-    covers = coverage_sentence(consumptive_balance)
+    covers = coverage_sentence(consumptive_balance, finalized)
     return {
         "supplies": consumptive_balance["supply_total"],
         "uses": consumptive_balance["uses_total"],
@@ -537,13 +540,17 @@ def _balance_line(consumptive_balance, water_use, has_well):
     }
 
 
-def coverage_sentence(consumptive_balance):
+def coverage_sentence(consumptive_balance, finalized=False):
     """What the balance covers when a month waits for OpenET (ruling 212, rows 3a to 3c); "" otherwise.
 
     The latest months waiting: "The balance runs through August 2026. September 2026 is
     waiting for OpenET and is left out." A month waiting before the last month counted:
     "August 2026 is waiting for OpenET and is left out of the balance." Nothing counted yet:
     "The balance starts with the first month OpenET sends. October 2026 is waiting for OpenET."
+
+    ``finalized``: the year was finalized with the months missing (ruling 215, rows D3 to D5):
+    "The balance runs through August 2026. OpenH2O had no crop ET for September 2026 when this
+    water year was finalized. The month is left out of the balance."
     """
     from datasync.crop_et import month_list
 
@@ -551,6 +558,8 @@ def coverage_sentence(consumptive_balance):
     if not waiting:
         return ""
     last = consumptive_balance.get("last_counted")
+    if finalized:
+        return _finalized_coverage(waiting, last)
     if last is None:
         verb = "is" if len(waiting) == 1 else "are"
         return (
@@ -571,6 +580,33 @@ def coverage_sentence(consumptive_balance):
         parts.append(
             f"{month_list(earlier)} {verb} waiting for OpenET and {verb} left out of the balance."
         )
+    return " ".join(parts)
+
+
+def _finalized_coverage(missing, last):
+    """``coverage_sentence`` for a finalized year (ruling 215, rows D3 to D5)."""
+    from datasync.crop_et import month_list
+
+    if last is None:
+        return (
+            "OpenH2O had no crop ET for any month of this water year when it was finalized. "
+            "This use area has no balance for the year."
+        )
+
+    def had_none(months):
+        noun = "The month is" if len(months) == 1 else "The months are"
+        return (
+            f"OpenH2O had no crop ET for {month_list(months)} when this water year was finalized. "
+            f"{noun} left out of the balance."
+        )
+
+    parts = []
+    later = [m for m in missing if m > last]
+    earlier = [m for m in missing if m < last]
+    if later:
+        parts.append(f"The balance runs through {last:%B %Y}. {had_none(later)}")
+    if earlier:
+        parts.append(had_none(earlier))
     return " ".join(parts)
 
 

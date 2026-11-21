@@ -86,7 +86,7 @@
           <div class="budget-breakdown-title">Estimate coverage</div>
           <div class="budget-breakdown-row"><span>Use areas</span><b>{{ use_areas_estimated }} of {{ parcel_balances|length }}</b></div>
           <div class="budget-breakdown-row"><span>Calculation runs</span><b>{{ balance.calculation_runs }}</b></div>
-          {% if use_areas_waiting %}<div class="budget-breakdown-row"><span>Use areas with a month waiting for OpenET</span><b>{{ use_areas_waiting }}</b></div>{% endif %}
+          {% if use_areas_waiting %}<div class="budget-breakdown-row"><span>{% if selected_period.is_finalized %}Use areas with a month left out when finalized{% else %}Use areas with a month waiting for OpenET{% endif %}</span><b>{{ use_areas_waiting }}</b></div>{% endif %}
         </div>
       </div>
       <div class="budget-op">&equals;</div>
