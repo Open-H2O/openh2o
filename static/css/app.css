@@ -2832,7 +2832,7 @@ html { color-scheme: dark; }
    squeezed every label to about 40px: that is why one "wrapped every label". Contained, the
    title adds nothing to either track and still fills the span, and the label track may give
    way: "Use areas with a month waiting for OpenET" wraps inside its cell at every width
-   instead of running across the divider at 1,440 (153.1-01 sweep, 2026-11-21). */
+   instead of running across the divider at 1,440. */
 .budget-seg > .budget-breakdown-group > .budget-breakdown-title {
     contain: inline-size;
     white-space: nowrap;
