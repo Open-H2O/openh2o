@@ -852,7 +852,7 @@ health. The jobs are in `crontab.txt`:
 | `run-sync.sh dwr_wdl dwr_sgma noaa cimis` | Every day at 2:00 | Groundwater levels, and NOAA climate data and CIMIS weather once their keys are set |
 | `run_accounting --open-periods --trigger schedule` | Every day at 3:30 | Calculates every reporting period that is not finalized, after the 2:00 sync. It never changes a finalized period. Only an administrator's correction or void does, in the months each covers. Each run's record shows on the period's page and on Site health |
 | `run_health_checks` | Every 6 hours | Checks the database, the disk, the certificate, the migrations and the data sources |
-| `sync_openet_parcels` | The 8th of each month at 4:15 | Asks OpenET for the monthly crop ET and rain of every OpenET field that overlaps a use area |
+| `sync_openet_parcels` | The 8th of each month at 4:15 | Asks OpenET for the monthly crop ET and rain of every OpenET field that overlaps a use area. It asks for every month up to the end of last month, in each water year that is not finalized |
 | `prune_old_data --confirm` | The 1st of each month at 3:00 | Deletes sync logs and health-check results older than a year, published readings OpenH2O received more than a year ago whatever date they describe, and unfinished import uploads older than a day. It keeps readings at Entered by hand stations, and deletes a revised reading with its earlier values once OpenH2O received the newest of them more than a year ago |
 
 The times are in the server's own time zone. A station's page shows when OpenH2O next

@@ -53,9 +53,11 @@ JAN = date(2024, 1, 1)
 FEB = date(2024, 2, 1)
 ET_MM = 304.8  # exactly 10.0000 AF over 10 acres
 
+# wording approved: ruling 212 (row 10)
 NO_DATA_MARCH = (
-    "OpenH2O has no crop water use data for March 2024 yet and will calculate "
-    "that month when the data arrives."
+    "OpenET has not sent crop ET for March 2024 yet. The month is left out of the "
+    "balance until it arrives. Its meter readings and canal water split by shares "
+    "are on the ledger."
 )
 
 _WITHOUT_SURFACE = tuple(
@@ -280,11 +282,13 @@ def test_a_failing_month_keeps_the_earlier_month_and_changes_nothing_in_itself(
 def test_a_month_without_data_becomes_one_note(world):
     # A year in progress always has months whose data has not arrived; that is
     # a note, not a reason for the run (or Site Health) to read as a problem.
+    # March has ended, so it runs (its wells' meter shares and canal water split
+    # by shares reach the fields, ruling 211) and no use area is calculated.
     req = _run_months_for_period("Winter 2024")
 
     assert req.status == "succeeded"
-    assert req.months == ["2024-01", "2024-02"]
-    assert req.outcome == "Calculated 2 months, January 2024 to February 2024."
+    assert req.months == ["2024-01", "2024-02", "2024-03"]
+    assert req.outcome == "Calculated 3 months, January 2024 to March 2024."
     assert req.notes[0] == NO_DATA_MARCH
     assert not CalculationRun.objects.filter(period="2024-03").exists()
 
@@ -293,21 +297,23 @@ def test_months_with_no_data_at_all_are_a_note_and_not_a_failure(world):
     req = _run_months("2024-03")
 
     assert req.status == "succeeded"
-    assert req.months == []
-    assert req.outcome == "No month was calculated."
+    assert req.months == ["2024-03"]
+    assert req.outcome == "Calculated March 2024."
     assert req.notes == [NO_DATA_MARCH]
     assert CalculationRun.objects.count() == 0
 
 
+# wording approved: ruling 212 (row 10, for two months)
 def test_months_to_run_names_a_range_when_several_months_are_left_out(world):
     months, notes = engine_run.months_to_run(
         months=["2024-01", "2024-02", "2024-03", "2024-04"]
     )
 
-    assert months == ["2024-01", "2024-02"]
+    assert months == ["2024-01", "2024-02", "2024-03", "2024-04"]
     assert notes == [
-        "OpenH2O has no crop water use data for March 2024 through April 2024 "
-        "yet and will calculate those months when the data arrives."
+        "OpenET has not sent crop ET for March 2024 and April 2024 yet. Those months are "
+        "left out of the balance until it arrives. Their meter readings and canal water "
+        "split by shares are on the ledger."
     ]
 
 

@@ -20,12 +20,11 @@ Usage:
 """
 
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from django.conf import settings
 from django.contrib.gis.geos import MultiPolygon
 from django.core.management.base import BaseCommand, CommandError
-from django.utils import timezone
 
 from datasync import crop_et, field_list
 from datasync.adapters import get_openet_adapter
@@ -87,10 +86,13 @@ class Command(BaseCommand):
             )
             end_date = (
                 datetime.strptime(options["end_date"], "%Y-%m-%d").date()
-                if options["end_date"] else timezone.localdate()
+                if options["end_date"] else self._default_end()
             )
         except ValueError as exc:
             raise CommandError(f"Invalid date format: {exc}. Use YYYY-MM-DD.") from exc
+        if not options["end_date"] and end_date < start_date:
+            self.stdout.write("The month in progress is the only month to ask OpenET for, so this run asks for nothing.")
+            return
         if end_date < start_date:
             raise CommandError("--end-date must be >= --start-date.")
 
@@ -161,8 +163,14 @@ class Command(BaseCommand):
         period = ReportingPeriod.objects.filter(is_finalized=False).order_by("start_date").first()
         if period is not None:
             return period.start_date
-        today = timezone.localdate()
+        today = crop_et.today()
         return date(today.year if today.month >= 10 else today.year - 1, 10, 1)
+
+    @staticmethod
+    def _default_end():
+        """The last day of last month: a month still in progress is never asked for, so a
+        part-month figure can never become its recorded crop ET."""
+        return crop_et.this_month() - timedelta(days=1)
 
     @staticmethod
     def _needing_setup(parcels, answered):
@@ -181,12 +189,14 @@ class Command(BaseCommand):
         from datasync.models import OpenETCache, OpenETRequest
 
         first_request = OpenETRequest.objects.order_by("-pk").values_list("pk", flat=True).first() or 0
-        today = timezone.localdate()
+        today = crop_et.today()
         stopped = False
         sent_fields, sent_months = set(), set()
         try:
             self._setup(parcels, today)
-            sent_fields, sent_months = self._figures(parcels, start_date, end_date, today)
+            # Filled as each request's answer is stored, so a run the allowance stops still
+            # records the months it received (ISS-444).
+            self._figures(parcels, start_date, end_date, today, sent_fields, sent_months)
         except field_list.AllowanceUsed:
             stopped = True
         except field_list.OpenETRefused as exc:
@@ -244,8 +254,9 @@ class Command(BaseCommand):
             if not field_list.has_shares(parcel) and field_list.rectangle_covers(answered, parcel):
                 field_list.compute_shares(parcel)
 
-    def _figures(self, parcels, start_date, end_date, today):
-        """Ask for the monthly figures of every field with a share; returns (field numbers, months)."""
+    def _figures(self, parcels, start_date, end_date, today, sent_fields, sent_months):
+        """Ask for the monthly figures of every field with a share, adding to ``sent_fields`` and
+        ``sent_months`` as each answer is stored."""
         from datasync.models import OpenETField, OpenETFieldMonth
 
         numbers = list(
@@ -253,7 +264,6 @@ class Command(BaseCommand):
             .order_by("field_id").values_list("field_id", flat=True)
         )
         ids = dict(OpenETField.objects.filter(field_id__in=numbers).values_list("field_id", "pk"))
-        sent_fields, sent_months = set(), set()
         size = self._per_request()
         for n in range(0, len(numbers), size):
             for number, month, et_mm, pr_mm in field_list.figures(numbers[n:n + size], start_date, end_date):
@@ -269,7 +279,6 @@ class Command(BaseCommand):
                     # field month holds the newest, with the day it arrived.
                     row.et_mm, row.pr_mm, row.received_on = et_mm, pr_mm, today
                     row.save()
-        return sent_fields, sent_months
 
     def _dry_run_fields(self, parcels, start_date, end_date):
         """Print the requests a run would send. Sends nothing, writes nothing."""

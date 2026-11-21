@@ -74,6 +74,91 @@ def last_day(first):
     return nxt - dt.timedelta(days=1)
 
 
+def today():
+    """The site's date, in its time zone. Read through this module so a test can set it."""
+    return timezone.localdate()
+
+
+def this_month():
+    """The first day of the month in progress: a month before it has ended."""
+    return today().replace(day=1)
+
+
+def add_months(first, n):
+    """The first day of the month ``n`` months after the one starting ``first``."""
+    index = first.year * 12 + first.month - 1 + n
+    return dt.date(index // 12, index % 12 + 1, 1)
+
+
+# -- A month waiting for OpenET (rulings 153 to 155, 160, 211) --------------------------------
+#
+# A use area's month is waiting when the month has ended, the use area lies in at least one
+# OpenET field, and the month has no recorded crop ET. A use area in no OpenET field never
+# waits (ruling 160): OpenET sends it nothing, and its page says no field is on record. A month
+# still in progress never waits and is never named.
+
+#: A waiting month is overdue once this many calendar months have passed since it ended
+#: (September is overdue from December 1). Site Health turns yellow then.
+OVERDUE_MONTHS = 2
+
+
+def is_overdue(first, on=None):
+    """Whether a waiting month starting ``first`` is still waiting more than two months after it ended."""
+    return (on or today()) >= add_months(first, OVERDUE_MONTHS + 1)
+
+
+def use_areas_with_fields(parcel_ids=None):
+    """The ids of the use areas that lie in at least one OpenET field (of ``parcel_ids`` when given)."""
+    from datasync.models import OpenETFieldShare
+
+    rows = OpenETFieldShare.objects.all()
+    if parcel_ids is not None:
+        rows = rows.filter(parcel_id__in=list(parcel_ids))
+    return set(rows.values_list("parcel_id", flat=True).distinct())
+
+
+def waiting_months(parcel_ids, start, end, variable="ET", model="Ensemble"):
+    """``{use area id: [first of each waiting month]}`` for the months from ``start`` to ``end``.
+
+    Only use areas that lie in an OpenET field, and only months that have ended. A use area
+    with nothing waiting is left out.
+    """
+    from datasync.models import CropETFigure
+
+    ended = [month_first(m) for m in months_between(start, end) if month_first(m) < this_month()]
+    if not ended:
+        return {}
+    with_fields = use_areas_with_fields(parcel_ids)
+    if not with_fields:
+        return {}
+    recorded = set(
+        CropETFigure.objects.current()
+        .filter(parcel_id__in=with_fields, variable=variable, model_name=model,
+                month__gte=ended[0], month__lte=ended[-1])
+        .values_list("parcel_id", "month")
+    )
+    found = {}
+    for pid in with_fields:
+        months = [m for m in ended if (pid, m) not in recorded]
+        if months:
+            found[pid] = months
+    return found
+
+
+def is_waiting(parcel, period):
+    """Whether ``parcel``'s month ``period`` ("YYYY-MM") is waiting for OpenET."""
+    first = month_first(period)
+    return bool(waiting_months([parcel.pk], first, first))
+
+
+def month_list(firsts):
+    """``September 2026``, ``August 2026 and September 2026``, ``July 2026, August 2026 and ...``."""
+    labels = [f"{first:%B %Y}" for first in firsts]
+    if len(labels) < 2:
+        return "".join(labels)
+    return f"{', '.join(labels[:-1])} and {labels[-1]}"
+
+
 def is_provisional(fetched_on, first):
     """Whether a figure fetched on ``fetched_on`` for the month starting ``first`` was provisional."""
     return fetched_on is not None and (fetched_on - last_day(first)).days <= PROVISIONAL_DAYS

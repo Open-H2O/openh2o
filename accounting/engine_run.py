@@ -123,12 +123,6 @@ def months_in_span(start, end):
     return out
 
 
-def _range_label(months):
-    if len(months) == 1:
-        return month_label(months[0])
-    return f"{month_label(months[0])} through {month_label(months[-1])}"
-
-
 # --------------------------------------------------------------------------
 # Which months have crop water use data
 # --------------------------------------------------------------------------
@@ -175,13 +169,19 @@ def months_with_et_data(first, last):
 
 
 def months_to_run(reporting_period=None, months=None):
-    """The months to calculate, ascending, and the notes about the ones left out.
+    """The months to calculate, ascending, and the note about the ones waiting for OpenET.
 
     Pass a ``reporting_period`` (its whole span) or an explicit ``months`` list
-    of ``"YYYY-MM"``. The run ends at the last month that has crop water use
-    data for any parcel; later months are not a failure, they become ONE note
-    naming the first such month, or the range. Returns ``(months, notes)``.
+    of ``"YYYY-MM"``. Every month that has ended runs, with crop ET or without
+    (ruling 211): a month OpenET has not sent yet still writes its wells' meter
+    shares and its canal water split by shares, and each use area with no
+    recorded crop ET is skipped (no calculated row). A month still in progress
+    runs only if some use area already has crop ET for it or a later month.
+    The ended months with crop ET for no use area become ONE note; a month that
+    has not ended is never named. Returns ``(months, notes)``.
     """
+    from datasync import crop_et
+
     if months is None:
         if reporting_period is None:
             return [], []
@@ -191,17 +191,31 @@ def months_to_run(reporting_period=None, months=None):
         return [], []
 
     have = months_with_et_data(month_date(months[0]), month_date(months[-1]))
-    to_run = [m for m in months if m <= max(have)] if have else []
-    left_out = [m for m in months if m not in to_run]
-    notes = []
-    if left_out:
-        many = len(left_out) > 1
-        notes.append(
-            f"OpenH2O has no crop water use data for {_range_label(left_out)} "
-            f"yet and will calculate {'those months' if many else 'that month'} "
-            f"when the data arrives."
-        )
+    current = crop_et.this_month()
+    ended = {m for m in months if month_date(m) < current}
+    reached = {m for m in months if have and m <= max(have)}
+    to_run = sorted(ended | reached)
+    waiting = [m for m in to_run if m not in have and m in ended]
+    notes = [waiting_note(waiting)] if waiting else []
     return to_run, notes
+
+
+def waiting_note(months):
+    """The run's note for ended months OpenET has sent no crop ET for (ruling 212, row 10)."""
+    from datasync.crop_et import month_list
+
+    named = month_list([month_date(m) for m in months])
+    if len(months) == 1:
+        return (
+            f"OpenET has not sent crop ET for {named} yet. The month is left out of the "
+            "balance until it arrives. Its meter readings and canal water split by shares "
+            "are on the ledger."
+        )
+    return (
+        f"OpenET has not sent crop ET for {named} yet. Those months are left out of the "
+        "balance until it arrives. Their meter readings and canal water split by shares "
+        "are on the ledger."
+    )
 
 
 # --------------------------------------------------------------------------
@@ -647,9 +661,9 @@ def _run(request_obj, notes):
         request_obj.months_done = index + 1
         request_obj.save(update_fields=["months_done"])
 
-    # Months with no crop water use data yet are the normal state of a year in
-    # progress (the data arrives a month or two behind), so they are a note,
-    # never a reason for the run to read as needing attention.
+    # Months waiting for OpenET are the normal state of a year in progress (the
+    # crop ET arrives a week or more behind), so they are a note, never a reason
+    # for the run to read as needing attention.
     attention, info = _note_sentences(raw, tabled=True)
     notes.extend(attention + skipped + info + _note_table(raw))
     if not to_run:

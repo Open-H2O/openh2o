@@ -658,6 +658,18 @@ def _served_links(pod: PointOfDiversion) -> list[PointOfDiversionParcel]:
     )
 
 
+def _months_waiting_on_crop_need(
+    pod: PointOfDiversion, served: list[Parcel], by_month: dict[date, list[DiversionRecord]]
+) -> set[date]:
+    """The months a crop-need point leaves undivided: a served use area is waiting for OpenET."""
+    if pod.division_method != "crop_need" or not served or not by_month:
+        return set()
+    from datasync.crop_et import waiting_months
+
+    found = waiting_months([p.pk for p in served], min(by_month), max(by_month))
+    return {month for months in found.values() for month in months} & set(by_month)
+
+
 def _plan_allocation(
     pod: PointOfDiversion,
     reporting_period: ReportingPeriod | None,
@@ -699,7 +711,13 @@ def _plan_allocation(
     to_write: list[ParcelLedger] = []
     unallocated: list[UnallocatedDelivery] = []
     losses: dict[date, dict[str, Decimal]] = {}
+    waiting = _months_waiting_on_crop_need(pod, served, by_month)
     for month, month_records in by_month.items():
+        if month in waiting:
+            # Canal water split by crop need waits with the month (ruling 211): nothing is
+            # divided, and the month's split rows, surplus and losses are cleared until
+            # OpenET sends the crop ET of every served use area that lies in an OpenET field.
+            continue
         losses[month] = _allocate_month(
             pod,
             month,
