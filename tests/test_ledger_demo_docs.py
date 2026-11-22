@@ -108,7 +108,7 @@ class TestMethodologyStatesTheRules:
         text = _methods_text()
         assert "by the shares entered" in text
         assert "by acreage" in text
-        assert "date of the diversion record" in text
+        assert "the date and the water year of the diversion record" in text
 
 
 def test_architecture_states_the_same_rules():

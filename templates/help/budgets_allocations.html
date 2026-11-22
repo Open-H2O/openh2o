@@ -61,7 +61,7 @@
           </tr>
           <tr>
             <td class="col-name">A zone with no acreage on record</td>
-            <td>When no use area in a zone has acres on record, OpenH2O divides the zone&rsquo;s ceiling equally among its use areas.</td>
+            <td>OpenH2O divides the zone&rsquo;s ceiling equally among its use areas when no use area in the zone has acres on record.</td>
           </tr>
           <tr>
             <td class="col-name">More than one zone</td>
@@ -117,7 +117,7 @@
         <tbody>
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-name">Groundwater extraction</td>
-            <td>Groundwater extraction on an account&rsquo;s use areas counts against its allocation. OpenH2O uses the meter reading for a well with a meter and its own estimate for a well without one. An entry added with Add ledger entry or Upload CSV counts only when its water type is groundwater, when it is a Meter Reading with no water type, or when its source type is Calculated.</td>
+            <td>Groundwater extraction on an account&rsquo;s use areas counts against its allocation. OpenH2O uses the meter reading for a well with a meter and its own estimate for a well without one. An entry added with Add ledger entry or Upload CSV counts against the allocation only in three cases: its water type is groundwater, it is a Meter Reading with no water type, or its source type is Calculated.</td>
           </tr>{% endif %}
           <tr>
             <td class="col-name">Surface water deliveries</td>
@@ -125,15 +125,15 @@
           </tr>
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-name">Remaining allocation</td>
-            <td>An account&rsquo;s remaining allocation is its allocation, plus any amount carried forward to it and any credit listed on its page, minus the groundwater extraction on its use areas. A negative figure means the account has extracted more than that.</td>
+            <td>OpenH2O adds an account&rsquo;s allocation, any amount carried forward to it and any credit listed on its page. The account&rsquo;s remaining allocation is that sum minus the groundwater extraction on its use areas. A negative figure means the account has extracted more than that sum.</td>
           </tr>{% endif %}
           <tr>
             <td class="col-name">Carry-over</td>
-            <td>When someone runs the rollover_allocations command for a closed water year, OpenH2O carries each zone&rsquo;s and each account&rsquo;s remaining groundwater allocation into the next year, whether a surplus or a debt. A zone set to let a surplus expire carries only a debt. Surface water is not carried forward. OpenH2O does not write the carry-over while a month of the water year is waiting for OpenET. The --anyway option writes it anyway. The waiting month is then left out of the figures.</td>
+            <td>OpenH2O carries each zone&rsquo;s and each account&rsquo;s remaining groundwater allocation into the next year when someone runs the rollover_allocations command for a closed water year. The amount carried may be a surplus or a debt. A zone set to let a surplus expire carries only a debt. Surface water is not carried forward. OpenH2O does not write the carry-over while a month of the water year is waiting for OpenET. The --anyway option writes it anyway. The waiting month is then left out of the figures.</td>
           </tr>
           <tr>
             <td class="col-name">A zone with no ceiling</td>
-            <td>When none of the zones an account&rsquo;s use areas lie in has a groundwater ceiling for the water year, OpenH2O shows a dash for that account&rsquo;s allocation.</td>
+            <td>OpenH2O shows a dash for an account&rsquo;s allocation when none of the zones its use areas lie in has a groundwater ceiling for the water year.</td>
           </tr>
         </tbody>
       </table>

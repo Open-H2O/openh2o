@@ -437,7 +437,16 @@ BASELINE: dict = {
     #   year; it names a setting's three choices, a false positive.
     #   2026-11-17: 6 -> 4. 153.9-01 removed passages for kinds of record no site
     #   holds (ruling 200), and two flagged strings went with them.
-    "templates/help/*.html": 4,
+    #   2026-11-22: 4 -> 5 for help/budgets_allocations.html, whose Groundwater
+    #   extraction row now reads "... counts against the allocation only in
+    #   three cases: its water type is groundwater, it is a Meter Reading with
+    #   no water type, or its source type is Calculated.", in the words
+    #   approved in rulings 234 and 240 (writing-fix 05-03). The scanner reads
+    #   the colon as opening an appositive definition of groundwater; the clause
+    #   lists which ledger entries the software charges, a data convention and
+    #   a false positive. getting_started.html carries the same sentence shape
+    #   (ruling 227) and was already in this count.
+    "templates/help/*.html": 5,
     #   2026-10-09: 10 -> 11 because the surface now reads the words passed
     #   into included partials, not because a definition was added. The one
     #   new location is reporting/partials/_report_detail_pane.html, whose

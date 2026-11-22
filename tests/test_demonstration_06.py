@@ -601,16 +601,16 @@ def test_getting_started_names_import_wells_when_infrastructure_is_off(admin_cli
     body = admin_client.get(reverse("getting_started")).content.decode()
     assert "import_wells" in body
     assert "Add well" not in body
-    assert "with Import" not in body
-    assert "add each point of diversion" not in body
-    assert "add each site" not in body
+    assert "Import wells adds many at once" not in body
+    assert "Add each point of diversion" not in body
+    assert "Add each recharge site" not in body
 
 
 def test_getting_started_names_the_buttons_when_infrastructure_is_on(admin_client):
     body = admin_client.get(reverse("getting_started")).content.decode()
     assert "Add wells one at a time with Add well" in body
-    assert "add each point of diversion" in body
-    assert "add each site" in body
+    assert "Add each point of diversion" in body
+    assert "Add each recharge site" in body
     assert "import_wells" not in body
 
 

@@ -48,7 +48,7 @@
         <tbody>
           <tr>
             <td class="col-name">1</td>
-            <td>For each use area and month, OpenH2O starts with OpenET's satellite estimate of crop ET, or 0 in a month the use area is marked fallow.</td>
+            <td>OpenH2O starts each use area's month with OpenET's satellite estimate of crop ET. It uses 0 instead in a month the use area is marked fallow.</td>
           </tr>
           <tr>
             <td class="col-name">2</td>
@@ -65,7 +65,7 @@
         </tbody>
       </table>
     </div>
-    <p class="text-secondary text-sm">Until OpenET sends a month&rsquo;s crop ET, the month is waiting and is left out of the balance. Its meter readings, and canal water split by shares, still count against the allocation as soon as they are entered.</p>
+    <p class="text-secondary text-sm">A month is waiting and is left out of the balance until OpenET sends its crop ET. Its meter readings and canal water split by shares still count against the allocation as soon as they are entered.</p>
 
     {% include "help/partials/_the_subtraction.html" %}
   </div>
@@ -96,7 +96,7 @@
         </tbody>
       </table>
     </div>
-    <p class="text-secondary text-sm">A use area with a well and no meter reading balances to zero when it did not receive surface water. When it did receive surface water, its balance is the part of the delivery that OpenH2O does not count toward ETAW. A negative balance means the uses were more than the supplies on record.</p>
+    <p class="text-secondary text-sm">A use area with a well and no meter reading balances to zero when it did not receive surface water. Its balance is the part of the delivery that OpenH2O does not count toward ETAW when it did receive surface water. A negative balance means the uses were more than the supplies on record.</p>
   </div>
 
   <div class="card-raised">
@@ -112,15 +112,15 @@
         <tbody>
           <tr>
             <td class="col-name">A headgate total</td>
-            <td>OpenH2O records each headgate&rsquo;s delivery as one monthly total: the water taken less any water returned to the stream. It subtracts the canal&rsquo;s losses and any delivery recorded for an individual use area, then divides the remainder among the other use areas by the share entered for each use area, or by acreage where none is entered. A use area marked fallow that month does not receive a share. When a point of diversion does not serve a use area, the remainder is not divided. OpenH2O shows it on the point of diversion&rsquo;s page as delivered to the named site the point feeds, or as Not delivered to a use area, and does not credit it to anyone. A headgate set to divide by crop ET divides the remainder in proportion to each use area&rsquo;s ETAW, up to what each use area can use.</td>
+            <td>OpenH2O records each headgate&rsquo;s delivery as one monthly total: the water taken less any water returned to the stream. It subtracts the canal&rsquo;s losses and any delivery recorded for an individual use area, then divides the remainder among the other use areas by the share entered for each use area, or by acreage where none is entered. A use area marked fallow that month does not receive a share. The remainder is not divided when a point of diversion does not serve a use area. OpenH2O shows it on the point of diversion&rsquo;s page as delivered to the named site the point feeds or as Not delivered to a use area. OpenH2O does not credit it to anyone. A headgate set to divide by crop ET divides the remainder in proportion to each use area&rsquo;s ETAW, up to what each use area can use.</td>
           </tr>
           <tr>
             <td class="col-name">A use area's own record</td>
-            <td>A use area with its own delivery record keeps that record instead.</td>
+            <td>A use area's own delivery record is a Use Ledger entry for that use area and month whose source type is Surface Diversion, entered on the Use Ledger or imported. The use area's delivery that month is the amount on that record. It does not take a share of the headgate total that month. Methods behind the numbers explains how a record is divided when more than one headgate serves the use area.</td>
           </tr>
           <tr>
             <td class="col-name">A diversion with no meter</td>
-            <td>When a diversion has no meter reading and no volume entered for the month, OpenH2O does not record a delivery for it, and the use areas it serves do not receive canal water from it that month.</td>
+            <td>OpenH2O does not record a delivery for a diversion with no meter reading and no volume entered for the month. The use areas it serves do not receive canal water from it that month.</td>
           </tr>
         </tbody>
       </table>

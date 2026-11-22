@@ -52,7 +52,7 @@
           <tr>
             <td class="col-name">Calculation steps</td>
             <td>The order of the calculation steps, and which of them are switched on.</td>
-            <td>{% if show_methods %}All four steps, switched on, in the order <a class="prose-link" href="{% url 'methods' %}">Methods behind the numbers</a> describes.{% else %}All four steps, switched on.{% endif %}</td>
+            <td>{% if show_methods %}All four steps are switched on and follow the order described in <a class="prose-link" href="{% url 'methods' %}">Methods behind the numbers</a>.{% else %}All four steps, switched on.{% endif %}</td>
           </tr>
           <tr>
             <td class="col-name">Effective precipitation method</td>
@@ -123,7 +123,7 @@
           </tr>
           <tr>
             <td class="col-name">Reporting year</td>
-            <td>For a diversion record file that gives a year and a month but no date, the year the file uses: a water year starting in October, a calendar year, or a season starting in a chosen month.</td>
+            <td>The year a diversion record file uses when it gives a year and a month but no date: a water year starting in October, a calendar year, or a season starting in a chosen month.</td>
             <td>Water year</td>
           </tr>
           <tr>
@@ -150,7 +150,7 @@
         <tbody>
           <tr>
             <td class="col-name">Access control</td>
-            <td>Whether only an administrator can change Methodology Settings and Delivery Settings, open the Setup Wizard, finalize a water year, correct or void a record in a finalized water year, choose a zone&rsquo;s year-end handling and manage users. While access control is on, people also cannot create their own accounts. While it is off, anyone who is signed in can do those things, except a viewer.</td>
+            <td>Whether only an administrator can change Methodology Settings and Delivery Settings, open the Setup Wizard, finalize a water year, correct or void a record in a finalized water year, choose a zone&rsquo;s year-end handling and manage users. People also cannot create their own accounts while access control is on. Anyone who is signed in except a viewer can do those things while it is off.</td>
             <td>On</td>
           </tr>
         </tbody>
@@ -171,7 +171,7 @@
         <tbody>
           <tr>
             <td class="col-name">A setting that changes a figure</td>
-            <td>Each calculated month keeps the settings it was calculated with. Except for the water year start, a changed setting affects a past month only when that month is recalculated{% if 'recharge' in enabled_modules %}, and a recharge event's credit only when that event is saved again{% endif %}.</td>
+            <td>Each calculated month keeps the settings it was calculated with. A changed setting other than the water year start affects a past month only when that month is recalculated.{% if 'recharge' in enabled_modules %} It affects a recharge event's credit only when that event is saved again.{% endif %}</td>
           </tr>
           <tr>
             <td class="col-name">The water year start</td>

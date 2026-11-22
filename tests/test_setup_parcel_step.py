@@ -283,7 +283,8 @@ def test_flowlines_runs_its_own_process_and_leaves_no_row(client, boundary):
 
 def test_getting_started_says_the_map_covers_california_only(client):
     page = _words(client.get(reverse("getting_started")))
+    # wording approved: ruling 227 (row 1.7)
     assert ("The Setup Wizard downloads the parcels that overlap your boundary from the "
             "California Department of Water Resources' parcel map and saves each as a use area. "
-            "The map covers California only. If you give the wizard a list of Assessor Parcel "
-            "Numbers (APNs), it saves only the parcels on that list.") in page
+            "The map covers California only. You can give the wizard a list of Assessor Parcel "
+            "Numbers (APNs). The wizard then saves only the parcels on that list.") in page
