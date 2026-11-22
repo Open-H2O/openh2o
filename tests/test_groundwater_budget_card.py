@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The account page's Groundwater budget card states its figures as a sum (ruling 233, ISS-447).
+"""The account page's Groundwater budget card states its figures as a sum (ruling 233).
 
 Allocation - Used = Remaining in the house centred equation panel; with credits,
 Allocation + Credits - Used = Remaining, every credit listed under the sum in
