@@ -2900,6 +2900,7 @@ files = [
   "accounting/views/common.py",
   "accounting/services.py",
   "accounting/carryover_math.py",
+  "accounting/management/commands/rollover_allocations.py",
   "geography/views.py",
   "templates/accounting/partials/_active_accounts_table.html",
 ]
