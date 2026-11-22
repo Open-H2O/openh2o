@@ -3,7 +3,8 @@
 
 Ruling 211: a waiting month's measured water (a well's meter shares, canal water split by the
 shares the district set) reaches the field the night it is entered and counts against the
-allocation at once. Canal water split by crop need waits with the month. The balance leaves the
+allocation at once. Canal water at a point set to divide by crop ET is divided by shares while a use area it
+serves waits (ruling 223), and again by crop ET once every use area has the month. The balance leaves the
 waiting month out whole and says what it covers. Ruling 212 approved the words.
 
 The site: one water year, October 2025 to September 2026, read on October 3, 2026 (the day the
@@ -169,29 +170,62 @@ def test_canal_water_split_by_shares_reaches_the_field_in_a_waiting_month(world)
     assert sum(abs(r.amount_acre_feet) for r in split) == Decimal("12.0000")
 
 
-# -- (b) a crop-need point leaves a waiting month undivided -------------------------------------
+# -- (b) a crop ET point divides a waiting month by shares (ruling 223) -------------------------
 
 
-def test_a_crop_need_point_leaves_a_month_undivided_while_a_served_use_area_waits(world):
-    _drop_month(world.u1, APR)
+def _crop_et_canal(world):
     pod = PointOfDiversionFactory(
         name="Need Canal", division_method="crop_need", evaporation_fraction=Decimal("0"),
         seepage_fraction=Decimal("0"), spill_fraction=Decimal("0"),
     )
-    for parcel in (world.u1, world.u2):
-        PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=parcel, fraction=Decimal("0.5"))
+    PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=world.u1, fraction=Decimal("0.25"))
+    PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=world.u2, fraction=Decimal("0.75"))
     for month in (date(2026, 3, 1), APR):
         DiversionRecordFactory(point_of_diversion=pod, reporting_period=world.period, month=month,
                                volume_acre_feet=Decimal("20"))
+    return pod
+
+
+def _divided(pod, month):
+    rows = ParcelLedger.objects.current().filter(
+        effective_date=month, divided_from_headgate=True, divided_from_point_pk=pod.pk
+    )
+    return {r.parcel.parcel_number: abs(r.amount_acre_feet) for r in rows}
+
+
+def test_a_crop_et_point_divides_a_waiting_month_by_shares(world):
+    _drop_month(world.u1, APR)
+    pod = _crop_et_canal(world)
     _run_year(world)
 
-    def divided(month):
-        return ParcelLedger.objects.current().filter(
-            effective_date=month, divided_from_headgate=True, divided_from_point_pk=pod.pk
-        ).count()
+    # Nobody waits in March: crop ET divides it, and the two use areas have the same ETAW.
+    assert _divided(pod, date(2026, 3, 1)) == {"WAIT-1": Decimal("10.0000"), "WAIT-2": Decimal("10.0000")}
+    # WAIT-1 waits in April: the shares divide it, 0.25 and 0.75 of 20 AF.
+    assert _divided(pod, APR) == {"WAIT-1": Decimal("5.0000"), "WAIT-2": Decimal("15.0000")}
 
-    assert divided(date(2026, 3, 1)) == 2
-    assert divided(APR) == 0
+
+def test_the_neighbour_of_a_waiting_use_area_counts_its_canal_water(world):
+    _drop_month(world.u1, APR)
+    _crop_et_canal(world)
+    _run_year(world)
+
+    run = CalculationRun.objects.get(parcel=world.u2, period="2026-04")
+    assert run.surface_delivered_af == Decimal("15.0000")
+
+
+def test_a_crop_et_point_divides_the_month_again_by_crop_et_once_it_arrives(world):
+    _drop_month(world.u1, APR)
+    pod = _crop_et_canal(world)
+    _run_year(world)
+    assert _divided(pod, APR)["WAIT-1"] == Decimal("5.0000")
+
+    field = OpenETField.objects.get(shares__parcel=world.u1)
+    OpenETFieldMonth.objects.create(field=field, month=APR, et_mm=ET_MM, pr_mm=Decimal("0"),
+                                    received_on=date(2026, 10, 9))
+    crop_et.record_received_months(world.u1, [crop_et.month_text(APR)])
+    _run_year(world)
+
+    assert _divided(pod, APR) == {"WAIT-1": Decimal("10.0000"), "WAIT-2": Decimal("10.0000")}
 
 
 # -- (c) a month missing for one use area in the middle of the year ----------------------------
