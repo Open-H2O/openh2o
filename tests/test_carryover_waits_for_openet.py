@@ -5,8 +5,8 @@ rollover_allocations stops while a month of the source water year waits for Open
 is not finalized: nothing is written, and it names the months and how many use areas wait. With
 --anyway it writes as today and says what it left out. --dry-run writes nothing, so it does not
 stop; it prints the waiting lines and the figures. A finalized year (one finalized anyway among
-them, ruling 214) rolls over exactly as today. Ruling 221 approved the words (rows R1 to R7); the
-month lines are ruling 215's row A2.
+them, ruling 214) rolls over exactly as today. Ruling 222 approved the words: Finalize's approved words
+(ruling 215) with the action swapped (rows draft 5).
 
 The site is ``tests/test_waiting_for_openet.py``'s: WY 2025-2026 read on October 3, 2026, WAIT-1
 and WAIT-2 in OpenET fields with no crop ET for September 2026, WAIT-4 in no field, and a zone
@@ -38,35 +38,26 @@ from tests.test_waiting_for_openet import (  # noqa: F401  (world is a fixture, 
 
 pytestmark = pytest.mark.django_db
 
-# wording approved: ruling 221 (rows R1 to R7); the month line is ruling 215 row A2
-R1 = "Stopped. Nothing was written. 2 use areas are waiting for OpenET in WY 2025-2026."
+# wording approved: ruling 222 (rows draft 5: Finalize's approved words, ruling 215, with the action swapped)
+S1 = (
+    "Nothing was written. Some use areas have a month of this water year waiting for OpenET. "
+    "The carry-over can be written once OpenET sends those months."
+)
 R2_SEPTEMBER = "September 2026: WAIT-1 and WAIT-2."
-R3 = (
-    "To wait, run the command again once OpenET sends these months. To write the carry-over now, "
-    "run it again with --anyway. Use areas with no meter then have no pumping counted for these "
-    "months. Their remainders carry over too high. A later run after OpenET sends the months "
-    "replaces the figures."
+S3 = (
+    "--anyway writes the carry-over now. The months listed are left out of the figures. "
+    "Their meter readings still count against the groundwater allocation."
 )
-R4 = (
-    "Writing the carry-over while 2 use areas are waiting for OpenET in WY 2025-2026. Use areas "
-    "with no meter have no pumping counted for the months listed below. A later run after OpenET "
-    "sends the months replaces the figures."
+W1 = (
+    "Some use areas have a month of this water year waiting for OpenET. The months listed are left "
+    "out of the figures. Their meter readings still count against the groundwater allocation."
 )
-R5_FIRST = "Dry run. 2 use areas are waiting for OpenET in WY 2025-2026."
-R5_REST = (
-    "A run without --dry-run stops here. The figures below count no pumping for these months on "
-    "use areas with no meter."
+H1 = "Write the carry-over while a month waits for OpenET. The waiting month is left out of the figures."
+H2 = (
+    "OpenH2O does not write the carry-over while a month of the water year is waiting for OpenET. "
+    "The --anyway option writes it anyway. The waiting month is then left out of the figures."
 )
-R6 = (
-    "Write the carry-over while months wait for OpenET. Use areas with no meter then have no "
-    "pumping counted for those months."
-)
-R7 = (
-    "The rollover_allocations command stops while a month of the year waits for OpenET. It lists "
-    "the months. Its --anyway option writes the carry-over now. Use areas with no meter then have "
-    "no pumping counted for those months."
-)
-WAITING_WORDS = ("waiting for OpenET", "Stopped.", "Dry run.", "--anyway")
+WAITING_WORDS = ("waiting for OpenET", "Nothing was written.", "left out of the figures", "--anyway")
 
 
 def _rollover(**options):
@@ -103,11 +94,11 @@ def test_while_september_waits_the_command_stops_names_the_month_and_writes_noth
     assert _next_year_rows() == (0, 0)
 
 
-def test_the_stop_prints_alone_with_the_count_the_month_and_both_ways_forward(budgeted):
+def test_the_stop_prints_alone_with_the_months_and_the_way_on(budgeted):
     out, err = io.StringIO(), io.StringIO()
     with pytest.raises(SystemExit):
         call_command("rollover_allocations", "--water-year", "2026", stdout=out, stderr=err)
-    assert _lines(err.getvalue()) == [R1, R2_SEPTEMBER, R3]
+    assert _lines(err.getvalue()) == [S1, R2_SEPTEMBER, S3]
     assert "PROVISIONAL" not in out.getvalue() + err.getvalue()
 
 
@@ -119,13 +110,13 @@ def test_anyway_writes_the_carry_over_and_says_what_it_left_out(budgeted):
     assert _next_year_rows() == (1, 1)
     lines = _lines(out)
     assert "PROVISIONAL" in lines[0]
-    assert lines[1:3] == [R4, R2_SEPTEMBER]
+    assert lines[1:3] == [W1, R2_SEPTEMBER]
     assert lines[-1].startswith("Wrote 1 carry-over row(s)")
 
 
 def test_the_anyway_option_says_what_it_costs_in_the_commands_help():
     parser = Command().create_parser("manage.py", "rollover_allocations")
-    assert R6 in " ".join(parser.format_help().split())
+    assert H1 in " ".join(parser.format_help().split())
 
 
 # -- (c) a dry run while a month waits does not stop and writes nothing ----------------------------
@@ -136,7 +127,7 @@ def test_a_dry_run_while_a_month_waits_prints_the_lines_and_the_figures_and_writ
     assert _next_year_rows() == (0, 0)
     lines = _lines(out)
     assert "PROVISIONAL" in lines[0]
-    assert lines[1:4] == [R5_FIRST, R2_SEPTEMBER, R5_REST]
+    assert lines[1:3] == [W1, R2_SEPTEMBER]
     assert lines[-1].startswith("Would write 1 carry-over row(s)")
 
 
@@ -192,4 +183,5 @@ def test_the_help_pages_carry_over_row_says_the_command_waits(client):
     response = client.get(reverse("budgets_allocations"))
     assert response.status_code == 200
     text = " ".join(re.sub(r"<[^>]+>", " ", response.content.decode()).split()).replace("&rsquo;", "’")
-    assert R7 in text
+    assert "Surface water is not carried forward. " + H2 in text  # at the end of the row
+    assert "rollover_allocations command stops" not in text
