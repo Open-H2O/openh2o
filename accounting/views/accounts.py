@@ -419,6 +419,16 @@ def _account_detail_context(account, period_param=None):
         # that runs recharge basins and farms nothing has credits and no allocation).
         if groundwater_budget["allocation"] is None and not groundwater_budget["credits"]:
             groundwater_budget = None
+    # The card states the budget as a sum (ruling 233): the credits total is a
+    # cell of its own, and every credit is listed under the sum in two columns,
+    # the first column holding the extra line when the count is odd.
+    groundwater_credit_total = None
+    groundwater_credit_columns: list = []
+    if groundwater_budget and groundwater_budget["credits"]:
+        credits = groundwater_budget["credits"]
+        groundwater_credit_total = sum((c.amount_af for c in credits), Decimal("0"))
+        half = (len(credits) + 1) // 2
+        groundwater_credit_columns = [column for column in (credits[:half], credits[half:]) if column]
 
     return {
         "account": account,
@@ -428,6 +438,8 @@ def _account_detail_context(account, period_param=None):
         # (the same parts every panel reads, services.supply_kinds).
         "supply_kinds": supply_kinds(account_parcel_ids(account, selected_period), selected_period),
         "groundwater_budget": groundwater_budget,
+        "groundwater_credit_total": groundwater_credit_total,
+        "groundwater_credit_columns": groundwater_credit_columns,
         "parcel_balances": parcel_balances,
         **state_counts,
         "use_areas_all_count": use_areas_all_count,

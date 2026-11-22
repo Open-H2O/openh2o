@@ -112,38 +112,56 @@
   <h3 class="section-header-sm">Groundwater budget</h3>
   <span class="text-tertiary text-xs">{{ selected_period.name }}. All figures in acre-feet (AF).{% if use_areas_waiting %} {% if selected_period.is_finalized %}Used includes meter readings for months with no crop ET when the year was finalized.{% else %}Used includes meter readings for months waiting for OpenET.{% endif %} The Groundwater figures on this page leave those months out.{% endif %}</span>
 </div>
-<div class="table-scroll">
-<table class="data-table">
-  <thead>
-    <tr>
-      <th>Source</th>
-      <th class="th-right">Amount</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Allocation</td>
-      <td class="td-num">{% if groundwater_budget.allocation is None %}&mdash;{% else %}{{ groundwater_budget.allocation|floatformat:2|intcomma }}{% endif %}</td>
-    </tr>
-    {% for credit in groundwater_budget.credits %}
-    <tr>
-      <td class="text-secondary">{{ credit.description }}</td>
-      <td class="td-num {% if credit.amount_af < 0 %}text-deficit{% else %}text-surplus{% endif %}">{% if credit.amount_af > 0 %}+{% endif %}{{ credit.amount_af|floatformat:2|intcomma }}</td>
-    </tr>
-    {% endfor %}
-    <tr>
-      <td>Used</td>
-      <td class="td-num">{{ groundwater_budget.used|floatformat:2|intcomma }}</td>
-    </tr>
-  </tbody>
-  <tfoot>
-    <tr>
-      <td class="tfoot-total">Remaining</td>
-      {% if groundwater_budget.remaining is None %}<td class="td-num-bold">&mdash;</td>{% else %}<td class="td-num-bold {% if groundwater_budget.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ groundwater_budget.remaining|floatformat:2|intcomma }}</td>{% endif %}
-    </tr>
-  </tfoot>
-</table>
+{% comment %}
+  The budget as a sum (ruling 233, ISS-447), in the house centred equation
+  panel the Dashboard's water balance uses: Allocation - Used = Remaining, and
+  with credits a fourth cell, Allocation + Credits - Used = Remaining. Every
+  credit is listed under the sum in two columns (the view splits them), at the
+  size of the Account balance card's breakdowns above, so no credit is hidden
+  and the list does not stretch the sum. A table the width of the page put
+  each label about 1,300px from its figure at 1,730.
+{% endcomment %}
+<div class="budget-panel budget-panel--centered">
+  <div class="budget-panel-body">
+    <div class="budget-panel-row{% if groundwater_credit_columns %} budget-panel-row--four{% endif %}">
+      <div class="budget-seg">
+        <div class="budget-seg-label">Allocation</div>
+        {% if groundwater_budget.allocation is None %}<div class="budget-seg-value text-tertiary">&mdash;</div>{% else %}<div class="budget-seg-value">{{ groundwater_budget.allocation|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>{% endif %}
+      </div>
+      {% if groundwater_credit_columns %}
+      <div class="budget-op">+</div>
+      <div class="budget-seg">
+        <div class="budget-seg-label">Credits</div>
+        <div class="budget-seg-value {% if groundwater_credit_total < 0 %}text-deficit{% else %}text-surplus{% endif %}">{{ groundwater_credit_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+      </div>
+      {% endif %}
+      <div class="budget-op">&minus;</div>
+      <div class="budget-seg">
+        <div class="budget-seg-label">Used</div>
+        <div class="budget-seg-value">{{ groundwater_budget.used|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+      </div>
+      <div class="budget-op">&equals;</div>
+      <div class="budget-seg budget-seg--result">
+        <div class="budget-seg-label">Remaining</div>
+        {% if groundwater_budget.remaining is None %}<div class="budget-seg-value text-tertiary">&mdash;</div>{% else %}<div class="budget-seg-value {% if groundwater_budget.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ groundwater_budget.remaining|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>{% endif %}
+      </div>
+    </div>
+  </div>
 </div>
+{% if groundwater_credit_columns %}
+<div class="credit-list">
+  <div class="budget-breakdown-title">Credits by source and date</div>
+  <div class="credit-list-columns">
+    {% for column in groundwater_credit_columns %}
+    <div class="credit-list-column">
+      {% for credit in column %}
+      <div class="budget-breakdown-row"><span>{{ credit.description }}</span><b class="{% if credit.amount_af < 0 %}text-deficit{% else %}text-surplus{% endif %}">{% if credit.amount_af > 0 %}+{% endif %}{{ credit.amount_af|floatformat:2|intcomma }}</b></div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 </div>
 {% endif %}
 

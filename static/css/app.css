@@ -3078,7 +3078,44 @@ html { color-scheme: dark; }
         justify-content: center;
         padding-right: 0;
     }
+    /* Four equal cells, the centred form of `.budget-panel-row--four`: the
+       account page's Groundwater budget with credits (Allocation + Credits
+       - Used = Remaining, ruling 233). */
+    .budget-panel--centered .budget-panel-body .budget-panel-row--four {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+    }
 }
+/* The account's credits, listed under the Groundwater budget's sum (ruling
+   233): every credit, none hidden, in two columns where the card is wide and
+   one where it is not. Inside a cell the list stretched the sum (page verdict,
+   2026-11-22). The type is the Account balance card's breakdown size on the
+   same page at 1,730 (11.6px); at the body's size it read larger than the sum
+   it explains (both page readers). */
+.credit-list {
+    container-type: inline-size;
+    margin-top: var(--space-md);
+    font-size: 0.725rem;
+    color: var(--color-text-secondary);
+}
+.credit-list-columns {
+    display: grid;
+    grid-template-columns: minmax(0, max-content);
+    row-gap: 0;
+    column-gap: var(--space-2xl);
+}
+@container (min-width: 700px) {
+    .credit-list-columns {
+        grid-template-columns: repeat(2, minmax(0, max-content));
+    }
+}
+.credit-list-column {
+    display: grid;
+    grid-template-columns: minmax(0, max-content) max-content;
+    column-gap: var(--space-lg);
+    align-content: start;
+}
+.credit-list-column > .budget-breakdown-row > b.text-surplus { color: var(--color-supply); }
+.credit-list-column > .budget-breakdown-row > b.text-deficit { color: var(--color-deficit); }
 
 .period-card {
     display: flex;
