@@ -50,10 +50,18 @@ def waiting(period):
     counted}], "use_areas": how many use areas wait}``; no months when nothing waits (a use area
     in no OpenET field, a month not ended, datasync off: ``YearReading.waiting``).
     """
+    return waiting_in([period])
+
+
+def waiting_in(periods):
+    """:func:`waiting` over several periods (a water year in more than one), each use area once."""
     from accounting.year_reading import YearReading
     from parcels.models import Parcel
 
-    found = YearReading(period).waiting
+    found = {}
+    for period in periods:
+        for pid, months in YearReading(period).waiting.items():
+            found.setdefault(pid, set()).update(months)
     if not found:
         return {"months": [], "use_areas": 0}
     numbers = dict(Parcel.objects.current().filter(pk__in=list(found)).values_list("pk", "parcel_number"))

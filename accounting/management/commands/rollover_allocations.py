@@ -21,6 +21,12 @@ never mutates a finalized period's ledger rows, so a re-run cannot rewrite filed
 numbers. If the source year is not yet finalized the carry-over is provisional and
 the command says so loudly (but still computes it, so a demo/preview works).
 
+While a month of an open source year waits for OpenET (``finalize.waiting_in``) the command
+stops, writes nothing and names the months and how many use areas wait (ruling 220): a
+use area with no meter would carry a remainder that counts no pumping for that month.
+``--anyway`` writes the carry-over as before and says what it left out; ``--dry-run`` never
+stops and prints the same lines above its figures. A finalized year rolls over as before.
+
 Water-year boundary is the site's water year start month (default 10 =
 California's Oct 1 start); --anchor-month overrides it for one run. The rule is
 carryover_math.water_year_of.
@@ -28,6 +34,7 @@ carryover_math.water_year_of.
 
 from __future__ import annotations
 
+import sys
 from datetime import date
 from decimal import Decimal
 
@@ -35,6 +42,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import QuerySet, Sum
 
+from accounting import finalize
 from accounting.carryover_math import available_with_carryover, water_year_label
 from accounting.models import (
     AccountCredit,
@@ -167,6 +175,25 @@ def _water_year_label(water_year: int) -> str:
     return water_year_label(water_year, water_year_start_month())
 
 
+def _waiting(periods: list[ReportingPeriod]) -> dict:
+    """The year's months waiting for OpenET (``finalize.waiting_in``), over its periods not finalized.
+
+    A finalized period's months are never waiting: a year finalized anyway says its month had
+    no crop ET when it was finalized (ruling 214), and it rolls over as any finalized year.
+    """
+    open_periods = [p for p in periods if not p.is_finalized]
+    if not open_periods:
+        return {"months": [], "use_areas": 0}
+    return finalize.waiting_in(open_periods)
+
+
+def _waiting_count(found: dict, source_wy: int) -> str:
+    """``76 use areas are waiting for OpenET in WY 2025-2026`` (one use area: ``is``)."""
+    n = found["use_areas"]
+    areas = "1 use area is" if n == 1 else f"{n} use areas are"
+    return f"{areas} waiting for OpenET in {_water_year_label(source_wy)}"
+
+
 _AccountResult = tuple[WaterAccount, Decimal, Decimal, bool]
 
 
@@ -270,6 +297,13 @@ class Command(BaseCommand):
             action="store_true",
             help="Print the computed carry-over without writing any rows.",
         )
+        parser.add_argument(
+            "--anyway",
+            action="store_true",
+            # wording approved: ruling 221 (row R6)
+            help="Write the carry-over while months wait for OpenET. Use areas with no meter "
+            "then have no pumping counted for those months.",
+        )
 
     def handle(self, *args, **options):
         source_wy = options["water_year"]
@@ -286,7 +320,12 @@ class Command(BaseCommand):
 
         date_start = min(p.start_date for p in periods)
         date_end = max(p.end_date for p in periods)
+        found = _waiting(periods)
+        if found["months"] and not (options["anyway"] or dry_run):
+            self._stop(found, source_wy)
         self._warn_if_not_finalized(periods, source_wy)
+        if found["months"]:
+            self._say_waiting(found, source_wy, dry_run)
 
         alloc_rows = _budget_rows(periods, source_wy)
         results = _budget_results(alloc_rows, date_start, date_end, source_wy)
@@ -317,6 +356,40 @@ class Command(BaseCommand):
                 f"into WY{target_wy}.{suffix}"
             )
         )
+
+    def _stop(self, found: dict, source_wy: int) -> None:
+        """Ruling 220: name the waiting months and how to go on, write nothing, exit 1 (rows R1 to R3)."""
+        # wording approved: ruling 221 (rows R1 and R3; the month lines are ruling 215 row A2)
+        self.stderr.write(f"Stopped. Nothing was written. {_waiting_count(found, source_wy)}.")
+        for entry in found["months"]:
+            self.stderr.write(finalize.month_line(entry))
+        self.stderr.write(
+            "To wait, run the command again once OpenET sends these months. To write the "
+            "carry-over now, run it again with --anyway. Use areas with no meter then have no "
+            "pumping counted for these months. Their remainders carry over too high. A later run "
+            "after OpenET sends the months replaces the figures."
+        )
+        sys.exit(1)
+
+    def _say_waiting(self, found: dict, source_wy: int, dry_run: bool) -> None:
+        """What a dry run or a run with --anyway leaves out while months wait (rows R4 and R5)."""
+        count = _waiting_count(found, source_wy)
+        # wording approved: ruling 221 (rows R4 and R5)
+        if dry_run:
+            self.stdout.write(f"Dry run. {count}.")
+        else:
+            self.stdout.write(
+                f"Writing the carry-over while {count}. Use areas with no meter have no pumping "
+                "counted for the months listed below. A later run after OpenET sends the months "
+                "replaces the figures."
+            )
+        for entry in found["months"]:
+            self.stdout.write(finalize.month_line(entry))
+        if dry_run:
+            self.stdout.write(
+                "A run without --dry-run stops here. The figures below count no pumping for these "
+                "months on use areas with no meter."
+            )
 
     def _warn_if_not_finalized(self, periods: list[ReportingPeriod], source_wy: int) -> None:
         """Say loudly that the carry-over is provisional when the source year is still open."""

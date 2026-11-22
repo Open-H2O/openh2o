@@ -129,7 +129,7 @@
           </tr>{% endif %}
           <tr>
             <td class="col-name">Carry-over</td>
-            <td>When someone runs the rollover_allocations command for a closed water year, OpenH2O carries each zone&rsquo;s and each account&rsquo;s remaining groundwater allocation into the next year, whether a surplus or a debt. A zone set to let a surplus expire carries only a debt. Surface water is not carried forward.</td>
+            <td>When someone runs the rollover_allocations command for a closed water year, OpenH2O carries each zone&rsquo;s and each account&rsquo;s remaining groundwater allocation into the next year, whether a surplus or a debt. The rollover_allocations command stops while a month of the year waits for OpenET. It lists the months. Its --anyway option writes the carry-over now. Use areas with no meter then have no pumping counted for those months. A zone set to let a surplus expire carries only a debt. Surface water is not carried forward.</td>
           </tr>
           <tr>
             <td class="col-name">A zone with no ceiling</td>
