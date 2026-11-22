@@ -99,7 +99,7 @@ def test_the_stop_prints_alone_with_the_months_and_the_way_on(budgeted):
     with pytest.raises(SystemExit):
         call_command("rollover_allocations", "--water-year", "2026", stdout=out, stderr=err)
     assert _lines(err.getvalue()) == [S1, R2_SEPTEMBER, S3]
-    assert "PROVISIONAL" not in out.getvalue() + err.getvalue()
+    assert "is not finalized" not in out.getvalue() + err.getvalue()
 
 
 # -- (b) --anyway writes as today and says what it left out ----------------------------------------
@@ -109,9 +109,9 @@ def test_anyway_writes_the_carry_over_and_says_what_it_left_out(budgeted):
     out, _err = _rollover(anyway=True)
     assert _next_year_rows() == (1, 1)
     lines = _lines(out)
-    assert "PROVISIONAL" in lines[0]
+    assert "is not finalized" in lines[0]
     assert lines[1:3] == [W1, R2_SEPTEMBER]
-    assert lines[-1].startswith("Wrote 1 carry-over row(s)")
+    assert lines[-1].startswith("Wrote the carry-over")
 
 
 def test_the_anyway_option_says_what_it_costs_in_the_commands_help():
@@ -126,9 +126,9 @@ def test_a_dry_run_while_a_month_waits_prints_the_lines_and_the_figures_and_writ
     out, _err = _rollover(dry_run=True)
     assert _next_year_rows() == (0, 0)
     lines = _lines(out)
-    assert "PROVISIONAL" in lines[0]
+    assert "is not finalized" in lines[0]
     assert lines[1:3] == [W1, R2_SEPTEMBER]
-    assert lines[-1].startswith("Would write 1 carry-over row(s)")
+    assert lines[-1].startswith("Nothing was written (dry run).")
 
 
 # -- (d) nothing waiting: as today -----------------------------------------------------------------
@@ -149,8 +149,8 @@ def test_with_nothing_waiting_the_command_writes_as_today_with_no_waiting_words(
     assert err == ""
     assert not any(words in out for words in WAITING_WORDS)
     lines = _lines(out)
-    assert "PROVISIONAL" in lines[0]
-    assert lines[-1].startswith("Wrote 1 carry-over row(s)")
+    assert "is not finalized" in lines[0]
+    assert lines[-1].startswith("Wrote the carry-over")
 
 
 # -- (e) a year finalized anyway rolls over as today -----------------------------------------------
@@ -169,7 +169,7 @@ def test_a_year_finalized_anyway_rolls_over_as_today(budgeted):
     assert _next_year_rows() == (1, 1)
     assert err == ""
     assert not any(words in out for words in WAITING_WORDS)
-    assert "PROVISIONAL" not in out
+    assert "is not finalized" not in out
 
 
 # -- (f) the help page's Carry-over row ------------------------------------------------------------

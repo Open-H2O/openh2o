@@ -19,7 +19,11 @@ Finalized-year guard: this command operates on a CLOSED prior water year and onl
 its allocations + usage, then WRITES new carry-over rows for the NEXT year. It
 never mutates a finalized period's ledger rows, so a re-run cannot rewrite filed
 numbers. If the source year is not yet finalized the carry-over is provisional and
-the command says so loudly (but still computes it, so a demo/preview works).
+the command says so first (but still computes it, so a demo/preview works).
+
+Its lines (ruling 235, words approved by ruling 248) state each zone's and each account's
+figures as a sum, name every year as the screens do (``_water_year_label``), and close by
+counting the zone rows and the account rows written.
 
 While a month of an open source year waits for OpenET (``finalize.waiting_in``) the command
 stops, writes nothing and names the months and their use areas (ruling 220): the month's
@@ -65,8 +69,8 @@ from core.water_year import water_year_start_month
 from geography.models import ParcelZone, Zone
 
 
-_Result = tuple[Zone, WaterType, Decimal, Decimal, Decimal]
-_Decided = tuple[Zone, WaterType, Decimal, Decimal, Decimal, bool]
+_Result = tuple[Zone, WaterType, Decimal, Decimal, Decimal, Decimal]
+_Decided = tuple[Zone, WaterType, Decimal, Decimal, Decimal, Decimal, bool]
 
 
 def _budget_rows(periods: list[ReportingPeriod], source_wy: int) -> QuerySet[AllocationPlan]:
@@ -93,7 +97,7 @@ def _budget_rows(periods: list[ReportingPeriod], source_wy: int) -> QuerySet[All
 def _budget_results(
     alloc_rows: QuerySet[AllocationPlan], date_start: date, date_end: date, source_wy: int
 ) -> list[_Result]:
-    """Each pair's ``(zone, water_type, allocation, usage, net)`` for the year."""
+    """Each pair's ``(zone, water_type, allocation, carried_in, usage, net)`` for the year."""
     zones = {z.id: z for z in Zone.objects.all()}
     water_types = {w.id: w for w in WaterType.objects.all()}
     usage_cache = {}  # zone_id -> {code: usage}
@@ -117,7 +121,7 @@ def _budget_results(
             zone=zone, water_type=water_type, water_year=source_wy, origin="allocation_carryover"
         ).aggregate(total=Sum("amount_af"))["total"] or Decimal("0")
         net = (available_with_carryover(allocation, carried_in) - usage).quantize(Decimal("0.0001"))
-        results.append((zone, water_type, allocation, usage, net))
+        results.append((zone, water_type, allocation, carried_in, usage, net))
     return results
 
 
@@ -132,11 +136,11 @@ def _decide_expiring_surplus(results: list[_Result]) -> list[_Decided]:
     agency_default = cfg.default_recovery_horizon if cfg else CARRY_FORWARD
 
     decided = []
-    for zone, water_type, allocation, usage, net in results:
+    for zone, water_type, allocation, carried_in, usage, net in results:
         horizon = resolve_recovery_horizon(zone, agency_default=agency_default)
         expires_surplus = horizon == SAME_WATER_YEAR and net > 0
         decided.append(
-            (zone, water_type, allocation, usage, net, expires_surplus)
+            (zone, water_type, allocation, carried_in, usage, net, expires_surplus)
         )
     return decided
 
@@ -164,7 +168,7 @@ def _replace_carryover_rows(decided: list[_Decided], source_wy: int, target_wy: 
                     source_water_year=source_wy,
                     amount_af=net,
                 )
-                for zone, water_type, _alloc, _usage, net, expires in decided
+                for zone, water_type, _alloc, _carried_in, _usage, net, expires in decided
                 if not expires
             ]
         )
@@ -187,13 +191,13 @@ def _waiting(periods: list[ReportingPeriod]) -> dict:
     return finalize.waiting_in(open_periods)
 
 
-_AccountResult = tuple[WaterAccount, Decimal, Decimal, bool]
+_AccountResult = tuple[WaterAccount, Decimal, Decimal, Decimal, Decimal, bool]
 
 
 def _account_results(
     periods: list[ReportingPeriod], source_wy: int, water_type: WaterType | None
 ) -> list[_AccountResult]:
-    """Each account's ``(account, remainder, used, expires_surplus)`` for the year.
+    """Each account's ``(account, allocation, credits, used, remainder, expires_surplus)`` for the year.
 
     The remainder is its share of the groundwater allocations, plus its credit
     rows for the year (last year's carried amount among them), less the
@@ -234,7 +238,7 @@ def _account_results(
             for z in Zone.objects.filter(pk__in=zone_ids)
         ]
         expires = bool(horizons) and all(h == SAME_WATER_YEAR for h in horizons) and net > 0
-        results.append((account, net, used, expires))
+        results.append((account, allocation, credits, used, net, expires))
     return results
 
 
@@ -258,7 +262,7 @@ def _replace_account_credits(
                     source_key=source_key,
                     description=f"Carried forward from {_water_year_label(source_wy)}",
                 )
-                for account, net, _used, expires in results
+                for account, _allocation, _credits, _used, net, expires in results
                 if not expires
             ]
         )
@@ -324,29 +328,32 @@ class Command(BaseCommand):
         results = _budget_results(alloc_rows, date_start, date_end, source_wy)
         decided = _decide_expiring_surplus(results)
 
-        verb = "Would write" if dry_run else "Wrote"
         if not dry_run:
             _replace_carryover_rows(decided, source_wy, target_wy)
-
-        written, skipped = self._report_rows(decided, target_wy)
-
         groundwater = WaterType.objects.filter(code__iexact="GW").first()
         account_results = _account_results(periods, source_wy, groundwater)
         if not dry_run:
             _replace_account_credits(account_results, groundwater, source_wy, target_wy)
-        for account, net, used, expires in account_results:
+
+        # wording approved: ruling 248 (rows Z1, A1, X1, E1 and C1 to C3)
+        next_year = _water_year_label(target_wy)
+        for zone, _water_type, allocation, carried_in, usage, net, expires in decided:
             self.stdout.write(
-                f"  {account.account_number} GW: remainder {net} AF, used {used} AF -> "
-                + ("EXPIRES, not carried" if expires else f"WY{target_wy}")
+                f"Zone {zone.name}: allocation {_af(allocation)} + added {_af(carried_in)} "
+                f"- used {_af(usage)} = remaining {_af(net)} AF, {_carried(net, expires, next_year)}"
+            )
+        for account, allocation, credits, used, net, expires in account_results:
+            self.stdout.write(
+                f"Account {account.account_number}: allocation {_af(allocation)} + credits {_af(credits)} "
+                f"- used {_af(used)} = remaining {_af(net)} AF, {_carried(net, expires, next_year)}"
             )
 
-        suffix = (
-            f" ({skipped} expiring surplus not carried)" if skipped else ""
-        )
+        zone_rows = sum(1 for row in decided if not row[-1])
+        account_rows = sum(1 for row in account_results if not row[-1])
+        expired = len(decided) + len(account_results) - zone_rows - account_rows
         self.stdout.write(
             self.style.SUCCESS(
-                f"{verb} {written} carry-over row(s) from WY{source_wy} "
-                f"into WY{target_wy}.{suffix}"
+                _closing_line(dry_run, _water_year_label(source_wy), next_year, zone_rows, account_rows, expired)
             )
         )
 
@@ -377,36 +384,62 @@ class Command(BaseCommand):
             self.stdout.write(finalize.month_line(entry))
 
     def _warn_if_not_finalized(self, periods: list[ReportingPeriod], source_wy: int) -> None:
-        """Say loudly that the carry-over is provisional when the source year is still open."""
-        all_finalized = all(p.is_finalized for p in periods)
-        if not all_finalized:
+        """Say that the carry-over is provisional when the source year is still open."""
+        if not all(p.is_finalized for p in periods):
+            # wording approved: ruling 248 (row P1)
             self.stdout.write(
                 self.style.WARNING(
-                    f"WARNING: water year {source_wy} is not finalized "
-                    f"({', '.join(p.name for p in periods if not p.is_finalized)}). "
-                    "The carry-over is PROVISIONAL and will change as the year "
-                    "closes."
+                    f"{_water_year_label(source_wy)} is not finalized, so this carry-over is "
+                    "provisional. Running the command again later replaces it, using the meter "
+                    "readings, OpenET's crop ET and corrections then on file."
                 )
             )
 
-    def _report_rows(self, decided: list[_Decided], target_wy: int) -> tuple[int, int]:
-        """Print one line per (zone, water type); returns ``(written, skipped)`` counts."""
-        written = 0
-        skipped = 0
-        for zone, water_type, allocation, usage, net, expires in decided:
-            if expires:
-                skipped += 1
-                self.stdout.write(
-                    f"  {zone.name} {water_type.code}: "
-                    f"alloc {allocation} - usage {usage} = {net} AF (surplus) "
-                    f"-> EXPIRES — not carried, per district policy"
-                )
-            else:
-                written += 1
-                kind = "surplus" if net > 0 else ("debt" if net < 0 else "even")
-                self.stdout.write(
-                    f"  {zone.name} {water_type.code}: "
-                    f"alloc {allocation} - usage {usage} = {net} AF ({kind}) "
-                    f"-> WY{target_wy}"
-                )
-        return written, skipped
+
+def _af(amount: Decimal) -> str:
+    """An amount in acre-feet as the rows store it: four decimal places."""
+    return str(Decimal(amount).quantize(Decimal("0.0001")))
+
+
+def _carried(net: Decimal, expires: bool, next_year: str) -> str:
+    """The end of a zone or account line: what happens to the remainder."""
+    if expires:
+        return f"a surplus that expires and is not carried into {next_year}."
+    if net == 0:
+        return f"neither surplus nor debt; 0.0000 AF is carried into {next_year}."
+    kind = "a surplus" if net > 0 else "a debt"
+    return f"{kind} carried into {next_year}."
+
+
+def _count(n: int, one: str, many: str) -> str:
+    return f"{n} {one if n == 1 else many}"
+
+
+def _closing_line(
+    dry_run: bool, year: str, next_year: str, zone_rows: int, account_rows: int, expired: int
+) -> str:
+    """The last line: the rows written (or a dry run's rows), zone rows and account rows apart."""
+    rows = (
+        f"{_count(zone_rows, 'zone row', 'zone rows')} and "
+        f"{_count(account_rows, 'account row', 'account rows')}"
+    )
+    if dry_run:
+        line = f"Nothing was written (dry run). A real run would write the carry-over from {year} into {next_year}: {rows}"
+        if expired:
+            line += "; " + (
+                "1 surplus would expire and not be carried"
+                if expired == 1
+                else f"{expired} surpluses would expire and not be carried"
+            )
+        return line + "."
+    line = (
+        f"Wrote the carry-over from {year} into {next_year}: {rows}, "
+        f"after deleting any rows an earlier run wrote for {next_year}."
+    )
+    if expired:
+        line += " " + (
+            "1 surplus expired and was not carried."
+            if expired == 1
+            else f"{expired} surpluses expired and were not carried."
+        )
+    return line

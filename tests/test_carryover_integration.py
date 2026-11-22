@@ -221,17 +221,19 @@ class TestRolloverCommand:
         )
         assert AllocationCarryover.objects.count() == 0
 
+    # wording approved: ruling 248 (row P1)
     def test_provisional_warning_when_not_finalized(self):
         self._setup(alloc=100, usage=30, finalized=False)
         out = StringIO()
         call_command("rollover_allocations", "--water-year", "2024", stdout=out)
-        assert "PROVISIONAL" in out.getvalue()
+        assert "is not finalized" in out.getvalue()
 
+    # wording approved: ruling 248 (row P1)
     def test_no_warning_when_finalized(self):
         self._setup(alloc=100, usage=30, finalized=True)
         out = StringIO()
         call_command("rollover_allocations", "--water-year", "2024", stdout=out)
-        assert "PROVISIONAL" not in out.getvalue()
+        assert "is not finalized" not in out.getvalue()
 
     def test_does_not_mutate_ledger_rows(self):
         # ISS-020 guard: rollover only READS the prior year and WRITES new

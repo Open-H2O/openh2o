@@ -107,7 +107,7 @@ def test_expire_zone_surplus_not_written():
     rollover(stdout=out)
 
     assert not AllocationCarryover.objects.filter(zone=zone).exists()
-    assert "EXPIRES" in out.getvalue()
+    assert "a surplus that expires and is not carried" in out.getvalue()
 
 
 def test_expire_zone_debt_still_written():
