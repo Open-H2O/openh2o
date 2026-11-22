@@ -661,7 +661,7 @@ def _served_links(pod: PointOfDiversion) -> list[PointOfDiversionParcel]:
 def _months_waiting_on_crop_need(
     pod: PointOfDiversion, served: list[Parcel], by_month: dict[date, list[DiversionRecord]]
 ) -> set[date]:
-    """The months a crop-need point leaves undivided: a served use area is waiting for OpenET."""
+    """The months a crop ET point divides by shares: a use area it serves is waiting for OpenET (ruling 223)."""
     if pod.division_method != "crop_need" or not served or not by_month:
         return set()
     from datasync.crop_et import waiting_months
@@ -713,11 +713,9 @@ def _plan_allocation(
     losses: dict[date, dict[str, Decimal]] = {}
     waiting = _months_waiting_on_crop_need(pod, served, by_month)
     for month, month_records in by_month.items():
-        if month in waiting:
-            # Canal water split by crop need waits with the month (ruling 211): nothing is
-            # divided, and the month's split rows, surplus and losses are cleared until
-            # OpenET sends the crop ET of every served use area that lies in an OpenET field.
-            continue
+        # A crop ET point divides a month by shares while a use area it serves is waiting for
+        # OpenET (ruling 223), so every use area's canal water is on the ledger at once; the
+        # first calculation after every use area has the month's crop ET divides it by crop ET.
         losses[month] = _allocate_month(
             pod,
             month,
@@ -728,6 +726,7 @@ def _plan_allocation(
             notes,
             to_write,
             unallocated,
+            by_shares=month in waiting,
         )
     return records, served, to_write, unallocated, losses
 
@@ -742,8 +741,13 @@ def _allocate_month(
     notes: list[dict[str, Any]] | None,
     to_write: list[ParcelLedger],
     unallocated: list[UnallocatedDelivery],
+    by_shares: bool = False,
 ) -> dict[str, Decimal]:
-    """Divide one calendar month's records; extend ``to_write`` and ``unallocated``, return the month's losses."""
+    """Divide one calendar month's records; extend ``to_write`` and ``unallocated``, return the month's losses.
+
+    ``by_shares`` divides the month by shares whatever the point's ``division_method`` (a crop ET
+    point while a use area it serves is waiting for OpenET, ruling 223).
+    """
     served = [link.parcel for link in served_links]
     month_total = sum(
         (r.consumed_acre_feet() for r in month_records), Decimal("0")
@@ -815,6 +819,7 @@ def _allocate_month(
             eff_by_parcel,
             sw_type,
             loss["loss_fraction"],
+            by_shares=by_shares,
         )
         to_write.extend(rows)
         if surplus > 0:
@@ -913,6 +918,7 @@ def _split_record(
     eff_by_parcel: Callable[[Parcel, date], Decimal],
     sw_type: WaterType | None,
     loss_fraction: Decimal,
+    by_shares: bool = False,
 ) -> tuple[list[ParcelLedger], str, Decimal]:
     """Split one record's remainder over the free fields; return (rows, path taken, surplus).
 
@@ -922,7 +928,7 @@ def _split_record(
     by each field's crop need, capped at need over efficiency, and what no cap
     takes is the surplus.
     """
-    if pod.division_method != "crop_need":
+    if pod.division_method != "crop_need" or by_shares:
         rows = _fraction_rows(
             record, free_links, pod, sw_type, delivery_total, loss_fraction
         )

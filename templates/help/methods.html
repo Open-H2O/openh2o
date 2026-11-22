@@ -51,7 +51,7 @@
           </tr>
           <tr>
             <td class="col-name">A month waiting for OpenET</td>
-            <td>Until OpenET sends a month&rsquo;s crop ET, OpenH2O does not calculate the month for the use area. The month&rsquo;s meter readings, and canal water split by shares, are on the ledger. Canal water split by crop need waits with the month. The first calculation after the crop ET arrives counts the month in the balance.</td>
+            <td>OpenH2O does not calculate a month for a use area until OpenET sends the month&rsquo;s crop ET. OpenH2O puts the month&rsquo;s meter readings and canal water on the ledger right away. OpenH2O counts the month in the balance at the first calculation after the crop ET arrives.</td>
           </tr>
           <tr>
             <td class="col-name">A year finalized with a month waiting</td>
@@ -200,6 +200,10 @@
           <tr>
             <td class="col-name">A month with no ETAW</td>
             <td>In a month when no use area on the headgate has any ETAW, OpenH2O divides the remainder according to the shares entered on the point of diversion, or by acreage when none are entered.</td>
+          </tr>
+          <tr>
+            <td class="col-name">A use area waiting for OpenET</td>
+            <td>A point of diversion can be set to divide by crop ET. OpenH2O divides the remainder by shares in a month when a use area the point serves is waiting for OpenET. OpenH2O uses acreage in that month when no shares are entered. OpenH2O divides the month again by crop ET once every use area the point serves has the month&rsquo;s crop ET.</td>
           </tr>
           <tr>
             <td class="col-name">A month recorded as 0</td>
