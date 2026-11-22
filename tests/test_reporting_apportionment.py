@@ -3,14 +3,17 @@
 End-to-end tests for Phase 56-02: shared wells and PODs split by the
 measurement-first apportionment kernel at report-read time.
 
-These prove the wiring (56-01 built the math; this proves the three report paths
-actually call it with real per-period ET demand):
+These prove the wiring (56-01 built the math; this proves the report paths
+actually call it):
 
-  1. No hand-set share -> the volume follows measured ET demand (the thirsty crop
-     gets the larger slice), via CalculationRun.net_consumptive_use_af for the period.
+  1. Wells: no hand-set share -> the volume follows measured ET demand (the thirsty
+     crop gets the larger slice), via CalculationRun.net_consumptive_use_af for the
+     period; no CalculationRun rows -> even 1/N split.
   2. A hand-set share wins over ET (measurement-first).
-  3. No CalculationRun rows -> even 1/N split, identical to the legacy static behavior
-     (and identical to passing no period at all — the back-compat guarantee).
+  3. Points of diversion: the CalWATRS file divides each point's water the way the
+     ledger divided it, else the shares entered, else acreage, never by crop ET
+     directly (ruling 226; tests/test_calwatrs_split_follows_the_ledger.py has the
+     month-by-month cases).
   4. A shared group's TOTAL is preserved — apportionment only redistributes WITHIN a
      group (the POD's diverted total, the well's metered total), never changes the sum.
 """
@@ -24,8 +27,8 @@ import pytest
 
 from accounting.models import CalculationRun
 from reporting.generators import (
-    build_normalized_pod_parcel_map,
     build_normalized_well_parcel_map,
+    build_pod_split_by_month,
     generate_calwatrs_csv,
     generate_gears_csv,
 )
@@ -164,20 +167,20 @@ def test_single_parcel_well_gets_full_weight():
 # POD map: the SW side, mirror of the well map.
 # ---------------------------------------------------------------------------
 
-def test_pod_map_splits_by_et_demand_when_no_handset():
+def test_pod_map_splits_by_acreage_when_no_handset():
+    """No share entered: a month the ledger has not divided splits by acreage, not by ET (ruling 226)."""
     rp = ReportingPeriodFactory()
     pod = PointOfDiversionFactory()
-    a = ParcelFactory()
-    b = ParcelFactory()
+    a = ParcelFactory(area_acres=Decimal("30"))
+    b = ParcelFactory(area_acres=Decimal("10"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a, fraction=Decimal("1.0000"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=b, fraction=Decimal("1.0000"))
-    _run(a, "5")
+    _run(a, "5")    # ET says b is thirstier; acreage divides
     _run(b, "15")
 
-    m = build_normalized_pod_parcel_map(rp)
-    weights = dict(m[pod.pk])
-    assert weights[a.pk] == Decimal("0.2500")
-    assert weights[b.pk] == Decimal("0.7500")
+    weights = dict(build_pod_split_by_month(rp).for_month(pod.pk, "2024-01"))
+    assert weights[a.pk] == Decimal("0.7500")
+    assert weights[b.pk] == Decimal("0.2500")
     assert weights[a.pk] + weights[b.pk] == Decimal("1.0000")
 
 
@@ -191,7 +194,7 @@ def test_pod_map_handset_wins_and_even_without_runs():
     _run(a, "5")
     _run(b, "15")
 
-    handset = dict(build_normalized_pod_parcel_map(rp)[pod.pk])
+    handset = dict(build_pod_split_by_month(rp).for_month(pod.pk, "2024-01"))
     assert handset[a.pk] == Decimal("0.6000")
     assert handset[b.pk] == Decimal("0.4000")
 
@@ -205,18 +208,23 @@ def _calwatrs_rows(reporting_period):
     return list(csv.reader(io.StringIO(text)))[1:]  # drop the header row
 
 
-def test_calwatrs_splits_pod_volume_by_demand_total_preserved():
-    """One diverted total split across two parcels follows ET demand, and the
-    POD's total volume is unchanged — apportionment only redistributes within it."""
+def test_calwatrs_splits_pod_volume_by_the_ledger_total_preserved():
+    """One diverted total split across two use areas follows the ledger's acreage split, not
+    ET demand (ruling 226), and the POD's total volume is unchanged."""
+    from surface.services import allocate_district_delivery
+
     rp = ReportingPeriodFactory()
     wr = WaterRightFactory()
-    pod = PointOfDiversionFactory(water_right=wr)
-    a = ParcelFactory()
-    b = ParcelFactory()
+    pod = PointOfDiversionFactory(
+        water_right=wr, evaporation_fraction=Decimal("0"), seepage_fraction=Decimal("0"),
+        spill_fraction=Decimal("0"),
+    )
+    a = ParcelFactory(area_acres=Decimal("10"))
+    b = ParcelFactory(area_acres=Decimal("30"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a, fraction=Decimal("1.0000"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=b, fraction=Decimal("1.0000"))
-    _run(a, "5")
-    _run(b, "15")
+    _run(a, "15")   # ET says a is thirstier; the ledger divides by acreage
+    _run(b, "5")
     DiversionRecordFactory(
         point_of_diversion=pod,
         reporting_period=rp,
@@ -224,11 +232,12 @@ def test_calwatrs_splits_pod_volume_by_demand_total_preserved():
         volume_acre_feet=Decimal("100.0000"),
         diversion_type="direct_use",
     )
+    allocate_district_delivery(pod, rp)
 
     rows = _calwatrs_rows(rp)
     assert len(rows) == 2                                   # one row per parcel
     volumes = sorted(Decimal(r[7]) for r in rows)           # column 7 = Volume (AF)
-    assert volumes[0] == Decimal("25")                      # 100 * 0.25
+    assert volumes[0] == Decimal("25")                      # 100 * 0.25 (10 of 40 acres)
     assert volumes[1] == Decimal("75")                      # 100 * 0.75
     assert sum(Decimal(r[7]) for r in rows) == Decimal("100")  # POD total preserved
 
@@ -280,22 +289,22 @@ def test_gears_by_well_total_preserved_no_double_count():
     assert Decimal(rows[0][5]) == Decimal("20")  # column 5 = Extraction Volume: both readings, whole
 
 
-def test_prefill_calwatrs_follows_demand_split():
-    """_prefill_calwatrs now routes through the period-aware demand map (was raw
-    fractions): a thirstier parcel pulls more of its ET into the shared POD's value."""
+def test_prefill_calwatrs_follows_the_files_split():
+    """_prefill_calwatrs uses the CalWATRS file's split (ruling 226): with no share entered
+    and nothing on the ledger, acreage, not ET demand."""
     rp = ReportingPeriodFactory()
     pod = PointOfDiversionFactory()
-    a = ParcelFactory()
-    b = ParcelFactory()
+    a = ParcelFactory(area_acres=Decimal("30"))
+    b = ParcelFactory(area_acres=Decimal("10"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a, fraction=Decimal("1.0000"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=b, fraction=Decimal("1.0000"))
     _et(a, "-10.0000")
     _et(b, "-30.0000")
-    _run(a, "10")          # weights 0.25 / 0.75
+    _run(a, "10")          # ET demand would give 0.25 / 0.75
     _run(b, "30")
 
     result = build_openet_prefill(rp, "calwatrs")
     assert len(result["entities"]) == 1
     value = result["entities"][0]["months"][0]["value_af"]
-    # demand-weighted: 10*0.25 + 30*0.75 = 25.0 (an even split would give 20.0)
-    assert value == Decimal("25")
+    # acreage 0.75 / 0.25: 10*0.75 + 30*0.25 = 15.0 (the ET demand split gave 25.0)
+    assert value == Decimal("15")

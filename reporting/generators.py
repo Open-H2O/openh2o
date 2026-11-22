@@ -165,39 +165,119 @@ def build_normalized_well_parcel_map(reporting_period=None):
     return well_parcel_map
 
 
-def build_normalized_pod_parcel_map(reporting_period=None):
-    """Return ``{pod_id: [(parcel_id, weight), ...]}`` split by the 56 kernel.
+class PodSplit:
+    """Each point of diversion's split among its use areas, month by month, as the ledger divided it.
 
-    The mirror image of build_normalized_well_parcel_map on the surface-water
-    side. PointOfDiversionParcel.fraction also defaults to 1.0, so a POD diverting
-    to N parcels all at 1.0 would have its diverted volume multiplied by N when the
-    CalWATRS CSV splits it across them — the same double-count the well map guards
-    against. Each POD's parcels run through the SAME measurement-first
-    ``apportion_shared_supply`` ladder (hand-set wins, else ET demand for the
-    ``reporting_period``, else even), so the weights sum to exactly 1.0. Passing no
-    ``reporting_period`` reproduces today's static split.
+    Ruling 226 (a gap in ruling 25 of 2026-10-25): the CalWATRS file and the Prepare
+    with OpenET page divide a point's water in a month the way the ledger divided it,
+    so the file's rows agree with the use area pages. ``for_month`` returns
+    ``[(parcel_id, weight), ...]`` with 4dp weights summing to exactly 1.0000:
+
+    * a use area's part is what the ledger put on it from this point that month:
+      the rows the point divided (``divided_from_headgate``) plus this point's part
+      of the use area's own recorded delivery (``own_parts_for_point``, the same
+      pro-rata rule the division uses), normalized by the kernel's residual rule;
+    * a point-month with nothing on the ledger (not yet calculated, water only to
+      storage, every use area fallow) takes the ledger's own rule, the shares
+      entered, else acreage (``shares_else_acreage``, the helper the division
+      calls).
+
+    Crop ET never feeds the split directly; it reaches the file only through a
+    point the district set to divide by crop ET, as the ledger divided it. A use
+    area the ledger left out of a month (fallow, or every bit of its water its own
+    record at another point) has no row that month.
+    """
+
+    def __init__(self, by_month: dict[tuple[int, str], list[tuple[int, Decimal]]],
+                 fallback: dict[int, list[tuple[int, Decimal]]]):
+        self.by_month = by_month
+        self.fallback = fallback
+
+    def pod_ids(self):
+        """Every point with a use area linked to it, or with water on the ledger."""
+        return set(self.fallback) | {pod_id for pod_id, _ in self.by_month}
+
+    def for_month(self, pod_id: int, month: str) -> list[tuple[int, Decimal]]:
+        """``[(parcel_id, weight), ...]`` for one point and ``"YYYY-MM"`` month; empty for a point serving no one."""
+        return self.by_month.get((pod_id, month)) or self.fallback.get(pod_id, [])
+
+
+def _month_of(day) -> str:
+    return day.strftime("%Y-%m")
+
+
+def build_pod_split_by_month(reporting_period) -> PodSplit:
+    """The ledger's split of each point's water for every month of ``reporting_period`` (ruling 226).
+
+    Four queries whatever the size of the site (the links, the divided rows, the
+    use areas' own deliveries, the diversion records); no query per point or month.
     """
     # Local import: `surface` is an optional module, so this must not
-    # run at module scope — importing surface.models with the app uninstalled
+    # run at module scope: importing surface.models with the app uninstalled
     # raises RuntimeError before any useful error prints.
-    from surface.models import PointOfDiversionParcel
+    from surface.models import DiversionRecord, PointOfDiversionParcel
+    from surface.services import own_parts_for_point, shares_else_acreage
 
-    demand_by_parcel = _period_demand_by_parcel(reporting_period)
-
-    members_by_pod = {}  # pod_id → [(parcel_id, fraction, demand)]
-    for podp in PointOfDiversionParcel.objects.all():
-        members_by_pod.setdefault(podp.point_of_diversion_id, []).append(
-            (
-                podp.parcel_id,
-                podp.fraction,
-                demand_by_parcel.get(podp.parcel_id, Decimal("0")),
-            )
-        )
-
-    return {
-        pod_id: list(apportion_shared_supply(members).items())
-        for pod_id, members in members_by_pod.items()
+    links_by_pod: dict[int, list] = {}
+    serving: dict[int, set[int]] = {}
+    for link in PointOfDiversionParcel.objects.select_related("parcel").order_by("id"):
+        links_by_pod.setdefault(link.point_of_diversion_id, []).append(link)
+        serving.setdefault(link.parcel_id, set()).add(link.point_of_diversion_id)
+    fallback = {
+        pod_id: list(shares_else_acreage(links).items())
+        for pod_id, links in links_by_pod.items()
     }
+
+    start, end = reporting_period.start_date, reporting_period.end_date
+    surface_rows = ParcelLedger.objects.current().filter(
+        source_type="surface_diversion",
+        effective_date__gte=start,
+        effective_date__lte=end,
+    )
+
+    # What the ledger put on each use area from each point, by month.
+    magnitudes: dict[tuple[int, str], dict[int, Decimal]] = {}
+    for pod_id, parcel_id, day, amount in surface_rows.filter(
+        divided_from_headgate=True, divided_from_point_pk__isnull=False
+    ).values_list("divided_from_point_pk", "parcel_id", "effective_date", "amount_acre_feet"):
+        slot = magnitudes.setdefault((pod_id, _month_of(day)), {})
+        slot[parcel_id] = slot.get(parcel_id, Decimal("0")) - amount
+
+    # Each use area's own recorded delivery by month, and each point's recorded
+    # consumed total by month: the division counts a served use area's own
+    # delivery in a month its point has direct-use water (``_allocate_month``).
+    own_sums: dict[str, dict[int, Decimal]] = {}
+    for parcel_id, day, amount in surface_rows.filter(
+        divided_from_headgate=False, parcel_id__in=list(serving)
+    ).values_list("parcel_id", "effective_date", "amount_acre_feet"):
+        slot = own_sums.setdefault(_month_of(day), {})
+        slot[parcel_id] = slot.get(parcel_id, Decimal("0")) + amount
+    if own_sums:
+        recorded: dict[str, dict[int, Decimal]] = {}
+        for record in DiversionRecord.objects.current().filter(
+            diversion_type="direct_use", month__gte=start, month__lte=end
+        ):
+            slot = recorded.setdefault(_month_of(record.month), {})
+            slot[record.point_of_diversion_id] = (
+                slot.get(record.point_of_diversion_id, Decimal("0"))
+                + record.consumed_acre_feet()
+            )
+        for month, sums in own_sums.items():
+            own = {pk: abs(total) for pk, total in sums.items()}
+            for pod_id in recorded.get(month, {}):
+                served_here = {pk: af for pk, af in own.items() if pod_id in serving.get(pk, ())}
+                parts = own_parts_for_point(pod_id, served_here, serving, recorded[month])
+                slot = magnitudes.setdefault((pod_id, month), {})
+                for parcel_id, af in parts.items():
+                    slot[parcel_id] = slot.get(parcel_id, Decimal("0")) + af
+
+    by_month = {}
+    for key, parts in magnitudes.items():
+        members = [(pk, Decimal("1.0"), af) for pk, af in sorted(parts.items()) if af > 0]
+        if members:
+            weights = apportion_shared_supply(members)
+            by_month[key] = [(pk, w) for pk, w in weights.items() if w > 0]
+    return PodSplit(by_month, fallback)
 
 
 def _compare_split(links, demand_by_parcel, parcel_names):
@@ -705,11 +785,11 @@ def _calwatrs_raw_volumes(records: Any) -> dict[tuple[int, str], dict[str, Any]]
 
 def _calwatrs_file_rows(
     raw: dict[tuple[int, str], dict[str, Any]],
-    pod_parcel_map: dict[int, list[tuple[int, Decimal]]],
+    pod_split: PodSplit,
     gw_parcel_ids: set[int],
     combined_parcel_ids: set[int],
 ) -> list[list[Any]]:
-    """Expand each (pod, month) total into one row per source parcel fraction."""
+    """Expand each (pod, month) total into one row per use area, by that month's split."""
     rows = []
     for key in sorted(raw, key=lambda k: (raw[k]["right_id"], raw[k]["month"])):
         entry = raw[key]
@@ -720,7 +800,7 @@ def _calwatrs_file_rows(
             # the volume is never lost — it is flagged for the operator to fix.
             continue
         pod = entry["pod"]
-        parcel_fractions = pod_parcel_map.get(pod.pk, [])
+        parcel_fractions = pod_split.for_month(pod.pk, entry["month"])
 
         if parcel_fractions:
             for parcel_id, fraction in parcel_fractions:
@@ -739,8 +819,8 @@ def _calwatrs_file_rows(
 
 
 def generate_calwatrs_csv(reporting_period, template_type="a1"):
-    # Local import: `surface` is an optional module — see
-    # `build_normalized_pod_parcel_map`. The CalWATRS filing is a surface-water
+    # Local import: `surface` is an optional module; see
+    # `build_pod_split_by_month`. The CalWATRS filing is a surface-water
     # report, so this generator is only ever reached with the module enabled.
     from surface.models import DiversionRecord, PointOfDiversionParcel
 
@@ -768,11 +848,10 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
         .order_by("point_of_diversion__water_right__right_id", "month")
     )
 
-    # Build pod→[(parcel_id, weight)] map split by the measurement-first kernel for
-    # THIS period. Sums to 1.0 across the POD's parcels so its diversion is reported
-    # ONCE, not N times; where no share is hand-set the split follows ET
-    # demand so the thirsty crop carries the larger slice — the mirror of the well guard.
-    pod_parcel_map = build_normalized_pod_parcel_map(reporting_period)
+    # Each point's split among its use areas, month by month, as the ledger divided
+    # it (ruling 226). The weights sum to 1.0 across the point's use areas, so its
+    # diversion is reported ONCE, not N times.
+    pod_split = build_pod_split_by_month(reporting_period)
 
     # Determine combined-use status per parcel: has both GW and SW sources
     gw_parcel_ids = set(
@@ -784,7 +863,7 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
     combined_parcel_ids = gw_parcel_ids & sw_parcel_ids
 
     raw = _calwatrs_raw_volumes(records)
-    rows = _calwatrs_file_rows(raw, pod_parcel_map, gw_parcel_ids, combined_parcel_ids)
+    rows = _calwatrs_file_rows(raw, pod_split, gw_parcel_ids, combined_parcel_ids)
 
     for row in rows:
         writer.writerow(safe_row(row))

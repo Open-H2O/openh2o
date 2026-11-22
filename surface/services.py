@@ -192,6 +192,21 @@ def _demand_rows(
     ]
 
 
+def shares_else_acreage(links: Iterable[PointOfDiversionParcel]) -> dict[int, Decimal]:
+    """``{parcel_pk: weight}``: the shares the district entered, else acreage (ruling 25).
+
+    The shares win; where the district entered none, the fields' acreage divides the
+    water (the ladder's demand rung, fed acres). Weights are 4dp and sum to exactly
+    1.0000. The ledger's division and the CalWATRS file's month with nothing on the
+    ledger both call this, so the two cannot drift (ruling 226). Each link's parcel
+    must be loaded.
+    """
+    return apportion_shared_supply(
+        (link.parcel.pk, link.fraction, link.parcel.area_acres or Decimal("0"))
+        for link in links
+    )
+
+
 def _fraction_rows(
     record: DiversionRecord,
     served_links: list[PointOfDiversionParcel],
@@ -200,42 +215,33 @@ def _fraction_rows(
     total: Decimal | None = None,
     loss_fraction: Decimal | None = None,
 ) -> list[ParcelLedger]:
-    """Unsaved static-fraction fallback rows (NEGATIVE) — the no-ET-demand path.
+    """Unsaved rows (NEGATIVE) dividing a record by the shares entered, else acreage.
 
     Builds unsaved instances rather than writing, so ``dry_run`` can preview it
     and the one compare-and-write path stays idempotent.
 
-    T3 (math eval 2026-07-18): the split now runs through
-    ``apportion_shared_supply`` — the SAME normalized kernel the report layer
-    uses — instead of multiplying by each link's raw ``fraction``. Raw fractions
-    are not guaranteed to sum to 1, and nothing in the model forces them to, so
-    the old math invented or lost water whenever they did not:
+    T3 (math eval 2026-07-18): the split runs through ``apportion_shared_supply``
+    (by way of ``shares_else_acreage``) instead of multiplying by each link's raw
+    ``fraction``. Raw fractions are not guaranteed to sum to 1, and nothing in
+    the model forces them to, so the old math invented or lost water whenever
+    they did not:
 
       * [0.6, 0.6, 0.6] on 100 AF gave 60/60/-20 — the last row took the
         remainder and came out POSITIVE, a phantom supply row on a diversion.
       * The untouched default [1.0, 1.0] gave parcel 1 the entire delivery and
         parcel 2 nothing.
 
-    This path runs whenever no served parcel has ET demand for the month — i.e.
-    every month before the engine first runs — so it is the common case, not an
-    edge. State filings were already correct (the report layer normalizes), which
-    is exactly why the internal ledger could be wrong for the same data without
-    anything visibly breaking.
-
-    Passing demand=0 for every member is deliberate and accurate: this is the
-    no-demand fallback, so the kernel's ladder resolves to hand-set fractions
-    when the district set any, and an even split when they are untouched.
+    This is the division at every point set to divide by shares (the default),
+    at a crop ET point while a use area it serves waits for OpenET (ruling 223),
+    and at a crop ET point in a month no served field has crop ET. The CalWATRS
+    file reads the rows written here, and calls ``shares_else_acreage`` itself
+    for a month with nothing on the ledger (ruling 226), so the two agree.
     """
     if total is None:
         total = record.consumed_acre_feet()
     today = timezone.localdate()
 
-    # The shares the district entered win; where it entered none, the fields'
-    # acreage divides the water (the ladder's demand rung, fed acres).
-    weights = apportion_shared_supply(
-        (link.parcel.pk, link.fraction, link.parcel.area_acres or Decimal("0"))
-        for link in served_links
-    )
+    weights = shares_else_acreage(served_links)
     if not weights:
         return []
 
@@ -416,16 +422,36 @@ def _own_total_for_pod(
         diversion_type="direct_use",
     ):
         recorded[record.point_of_diversion_id] += record.consumed_acre_feet()
-    total = Decimal("0")
+    parts = own_parts_for_point(pod.pk, own, serving, recorded)
+    return sum(parts.values(), Decimal("0")).quantize(_Q)
+
+
+def own_parts_for_point(
+    pod_pk: int,
+    own: dict[int, Decimal],
+    serving: dict[int, set[int]],
+    recorded: dict[int, Decimal],
+) -> dict[int, Decimal]:
+    """``{parcel_pk: AF}``: this point's part of each served field's own delivery, unrounded.
+
+    ``own`` is each field's own delivery for the month (``_own_magnitudes``),
+    ``serving`` the points that serve each field, ``recorded`` each point's
+    recorded consumed total for the month. A field served by one point gives it
+    the whole delivery; a field served by several gives this point its part pro
+    rata by the points' recorded totals, or an even part when none recorded
+    anything. ``_own_total_for_pod`` sums these; the CalWATRS file reads them
+    per field (ruling 226).
+    """
+    parts: dict[int, Decimal] = {}
     for parcel_id, magnitude in own.items():
-        ids = serving.get(parcel_id, {pod.pk})
-        recorded_sum = sum((recorded[i] for i in ids), Decimal("0"))
+        ids = serving.get(parcel_id, {pod_pk})
+        recorded_sum = sum((recorded.get(i, Decimal("0")) for i in ids), Decimal("0"))
         if recorded_sum > 0:
-            weight = recorded[pod.pk] / recorded_sum
+            weight = recorded.get(pod_pk, Decimal("0")) / recorded_sum
         else:
             weight = Decimal("1") / len(ids)
-        total += magnitude * weight
-    return total.quantize(_Q)
+        parts[parcel_id] = magnitude * weight
+    return parts
 
 
 class CanalLossesTooLarge(ValueError):
