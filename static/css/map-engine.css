@@ -367,3 +367,5 @@
     padding: 0 4px 1px !important; margin: 0 10px 4px 0 !important;
     font-family: inherit; font-size: 10.5px !important; letter-spacing: 0;
 }
+/* A picked source's popup placed beside its use areas has no tip: it would point at open ground. */
+.maplibregl-popup.popup-beside .maplibregl-popup-tip { display: none; }

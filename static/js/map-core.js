@@ -262,7 +262,9 @@ OH2O._groupBox = function (map, type, pk, coords) {
     });
     var west = Infinity, south = Infinity, east = -Infinity, north = -Infinity;
     pts.forEach(function (c) { west = Math.min(west, c[0]); east = Math.max(east, c[0]); south = Math.min(south, c[1]); north = Math.max(north, c[1]); });
-    return [[west, south], [east, north]];
+    var box = [[west, south], [east, north]];
+    box.source = coords;
+    return box;
 };
 OH2O._freeArea = function (map) {
     var c = map.getContainer().getBoundingClientRect();
@@ -277,7 +279,7 @@ OH2O._placeBeside = function (map, popup, box, w, h) {
     var minX = Math.min(a.x, b.x), maxX = Math.max(a.x, b.x), minY = Math.min(a.y, b.y), maxY = Math.max(a.y, b.y);
     var f = OH2O._freeArea(map), gap = 12;
     var clamp = function (v, lo, hi) { return Math.max(lo, Math.min(hi, v)); };
-    var midY = clamp((minY + maxY) / 2, f.top + h / 2, f.bottom - h / 2);
+    var src = map.project(box.source), midY = clamp(src.y, f.top + h / 2, f.bottom - h / 2);
     var midX = clamp((minX + maxX) / 2, f.left + w / 2, f.right - w / 2);
     var sides = [
         { anchor: 'right',  at: [minX - gap, midY], fits: minX - gap - w >= f.left && f.bottom - f.top >= h },
@@ -286,7 +288,12 @@ OH2O._placeBeside = function (map, popup, box, w, h) {
         { anchor: 'bottom', at: [midX, minY - gap], fits: minY - gap - h >= f.top && f.right - f.left >= w }
     ];
     for (var i = 0; i < sides.length; i++) {
-        if (sides[i].fits) { OH2O._setAnchor(popup, sides[i].anchor); popup.setLngLat(map.unproject(sides[i].at)); return true; }
+        if (sides[i].fits) {
+            OH2O._setAnchor(popup, sides[i].anchor); popup.setLngLat(map.unproject(sides[i].at));
+            // Beside the group its tip would point at open ground, not at the source: no tip.
+            popup.addClassName('popup-beside');
+            return true;
+        }
     }
     return false;
 };
@@ -304,7 +311,10 @@ OH2O.placePopup = function (map, popup, layerId, props, coords) {
     var c = map.getContainer().getBoundingClientRect(), f = OH2O._freeArea(map);
     map.fitBounds(box, { duration: 0, maxZoom: Math.max(map.getZoom(), 13),
         padding: { left: f.left + w + 40, right: (c.width - f.right) + 30, top: f.top + 20, bottom: 30 } });
-    if (!OH2O._placeBeside(map, popup, box, w, h)) { OH2O._setAnchor(popup, 'right'); popup.setLngLat(map.unproject([map.project(box[0]).x - 12, c.height / 2])); }
+    if (!OH2O._placeBeside(map, popup, box, w, h)) {
+        OH2O._setAnchor(popup, 'right'); popup.addClassName('popup-beside');
+        popup.setLngLat(map.unproject([map.project(box[0]).x - 12, c.height / 2]));
+    }
 };
 
 /* Mount the pick on the Map page. `words`: { podHead, wellHead, more } (more carries N). */
@@ -336,7 +346,20 @@ OH2O.mountSourceShares = function (map, words) {
                 return { type: 'Feature', properties: f.properties, geometry: { type: 'Point', coordinates: c[c.length - 1] } };
             }) });
             map.setFilter('sel-use-areas', ['in', ['get', 'pk'], ['literal', feats.map(function (f) { return f.properties.parcel_id; })]]);
+            // While a source is picked, only its own name and its use areas' names stay on the map,
+            // so the lines and shares are not read through other wells' and fields' labels.
+            var picked = feats.length ? String(pk) : null;
+            var only = function (id, expr) {
+                if (!map.getLayer(id)) return;
+                if (!(id in base)) base[id] = map.getFilter(id) || null;
+                map.setFilter(id, picked ? (base[id] ? ['all', base[id], expr] : expr) : base[id]);
+            };
+            var ids = feats.map(function (f) { return f.properties.parcel_id; });
+            only('parcels-label', ['in', ['get', 'pk'], ['literal', ids]]);
+            only('wells-label', type === 'gw' ? ['==', ['to-string', ['get', 'pk']], picked || ''] : ['==', ['get', 'pk'], -1]);
+            only('pods-label', type === 'sw' ? ['==', ['to-string', ['get', 'pk']], picked || ''] : ['==', ['get', 'pk'], -1]);
         }
+        var base = {};
         OH2O.selectSource = select;
         map.on('click', function (e) {
             var layers = ['pods-points', 'wells-points'].filter(function (l) { return map.getLayer(l); });
