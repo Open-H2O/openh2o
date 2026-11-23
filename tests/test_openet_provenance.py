@@ -6,7 +6,7 @@ figure in ``data/merced/openet_fields.json`` must be one OpenET's field list sen
 tests hold four things:
 
 * the committed file names its source, carries each field's outline as OpenET's field list
-  sent it (ruling 166), and every field and month row carries the day it was received,
+  sent it, and every field and month row carries the day it was received,
   after the month ended;
 * every use area takes its crop ET and rain from at least one OpenET field, and every such
   field has crop ET and rain for all 24 months, figures as OpenET's field list sent them;

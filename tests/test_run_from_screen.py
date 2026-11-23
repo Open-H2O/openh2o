@@ -146,7 +146,7 @@ def test_an_operators_press_creates_one_request_and_runs_it(world, operator):  #
     assert calculation.requested_by == operator
     assert calculation.reporting_period == world.period
     assert calculation.status == "succeeded"
-    # March has ended, so it runs too (ruling 211); no field has crop ET for it.
+    # March has ended, so it runs too; no field has crop ET for it.
     assert calculation.months == ["2024-01", "2024-02", "2024-03"]
     assert calculation.months_done == 3
     assert calculation.outcome == "Calculated 3 months, January 2024 to March 2024."

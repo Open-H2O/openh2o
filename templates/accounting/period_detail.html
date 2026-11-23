@@ -180,7 +180,7 @@
           {% else %}
           <p class="text-secondary text-base m-0">Finalizing closes this water year's records to editing. After that an administrator can correct or void a record, or reopen the year, each with a reason that OpenH2O keeps in the change history. OpenH2O keeps a copy of the figures as finalized.</p>
           {% if finalize_waiting.months %}
-          {% comment %}A month of the year waits for OpenET (accounting.finalize.waiting): finalizing waits for it, and the administrator may finalize anyway (ruling 214). The words are approved word for word (ruling 215).{% endcomment %}
+          {% comment %}A month of the year waits for OpenET (accounting.finalize.waiting): finalizing waits for it, and the administrator may finalize anyway. The words are approved word for word.{% endcomment %}
           <p class="text-secondary text-base m-0" style="margin-top: var(--space-sm);">Some use areas have a month of this water year waiting for OpenET. The year can be finalized once OpenET sends those months.</p>
           <p class="text-secondary text-base m-0" style="margin-top: var(--space-sm);">Finalize anyway closes the year now. The months listed are left out of the balance and the figures as finalized. Their meter readings still count against the groundwater allocation. OpenH2O asks OpenET for them only if the year is reopened.</p>
           {% endif %}
@@ -210,7 +210,7 @@
           </div>
           {% endif %}
           {% if finalize_waiting.months %}
-          {% comment %}The months oldest first, the first five use areas by number, each linked to its page, then the rest counted (ruling 215). Finalize anyway is the plain button: gold is for the expected step, and closing with a month missing is the exception.{% endcomment %}
+          {% comment %}The months oldest first, the first five use areas by number, each linked to its page, then the rest counted. Finalize anyway is the plain button: gold is for the expected step, and closing with a month missing is the exception.{% endcomment %}
           {% if finalize_refused %}<p class="text-base m-0">This water year is still open. A month ended after this page was loaded, and OpenET has not sent it. Wait for OpenET, or press Finalize anyway.</p>{% endif %}
           <div>
             {% for m in finalize_waiting.months %}

@@ -20,8 +20,8 @@
 # commit before the fix. A red check, or one that does not finish within the
 # wait, refuses the release with nothing changed (exit 1); the run's log prints
 # the Test-Change: or Fix-Test: lines that would excuse each failure. The
-# candidate is resolved here, and that exact commit is what Butler checks and
-# releases. Needs `gh` logged in with access to the repository's Actions.
+# candidate is resolved here, and that exact commit is what the server checks out
+# and releases. Needs `gh` logged in with access to the repository's Actions.
 # Before dispatching the deploy checks it runs scripts/test_reasons.py (read from origin/main) on the
 # same pair: an old test the candidate changed with no Test-Change: line refuses in seconds, with the
 # lines it needs, instead of after the 27-minute check; nothing else here changed with it.

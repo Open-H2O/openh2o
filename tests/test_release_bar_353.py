@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """When OpenET reports a different figure for a month, nothing that month counts changes on its own.
 
-Ruling 134 (the plain write-up Brent approved): a month's crop ET from OpenET is recorded
+The plain write-up the maintainer approved on 2026-11-11: a month's crop ET from OpenET is recorded
 once, the first time it is fetched, with the day it was fetched. The calculation
 uses that record. A second fetch with a different figure leaves
 the record, the calculated row and the pumped figure as they were, and the

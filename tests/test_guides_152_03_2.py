@@ -310,9 +310,9 @@ def test_the_result_after_refresh_says_row_66(client_in, epa):
     assert ROW_66_NOW not in text
 
 
-# Rows 88 to 92 (ruling 110): what the post-build re-read found.
+# Rows 88 to 92: what the post-build re-read found.
 ROWS_88_TO_92 = [
-    # The sentence before it grew in a later plan (ruling 115); this row's own sentence is unchanged.
+    # The sentence before it grew in a later plan; this row's own sentence is unchanged.
     ("README.md", "On the Add a water system page, "
      "you enter a system's PWSID and OpenH2O fills in the system's details from EPA's records."),
     ("docs/DATA-IMPORT.md", "You can import a file of a water system's monthly production with the "

@@ -93,7 +93,7 @@ class PeriodFinalizeForm(forms.Form):
         ),
     )
 
-    #: Finalize anyway (ruling 214): finalize though a month of the year waits for OpenET.
+    #: Finalize anyway: finalize though a month of the year waits for OpenET.
     #: Finalizing only; reopening ignores it.
     anyway = forms.BooleanField(required=False, widget=forms.HiddenInput)
 

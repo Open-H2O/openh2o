@@ -86,7 +86,7 @@ def _precip_cache(parcel, period, precip_mm):
         model_name="GRIDMET",
         et_data=[{"precip": precip_mm, "date": period, "unit": "mm"}],
     )
-    # Recorded the way the rain writers record a month they received (ruling 208).
+    # Recorded the way the rain writers record a month they received.
     from datasync.crop_et import months_of, record_fetched_months
 
     record_fetched_months(parcel, months_of(row.et_data, "precip"), variable="precip", model="GRIDMET")

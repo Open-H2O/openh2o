@@ -102,7 +102,7 @@ def test_account_detail_opens_on_a_period_that_has_usage(seeded_site):
     assert selected is not None, "account page should auto-select a period"
     assert selected.name in (PRIOR_WY, OPEN_WY)
     # 57-02: the page reads the consumptive lens, so "real activity" is proxied by
-    # the recorded supplies (the balance itself counts only calculated months, ruling 211,
+    # the recorded supplies (the balance itself counts only calculated months,
     # and this slice is not calculated). An empty period would land this on zero.
     recorded = resp.context["balance"]["recorded"]
     assert recorded["surface"] + recorded["groundwater"] > Decimal("0"), (
@@ -140,7 +140,7 @@ def test_dashboard_opens_on_a_period_with_nonzero_usage(seeded_site):
     selected = resp.context["selected_period"]
     assert selected is not None, "dashboard should auto-select a period"
     assert selected.name in (PRIOR_WY, OPEN_WY)
-    # The balance counts only calculated months (ruling 211) and this slice is not
+    # The balance counts only calculated months and this slice is not
     # calculated, so the period's recorded water is the proxy for real activity.
     from parcels.models import ParcelLedger
 

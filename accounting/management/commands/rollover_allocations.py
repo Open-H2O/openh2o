@@ -21,12 +21,12 @@ never mutates a finalized period's ledger rows, so a re-run cannot rewrite filed
 numbers. If the source year is not yet finalized the carry-over is provisional and
 the command says so first (but still computes it, so a demo/preview works).
 
-Its lines (ruling 235, words approved by ruling 248) state each zone's and each account's
+Its lines, in wording the maintainer approved, state each zone's and each account's
 figures as a sum, name every year as the screens do (``_water_year_label``), and close by
 counting the zone rows and the account rows written.
 
 While a month of an open source year waits for OpenET (``finalize.waiting_in``) the command
-stops, writes nothing and names the months and their use areas (ruling 220): the month's
+stops, writes nothing and names the months and their use areas: the month's
 estimated extraction would be left out of the remainders.
 ``--anyway`` writes the carry-over as before and says what it left out; ``--dry-run`` never
 stops and prints the same lines above its figures. A finalized year rolls over as before.
@@ -183,7 +183,7 @@ def _waiting(periods: list[ReportingPeriod]) -> dict:
     """The year's months waiting for OpenET (``finalize.waiting_in``), over its periods not finalized.
 
     A finalized period's months are never waiting: a year finalized anyway says its month had
-    no crop ET when it was finalized (ruling 214), and it rolls over as any finalized year.
+    no crop ET when it was finalized, and it rolls over as any finalized year.
     """
     open_periods = [p for p in periods if not p.is_finalized]
     if not open_periods:
@@ -297,7 +297,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--anyway",
             action="store_true",
-            # wording approved: ruling 222 (row H1)
+            # Default wording, approved by the maintainer on 2026-11-21.
             help="Write the carry-over while a month waits for OpenET. The waiting month is left "
             "out of the figures.",
         )
@@ -335,7 +335,7 @@ class Command(BaseCommand):
         if not dry_run:
             _replace_account_credits(account_results, groundwater, source_wy, target_wy)
 
-        # wording approved: ruling 248 (rows Z1, A1, X1, E1 and C1 to C3)
+        # Default wording, approved by the maintainer on 2026-11-22.
         next_year = _water_year_label(target_wy)
         for zone, _water_type, allocation, carried_in, usage, net, expires in decided:
             self.stdout.write(
@@ -358,8 +358,8 @@ class Command(BaseCommand):
         )
 
     def _stop(self, found: dict) -> None:
-        """Ruling 220: write nothing, name the waiting months and the way on, exit 1 (rows S1 to S3)."""
-        # wording approved: ruling 222 (Finalize's words, ruling 215, with the action swapped)
+        """Write nothing, name the waiting months and the way on, exit 1 (approved wording)."""
+        # Default wording, approved by the maintainer on 2026-11-21.
         self.stderr.write(
             "Nothing was written. Some use areas have a month of this water year waiting for OpenET. "
             "The carry-over can be written once OpenET sends those months."
@@ -374,7 +374,7 @@ class Command(BaseCommand):
 
     def _say_waiting(self, found: dict) -> None:
         """What a dry run or a run with --anyway leaves out while months wait (row W1)."""
-        # wording approved: ruling 222 (row W1)
+        # Default wording, approved by the maintainer on 2026-11-21.
         self.stdout.write(
             "Some use areas have a month of this water year waiting for OpenET. The months listed "
             "are left out of the figures. Their meter readings still count against the groundwater "
@@ -386,7 +386,7 @@ class Command(BaseCommand):
     def _warn_if_not_finalized(self, periods: list[ReportingPeriod], source_wy: int) -> None:
         """Say that the carry-over is provisional when the source year is still open."""
         if not all(p.is_finalized for p in periods):
-            # wording approved: ruling 248 (row P1)
+            # Default wording, approved by the maintainer on 2026-11-22.
             self.stdout.write(
                 self.style.WARNING(
                     f"{_water_year_label(source_wy)} is not finalized, so this carry-over is "

@@ -163,7 +163,7 @@ def test_finalize_year_finalizes_an_open_year_once(open_year):
     assert PeriodStatement.objects.filter(period=open_year).count() == 1
 
 
-# -- the whole demonstration: nothing waits for OpenET (153.1-02, ruling 214) ----------------------
+# -- the whole demonstration: nothing waits for OpenET (153.1-02) ----------------------
 
 
 @pytest.mark.release

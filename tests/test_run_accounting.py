@@ -53,7 +53,7 @@ JAN = date(2024, 1, 1)
 FEB = date(2024, 2, 1)
 ET_MM = 304.8  # exactly 10.0000 AF over 10 acres
 
-# wording approved: ruling 212 (row 10)
+# Default wording, approved by the maintainer on 2026-11-21. To change the wording, update this test in the same commit.
 NO_DATA_MARCH = (
     "OpenET has not sent crop ET for March 2024 yet. The month is left out of the "
     "balance until it arrives. Its meter readings and canal water split by shares "
@@ -283,7 +283,7 @@ def test_a_month_without_data_becomes_one_note(world):
     # A year in progress always has months whose data has not arrived; that is
     # a note, not a reason for the run (or Site Health) to read as a problem.
     # March has ended, so it runs (its wells' meter shares and canal water split
-    # by shares reach the fields, ruling 211) and no use area is calculated.
+    # by shares reach the fields) and no use area is calculated.
     req = _run_months_for_period("Winter 2024")
 
     assert req.status == "succeeded"
@@ -303,7 +303,7 @@ def test_months_with_no_data_at_all_are_a_note_and_not_a_failure(world):
     assert CalculationRun.objects.count() == 0
 
 
-# wording approved: ruling 212 (row 10, for two months)
+# Default wording, approved by the maintainer on 2026-11-21. To change the wording, update this test in the same commit.
 def test_months_to_run_names_a_range_when_several_months_are_left_out(world):
     months, notes = engine_run.months_to_run(
         months=["2024-01", "2024-02", "2024-03", "2024-04"]

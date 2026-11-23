@@ -377,7 +377,7 @@ OH2O.mountBasemapToggle = function (map, mode) {
 };
 
 /* ── OpenET's fields on a detail map, off until a person ticks the box ──
-   Ruling 166: the outlines show only when asked for, and OpenET is named on the map
+   The outlines show only when asked for, and OpenET is named on the map
    whenever they show. Adds a second group to the map's Dark/Aerial bar holding one
    checkbox ("OpenET fields", with a dashed swatch), a dashed line layer, and a credit
    chip at the map's bottom-left. The box is unticked on every call: nothing is

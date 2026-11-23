@@ -88,8 +88,8 @@ STATUS_META = {
     # advice changes nothing at all.
     "none_activated": {"label": "Syncing off", "tone": "neutral"},
     # The syncs ran and no switched-on station is up to date: the chip takes the
-    # monitoring page's map-key words for the freshest state any station reached
-    # (ruling 167). "dormant" has its own tone because the map key's dormant
+    # monitoring page's map-key words for the freshest state any station reached.
+    # "dormant" has its own tone because the map key's dormant
     # colour is `--color-dormant`, not the stale amber.
     "behind": {"label": "Slightly behind", "tone": "stale"},
     "dormant": {"label": "Dormant", "tone": "dormant"},

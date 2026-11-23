@@ -263,7 +263,7 @@ was measured live and fixed at its shared cause where one existed. The rules, ea
   carries the head's weight** above its fields (the worksheet); **the primary action sits after the
   statement that qualifies it** (the report's Download beside the no-filing sentence, not above it);
   **a detail map's one mark is sized for its band**, not the overview's zoom ramp.
-- **A source's own layer on a detail map is off until a person ticks its box** (ruling 166): OpenET's
+- **A source's own layer on a detail map is off until a person ticks its box**: OpenET's
   field outlines are a dashed `--color-entity-openet` line with no fill and no label per field, the
   checkbox ("OpenET fields") a second group beside Dark and Aerial, unticked on every page load, and a
   credit chip at the map's bottom-left names OpenET while the layer shows

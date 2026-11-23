@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Finalize water year waits while a month of the year waits for OpenET (ruling 214).
+"""Finalize water year waits while a month of the year waits for OpenET.
 
 The Finalize card names each waiting month and its use areas and offers Finalize anyway in
 place of Finalize water year. Pressing Finalize water year while a month waits (a page loaded
@@ -8,7 +8,7 @@ and the change history records the months and use areas left out. A year finaliz
 says on every page that the month had no crop ET when the year was finalized, in place of
 "waiting for OpenET", because a finalized year is never asked for or calculated again;
 reopening it brings the waiting words back and the next monthly request asks for the year.
-Ruling 215 approved the words.
+The maintainer approved the words on 2026-11-21.
 
 The site is ``tests/test_waiting_for_openet.py``'s: WY 2025-2026 read on October 3, 2026,
 WAIT-1 and WAIT-2 in OpenET fields with no crop ET for September 2026, WAIT-4 in no field.
@@ -108,7 +108,7 @@ def test_the_card_names_the_waiting_month_and_its_use_areas_and_offers_finalize_
     for parcel in (world.u1, world.u2):
         assert reverse("parcels:detail", args=[parcel.pk]) in page.content.decode()
         assert parcel.parcel_number in text
-    assert "WAIT-4" not in text  # in no OpenET field: never waiting (ruling 160)
+    assert "WAIT-4" not in text  # in no OpenET field: never waiting
     assert _anyway_button(page)
     assert not _finalize_button(page)
 
@@ -141,7 +141,7 @@ def test_finalize_anyway_starts_one_run_and_the_history_names_the_months_and_use
     world.period.refresh_from_db()
     assert world.period.is_finalized is True
     note = world.period.events.get(pgh_label="update").pgh_context.metadata["note"]
-    # wording approved: ruling 215 (row C1)
+    # Default wording, approved by the maintainer on 2026-11-21. To change the wording, update this test in the same commit.
     assert note == "Finalized with months waiting for OpenET. September 2026: WAIT-1 and WAIT-2."
 
 
@@ -171,7 +171,7 @@ def test_a_year_with_every_month_finalizes_as_today(
     assert _finalize_runs().get().settings["note"] == ""
 
 
-# -- (e) what never holds Finalize back (ruling 160) ----------------------------------------------
+# -- (e) what never holds Finalize back ----------------------------------------------
 
 
 def test_a_use_area_in_no_openet_field_does_not_hold_finalize_back(monkeypatch, admin_client):
@@ -217,7 +217,7 @@ def test_a_press_from_a_page_loaded_before_the_month_ended_is_refused_and_names_
     assert _finalize_runs().count() == 0
     text = _words(response)
     assert "September 2026" in text
-    # wording approved: ruling 215 (row B1)
+    # Default wording, approved by the maintainer on 2026-11-21. To change the wording, update this test in the same commit.
     assert (
         "This water year is still open. A month ended after this page was loaded, and OpenET "
         "has not sent it. Wait for OpenET, or press Finalize anyway." in text
@@ -238,7 +238,7 @@ def test_a_month_with_seven_use_areas_waiting_names_five_and_counts_two_more(mon
     for n in range(1, 6):
         assert f"SEV-{n}" in text
     assert "SEV-6" not in text and "SEV-7" not in text
-    # wording approved: ruling 215 (row A2)
+    # Default wording, approved by the maintainer on 2026-11-21. To change the wording, update this test in the same commit.
     assert "September 2026: SEV-1, SEV-2, SEV-3, SEV-4, SEV-5 and 2 more use areas" in text
 
 
@@ -265,7 +265,7 @@ def test_a_year_finalized_anyway_says_the_month_had_no_crop_et_and_reopening_wai
     assert month.status_code == 200
     for text in (pane, _words(month), account_page, dashboard):
         assert "waiting for OpenET" not in text.replace("A month waiting for OpenET", "")
-    # wording approved: ruling 215 (rows D1, D3, D7, D8, D9)
+    # Default wording, approved by the maintainer on 2026-11-21. To change the wording, update this test in the same commit.
     assert "No crop ET when finalized" in pane
     assert (
         "The balance runs through August 2026. OpenH2O had no crop ET for September 2026 when this "
@@ -304,7 +304,7 @@ def test_an_operators_finalize_anyway_is_refused_as_today(world):
     assert _finalize_runs().count() == 0
 
 
-# -- (k) ISS-446 on a year finalized with a month missing (ruling 217) -------------------------------
+# -- (k) ISS-446 on a year finalized with a month missing -------------------------------
 
 
 def test_a_year_finalized_anyway_says_why_groundwater_and_remaining_differ_in_its_finalized_words(
@@ -318,7 +318,7 @@ def test_a_year_finalized_anyway_says_why_groundwater_and_remaining_differ_in_it
 
     dashboard, account_page = _caption_words(admin_client, world, account)
 
-    # wording approved: ruling 218 (rows G1, G2, G3, finalized forms)
+    # Default wording, approved by the maintainer on 2026-11-21. To change the wording, update this test in the same commit.
     assert dashboard.count(
         "Remaining counts meter readings for months with no crop ET when the year was finalized. "
         "Groundwater leaves those months out."

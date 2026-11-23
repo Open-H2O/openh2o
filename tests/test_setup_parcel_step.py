@@ -35,7 +35,7 @@ CALIFORNIA_LINE = (
     "The basins and parcels come from the California Department of Water Resources and cover "
     "California only. For land outside California, uncheck Groundwater Basins and Parcel "
     "Boundaries and load your parcel outlines with")
-# wording approved: ruling 194 (row 10)
+# Default wording, approved by the maintainer on 2026-11-16. To change the wording, update this test in the same commit.
 LEAVE_LINE = (
     "Keep this page open until every step finishes. A step that has started keeps going if you "
     "leave, but the next step starts only when you come back.")
@@ -283,7 +283,7 @@ def test_flowlines_runs_its_own_process_and_leaves_no_row(client, boundary):
 
 def test_getting_started_says_the_map_covers_california_only(client):
     page = _words(client.get(reverse("getting_started")))
-    # wording approved: ruling 227 (row 1.7)
+    # Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.
     assert ("The Setup Wizard downloads the parcels that overlap your boundary from the "
             "California Department of Water Resources' parcel map and saves each as a use area. "
             "The map covers California only. You can give the wizard a list of Assessor Parcel "

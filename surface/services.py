@@ -193,12 +193,12 @@ def _demand_rows(
 
 
 def shares_else_acreage(links: Iterable[PointOfDiversionParcel]) -> dict[int, Decimal]:
-    """``{parcel_pk: weight}``: the shares the district entered, else acreage (ruling 25).
+    """``{parcel_pk: weight}``: the shares the district entered, else acreage.
 
     The shares win; where the district entered none, the fields' acreage divides the
     water (the ladder's demand rung, fed acres). Weights are 4dp and sum to exactly
     1.0000. The ledger's division and the CalWATRS file's month with nothing on the
-    ledger both call this, so the two cannot drift (ruling 226). Each link's parcel
+    ledger both call this, so the two cannot drift. Each link's parcel
     must be loaded.
     """
     return apportion_shared_supply(
@@ -232,10 +232,10 @@ def _fraction_rows(
         parcel 2 nothing.
 
     This is the division at every point set to divide by shares (the default),
-    at a crop ET point while a use area it serves waits for OpenET (ruling 223),
+    at a crop ET point while a use area it serves waits for OpenET,
     and at a crop ET point in a month no served field has crop ET. The CalWATRS
     file reads the rows written here, and calls ``shares_else_acreage`` itself
-    for a month with nothing on the ledger (ruling 226), so the two agree.
+    for a month with nothing on the ledger, so the two agree.
     """
     if total is None:
         total = record.consumed_acre_feet()
@@ -440,7 +440,7 @@ def own_parts_for_point(
     the whole delivery; a field served by several gives this point its part pro
     rata by the points' recorded totals, or an even part when none recorded
     anything. ``_own_total_for_pod`` sums these; the CalWATRS file reads them
-    per field (ruling 226).
+    per field.
     """
     parts: dict[int, Decimal] = {}
     for parcel_id, magnitude in own.items():
@@ -687,7 +687,7 @@ def _served_links(pod: PointOfDiversion) -> list[PointOfDiversionParcel]:
 def _months_waiting_on_crop_need(
     pod: PointOfDiversion, served: list[Parcel], by_month: dict[date, list[DiversionRecord]]
 ) -> set[date]:
-    """The months a crop ET point divides by shares: a use area it serves is waiting for OpenET (ruling 223)."""
+    """The months a crop ET point divides by shares: a use area it serves is waiting for OpenET."""
     if pod.division_method != "crop_need" or not served or not by_month:
         return set()
     from datasync.crop_et import waiting_months
@@ -740,7 +740,7 @@ def _plan_allocation(
     waiting = _months_waiting_on_crop_need(pod, served, by_month)
     for month, month_records in by_month.items():
         # A crop ET point divides a month by shares while a use area it serves is waiting for
-        # OpenET (ruling 223), so every use area's canal water is on the ledger at once; the
+        # OpenET, so every use area's canal water is on the ledger at once; the
         # first calculation after every use area has the month's crop ET divides it by crop ET.
         losses[month] = _allocate_month(
             pod,
@@ -772,7 +772,7 @@ def _allocate_month(
     """Divide one calendar month's records; extend ``to_write`` and ``unallocated``, return the month's losses.
 
     ``by_shares`` divides the month by shares whatever the point's ``division_method`` (a crop ET
-    point while a use area it serves is waiting for OpenET, ruling 223).
+    point while a use area it serves is waiting for OpenET).
     """
     served = [link.parcel for link in served_links]
     month_total = sum(

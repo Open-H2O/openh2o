@@ -31,7 +31,7 @@
 # Ahead runs: after a green push to main, tests.yml's release-check-ahead job dispatches this
 # workflow for that commit against the live one, with input ahead=true and the same title a release
 # would ask for. A later deploy.sh of that commit finds the run and waits only for what is left of it
-# (nothing, once it has finished), instead of about 27 minutes (Brent 2026-11-18 16:30, "yes").
+# (nothing, once it has finished), instead of about 27 minutes.
 # Ahead runs queue one at a time and are never cancelled while running; GitHub replaces an older
 # WAITING ahead run with a newer one. The one trap: a release whose gate waited on a queued ahead
 # run that a newer push replaced is refused as cancelled; `gh run rerun <id>` on that run clears it.
@@ -198,7 +198,7 @@ jobs:
           # Side by side when this tree's conftest.py deals tests to workers (pytest_xdist_make_scheduler,
           # 357f0d8d, 2026-11-15, after the fixes that made the suite safe in parallel), as tests.yml does;
           # a tree from before it (v3.0) runs one test at a time as before. Serial, the old tests took 30
-          # to 60 minutes (runs 42934541782, 43969792621, 44371300503). Brent 2026-11-18 11:46: "Make both changes".
+          # to 60 minutes (runs 42934541782, 43969792621, 44371300503).
           par=()
           grep -qs '^def pytest_xdist_make_scheduler' conftest.py && par=(-n auto --dist loadfile)
           dc exec -T -e OPENH2O_MODULES=all web python -m pytest "$@" "${leave[@]}" ${par[@]+"${par[@]}"} --ds=config.settings.local \
@@ -277,7 +277,7 @@ jobs:
           # Side by side when this tree's conftest.py deals tests to workers (pytest_xdist_make_scheduler,
           # 357f0d8d, 2026-11-15, after the fixes that made the suite safe in parallel), as tests.yml does;
           # a tree from before it (v3.0) runs one test at a time as before. Serial, the old tests took 30
-          # to 60 minutes (runs 42934541782, 43969792621, 44371300503). Brent 2026-11-18 11:46: "Make both changes".
+          # to 60 minutes (runs 42934541782, 43969792621, 44371300503).
           par=()
           grep -qs '^def pytest_xdist_make_scheduler' conftest.py && par=(-n auto --dist loadfile)
           dc exec -T -e OPENH2O_MODULES=all web python -m pytest "$@" ${par[@]+"${par[@]}"} --ds=config.settings.local \

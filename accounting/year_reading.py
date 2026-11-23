@@ -407,7 +407,7 @@ class YearReading:
 
         The balance counts a use area's ledger water only in the months it has a calculation
         run in: a month waiting for OpenET is left out whole, its canal water and meter
-        readings with its rain and crop use (ruling 211). ``groundwater_charged``, the
+        readings with its rain and crop use. ``groundwater_charged``, the
         allocation's figure, keeps every month. ``recorded`` is every month's canal water and
         groundwater, for a page that lists the recorded supplies of a use area with nothing
         counted. ``last_counted`` is the latest month with a run and ``waiting`` the months

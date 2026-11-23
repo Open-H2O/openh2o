@@ -468,7 +468,7 @@ def test_the_links_to_the_page(admin_client):
 
 
 
-# -- the Setup Wizard asks first (ruling 33) --------------------------------
+# -- the Setup Wizard asks first --------------------------------
 
 
 WIZARD = reverse("setup:wizard")
@@ -640,7 +640,7 @@ def test_add_ledger_entry_lists_use_areas_in_number_order():
 
 
 def test_the_screens_give_no_fixed_load_time(admin_client):
-    # Ruling 35: the load took 88 to 96 s on one computer and about 5.5 minutes
+    # The load took 88 to 96 s on one computer and about 5.5 minutes
     # on the staging server, so a screen says "a few minutes" and no figure.
     for url in (WIZARD, URL):
         body = admin_client.get(url).content.decode()

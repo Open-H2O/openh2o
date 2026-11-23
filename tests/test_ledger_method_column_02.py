@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The ledger file's calculation_method column (Phase 151.6, plan 02, ruling 44).
+"""The ledger file's calculation_method column (Phase 151.6, plan 02).
 
 A calculated row of the downloaded ledger file names the plan and the settings
 code of the run that produced it: "<plan name>, settings <config_hash>". Every

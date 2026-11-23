@@ -1,10 +1,10 @@
-# 151.3-05 (2026-10-23): the zero row's sentence names what met the ETAW.
+# 2026-10-23: the zero row's sentence names what met the ETAW.
 #
 # "No ETAW met by groundwater this month, so the estimated groundwater
 # extraction is zero." became "Groundwater did not meet any of this month's
 # ETAW, so the estimated groundwater extraction is zero." in
-# `accounting.ledger_words` (Brent's yes, 2026-10-23 05:15 PDT, on rewriting the
-# saved rows too). A finalized year is never recalculated, so without this its
+# `accounting.ledger_words`, and the maintainer approved rewriting the saved
+# rows too (2026-10-23). A finalized year is never recalculated, so without this its
 # rows would keep the old words for good. Only the description text moves, as
 # 0014: no amount, date, count or other column is touched.
 #

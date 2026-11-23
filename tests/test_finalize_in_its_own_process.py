@@ -100,7 +100,7 @@ def test_a_second_press_while_it_runs_starts_nothing(
     assert PendingImport.objects.filter(kind="finalize").count() == 1
 
 
-# wording approved: ruling 194 (rows 1 and 2)
+# Default wording, approved by the maintainer on 2026-11-16. To change the wording, update this test in the same commit.
 def test_the_page_shows_the_run_and_no_button_while_it_runs(
         client, year, settings, django_capture_on_commit_callbacks):
     settings.OPENH2O_IMPORT_INLINE = False
@@ -203,7 +203,7 @@ def test_a_failure_keeps_nothing_and_leaves_the_year_open(
     assert PendingImport.objects.get(kind="finalize").status == "failed"
 
 
-# wording approved: ruling 194 (row 3)
+# Default wording, approved by the maintainer on 2026-11-16. To change the wording, update this test in the same commit.
 def test_the_stopped_words_show_with_the_button_until_the_next_press(
         client, year, settings, django_capture_on_commit_callbacks):
     settings.OPENH2O_IMPORT_INLINE = False

@@ -298,7 +298,7 @@ def test_demo_lining_command_sets_each_named_point_once():
     assert atwater.notes.count(LINING_BY_POD[atwater.name][1]) == 1
 
 
-# The notes Brent approved as rows 1 to 5 of 153.6-01-ROWS.md (ruling 175).
+# The notes the maintainer approved word for word.
 _UNLINED_NOTE_153_6 = (
     "The lining below is an assumption for the demonstration. An irrigation "
     "district in the area reports 406 miles of canal unlined and 105 miles lined "
@@ -323,7 +323,7 @@ _APPROVED_153_6 = {
 
 
 def test_demo_lining_notes_are_the_approved_rows():
-    """Every point's note is word for word its approved row (153.6-01, ruling 175)."""
+    """Every point's note is word for word its approved row (153.6-01)."""
     from core.management.commands.seed_merced_pod_lining import LINING_BY_POD
 
     for name, approved in _APPROVED_153_6.items():
@@ -338,7 +338,7 @@ def test_demo_lining_notes_are_the_approved_rows():
 
 
 def test_identifier_help_text_is_the_approved_row(auth_client):
-    """The Identifier's ? text is row 6 of 153.6-01-ROWS.md (ruling 175), opening to the right."""
+    """The Identifier's ? text is row 6 of 153.6-01-ROWS.md, opening to the right."""
     pod = PointOfDiversionFactory()
     html = auth_client.get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
     assert (

@@ -319,7 +319,8 @@ class TestHandOffs:
 
     def test_a_settings_comment_names_no_person_or_date(self):
         lines = _text("config/settings/base.py").splitlines()
-        assert not any("Brent" in line for line in lines)
+        maintainer = _text("NOTICE").split("Copyright (C) 2026 ", 1)[1].split()[0]
+        assert not any(maintainer in line for line in lines)
         at = lines.index("ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = False")
         above = []
         for line in reversed(lines[:at]):

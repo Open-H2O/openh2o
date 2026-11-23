@@ -8,7 +8,7 @@ that say what is off, and one row for each month of the water year.
   in the crop ET column.
 * The Water balance panel (supplies minus uses, the residual and its badge) is not on this
   page. The dashboard and the account pages keep it; the card ends its months with one
-  Water balance line instead (ruling 53, tests/test_use_area_balance_line_01.py).
+  Water balance line instead (tests/test_use_area_balance_line_01.py).
 
 Every expected figure is a literal worked by hand.
 """

@@ -14,7 +14,7 @@ cache is read only through ``accounting.steps._cache_by_date``, the same
 "newest row wins" read the calculation used before records existed, so the
 record and the newer-figure check agree on which fetch is the newest.
 
-Rain is recorded with the same answer (ruling 208). On a use area with OpenET fields
+Rain is recorded with the same answer. On a use area with OpenET fields
 the record keeps, beside the crop ET, each field's acres inside the use area, crop
 ET and rain from that answer (``CropETFigure.fields``, :func:`recorded_fields`), and
 the effective rain step reads only those. On a use area with none, each rain writer
@@ -94,7 +94,7 @@ def add_months(first, n):
 #
 # A use area's month is waiting when the month has ended, the use area lies in at least one
 # OpenET field, and the month has no recorded crop ET. A use area in no OpenET field never
-# waits (ruling 160): OpenET sends it nothing, and its page says no field is on record. A month
+# waits: OpenET sends it nothing, and its page says no field is on record. A month
 # still in progress never waits and is never named.
 
 #: A waiting month is overdue once this many calendar months have passed since it ended
@@ -520,7 +520,7 @@ def accept_newer_figure(record, *, user, reason):
     """Replace ``record`` with OpenET's newer figure.
 
     On a use area with OpenET fields the new record keeps the newer answer's fields, so
-    the month's rain comes from the same answer as its crop ET (ruling 208).
+    the month's rain comes from the same answer as its crop ET.
     A recorded correction carrying ``reason``: the old record stays,
     struck. Raises ``core.corrections.AlreadyVoided`` / ``AlreadyReplaced``, ``ValueError``
     (the reason sentence, or :data:`NO_NEWER_SENTENCE`) or
@@ -555,7 +555,7 @@ def accept_newer_figure(record, *, user, reason):
                 variable=locked.variable,
                 model_name=locked.model_name,
                 depth_mm=newer.mm,
-                # The newer answer's fields, its rain included (ruling 208).
+                # The newer answer's fields, its rain included.
                 fields=fields_received(locked.parcel, period) if field_list.has_shares(locked.parcel) else [],
                 fetched_on=newer.fetched_on,
                 replaces=locked,
@@ -681,7 +681,7 @@ def asked_and_none_sent(parcel, period, variable="ET", model="Ensemble"):
 
 
 def _waiting_lines(first):
-    """The lines under the waiting month's heading (ruling 212, rows 6 and 6b)."""
+    """The lines under the waiting month's heading (approved wording)."""
     import os
 
     if not os.environ.get("OPENET_API_KEY", ""):
@@ -699,7 +699,7 @@ def _waiting_lines(first):
 
 def _finalized_lines(first):
     """The lines under the month's heading when its water year was finalized without it
-    (ruling 215, row D8): one form, with or without an OpenET key, since it says what OpenH2O had."""
+    (approved wording): one form, with or without an OpenET key, since it says what OpenH2O had."""
     return (
         f"OpenH2O had no crop ET for {first:%B %Y} when this water year was finalized. The month "
         "is left out of this use area's balance. Its meter readings still count against the "
@@ -754,7 +754,7 @@ def no_figure_context(parcel, period):
                 "pills": supply_kind_lines([(kind, abs(amount)) for kind, amount in terms]),
             })
     entries = list(billable.select_related("water_type").order_by("effective_date", "pk"))
-    # A finalized year is never asked for or calculated again (ruling 215, rows D7 and D8).
+    # A finalized year is never asked for or calculated again (approved wording).
     finalized = in_finalized_year(first)
     lines = (_finalized_lines(first) if finalized else _waiting_lines(first)) + (
         " " + NO_FIGURE_ENTRIES if entries else ""

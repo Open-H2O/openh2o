@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The Water use card ends its months with one Water balance line (ruling 53).
+"""The Water use card ends its months with one Water balance line.
 
 * The line reads Supplies minus Uses equals Balance, in acre-feet, for the water year.
 * The figure is the account page's and the Dashboard's (supplies minus crop ET and the

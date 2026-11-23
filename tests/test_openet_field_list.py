@@ -778,7 +778,7 @@ def test_the_stamped_rainfall_adds_to_the_rain_the_precip_step_counts():
 
 
 def test_the_stamp_lists_the_recorded_fields_when_a_newer_figure_has_not_been_accepted():
-    """A newer answer nobody accepted leaves the list as recorded (ruling 208)."""
+    """A newer answer nobody accepted leaves the list as recorded."""
     from accounting.steps import et_gross
 
     parcel, a, b = _sixty_thirty_july()

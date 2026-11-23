@@ -604,7 +604,7 @@ class TestTheEmptyStateDoorsOpen:
         doors = _hrefs_with_class(
             client_in, "drinking:sampling_points", "btn-primary"
         )
-        # 151.3-06 (Brent, row 3): the site has systems, so the door is Drinking Water, where each
+        # The site has systems, so the door is Drinking Water, where each
         # system has its own Add sampling points, not Add a water system.
         assert reverse("drinking:overview") in doors
         assert reverse("drinking:onboard") not in doors

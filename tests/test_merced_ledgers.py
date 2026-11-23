@@ -457,7 +457,7 @@ def test_el_nido_district_open_year_surface_budget_is_reduced(seeded):
     open_budget = AllocationPlan.objects.get(zone=zone, water_type=sw, reporting_period=open_wy)
     assert open_budget.allocation_acre_feet < prior_budget.allocation_acre_feet, (
         "El Nido district's open-year surface budget should be reduced vs the prior year")
-    # Ruling 141: the note states the cut and claims no weather.
+    # The note states the cut and claims no weather.
     assert open_budget.notes == (
         "Surface allocation for the demonstration: a tenth of the district's "
         "allocation for WY 2024-2025."

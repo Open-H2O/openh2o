@@ -166,7 +166,7 @@ class TestParcelBalanceCard:
         body = resp.content.decode()
         assert "OpenH2O has not calculated crop ET" in body          # honest open state
         # surface supply still shown honestly, no fabricated closing term: the recorded
-        # supplies, since the balance counts no month without a calculation (ruling 211).
+        # supplies, since the balance counts no month without a calculation.
         assert resp.context["consumptive_balance"]["recorded"]["surface"] == Decimal("9")
         assert resp.context["consumptive_balance"]["supplies"]["surface"] == Decimal("0")
         # no dangling drill-down link when there are no runs.

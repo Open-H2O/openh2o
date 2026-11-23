@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""How the month's calculation page shows OpenET's crop ET (the drawing and words Brent approved).
+"""How the month's calculation page shows OpenET's crop ET (the drawing and words the maintainer approved).
 
 * The recorded figure is the Crop ET figure's value. One caption says where it came from and
   the day it was received, and a pill says Provisional or Final (the site's ``.kind-pill``).

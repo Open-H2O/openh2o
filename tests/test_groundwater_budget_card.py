@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The account page's Groundwater budget card states its figures as a sum (ruling 233).
+"""The account page's Groundwater budget card states its figures as a sum.
 
 Allocation - Used = Remaining in the house centred equation panel; with credits,
 Allocation + Credits - Used = Remaining, every credit listed under the sum in
@@ -91,7 +91,7 @@ def test_with_credits_the_card_is_four_cells_and_three_operators(d3, client):
     assert _operators(card) == ["+", "&minus;", "&equals;"]
 
 
-# wording approved: ruling 246
+# Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.
 def test_the_two_new_labels_are_the_approved_words(d3, client):
     card = _card(client, d3["account"], {"allocation": D("1"), "credits": [_credit("A", "1")], "used": D("0"), "remaining": D("2")})
     assert _cells(card)[1] == "Credits"

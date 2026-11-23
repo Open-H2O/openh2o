@@ -12,7 +12,7 @@ actually call it):
   2. A hand-set share wins over ET (measurement-first).
   3. Points of diversion: the CalWATRS file divides each point's water the way the
      ledger divided it, else the shares entered, else acreage, never by crop ET
-     directly (ruling 226; tests/test_calwatrs_split_follows_the_ledger.py has the
+     directly (tests/test_calwatrs_split_follows_the_ledger.py has the
      month-by-month cases).
   4. A shared group's TOTAL is preserved — apportionment only redistributes WITHIN a
      group (the POD's diverted total, the well's metered total), never changes the sum.
@@ -168,7 +168,7 @@ def test_single_parcel_well_gets_full_weight():
 # ---------------------------------------------------------------------------
 
 def test_pod_map_splits_by_acreage_when_no_handset():
-    """No share entered: a month the ledger has not divided splits by acreage, not by ET (ruling 226)."""
+    """No share entered: a month the ledger has not divided splits by acreage, not by ET."""
     rp = ReportingPeriodFactory()
     pod = PointOfDiversionFactory()
     a = ParcelFactory(area_acres=Decimal("30"))
@@ -210,7 +210,7 @@ def _calwatrs_rows(reporting_period):
 
 def test_calwatrs_splits_pod_volume_by_the_ledger_total_preserved():
     """One diverted total split across two use areas follows the ledger's acreage split, not
-    ET demand (ruling 226), and the POD's total volume is unchanged."""
+    ET demand, and the POD's total volume is unchanged."""
     from surface.services import allocate_district_delivery
 
     rp = ReportingPeriodFactory()
@@ -290,7 +290,7 @@ def test_gears_by_well_total_preserved_no_double_count():
 
 
 def test_prefill_calwatrs_follows_the_files_split():
-    """_prefill_calwatrs uses the CalWATRS file's split (ruling 226): with no share entered
+    """_prefill_calwatrs uses the CalWATRS file's split: with no share entered
     and nothing on the ledger, acreage, not ET demand."""
     rp = ReportingPeriodFactory()
     pod = PointOfDiversionFactory()

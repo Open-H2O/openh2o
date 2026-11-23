@@ -226,7 +226,7 @@ def _calculate_every_month_with_water():
     """A calculation run with no crop use for each use area's month that has water and no run.
 
     The balance, and the Supplies lines beside it, count a month's water only in a month the
-    use area has a calculation run in (ruling 211). These tests are about how each kind of
+    use area has a calculation run in. These tests are about how each kind of
     water is measured, so every month with water is given a run that adds no crop use.
     """
     from accounting.models import CalculationRun

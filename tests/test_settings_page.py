@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The Settings page and the Settings button in the top bar (plan 151.8-01, D4, D6, D7).
 
-Brent's ruling 54 took the Operations/Admin switch out of the sidebar. The
+The Operations/Admin switch is out of the sidebar. The
 settings that apply to the whole site (Methodology, Delivery Settings, Users,
 Site Health, Setup Wizard) now open from one Settings page, reached by a
 written-out Settings button beside the sign-in name. The button and the page

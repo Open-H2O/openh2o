@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The carry-over command waits while a month of the year waits for OpenET (ruling 220).
+"""The carry-over command waits while a month of the year waits for OpenET.
 
 rollover_allocations stops while a month of the source water year waits for OpenET and the year
 is not finalized: nothing is written, and it names the months and how many use areas wait. With
 --anyway it writes as today and says what it left out. --dry-run writes nothing, so it does not
 stop; it prints the waiting lines and the figures. A finalized year (one finalized anyway among
-them, ruling 214) rolls over exactly as today. Ruling 222 approved the words: Finalize's approved words
-(ruling 215) with the action swapped (rows draft 5).
+them) rolls over exactly as today. The maintainer approved the words on 2026-11-21: Finalize's
+approved words with the action swapped.
 
 The site is ``tests/test_waiting_for_openet.py``'s: WY 2025-2026 read on October 3, 2026, WAIT-1
 and WAIT-2 in OpenET fields with no crop ET for September 2026, WAIT-4 in no field, and a zone
@@ -38,7 +38,7 @@ from tests.test_waiting_for_openet import (  # noqa: F401  (world is a fixture, 
 
 pytestmark = pytest.mark.django_db
 
-# wording approved: ruling 222 (rows draft 5: Finalize's approved words, ruling 215, with the action swapped)
+# Default wording, approved by the maintainer on 2026-11-21. To change the wording, update this test in the same commit.
 S1 = (
     "Nothing was written. Some use areas have a month of this water year waiting for OpenET. "
     "The carry-over can be written once OpenET sends those months."

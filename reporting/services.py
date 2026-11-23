@@ -149,7 +149,7 @@ def _prefill_calwatrs(reporting_period: ReportingPeriod) -> list[dict[str, Any]]
 
     Uses the CalWATRS file's own split (``build_pod_split_by_month``): each point's
     water in a month divided the way the ledger divided it, else the shares entered,
-    else acreage (ruling 226). A use area's figure for a month is attributed by that
+    else acreage. A use area's figure for a month is attributed by that
     same month's split, so the pre-fill and the file never disagree about a shared
     point. ET is a consumptive-use estimate, not a diverted volume; the label makes
     that explicit; this is a starting figure to reconcile.

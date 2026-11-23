@@ -19,8 +19,9 @@ notation (``{`` or ``}``).
 
 **What passes.** A sentence-only test passes when, in the two lines above its
 ``def`` (or its first decorator) or inside it, it carries
-``# wording approved: <the ruling or ROWS row>`` or ``# not wording: <why>``,
-with a reason. Every sentence-only test that existed when this file was written
+``# Default wording, approved by the maintainer on <date>. To change the wording,
+update this test in the same commit.`` (the date the maintainer approved those
+exact words) or ``# not wording: <why>``, with a reason. Every sentence-only test that existed when this file was written
 is listed in ``wording_tests_baseline.txt`` and left alone. That list may only
 shrink: a listed test that is gone, or no longer sentence-only, must come off it.
 
@@ -35,7 +36,10 @@ TESTS_DIR = Path(__file__).resolve().parent
 REPO_ROOT = TESTS_DIR.parent
 BASELINE = TESTS_DIR / "wording_tests_baseline.txt"
 
-MARK = re.compile(r"#\s*(wording approved|not wording):\s*(\S.*)$")
+MARK = re.compile(
+    r"#\s*Default wording, approved by the maintainer on \d{4}-\d{2}-\d{2}\.\s+To change the wording, update this test"
+    r"|#\s*not wording:\s*\S"
+)
 SHOWN = 5
 
 
@@ -164,10 +168,10 @@ def failures(current, baseline):
     if new:
         out.append(
             f"{len(new)} new test(s) check only exact sentences: {_names(new)}. A test that requires a "
-            "sentence puts it back whenever Brent edits the page (CLAUDE.md: a test may never mandate a domain "
+            "sentence puts it back whenever the maintainer edits the page (CLAUDE.md: a test may never mandate a domain "
             "description). Check the fact the page must show (a number, a name, a status, that a warning is "
-            "present) instead. Only if Brent approved this exact wording, add `# wording approved: ruling N` (or "
-            "the ROWS row) above the test; if the literal is not wording a person reads, add "
+            "present) instead. Only if the maintainer approved this exact wording, add `# Default wording, approved by the maintainer on <date>. To change the "
+            "wording, update this test in the same commit.` above the test, with the date of the approval; if the literal is not wording a person reads, add "
             "`# not wording: <why>`. Do not add it to the baseline list. (If you are not Claude: pass this to "
             "Claude.)"
         )
@@ -223,17 +227,24 @@ def test_one_check_that_is_not_a_sentence_lets_it_pass():
 
 
 def test_each_marker_with_a_reason_silences_it():
-    for marker in ("# wording approved: ruling 999", "# not wording: a CSS value"):
+    for marker in ("# Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.", "# not wording: a CSS value"):
         assert scan(_marked_copy(marker), "tests/test_x.py") == [("tests/test_x.py::test_page_words", True)]
 
 
 def test_a_marker_inside_the_test_counts():
-    source = SENTENCE_ONLY.replace("    body =", "    # wording approved: ruling 999\n    body =")
+    source = SENTENCE_ONLY.replace("    body =", "    # Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.\n    body =")
     assert scan(source, "tests/test_x.py") == [("tests/test_x.py::test_page_words", True)]
 
 
 def test_an_empty_marker_does_not_count():
-    assert scan(_marked_copy("# wording approved:"), "tests/test_x.py") == [
+    assert scan(_marked_copy("# not wording:"), "tests/test_x.py") == [
+        ("tests/test_x.py::test_page_words", False)
+    ]
+
+
+def test_the_old_numbered_marker_no_longer_counts():
+    """A decision number points into a record no outside reader can open; the date replaces it."""
+    assert scan(_marked_copy("# wording approved: decision 999"), "tests/test_x.py") == [
         ("tests/test_x.py::test_page_words", False)
     ]
 

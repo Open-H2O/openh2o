@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """OpenET's crop ET for a month is recorded once, with the date it was fetched.
 
-What a correct site does (the plain write-up Brent approved, ruling 134):
+What a correct site does (the plain write-up the maintainer approved on 2026-11-11):
 
 * the first fetch of a month records its figure and the day it was fetched;
 * the calculation and the GEARS by-ET file read only that record;
@@ -10,7 +10,7 @@ What a correct site does (the plain write-up Brent approved, ruling 134):
   is replaced as a correction (the old one kept, struck) and the month is recalculated at once;
 * in a finalized year only an administrator may accept, through the recorded door;
 * nobody can type an ET figure;
-* rainfall is recorded the same way (ruling 208; tests/test_release_bar_353_rain.py).
+* rainfall is recorded the same way (tests/test_release_bar_353_rain.py).
 
 The worked example is the write-up's: a 100-acre corn field watered by sprinkler, with a
 well. July 2025 fetched at 91.44 mm (3.60 in, 30.00 AF crop ET, 37.50 AF pumped); OpenET
@@ -520,7 +520,7 @@ def test_the_recorded_figure_is_demonstration_content():
     assert "datasync.CropETFigure" in demonstration.CONTENT_LABELS
 
 
-# ---------------------------------------------------------------- 13. rainfall, recorded the same way (ruling 208)
+# ---------------------------------------------------------------- 13. rainfall, recorded the same way
 
 
 def test_a_refetched_rain_month_leaves_the_calculation_as_it_was():

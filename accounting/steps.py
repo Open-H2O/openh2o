@@ -450,7 +450,7 @@ def subtract_effective_precip(running_af, parcel, period, ctx, config):
     precip is a valid, correct outcome, e.g. a dry summer month).
 
     Rain is read only from the month's record, never from the cache or the field
-    months as they now stand (ruling 208): a later answer from OpenET with other rain
+    months as they now stand: a later answer from OpenET with other rain
     moves nothing until a person accepts the newer figure.
 
     **A month whose record holds OpenET fields** (``CropETFigure.fields``, recorded from

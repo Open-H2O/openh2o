@@ -99,7 +99,7 @@ _REPORTS = (
 )
 _APPROVED = (
     "approved word for word on {}; its 'none' or 'not' is the fact the "
-    "sentence states, and it stays as approved (ruling 2026-10-18)."
+    "sentence states, and it stays as approved (the maintainer's decision of 2026-10-18)."
 )
 _DEVELOPER = (
     "an Http404 message, shown only on a server running with DEBUG on; the "
@@ -152,14 +152,14 @@ EXCEPTIONS: tuple = (
     ("health/checks.py", ", not a public domain name",
      ("negation frame",), _APPROVED.format("2026-10-16")),
     ("templates/help/budgets_allocations.html", "when none of the zones its use areas lie in",
-     ("negation frame",), _APPROVED.format("2026-11-22 (ruling 234)")),
+     ("negation frame",), _APPROVED.format("2026-11-22")),
     # Developer messages.
     ("config/views.py", "It is hidden rather than rewritten", ("negation frame",), _DEVELOPER),
     ("infrastructure/views.py", "runs none of the modules", ("negation frame",), _DEVELOPER),
     # Reports.
     ("templates/reporting/partials/_handoff.html", "given your agency", ("district reader",), _REPORTS),
     ("templates/reporting/report_prefill.html", "The figure is crop ET, not a measured diversion",
-     ("negation frame",), _APPROVED.format("2026-11-17, ruling 203")),
+     ("negation frame",), _APPROVED.format("2026-11-17")),
     ("templates/reporting/partials/_report_actions.html", "A check, not a filing",
      ("negation frame",), _REPORTS),
     ("templates/reporting/partials/_report_detail_pane.html", "that system does not currently accept",
@@ -195,7 +195,7 @@ EXCEPTIONS: tuple = (
     ("accounting/models.py", "The months to calculate, oldest first, each",
      ("filler",), _NOWHERE_HELP),
     ("accounting/models.py", "The engine writes no ledger row for it",
-     ("no for not",), _APPROVED.format("2026-11-17 (ruling 200, row 43)")),
+     ("no for not",), _APPROVED.format("2026-11-17 (approved wording)")),
     ("core/modules.py", "core owns AUTH_USER_MODEL; disabling it is a",
      ("negation frame",), _START_UP),
     ("core/modules.py", "Move the join to the optional side — a wells",

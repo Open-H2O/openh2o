@@ -21,7 +21,7 @@ own page. The decided list is
   another system", a link that led to a refusal, and the add-a-system result
   drops the same button.
 
-Water years are not tested here: Brent ruled that a water year stays plain text.
+Water years are not tested here: the maintainer decided that a water year stays plain text.
 """
 from datetime import date
 from decimal import Decimal

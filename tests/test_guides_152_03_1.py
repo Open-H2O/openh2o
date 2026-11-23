@@ -100,7 +100,7 @@ def test_the_headgate_row_is_in_the_use_areas_table():
     assert "`HEADGATE`" in rows[0] and "`--headgate-field`" in rows[0]
 
 
-# Rows 76 to 80 (ruling 108), the follow-up sentences the post-build re-read called for.
+# Rows 76 to 80, the follow-up sentences the post-build re-read called for.
 _FOLLOW_UP = [
     ("docs/DATA-IMPORT.md", "`import_parcels` differs from the Import use areas screen in four ways: it imports parcels outside the boundary, it reads the parcel number from the `APN` column unless you name another column, it stops at an outline it cannot read, and it links each use area to its headgate from a headgate column:"),
     ("README.md", "`import_parcels` does not import any use area when an outline cannot be read, a parcel cannot be saved or the file names a headgate that is not on the site."),

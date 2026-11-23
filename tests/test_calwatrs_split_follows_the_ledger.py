@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The CalWATRS file divides each point's water in each month the way the ledger divided it (ruling 226).
+"""The CalWATRS file divides each point's water in each month the way the ledger divided it.
 
-Ruling 25 (2026-10-25) set how canal water divides among use areas: by the shares the district
+A decision of 2026-10-25 set how canal water divides among use areas: by the shares the district
 entered, by acreage where it entered none, by crop ET only at a point the district set to divide by
 crop ET. The use area pages follow it. The CalWATRS file kept an older rule: where no shares are
-entered, each use area's crop ET summed over the year. Ruling 226 applies ruling 25 to the file.
+entered, each use area's crop ET summed over the year. The file now follows the same division.
 
 So for each point and month, a use area's Source Fraction is its part of what the ledger put on the
 point's use areas that month: the rows the point divided, plus a use area's own recorded delivery

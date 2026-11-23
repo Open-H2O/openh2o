@@ -104,7 +104,7 @@ def _pages(*sizes):
 # -- Flowlines -------------------------------------------------------------------------------
 
 
-# wording approved: ruling 194 (rows 4 and 10)
+# Default wording, approved by the maintainer on 2026-11-16. To change the wording, update this test in the same commit.
 def test_flowlines_answers_at_once_and_starts_one_process(
         client, boundary, settings, django_capture_on_commit_callbacks):
     settings.OPENH2O_IMPORT_INLINE = False
@@ -126,7 +126,7 @@ def test_flowlines_answers_at_once_and_starts_one_process(
     assert popen.call_count == 0  # a poll while it runs starts nothing new
 
 
-# wording approved: ruling 194 (rows 5 and 6)
+# Default wording, approved by the maintainer on 2026-11-16. To change the wording, update this test in the same commit.
 def test_the_flowlines_progress_line_counts_the_download(
         client, boundary, settings, django_capture_on_commit_callbacks):
     settings.OPENH2O_IMPORT_INLINE = False
@@ -187,7 +187,7 @@ def test_a_usgs_failure_inside_the_process_shows_todays_error_row(
     assert Flowline.objects.count() == 1  # the pages saved before the failure stay
 
 
-# wording approved: ruling 194 (rows 7 and 9)
+# Default wording, approved by the maintainer on 2026-11-16. To change the wording, update this test in the same commit.
 def test_a_flowlines_process_that_went_quiet_is_reported_stopped(
         client, boundary, settings, django_capture_on_commit_callbacks):
     settings.OPENH2O_IMPORT_INLINE = False
@@ -276,7 +276,7 @@ def test_while_stations_run_the_page_lists_the_providers_done_and_the_next(
     assert "Checking CDEC Service…" in words
 
 
-# wording approved: ruling 194 (rows 8 and 9)
+# Default wording, approved by the maintainer on 2026-11-16. To change the wording, update this test in the same commit.
 def test_a_station_process_that_went_quiet_is_reported_stopped(
         client, boundary, sources, settings, django_capture_on_commit_callbacks):
     settings.OPENH2O_IMPORT_INLINE = False

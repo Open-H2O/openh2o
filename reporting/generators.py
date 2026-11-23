@@ -168,9 +168,8 @@ def build_normalized_well_parcel_map(reporting_period=None):
 class PodSplit:
     """Each point of diversion's split among its use areas, month by month, as the ledger divided it.
 
-    Ruling 226 (a gap in ruling 25 of 2026-10-25): the CalWATRS file and the Prepare
-    with OpenET page divide a point's water in a month the way the ledger divided it,
-    so the file's rows agree with the use area pages. ``for_month`` returns
+    The CalWATRS file and the Prepare with OpenET page divide a point's water in a
+    month the way the ledger divided it, so the file's rows agree with the use area pages. ``for_month`` returns
     ``[(parcel_id, weight), ...]`` with 4dp weights summing to exactly 1.0000:
 
     * a use area's part is what the ledger put on it from this point that month:
@@ -207,7 +206,7 @@ def _month_of(day) -> str:
 
 
 def build_pod_split_by_month(reporting_period) -> PodSplit:
-    """The ledger's split of each point's water for every month of ``reporting_period`` (ruling 226).
+    """The ledger's split of each point's water for every month of ``reporting_period``.
 
     Four queries whatever the size of the site (the links, the divided rows, the
     use areas' own deliveries, the diversion records); no query per point or month.
@@ -849,7 +848,7 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
     )
 
     # Each point's split among its use areas, month by month, as the ledger divided
-    # it (ruling 226). The weights sum to 1.0 across the point's use areas, so its
+    # it. The weights sum to 1.0 across the point's use areas, so its
     # diversion is reported ONCE, not N times.
     pod_split = build_pod_split_by_month(reporting_period)
 

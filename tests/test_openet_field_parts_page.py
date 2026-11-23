@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The month page lists the OpenET fields its crop ET came from (153.2-02, ruling 168).
+"""The month page lists the OpenET fields its crop ET came from (153.2-02).
 
 * The list is the Crop ET figure's parts, inside its cell: each OpenET field's number, its
   acres inside the use area and its crop ET in acre-feet, then the acres outside every OpenET

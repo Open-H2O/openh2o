@@ -207,7 +207,7 @@ def test_add_station_already_on_file(auth_client):
     assert MonitoredStation.objects.count() == before
 
 
-# --- the OpenET line and the source chips (153.2-02 Task 7, ruling 167) ------
+# --- the OpenET line and the source chips (153.2-02 Task 7) ------
 
 _PROVIDER_ANSWERED = {"source": "provider", "limit": 100, "used": 82, "tier": 1, "reason": ""}
 _PROVIDER_SILENT = {

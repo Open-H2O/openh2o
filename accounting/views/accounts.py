@@ -419,7 +419,7 @@ def _account_detail_context(account, period_param=None):
         # that runs recharge basins and farms nothing has credits and no allocation).
         if groundwater_budget["allocation"] is None and not groundwater_budget["credits"]:
             groundwater_budget = None
-    # The card states the budget as a sum (ruling 233): the credits total is a
+    # The card states the budget as a sum: the credits total is a
     # cell of its own, and every credit is listed under the sum in two columns,
     # the first column holding the extra line when the count is odd.
     groundwater_credit_total = None

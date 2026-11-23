@@ -221,14 +221,14 @@ class TestRolloverCommand:
         )
         assert AllocationCarryover.objects.count() == 0
 
-    # wording approved: ruling 248 (row P1)
+    # Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.
     def test_provisional_warning_when_not_finalized(self):
         self._setup(alloc=100, usage=30, finalized=False)
         out = StringIO()
         call_command("rollover_allocations", "--water-year", "2024", stdout=out)
         assert "is not finalized" in out.getvalue()
 
-    # wording approved: ruling 248 (row P1)
+    # Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.
     def test_no_warning_when_finalized(self):
         self._setup(alloc=100, usage=30, finalized=True)
         out = StringIO()

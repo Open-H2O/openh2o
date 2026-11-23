@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Upgrading a site records each month's crop ET and moves no number.
 
-What a correct upgrade does (the plain write-up Brent approved, ruling 134, section 5):
+What a correct upgrade does (the plain write-up the maintainer approved on 2026-11-11, section 5):
 
 * a month that was calculated is recorded at the depth its last calculation used, even
   where the cache moved after that calculation; the month then shows the newer figure;

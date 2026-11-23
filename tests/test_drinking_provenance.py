@@ -409,4 +409,4 @@ class TestTheAboutPageSaysTheSameWordsAsTheScreens:
         assert "label" in text
 
     # test_the_record_versus_limit_claim_is_untouched was removed with the
-    # paragraph it pinned, on the maintainer's ruling 2026-10-18 16:54 PDT.
+    # paragraph it pinned, on the maintainer's decision of 2026-10-18.

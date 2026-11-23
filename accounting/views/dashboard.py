@@ -151,7 +151,7 @@ def _account_rollup(
                 accounts_in_deficit += 1
             else:
                 accounts_balanced += 1
-    # Every use area of the year with a month waiting for OpenET, counted once (rows 9, ruling 212).
+    # Every use area of the year with a month waiting for OpenET, counted once (approved wording).
     use_areas_waiting = len(reading.waiting) if selected_period is not None else 0
     return {
         "use_areas_waiting": use_areas_waiting,

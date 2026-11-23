@@ -81,7 +81,7 @@ def waiting_in(periods):
 
 
 def month_line(entry):
-    """One waiting month's line (ruling 215, row A2): ``September 2026: A, B and 71 more use areas``."""
+    """One waiting month's line (approved wording): ``September 2026: A, B and 71 more use areas``."""
     names = [area["number"] for area in entry["use_areas"]]
     more = entry["more"]
     if more:
@@ -94,7 +94,7 @@ def month_line(entry):
 
 
 def note_for(found):
-    """The note OpenH2O records when a year is finalized anyway (ruling 215, row C1)."""
+    """The note OpenH2O records when a year is finalized anyway (approved wording)."""
     return " ".join(["Finalized with months waiting for OpenET."] + [month_line(m) for m in found["months"]])
 
 

@@ -3,8 +3,7 @@
 ``import_infrastructure``).
 
 Each helper says one thing the same way in both commands. The words a person
-reads come from rows 20 to 33 of the approved wording list
-(``.planning/phases/152-proven-by-strangers/152-03.1-ROWS.md``).
+reads are approved word for word by the maintainer.
 """
 import os
 

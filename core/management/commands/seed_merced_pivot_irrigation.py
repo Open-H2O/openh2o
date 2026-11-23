@@ -35,8 +35,8 @@ areas with geometry, so in practice this only ever touches the demo -- but it
 makes no assumption about a parcel's number to reach that answer.
 
 Standalone use: this command is *also* the one to run by hand against an
-already-seeded deployment (e.g. staging) to apply ruling 1 to data seeded
-before this command existed:
+already-seeded deployment (e.g. staging) to record the center-pivot
+irrigation method on data seeded before this command existed:
 
     python manage.py seed_merced_pivot_irrigation
 """

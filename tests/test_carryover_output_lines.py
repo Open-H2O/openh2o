@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The carry-over command's output lines (ruling 235; words approved by ruling 248).
+"""The carry-over command's output lines, in wording the maintainer approved on 2026-11-22.
 
 What the lines must get right, checked against the database rather than the printed words:
 the closing line's counts are the zone rows and account rows a real run writes; a dry run's
@@ -119,7 +119,7 @@ def test_no_output_line_holds_an_em_dash():
 # -- (e) the approved lines, word for word ---------------------------------------------------------
 
 
-# wording approved: ruling 248 (row P1)
+# Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.
 def test_an_open_year_says_its_carry_over_is_provisional(budgeted):
     out, _err = _rollover(dry_run=True)
     assert _lines(out)[0] == (
@@ -128,7 +128,7 @@ def test_an_open_year_says_its_carry_over_is_provisional(budgeted):
     )
 
 
-# wording approved: ruling 248 (rows C1 and C2)
+# Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.
 def test_the_closing_lines_of_a_dry_run_and_a_real_run(budgeted):
     dry, _err = _rollover(dry_run=True)
     assert _lines(dry)[-1] == (
@@ -142,7 +142,7 @@ def test_the_closing_lines_of_a_dry_run_and_a_real_run(budgeted):
     )
 
 
-# wording approved: ruling 248 (rows Z1 and A1)
+# Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.
 def test_the_zone_line_and_the_account_line_state_their_sum(budgeted):
     out, _err = _rollover(anyway=True)
     zone_row = AllocationCarryover.objects.get(water_year=2027, origin="allocation_carryover")
@@ -163,7 +163,7 @@ def test_the_zone_line_and_the_account_line_state_their_sum(budgeted):
     )
 
 
-# wording approved: ruling 248 (rows E1 and C3)
+# Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.
 def test_a_surplus_that_expires_says_so_and_the_closing_line_counts_it():
     gw = gw_type()
     period = wy_period()
@@ -181,7 +181,7 @@ def test_a_surplus_that_expires_says_so_and_the_closing_line_counts_it():
     )
 
 
-# wording approved: ruling 248 (row X1)
+# Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.
 def test_a_remainder_of_exactly_zero_is_neither_surplus_nor_debt():
     gw = gw_type()
     period = wy_period()

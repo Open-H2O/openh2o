@@ -388,7 +388,7 @@ def test_no_leaf_header_carries_a_unit_and_each_card_states_it_once():
 def test_the_footer_dashes_when_the_engine_never_ran():
     """ISS-099 reaches the footer: with no calculation run the use and balance
     cells dash, and the supply cells count none of the ledger's 37.50, because the
-    balance counts a month's water only in a month with a calculation run (ruling 211)."""
+    balance counts a month's water only in a month with a calculation run."""
     period, _zone, _parcel, _account = _basin(with_run=False)
     html = _dashboard(period).content.decode()
 

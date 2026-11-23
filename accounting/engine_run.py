@@ -172,8 +172,8 @@ def months_to_run(reporting_period=None, months=None):
     """The months to calculate, ascending, and the note about the ones waiting for OpenET.
 
     Pass a ``reporting_period`` (its whole span) or an explicit ``months`` list
-    of ``"YYYY-MM"``. Every month that has ended runs, with crop ET or without
-    (ruling 211): a month OpenET has not sent yet still writes its wells' meter
+    of ``"YYYY-MM"``. Every month that has ended runs, with crop ET or without:
+    a month OpenET has not sent yet still writes its wells' meter
     shares and its canal water split by shares, and each use area with no
     recorded crop ET is skipped (no calculated row). A month still in progress
     runs only if some use area already has crop ET for it or a later month.
@@ -201,7 +201,7 @@ def months_to_run(reporting_period=None, months=None):
 
 
 def waiting_note(months):
-    """The run's note for ended months OpenET has sent no crop ET for (ruling 212, row 10)."""
+    """The run's note for ended months OpenET has sent no crop ET for (approved wording)."""
     from datasync.crop_et import month_list
 
     named = month_list([month_date(m) for m in months])

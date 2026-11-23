@@ -182,7 +182,7 @@ class Command(BaseCommand):
                     parcel, crop_et.months_of(row["et_data"]), model=row["model_name"]
                 )
             elif row["variable"] == "precip":
-                # Rain is recorded the same way (ruling 208).
+                # Rain is recorded the same way.
                 crop_et.record_fetched_months(
                     parcel, crop_et.months_of(row["et_data"], "precip"),
                     variable="precip", model=row["model_name"],

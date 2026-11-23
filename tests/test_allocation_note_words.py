@@ -2,7 +2,7 @@
 """The El Nido allocation note on a site that loaded the demonstration earlier.
 
 accounting migration 0047 rewrites the stored "Surface allocation reduced for a
-dry year." to the words the seed now writes (ruling 141), and touches no other
+dry year." to the words the seed now writes, and touches no other
 note.
 """
 

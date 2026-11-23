@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # The demonstration's El Nido district allocation note, reworded on the rows
-# already written (ruling 141, 2026-11-12).
+# already written (2026-11-12).
 #
 # The seed wrote "Surface allocation reduced for a dry year." on the district's
 # WY 2025-2026 surface allocation when that year's rainfall was generated as a

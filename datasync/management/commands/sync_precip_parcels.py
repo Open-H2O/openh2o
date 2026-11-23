@@ -140,7 +140,7 @@ class Command(BaseCommand):
                 },
             )
             # A month with no rain recorded yet is recorded at the rain just received; a
-            # recorded month keeps its figure (datasync/crop_et.py, ruling 208).
+            # recorded month keeps its figure (datasync/crop_et.py).
             crop_et.record_fetched_months(
                 parcel, crop_et.months_of(row.et_data, "precip"), variable="precip", model="GRIDMET"
             )

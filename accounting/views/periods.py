@@ -271,7 +271,7 @@ def period_finalize(request, pk):
         )
 
     if not reopening:
-        # Ruling 214: while a month of the year waits for OpenET, Finalize water year
+        # While a month of the year waits for OpenET, Finalize water year
         # finalizes nothing (a page loaded before the month ended still shows it) and the
         # page comes back naming the months; Finalize anyway closes the year and the change
         # history records the months left out.

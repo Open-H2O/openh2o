@@ -487,7 +487,7 @@
         paint: { 'line-color': OH2O.colors.blue, 'line-width': 2 }
       });
       OH2O.addDetailLabel(map, 'parcel', 'parcel', { id: 'parcel-label', anchor: 'center', offset: [0, 0] });
-      // OpenET's fields, off until the person ticks the box (ruling 166).
+      // OpenET's fields, off until the person ticks the box.
       OH2O.mountOpenETFieldsToggle(map, openetFields());
       OH2O.attachPopup(map, 'parcel-fill', function (p) {
         return '<strong>' + (p.parcel_number || 'Parcel') + '</strong><br>' +

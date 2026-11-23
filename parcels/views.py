@@ -331,7 +331,7 @@ def _parcel_detail_context(parcel, period_id=None, can_write=True):
     editable_fields_with_values = _editable_fields_with_values(parcel, editable_fields)
     mark_actions([parcel], can_write=can_write, finalized=corrections.finalized_ranges())
     # A finalized year is never asked for or calculated again: its missing months read as
-    # finalized without them (ruling 215, rows D1 to D6), not as waiting.
+    # finalized without them (approved wording), not as waiting.
     finalized = bool(balance_period and balance_period.is_finalized)
     balance_line = _balance_line(consumptive_balance, water_use, has_well, finalized)
 
@@ -541,14 +541,14 @@ def _balance_line(consumptive_balance, water_use, has_well, finalized=False):
 
 
 def coverage_sentence(consumptive_balance, finalized=False):
-    """What the balance covers when a month waits for OpenET (ruling 212, rows 3a to 3c); "" otherwise.
+    """What the balance covers when a month waits for OpenET (approved wording); "" otherwise.
 
     The latest months waiting: "The balance runs through August 2026. September 2026 is
     waiting for OpenET and is left out." A month waiting before the last month counted:
     "August 2026 is waiting for OpenET and is left out of the balance." Nothing counted yet:
     "The balance starts with the first month OpenET sends. October 2026 is waiting for OpenET."
 
-    ``finalized``: the year was finalized with the months missing (ruling 215, rows D3 to D5):
+    ``finalized``: the year was finalized with the months missing (approved wording):
     "The balance runs through August 2026. OpenH2O had no crop ET for September 2026 when this
     water year was finalized. The month is left out of the balance."
     """
@@ -584,7 +584,7 @@ def coverage_sentence(consumptive_balance, finalized=False):
 
 
 def _finalized_coverage(missing, last):
-    """``coverage_sentence`` for a finalized year (ruling 215, rows D3 to D5)."""
+    """``coverage_sentence`` for a finalized year (approved wording)."""
     from datasync.crop_et import month_list
 
     if last is None:

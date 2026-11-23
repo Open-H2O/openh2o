@@ -181,7 +181,7 @@ def setup_wizard(request):
 
     boundaries = Boundary.objects.all().order_by("name")
     # The first question, asked only while it is free to answer: a site the
-    # demonstration can load into (ruling 33). "Start with your own records"
+    # demonstration can load into. "Start with your own records"
     # is ?start=own; the site's first boundary then retires the question.
     demonstration_state = demonstration.status().state
     context = {

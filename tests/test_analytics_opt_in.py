@@ -45,5 +45,9 @@ def test_csp_takes_extra_origins_from_the_environment():
     connect_src = policy.split("connect-src", 1)[1].split(";", 1)[0]
     assert "{$CSP_EXTRA_ORIGINS}" in script_src
     assert "{$CSP_EXTRA_ORIGINS}" in connect_src
-    assert "vanderdev" not in caddyfile
+    # The only script origins are the two code libraries and the site's own placeholder:
+    # no default analytics host comes back.
+    assert set(script_src.split()) == {
+        "'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net", "{$CSP_EXTRA_ORIGINS}",
+    }
     assert "cloudflareinsights" not in policy

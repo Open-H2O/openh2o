@@ -1,17 +1,17 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """A month OpenET has not sent crop ET for is waiting, and one rule covers it everywhere.
 
-Ruling 211: a waiting month's measured water (a well's meter shares, canal water split by the
+A waiting month's measured water (a well's meter shares, canal water split by the
 shares the district set) reaches the field the night it is entered and counts against the
 allocation at once. Canal water at a point set to divide by crop ET is divided by shares while a use area it
-serves waits (ruling 223), and again by crop ET once every use area has the month. The balance leaves the
-waiting month out whole and says what it covers. Ruling 212 approved the words.
+serves waits, and again by crop ET once every use area has the month. The balance leaves the
+waiting month out whole and says what it covers. The maintainer approved the words on 2026-11-21.
 
 The site: one water year, October 2025 to September 2026, read on October 3, 2026 (the day the
 site thinks it is, ``crop_et.today``). Two use areas, WAIT-1 and WAIT-2, each inside its own
 OpenET field, with crop ET for October 2025 to August 2026 and none for September 2026. Well W
 waters WAIT-1 and its meter reads 8.94 AF in September 2026 and 5.00 AF in April 2026. WAIT-4
-lies in no OpenET field (ruling 160: not waiting). Each test adds what it needs.
+lies in no OpenET field (so it never waits). Each test adds what it needs.
 """
 import io
 from datetime import date
@@ -170,7 +170,7 @@ def test_canal_water_split_by_shares_reaches_the_field_in_a_waiting_month(world)
     assert sum(abs(r.amount_acre_feet) for r in split) == Decimal("12.0000")
 
 
-# -- (b) a crop ET point divides a waiting month by shares (ruling 223) -------------------------
+# -- (b) a crop ET point divides a waiting month by shares -------------------------
 
 
 def _crop_et_canal(world):
@@ -300,7 +300,7 @@ def test_the_use_area_page_reads_waiting_for_the_month_and_says_what_the_balance
     text = " ".join(page.content.decode().split())
 
     assert reverse("accounting:calculation_run_detail", args=[world.u1.pk, "2026-09"]) in text
-    # wording approved: ruling 212 (rows 1 and 3a)
+    # Default wording, approved by the maintainer on 2026-11-21. To change the wording, update this test in the same commit.
     assert ">Waiting for OpenET<" in text.replace("> ", ">").replace(" <", "<")
     assert "The balance runs through August 2026. September 2026 is waiting for OpenET and is left out." in text
 
@@ -325,7 +325,7 @@ def test_the_waiting_months_page_opens_and_a_month_not_ended_stays_not_found(wor
     assert "September 2026" in text
     assert "8.94" in text
     assert page(world.u1, "2026-10").status_code == 404
-    # A use area in no OpenET field is not waiting (ruling 160): no month page, and its own page
+    # A use area in no OpenET field is not waiting: no month page, and its own page
     # keeps today's words.
     assert page(world.u4, "2026-09").status_code == 404
     pane = client.get(reverse("parcels:detail", args=[world.u4.pk]) + f"?period={world.period.pk}")
@@ -335,7 +335,7 @@ def test_the_waiting_months_page_opens_and_a_month_not_ended_stays_not_found(wor
 # -- (f) the run's note names only ended months --------------------------------------------------
 
 
-# wording approved: ruling 212 (row 10)
+# Default wording, approved by the maintainer on 2026-11-21. To change the wording, update this test in the same commit.
 def test_the_runs_note_names_only_ended_months_without_crop_et(world):
     req = _run("2026-08", "2026-09", "2026-10", "2026-11")
 
@@ -444,7 +444,7 @@ def test_a_month_whose_crop_et_is_withdrawn_after_a_calculation_waits_again(worl
     assert covered["waiting"] == [AUG, SEP]
 
 
-# -- (k) ISS-446: why a row's Groundwater and its Remaining differ while a month waits (ruling 217) -----
+# -- (k) ISS-446: why a row's Groundwater and its Remaining differ while a month waits -----
 
 GW_GAP_DASHBOARD = (
     "Remaining counts meter readings for months waiting for OpenET. Groundwater leaves those months out."
@@ -500,7 +500,7 @@ def test_while_a_month_waits_the_dashboard_and_account_say_why_groundwater_and_r
 
     dashboard, account_page = _caption_words(_staff_client(), world, account)
 
-    # wording approved: ruling 218 (rows G1, G2, G3)
+    # Default wording, approved by the maintainer on 2026-11-21. To change the wording, update this test in the same commit.
     assert dashboard.count(GW_GAP_DASHBOARD) == 2  # the Active water accounts and Zones captions
     assert account_page.count(GW_GAP_ACCOUNT) == 1  # the Groundwater budget caption
 
@@ -517,7 +517,7 @@ def test_with_nothing_waiting_neither_page_carries_the_sentence(world):
 
     dashboard, account_page = _caption_words(_staff_client(), world, account)
 
-    # wording approved: ruling 218 (rows G1 to G3 are absent with nothing waiting; ruling 212 row 9)
+    # Default wording, approved by the maintainer on 2026-11-21. To change the wording, update this test in the same commit.
     assert "Use areas with a month waiting for OpenET" not in dashboard
     assert "meter readings for months" not in dashboard
     assert "meter readings for months" not in account_page

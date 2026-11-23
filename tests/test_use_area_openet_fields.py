@@ -6,7 +6,7 @@
 * With no calculation in the year, the card adds "No OpenET field is on record for this use
   area." only when the use area has no overlap; otherwise its wording is unchanged.
 * The page carries the outlines of the OpenET fields in the map's frame only when some reach
-  into it; the map's checkbox starts unticked on every load (ruling 166).
+  into it; the map's checkbox starts unticked on every load.
 
 **Every OpenET field number and figure in this file is made up**; the use areas are the
 made-up fields of ``tests/ledger_districts``.
@@ -79,7 +79,7 @@ def test_no_run_and_no_openet_field_says_so(operator):
     assert f"{NO_RUN} {NO_FIELD} Recorded supplies:" in page
 
 
-# wording approved: ruling 212 (row 3c)
+# Default wording, approved by the maintainer on 2026-11-21. To change the wording, update this test in the same commit.
 def test_no_run_with_openet_fields_says_the_balance_starts_with_openets_first_month(operator):
     from datasync.models import CropETFigure
 

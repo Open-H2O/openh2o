@@ -270,13 +270,13 @@ class TestRenderedPages:
         settings.OPENH2O_MODULES = NINE_MODULE_DRINKING
         drinking = admin_client.get("/help/getting-started/").content.decode()
         assert "The Setup Wizard uses a boundary: the outline of the land your records cover." in drinking
-        # wording approved: ruling 227 (row 1.3)
+        # Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.
         assert "The wizard uses the boundary to bring in the groundwater subbasins and streams inside it and nearby." in drinking
         assert "Run the wizard before Step 2, because it does part of that step." in drinking
 
         settings.OPENH2O_MODULES = list(mod.ALL_MODULE_NAMES)
         full = admin_client.get("/help/getting-started/").content.decode()
-        # wording approved: ruling 227 (row 1.3)
+        # Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.
         assert (
             "uses the boundary to bring in the groundwater subbasins, parcels, streams and monitoring stations"
             in full

@@ -469,7 +469,7 @@ def test_pwsid_names_the_system_that_receives_the_rows(system, analytes, tmp_pat
     assert only_row().system == other
 
 
-# -- a second import (ruling 113) ----------------------------------------------
+# -- a second import ----------------------------------------------
 
 
 @pytest.fixture

@@ -4,7 +4,7 @@
 ``scripts/writing_shapes.py`` counts "no" put on the object ("sends no email")
 but skips "no one", "nobody" and "no" after a preposition ("to no field"), so
 "Credited to no one" stood beside "Not credited to anyone" on two screens
-(Brent's strike, ruling 57). The 151.8-03 sweep measured the screens on
+(the maintainer struck it). The 151.8-03 sweep measured the screens on
 2026-10-31 (``151.8-work/language-sweep-measured.md``): 24 sentences in 13 files
 put "no" on the object, 6 sentences named a page by another page's name ("the
 field's page", "the canal's headgate page"), 11 places said "Log in" or
@@ -27,7 +27,7 @@ or a sentence that names a page carries that page's name).
 3. **Sign in**, in templates: no "Log in", "log in" or "login". Zero.
 4. **A new-record page and its button say "Add"**: no page title starting
    "New " or "Create ", no "+ New" button. Zero outside ``EXCEPTIONS``.
-5. **"Field" meaning the record** is "use area" (ruling 59, 2026-10-31 17:36).
+5. **"Field" meaning the record** is "use area" (the maintainer's decision of 2026-10-31).
    ``FIELD_WORD_KEPT`` holds, per file, the uses that mean land outside the
    record or a data field; it may only fall.
 6. **Setting names agree**: each heading on the Delivery Settings page is a
@@ -89,27 +89,27 @@ FIELD_WORD_KEPT: dict = {
     # the rows for the 78 OpenET fields (crop ET, rainfall, outlines).
     "templates/about_demonstration_data.html": 6,
     # "Field outlines": the outlines in the person's own file, before any of
-    # them is a use area (the heading Brent approved on the drawing, ruling 70).
+    # them is a use area (the heading the maintainer approved on the drawing).
     "templates/parcels/use_area_import.html": 1,
     # "OpenET field": OpenET's own record of a piece of land and its number, a name in
     # OpenET's data and not a use area. Measured 2026-11-14 on the field-list route.
     "core/demonstration.py": 6,
     "datasync/adapters/openet_fields.py": 1,
     # Site Health's Waiting for OpenET card: "OpenET's figures for their fields", the OpenET
-    # fields a waiting use area lies in (ruling 212, row 11c).
+    # fields a waiting use area lies in (approved wording).
     "health/checks.py": 1,
     "datasync/crop_et.py": 1,
     # 14 from 153-08: a recorded figure's "OpenET fields".
     "datasync/models.py": 14,
     # The month page's list of the OpenET fields a crop ET figure came from, and the use
     # area page's acres in OpenET fields, its explainer and its no-field sentence
-    # (153.2-02, ruling 168). Measured 2026-11-14.
+    # (153.2-02). Measured 2026-11-14.
     "templates/accounting/partials/_crop_et_segment.html": 2,
     "templates/parcels/partials/_detail_pane.html": 6,
     # "OpenET field" in the glossary's entry for it and in the Methods page's crop ET and
     # precipitation rows (153.2-03). Measured 2026-11-14.
     "config/views.py": 3,
-    "templates/help/methods.html": 8,  # 8 from 153-08 (ruling 209: "the field's rainfall")
+    "templates/help/methods.html": 8,  # 8 including "the field's rainfall", approved 2026-11-18
 }
 
 #: Titles that start "New " or "Create " and are not a new record, one reason
@@ -263,7 +263,7 @@ def test_a_stations_readings_are_not_fetched_on_a_screen(pattern, advice):
 def test_a_screen_does_not_use_a_struck_word(pattern, advice):
     found = _all_hits(_screen_files(), pattern)
     assert not found, (
-        f"{len(found)} sentence(s) use a word Brent struck:\n" + _report(found, advice))
+        f"{len(found)} sentence(s) use a word the maintainer struck:\n" + _report(found, advice))
 
 
 # -- 2. A page is named by its own name ----------------------------------------------------
@@ -369,7 +369,7 @@ def test_the_record_is_a_use_area_not_a_field():
         + ", ".join(f"{rel}:{line}" for line, _text in hits[:12]) + (" ..." if len(hits) > 12 else "")
         for rel, hits in sorted(over.items()))
     assert not over, (
-        f"{len(over)} file(s) call the record a \"field\"; it is a \"use area\" everywhere (ruling 59, 2026-10-31). "
+        f"{len(over)} file(s) call the record a \"field\"; it is a \"use area\" everywhere. "
         "Reword it, or, when the word means land outside the record or a data field, "
         "list the file in FIELD_WORD_KEPT with the reason:\n" + lines)
 

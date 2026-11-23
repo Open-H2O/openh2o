@@ -324,7 +324,7 @@ class TestAccountDetailPerParcelUsage:
             effective_date=eff, amount_acre_feet=Decimal("-10.0000"),
         )
         # The month's calculation run: the balance counts a month's ledger water only in a
-        # month the use area has a run in (ruling 211).
+        # month the use area has a run in.
         from accounting.models import CalculationRun
 
         CalculationRun.objects.create(

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The Crop ET block's rules and words that Brent approved on 2026-11-12 (the drawing and the rows).
+"""The Crop ET block's rules and words that the maintainer approved on 2026-11-12 (the drawing and the words).
 
 * Provisional and Final: a figure OpenET sent within 120 days of the month's end is
   Provisional; one sent later is Final; a figure whose received day is unknown carries no
@@ -156,7 +156,7 @@ def _no_figure_field(well=True):
     return field
 
 
-# wording approved: ruling 212 (rows 5 and 6b)
+# Default wording, approved by the maintainer on 2026-11-21. To change the wording, update this test in the same commit.
 def test_a_month_openet_sent_no_crop_et_for_has_a_page_that_says_so(operator):
     field = _no_figure_field()
     ld.ledger(field, dt.date(2025, 7, 15), -4.8, "surface_diversion", "SW")
@@ -204,7 +204,7 @@ def test_a_month_openet_was_never_asked_about_stays_not_found(operator):
 # ---------------------------------------------------------------- words elsewhere
 
 
-# wording approved: ruling 151 (the section), ruling 209 (the two rainfall sentences), ruling 237 (row 4.12, the rainfall sentences rewritten)
+# Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.
 METHODS_SENTENCES = [
     "OpenH2O records a use area’s crop ET for a month the first time OpenET’s figures for that month arrive.",
     "A recorded figure is Provisional when OpenET sent it within 120 days of the month’s end.",

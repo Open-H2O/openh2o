@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""OpenET's answer for a use area's month is recorded once, crop ET and rain together (ISS-353, ruling 208).
+"""OpenET's answer for a use area's month is recorded once, crop ET and rain together (ISS-353).
 
 What a correct site does:
 

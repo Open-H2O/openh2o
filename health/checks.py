@@ -1546,10 +1546,10 @@ def _successful_backup_card(finished: datetime, dump_bytes: int, entries: int, b
 
 
 def check_openet_waiting():
-    """Months waiting for OpenET in the water years not finalized (ruling 212, rows 11a to 11c).
+    """Months waiting for OpenET in the water years not finalized (approved wording).
 
     Counts each ended month with no recorded crop ET of each use area that lies in an OpenET
-    field (a use area in none never waits, ruling 160). Green while every waiting month is
+    field (a use area in none never waits). Green while every waiting month is
     younger than its overdue point; yellow once a month is still waiting more than two calendar
     months after it ended (September from December 1), naming the first use area and how many
     more. The site cannot read its own schedule, so the point is by the calendar.
