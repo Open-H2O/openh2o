@@ -4,8 +4,10 @@
 **Which surface names the layers, and why it matters here.** The map's key is the
 LAYERS PANEL — it names every layer, shows its colour swatch, and carries a live
 feature count, and it is always on screen. The small legend box in the
-bottom-left carries only the per-zone-name colour breakdown, the one thing the
-panel structurally cannot show (a single layer painted in many named colours).
+bottom-left once carried the per-zone-name colour breakdown; since the map's
+symbols were redrawn by role (``test_map_symbols.py``) management areas are a
+dashed line with their names on the map, so the box declares no section of its
+own on the Map page.
 
 That division was settled on 2026-08-05 after the first pass at ISS-116 gave the
 legend one row per populated layer and produced a second panel repeating the
@@ -19,8 +21,8 @@ What this file therefore pins:
 * **Every layer that can be drawn can also be keyed.** A layer with a `label` and
   no `swatch`/colour is a layer no surface can name — the exact shape of the
   defect, and it would be silent.
-* **The hardcoded legend pair is gone**, and `MAP_CONFIG.legend` holds only the
-  zone breakdown, so the misleading row cannot come back unnoticed.
+* **The hardcoded legend pair is gone**, and `MAP_CONFIG.legend` declares no
+  section, so the misleading row cannot come back unnoticed.
 * **The count filters are declared.** Two layers sharing one source have to
   narrow it the way their MapLibre filters do, or the panel reports the same
   number twice (measured at 4,672 for both rivers and canals).
@@ -204,6 +206,17 @@ def _labelled_layers(html):
     return found
 
 
+def _labelled_ids(html):
+    """``{layer id: element}`` for every named layer, so a test can find a layer
+    without pinning the words the panel shows."""
+    found = {}
+    for _, element in _labelled_layers(html):
+        match = re.search(r"(?<![\w-])id:\s*'([^']+)'", element)
+        if match:
+            found[match.group(1)] = element
+    return found
+
+
 def _rendered(client):
     response = client.get(reverse("geography:map"))
     assert response.status_code == 200
@@ -239,8 +252,8 @@ class TestEveryNamedLayerCanBeKeyed:
     ):
         """Sanity on the reader above: it finds layers across the whole config,
         not just the first block, so a silent parse failure cannot pass."""
-        names = {name for name, _ in _labelled_layers(_rendered(client_in))}
-        assert {"Boundary", "Management Areas", "Rivers & Streams"} <= names
+        ids = set(_labelled_ids(_rendered(client_in)))
+        assert {"boundary-outline", "zones-outline", "flowlines-rivers", "wells-points"} <= ids
 
 
 # -- 2. The hardcoded legend pair is gone -------------------------------------
@@ -262,23 +275,19 @@ class TestTheExplicitLegendHoldsOnlyTheZoneBreakdown:
             "the hardcoded Drinking Water legend section is back"
         )
 
-    def test_the_zone_breakdown_is_the_only_explicit_section(
+    def test_management_areas_are_not_a_legend_section(
         self, client_in, two_populated_modules, management_areas
     ):
-        """One layer split into many named colours — the panel cannot show it.
+        """Management areas are a dashed line with their names on the map.
 
-        This is the whole reason the legend box still exists. Anything else that
-        appears here is duplicating the Layers panel.
+        Their per-zone colour breakdown was the one reason the legend box held a
+        section; with no fill there is no colour to key, and the names sit on
+        the areas themselves.
         """
         legend = _array(_rendered(client_in), "legend")
-        titles = re.findall(r"title:\s*'([^']+)'", legend)
-        assert titles == ["Management Areas"], (
-            f"expected only the GSA zone breakdown to be declared, got {titles}"
-        )
+        assert not re.findall(r"title:\s*'([^']+)'", legend), legend
         for zone in management_areas:
-            assert f"label: '{zone.name}'" in legend, (
-                f"{zone.name} is missing from the per-zone colour breakdown"
-            )
+            assert zone.name not in legend
 
     def test_with_no_management_areas_the_legend_box_has_nothing_to_show(
         self, client_in, two_populated_modules
@@ -295,9 +304,9 @@ class TestTheExplicitLegendHoldsOnlyTheZoneBreakdown:
         self, client_in, two_populated_modules
     ):
         """Removing the section must not remove the layer's ability to be named."""
-        names = dict(_labelled_layers(_rendered(client_in)))
-        assert "Drinking Water Facilities" in names
-        assert "OH2O.colors.blueBright" in names["Drinking Water Facilities"]
+        layers = _labelled_ids(_rendered(client_in))
+        assert "drinking-points" in layers
+        assert "OH2O.colors.drinking" in layers["drinking-points"]
 
 
 # -- 3. A deployment with data in two modules can name both -------------------
@@ -313,32 +322,21 @@ class TestBothPopulatedModulesAreReachable:
         panel row actually renders is a browser matter this suite cannot see;
         what it can see is that both layers arrive fully described.
         """
-        names = dict(_labelled_layers(_rendered(client_in)))
-        assert "Monitoring Stations" in names, "the map cannot name its stations"
-        assert "OH2O.colors.red" in names["Monitoring Stations"]
-        assert "Drinking Water Facilities" in names
-        assert "OH2O.colors.blueBright" in names["Drinking Water Facilities"]
+        layers = _labelled_ids(_rendered(client_in))
+        assert "stations-points" in layers, "the map cannot name its stations"
+        assert "OH2O.colors.station" in layers["stations-points"]
+        assert "drinking-points" in layers
+        assert "OH2O.colors.drinking" in layers["drinking-points"]
 
-    def test_the_zone_swatch_matches_the_fill_the_map_actually_paints(
+    def test_the_zone_swatch_matches_the_line_the_map_actually_paints(
         self, client_in, two_populated_modules
     ):
-        """With no management-area zones the fill is the flat fallback.
-
-        The fixture creates none, which is also the real-basin case ISS-116 was
-        filed against — there the 15 zones are `zone_type='subbasin'`, the
-        per-zone list comes back empty, and a swatch fixed at the
-        match-expression colour showed a colour the map never painted.
-
-        ``#3a9742`` (143-07 R-095) is forest-teal at DESIGN.md's OKLCH ramps'
-        500 lightness step, the fallback ``map_view`` derives when no
-        management-area zone exists — replacing the old flat green
-        ``#3a7d5c``, which lived nowhere in the derivation.
-        """
-        names = dict(_labelled_layers(_rendered(client_in)))
-        element = names["Management Areas"]
-        assert "'#3a9742'" in element.split("swatch:")[-1], (
-            "the zones swatch does not follow the fill it paints"
-        )
+        """Management areas are a sand dashed line, and the swatch says so."""
+        element = _labelled_ids(_rendered(client_in))["zones-outline"]
+        paint, swatch = element.split("swatch:")
+        assert "'line-color': OH2O.colors.managementArea" in paint
+        assert "line-dasharray" in paint
+        assert "'line-dash'" in swatch and "OH2O.colors.managementArea" in swatch
 
 
 # -- 4. The per-layer count filters --------------------------------------------
@@ -353,21 +351,21 @@ class TestSharedSourcesAreNarrowedPerLayer:
     """
 
     @pytest.mark.parametrize(
-        "layer_name,expected",
+        "layer_id,expected",
         [
-            ("Rivers & Streams", "{ prop: 'feature_type', notContains: 'Canal' }"),
-            ("Canals & Ditches", "{ prop: 'feature_type', contains: 'Canal' }"),
-            ("SW Allocation Links", "{ prop: 'source_type', val: 'sw' }"),
-            ("GW Allocation Links", "{ prop: 'source_type', val: 'gw' }"),
+            ("flowlines-rivers", "{ prop: 'feature_type', notContains: 'Canal' }"),
+            ("flowlines-canals", "{ prop: 'feature_type', contains: 'Canal' }"),
+            ("zones-outline", "{ prop: 'zone_type', val: 'management_area' }"),
+            ("service-areas-outline", "{ prop: 'zone_type', notVal: 'management_area' }"),
         ],
     )
     def test_the_filter_mirrors_the_layers_own_maplibre_filter(
-        self, client_in, two_populated_modules, layer_name, expected
+        self, client_in, two_populated_modules, layer_id, expected
     ):
-        names = dict(_labelled_layers(_rendered(client_in)))
-        assert layer_name in names, f"{layer_name} is not declared on the map"
-        assert f"countFilter: {expected}" in names[layer_name], (
-            f"{layer_name} does not narrow its shared source the way it draws"
+        layers = _labelled_ids(_rendered(client_in))
+        assert layer_id in layers, f"{layer_id} is not declared on the map"
+        assert f"countFilter: {expected}" in layers[layer_id], (
+            f"{layer_id} does not narrow its shared source the way it draws"
         )
 
     def test_each_filtered_layer_names_a_property_its_maplibre_filter_uses(
@@ -385,7 +383,7 @@ class TestSharedSourcesAreNarrowedPerLayer:
             )
 
 
-# -- 5. R-094 / R-095 (143-07): two kinds of zone, three tellable fills ------
+# -- 5. Two kinds of zone, each its own line -----------------------------------
 #
 # The `zones` source carries management-area GSA zones AND everything else
 # (surface service areas in the demonstration). One fill layer drawing both
@@ -407,30 +405,14 @@ def _element_containing(html, key, needle):
     raise AssertionError(f"no element of {key!r} contains {needle!r}")
 
 
-def _hex_rgb(hex_color):
-    hex_color = hex_color.lstrip("#")
-    return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
-
-
-@pytest.fixture
-def three_management_areas(db):
-    """Three GSA zones: enough for the "three tellable fills" claim to mean
-    something; `management_areas` above only carries two."""
-    return [
-        ZoneFactory(name="Alpha GSA"),
-        ZoneFactory(name="Beta GSA"),
-        ZoneFactory(name="Gamma GSA"),
-    ]
-
-
 class TestTheDistrictSplitsIntoTwoZoneKinds:
-    def test_zones_fill_is_filtered_to_management_area_and_keyed(self, client_in):
+    def test_zones_outline_is_filtered_to_management_area_and_keyed(self, client_in):
         element = _element_containing(
-            _rendered(client_in), "layers", "id: 'zones-fill'"
+            _rendered(client_in), "layers", "id: 'zones-outline'"
         )
         assert "filter: ['==', ['get', 'zone_type'], 'management_area']" in element
-        assert "label: 'Management Areas'" in element
-        assert "swatch: 'fill'" in element
+        assert LABEL.search(element), "the management areas layer has no name"
+        assert "swatch: 'line-dash'" in element
 
     def test_service_areas_outline_is_filtered_to_everything_else_and_keyed(
         self, client_in
@@ -439,7 +421,7 @@ class TestTheDistrictSplitsIntoTwoZoneKinds:
             _rendered(client_in), "layers", "id: 'service-areas-outline'"
         )
         assert "filter: ['!=', ['get', 'zone_type'], 'management_area']" in element
-        assert "label: 'Surface service areas'" in element
+        assert LABEL.search(element), "the other zones layer has no name"
         assert "swatch: 'line-dash'" in element
 
     def test_service_area_labels_do_not_exist_below_zoom_11(self, client_in):
@@ -451,31 +433,22 @@ class TestTheDistrictSplitsIntoTwoZoneKinds:
         )
         assert "minzoom: 11" in element
 
-    def test_the_legend_names_exactly_the_management_area_zones(
-        self, client_in, three_management_areas
-    ):
-        legend = _array(_rendered(client_in), "legend")
-        names = re.findall(r"label:\s*'([^']+)'", legend)
-        assert names == [z.name for z in three_management_areas]
+    def test_the_map_names_exactly_the_management_area_zones(self, client_in):
+        """The names sit on the areas: the label layer reads the management areas only."""
+        element = _element_containing(
+            _rendered(client_in), "layers", "'zones-label'"
+        )
+        assert "filter: ['==', ['get', 'zone_type'], 'management_area']" in element
 
 
-class TestTheThreeFillsAreTellableApart:
-    def test_the_three_colours_are_pairwise_distinct(
-        self, client_in, three_management_areas
-    ):
-        legend = _array(_rendered(client_in), "legend")
-        colors = re.findall(r"color:\s*'(#[0-9a-fA-F]{6})'", legend)
-        assert len(colors) == 3, f"expected 3 zone colours, got {colors}"
-        rgbs = [_hex_rgb(c) for c in colors]
-        for i in range(len(rgbs)):
-            for j in range(i + 1, len(rgbs)):
-                channel_diffs = [abs(a - b) for a, b in zip(rgbs[i], rgbs[j])]
-                distinct_channels = sum(1 for d in channel_diffs if d > 0x20)
-                assert distinct_channels >= 2, (
-                    f"{colors[i]} and {colors[j]} differ by more than 0x20 in "
-                    f"only {distinct_channels} channel(s), not tellable apart "
-                    "at a glance on aerial imagery or in an 11px swatch"
-                )
+class TestTheTwoZoneKindsAreTellableApart:
+    def test_management_areas_and_other_zones_differ_in_colour_and_dash(self, client_in):
+        html = _rendered(client_in)
+        managed = _element_containing(html, "layers", "id: 'zones-outline'")
+        other = _element_containing(html, "layers", "id: 'service-areas-outline'")
+        assert "OH2O.colors.managementArea" in managed and "OH2O.colors.serviceArea" in other
+        dash = re.compile(r"'line-dasharray':\s*(\[[^\]]*\])")
+        assert dash.search(managed).group(1) != dash.search(other).group(1)
 
 
 class TestZoneLabelsGeojsonCarriesTheFollowFilterFields:
