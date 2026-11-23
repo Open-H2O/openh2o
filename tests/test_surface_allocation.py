@@ -268,13 +268,12 @@ def test_fraction_fallback_normalizes_fractions_that_do_not_sum_to_one():
     assert sum(by_parcel.values()) == Decimal("-100.0000")
     assert all(v < 0 for v in by_parcel.values()), "no row may be a positive supply"
 
-    # Equal stored fractions give equal thirds. Shares are computed from the
-    # kernel's 4dp weights (0.3333) — the same resolution as the stored fraction
-    # field itself, which is DecimalField(decimal_places=4) — so each parcel gets
-    # 33.33 and the rounding residual lands on the last key by sorted str(pk).
-    assert by_parcel[a.id] == Decimal("-33.3300")
-    assert by_parcel[b.id] == Decimal("-33.3300")
-    assert by_parcel[c.id] == Decimal("-33.3400")
+    # Equal stored fractions give equal thirds. Each parcel gets its exact part of
+    # the delivery rounded to 4dp, 33.3333, and the 0.0001 the rounding leaves goes
+    # to the largest part, ties to the lower parcel number, APN-N1.
+    assert by_parcel[a.id] == Decimal("-33.3334")
+    assert by_parcel[b.id] == Decimal("-33.3333")
+    assert by_parcel[c.id] == Decimal("-33.3333")
 
 
 def test_fraction_fallback_with_untouched_defaults_splits_evenly():
