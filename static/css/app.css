@@ -2366,16 +2366,28 @@ html { color-scheme: dark; }
 .month-ledger-months {
     margin-top: var(--space-lg);
 }
-/* The month on screen among its year's month chips: named, not a link, so no box. */
+/* The year's twelve months as two even rows of six. Left to wrap, they broke
+   ten and two, the month on screen alone at the end of the short row, and both
+   page readers named the card's foot as hanging (2026-11-22). */
+.month-ledger-months .jump-nav {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.month-ledger-months .jump-nav > * {
+    text-align: center;
+}
+/* The month on screen: not a link, boxed in the accent as an active state is. */
 .jump-nav .jump-nav-current,
 .jump-nav .jump-nav-none {
     padding: 4px 10px;
     border: 1px solid transparent;
+    border-radius: var(--radius-sm);
     font-size: 0.8125rem;
     font-weight: 600;
 }
 .jump-nav .jump-nav-current {
     color: var(--color-text-primary);
+    border-color: var(--color-accent);
 }
 /* A month with no page of its own (not yet ended, or nothing recorded). */
 .jump-nav .jump-nav-none {

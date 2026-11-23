@@ -216,7 +216,8 @@ the same idea always looks the same. All live in `static/css/app.css`.
 - `.page-grid-month`: a short month page (a metered month, a no-well month, a month waiting for
   OpenET): the short card (`.receipt-short`) on the left, three fifths, and `.month-ledger` beside it,
   two fifths, one height: "<Month YYYY> on the ledger" with the month's entries (Date, Amount,
-  Water) and the water year's months as `.jump-nav` chips, the month on screen marked and not a link.
+  Water) and the water year's months as `.jump-nav` chips in two rows of six, the month on screen boxed in
+  the accent and not a link.
   One column below 1,100px of window, the short card first.
 - `.statement-*`: the use area page's Water use card: the water year's figures
   lead (`.statement-lead`), one line for each thing that is off and only when it
