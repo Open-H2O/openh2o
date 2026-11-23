@@ -2329,11 +2329,12 @@ html { color-scheme: dark; }
     max-width: 70ch;
 }
 
-/* The short page (a month with nothing estimated): one sentence, so the card
-   is as wide as what it holds and closes evenly under it. */
+/* The short page (a month with nothing estimated, or one waiting for OpenET): one
+   card at the content width, as every full card is, so its right edge lines up with
+   the banner and cards above it instead of stopping halfway across an empty page.
+   Its sentence keeps its reading measure (.receipt-lead). */
 .receipt-short {
-    width: fit-content;
-    max-width: 100%;
+    width: auto;
 }
 
 .receipt-short .receipt-lead {
@@ -3806,6 +3807,15 @@ div[id$="-map"] {
 
 .nowrap-item {
     white-space: nowrap;
+}
+
+/* A finalized water year's date and time, on the line under its Finalized badge. */
+.finalized-when {
+    margin-top: var(--space-xs);
+}
+
+.finalized-by {
+    overflow-wrap: anywhere;
 }
 
 .listed-summary {

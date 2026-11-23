@@ -58,10 +58,10 @@
           <div class="field-label">Status</div>
           <div class="field-value">
             {% if period.is_finalized %}
+              {% comment %} The date and time on their own line under the badge, never broken
+                 apart; who finalized it follows and may wrap (an address can be long). {% endcomment %}
               <span class="badge badge-pill badge-green">Finalized</span>
-              <span class="text-tertiary text-sm" style="margin-left: var(--space-sm); overflow-wrap: anywhere;">
-                {{ period.finalized_at|date:"M d, Y H:i" }}{% if period.finalized_by %} by {{ period.finalized_by }}{% endif %}
-              </span>
+              <div class="text-tertiary text-sm finalized-when"><span class="nowrap-item">{{ period.finalized_at|date:"M d, Y H:i" }}</span>{% if period.finalized_by %} by <span class="finalized-by">{{ period.finalized_by }}</span>{% endif %}</div>
             {% else %}
               <span class="badge badge-pill badge-amber">Open</span>
             {% endif %}

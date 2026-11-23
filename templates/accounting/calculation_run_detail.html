@@ -204,7 +204,7 @@
   <div class="text-tertiary text-sm receipt-facts">
     {{ parcel.parcel_number }}{% if parcel.owner_name %} &middot; {{ parcel.owner_name }}{% endif %} &middot; {{ parcel.area_acres|floatformat:2 }} acres &middot; Methodology: {{ methodology_plan_name|blank }}{% if methodology_settings_code %}, settings {{ methodology_settings_code }}{% endif %}
   </div>
-  {% comment %} One card, as wide as what it holds (.receipt-short). The month's crop ET
+  {% comment %} One card at the content width (.receipt-short). The month's crop ET
      sits inside it, the same block as the receipt's Crop ET figure. {% endcomment %}
   <div class="card-raised receipt receipt-short">
     <h2 class="receipt-headline">No groundwater extraction estimated for {{ month_label }}</h2>

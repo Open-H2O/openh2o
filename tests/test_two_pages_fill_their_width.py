@@ -39,6 +39,7 @@ def test_the_short_receipt_card_is_not_shrunk_to_its_contents():
     assert "max-content" not in declarations
 
 
+# not wording: the literal is a CSS declaration in app.css, not a sentence a person reads.
 def test_the_short_receipts_sentence_keeps_its_reading_measure():
     css = APP_CSS.read_text()
     assert "max-width: 70ch" in _rule(css, ".receipt-lead")
