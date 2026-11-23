@@ -22,7 +22,7 @@ ladder, and the vectors below are the SPEC the implementation must satisfy:
   RUNG 4 (even fallback): all fractions 1.0 AND zero total demand -> even split.
 
 Every result sums to EXACTLY 1.0000, with the rounding residual placed on the
-last key by sorted str(key) (the create_diversion_ledger_entries convention).
+largest weight, ties by the lowest str(key), so no database id decides it.
 Empty input -> {}. Negative fraction or negative demand fails closed (ValueError)
 so a wrong water number can never be produced silently.
 
@@ -113,9 +113,9 @@ def test_rung3_et_demand_split_when_all_fractions_default():
     assert _sum(got) == Decimal("1.0000"), f"got {_sum(got)}"
 
 
-def test_rung3_residual_lands_on_last_key_by_sorted_order():
+def test_rung3_residual_between_equal_weights_lands_on_the_lowest_key():
     # Three equal demands -> each 1/3 = 0.3333, sum 0.9999, residual 0.0001 onto
-    # the last key by str order ("C").
+    # the lowest key by str order ("A"), the weights being equal.
     got = apportion_shared_supply(
         [
             ("A", Decimal("1.0"), Decimal("1")),
@@ -123,12 +123,13 @@ def test_rung3_residual_lands_on_last_key_by_sorted_order():
             ("C", Decimal("1.0"), Decimal("1")),
         ]
     )
-    assert got == {"A": Decimal("0.3333"), "B": Decimal("0.3333"), "C": Decimal("0.3334")}, f"got {got}"
+    assert got == {"A": Decimal("0.3334"), "B": Decimal("0.3333"), "C": Decimal("0.3333")}, f"got {got}"
     assert _sum(got) == Decimal("1.0000"), f"must sum exactly to 1.0000, got {_sum(got)}"
 
 
 def test_rung3_residual_int_keys_sort_by_str():
-    # Integer parcel ids, inserted out of order; residual lands on 3 ("3" last).
+    # Integer parcel ids, inserted out of order; equal weights, so the residual
+    # lands on 1 ("1" first).
     got = apportion_shared_supply(
         [
             (3, Decimal("1.0"), Decimal("1")),
@@ -136,20 +137,21 @@ def test_rung3_residual_int_keys_sort_by_str():
             (2, Decimal("1.0"), Decimal("1")),
         ]
     )
-    assert got == {3: Decimal("0.3334"), 1: Decimal("0.3333"), 2: Decimal("0.3333")}, f"got {got}"
+    assert got == {3: Decimal("0.3333"), 1: Decimal("0.3334"), 2: Decimal("0.3333")}, f"got {got}"
     assert _sum(got) == Decimal("1.0000"), f"got {_sum(got)}"
 
 
 def test_rung3_residual_stub_object_keys_sort_by_str():
     # Non-int keys inserted as zebra, apple, mango; sorted str -> apple, mango,
-    # zebra, so the residual lands on zebra. Proves str(key) ordering, not id().
+    # zebra, so between equal weights the residual lands on apple. Proves
+    # str(key) ordering, not id().
     z, a, m = _Stub("zebra"), _Stub("apple"), _Stub("mango")
     got = apportion_shared_supply(
         [(z, Decimal("1.0"), Decimal("1")), (a, Decimal("1.0"), Decimal("1")), (m, Decimal("1.0"), Decimal("1"))]
     )
-    assert got[a] == Decimal("0.3333"), f"got {got[a]}"
+    assert got[a] == Decimal("0.3334"), f"residual must land on apple, got {got[a]}"
     assert got[m] == Decimal("0.3333"), f"got {got[m]}"
-    assert got[z] == Decimal("0.3334"), f"residual must land on zebra, got {got[z]}"
+    assert got[z] == Decimal("0.3333"), f"got {got[z]}"
     assert _sum(got) == Decimal("1.0000"), f"got {_sum(got)}"
 
 
@@ -168,7 +170,7 @@ def test_rung4_even_split_when_no_fraction_and_no_demand():
 
 
 def test_rung4_even_split_three_way_residual():
-    # Even fallback across three -> 0.3333 each, residual onto last by str ("C").
+    # Even fallback across three -> 0.3333 each, residual onto the lowest by str ("A").
     got = apportion_shared_supply(
         [
             ("A", Decimal("1.0"), Decimal("0")),
@@ -176,7 +178,7 @@ def test_rung4_even_split_three_way_residual():
             ("C", Decimal("1.0"), Decimal("0")),
         ]
     )
-    assert got == {"A": Decimal("0.3333"), "B": Decimal("0.3333"), "C": Decimal("0.3334")}, f"got {got}"
+    assert got == {"A": Decimal("0.3334"), "B": Decimal("0.3333"), "C": Decimal("0.3333")}, f"got {got}"
     assert _sum(got) == Decimal("1.0000"), f"got {_sum(got)}"
 
 

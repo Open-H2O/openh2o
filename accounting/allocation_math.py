@@ -42,9 +42,8 @@ Three deliberate rules, each encoded below:
 Decimal throughout, quantized to 4 decimal places to match the ledger; a float
 anywhere reintroduces binary-float drift on water volumes. The short-delivery
 residual (delivery_total minus the sum of the rounded shares) is placed on the
-parcel with the most headroom below its cap, ties by deterministic ``str(key)``
-order (the last of the tied keys, as the ``create_diversion_ledger_entries``
-last-parcel-residual convention would), so the two layers agree to the cent and
+parcel with the most headroom below its cap, ties by the lowest ``str(key)``
+(a Parcel's parcel number), so the result does not depend on database ids and
 no share is pushed above its cap. Keys may be ints (parcel ids) or Parcel instances;
 sorting by ``str(key)`` keeps the function agnostic to key type.
 
@@ -62,8 +61,9 @@ ladder so the platform's stored numbers always beat the ET reference layer:
   RUNG 4 — all fractions untouched and zero total demand: no signal at all, so
     fall back to an even 1/N split.
 
-The same Decimal-only, 4dp-quantized, last-key-residual conventions apply, so a
-shared-supply split agrees with the rest of the ledger to the cent.
+The same Decimal-only, 4dp-quantized conventions apply, and its rounding leftover
+goes to the largest weight (``place_leftover``). ``exact_shared_supply`` gives the
+same weights unrounded, for a caller that multiplies a delivery by them.
 """
 
 from __future__ import annotations
@@ -84,27 +84,28 @@ def _q(value):
     return _dec(value).quantize(_Q)
 
 
-def _place_residual(shares, target):
-    """Force ``shares`` to sum to EXACTLY ``target`` after 4dp quantization.
+def place_leftover(amounts, target, tie=str):
+    """Give ``target - sum(amounts)`` to the largest amount; between equal amounts, the lowest ``tie(key)``.
 
-    Quantizing each share independently leaves a rounding residual
-    (``target - sum``). Drop it on the LAST key by sorted ``str(key)`` — the same
-    last-key-residual convention as ``create_diversion_ledger_entries`` — so this
-    layer and the ledger agree to the cent. Mutates and returns ``shares``.
+    Rounding each part to four places leaves a few ten-thousandths over or short.
+    They go to the largest part, so the rule can be stated in one sentence and
+    does not depend on the order records were loaded in or on their database ids.
+    A use area's ``tie`` is its parcel number (``str`` of a Parcel). Mutates and
+    returns ``amounts``.
     """
-    residual = _dec(target) - sum(shares.values(), Decimal("0"))
-    if residual != 0:
-        last_key = sorted(shares, key=str)[-1]
-        shares[last_key] = _q(shares[last_key] + residual)
-    return shares
+    leftover = _dec(target) - sum(amounts.values(), Decimal("0"))
+    if leftover != 0 and amounts:
+        key = min(amounts, key=lambda k: (-amounts[k], tie(k)))
+        amounts[key] = amounts[key] + leftover
+    return amounts
 
 
 def _place_residual_under_caps(shares, caps, target):
     """Force ``shares`` to sum to EXACTLY ``target`` without crossing any cap.
 
-    The capped sibling of ``_place_residual``. A positive residual
-    goes to the key with the most headroom below its cap (ties by sorted
-    ``str(key)``, last one wins, the same end ``_place_residual`` uses), and
+    The capped sibling of ``place_leftover``. A positive residual
+    goes to the key with the most headroom below its cap (ties by the lowest
+    ``str(key)``, a use area's parcel number, as ``place_leftover`` breaks them), and
     spills to the next-most-headroom key if one key cannot take all of it. A
     negative residual comes off in the same order, never below zero. Mutates
     and returns ``shares``.
@@ -112,11 +113,7 @@ def _place_residual_under_caps(shares, caps, target):
     residual = _dec(target) - sum(shares.values(), Decimal("0"))
     if residual == 0:
         return shares
-    order = sorted(
-        shares,
-        key=lambda k: (caps[k] - shares[k], str(k)),
-        reverse=True,
-    )
+    order = sorted(shares, key=lambda k: (-(caps[k] - shares[k]), str(k)))
     for key in order:
         if residual > 0:
             move = min(residual, caps[key] - shares[key])
@@ -326,11 +323,27 @@ def apportion_shared_supply(members):
 
     Returns:
         ``{key: weight}`` quantized to 4dp and summing to exactly ``1.0000``
-        (rounding residual on the last key by sorted ``str(key)``), or ``{}`` for
+        (the rounding leftover on the largest weight, ties by the lowest ``str(key)``), or ``{}`` for
         empty input. A lone member always maps to ``Decimal("1.0000")``.
 
     Raises:
         ValueError: any negative fraction or negative demand (fail closed).
+    """
+    exact = exact_shared_supply(members)
+    # Quantize to 4dp, then give the rounding leftover to the largest share so
+    # the weights sum to EXACTLY 1.0000.
+    shares = {key: _q(w) for key, w in exact.items()}
+    return place_leftover(shares, Decimal("1.0000"))
+
+
+def exact_shared_supply(members):
+    """``apportion_shared_supply``'s weights before rounding: ``{key: weight}`` summing to 1.
+
+    A delivery divided among use areas is multiplied by these, and only the
+    amounts are rounded. Rounding the weights first and then multiplying lets a
+    weight's rounding grow with the delivery: 0.0002 of a weight on a 687 AF
+    delivery is 0.14 AF on one use area. Same ladder, same arguments and the same
+    errors as ``apportion_shared_supply``.
     """
     members = list(members)
     if not members:
@@ -366,7 +379,4 @@ def apportion_shared_supply(members):
         weights = {key: Decimal("1") for key in fractions}
         total_weight = sum(weights.values(), Decimal("0"))
 
-    # Normalize to 1.0, quantize, then place the rounding residual on the last
-    # key by sorted str(key) so the weights sum to EXACTLY 1.0000.
-    shares = {key: _q(w / total_weight) for key, w in weights.items()}
-    return _place_residual(shares, Decimal("1.0000"))
+    return {key: w / total_weight for key, w in weights.items()}

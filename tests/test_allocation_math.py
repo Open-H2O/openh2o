@@ -13,7 +13,7 @@ This kernel is the heart of Phase 55: it reframes the throwaway month-axis helpe
 the PARCEL axis as a tested, reusable platform primitive. The vectors below are
 the SPEC the implementation must satisfy (ample -> every parcel gets its cap;
 short -> the whole delivery split by demand weight; zero demand -> empty; zero
-delivery -> a real recorded zero per parcel; exact-sum residual on the last key;
+delivery -> a real recorded zero per parcel; exact-sum residual on the parcel with the most headroom, ties by the lowest key;
 fail-closed validation) — not the implementation's own output.
 
 Run locally (no pytest needed):  python3 tests/test_allocation_math.py
@@ -93,25 +93,26 @@ def test_short_each_parcel_stays_at_or_below_its_cap():
 
 # --------------------------------------------------------------------------
 # Rounding residual: quantize each short share to 4dp and place the residual
-# (delivery_total - sum of rounded shares) on the LAST parcel by sorted str(key),
+# (delivery_total - sum of rounded shares) on the parcel with the most headroom
+# below its cap, ties by the LOWEST str(key) (a parcel number, never a database id),
 # so the result sums EXACTLY to delivery_total with no Decimal drift.
 # --------------------------------------------------------------------------
 
 
-def test_short_residual_lands_on_last_key_by_sorted_order():
+def test_short_residual_between_equal_headroom_lands_on_the_lowest_key():
     # demand {A:1,B:1,C:1}, eff 0.5 -> caps 2 each, sum 6. delivery 1 (short).
-    # Each raw share is 1/3 = 0.3333 -> sum 0.9999, residual 0.0001 onto "C".
+    # Each raw share is 1/3 = 0.3333 -> sum 0.9999, residual 0.0001 onto "A".
     got = allocate_by_demand(
         Decimal("1"), {"A": Decimal("1"), "B": Decimal("1"), "C": Decimal("1")}, Decimal("0.5")
     )
-    assert got == {"A": Decimal("0.3333"), "B": Decimal("0.3333"), "C": Decimal("0.3334")}, f"got {got}"
+    assert got == {"A": Decimal("0.3334"), "B": Decimal("0.3333"), "C": Decimal("0.3333")}, f"got {got}"
     assert _sum(got) == Decimal("1.0000"), f"must sum exactly to delivery_total, got {_sum(got)}"
 
 
 def test_short_residual_is_key_type_agnostic_int_keys():
-    # Integer parcel ids sort by str(key): "1" < "2" < "3", residual onto 3.
+    # Integer parcel ids sort by str(key): "1" < "2" < "3", residual onto 1.
     got = allocate_by_demand(Decimal("1"), {1: Decimal("1"), 2: Decimal("1"), 3: Decimal("1")}, Decimal("0.5"))
-    assert got == {1: Decimal("0.3333"), 2: Decimal("0.3333"), 3: Decimal("0.3334")}, f"got {got}"
+    assert got == {1: Decimal("0.3334"), 2: Decimal("0.3333"), 3: Decimal("0.3333")}, f"got {got}"
     assert _sum(got) == Decimal("1.0000"), f"got {_sum(got)}"
 
 

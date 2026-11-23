@@ -68,7 +68,12 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
-from accounting.allocation_math import allocate_by_demand, apportion_shared_supply
+from accounting.allocation_math import (
+    allocate_by_demand,
+    apportion_shared_supply,
+    exact_shared_supply,
+    place_leftover,
+)
 from accounting.carryover_math import water_year_of
 from core.as_of import LEDGER_KEY
 from core.map_labels import map_label
@@ -192,16 +197,20 @@ def _demand_rows(
     ]
 
 
-def shares_else_acreage(links: Iterable[PointOfDiversionParcel]) -> dict[int, Decimal]:
+def shares_else_acreage(
+    links: Iterable[PointOfDiversionParcel], exact: bool = False
+) -> dict[int, Decimal]:
     """``{parcel_pk: weight}``: the shares the district entered, else acreage.
 
     The shares win; where the district entered none, the fields' acreage divides the
     water (the ladder's demand rung, fed acres). Weights are 4dp and sum to exactly
-    1.0000. The ledger's division and the CalWATRS file's month with nothing on the
+    1.0000; with ``exact=True`` they are not rounded, for multiplying a delivery by.
+    The ledger's division and the CalWATRS file's month with nothing on the
     ledger both call this, so the two cannot drift. Each link's parcel
     must be loaded.
     """
-    return apportion_shared_supply(
+    split = exact_shared_supply if exact else apportion_shared_supply
+    return split(
         (link.parcel.pk, link.fraction, link.parcel.area_acres or Decimal("0"))
         for link in links
     )
@@ -220,7 +229,7 @@ def _fraction_rows(
     Builds unsaved instances rather than writing, so ``dry_run`` can preview it
     and the one compare-and-write path stays idempotent.
 
-    T3 (math eval 2026-07-18): the split runs through ``apportion_shared_supply``
+    T3 (math eval 2026-07-18): the split runs through ``exact_shared_supply``
     (by way of ``shares_else_acreage``) instead of multiplying by each link's raw
     ``fraction``. Raw fractions are not guaranteed to sum to 1, and nothing in
     the model forces them to, so the old math invented or lost water whenever
@@ -241,20 +250,19 @@ def _fraction_rows(
         total = record.consumed_acre_feet()
     today = timezone.localdate()
 
-    weights = shares_else_acreage(served_links)
+    weights = shares_else_acreage(served_links, exact=True)
     if not weights:
         return []
 
-    # Weights are 4dp — the same resolution as the stored fraction field itself
-    # (DecimalField(decimal_places=4)), so this claims no more precision than the
-    # input carries. They sum to exactly 1.0000; the residual below keeps the
-    # AMOUNTS summing to the delivery exactly, which is the invariant that
-    # matters (nothing invented, nothing lost).
+    # Each use area's exact part of the delivery, rounded to 4dp, the precision
+    # the ledger stores. Rounding the weights first would let a weight's
+    # rounding grow with the delivery (0.0002 on 687 AF is 0.14 AF on one use
+    # area). The few ten-thousandths the amounts' rounding leaves go to the
+    # largest part, ties by the lower parcel number, so the parts add to the
+    # delivery exactly and no database id decides who gets them.
     amounts = {key: (total * w).quantize(_Q) for key, w in weights.items()}
-    residual = total - sum(amounts.values(), Decimal("0"))
-    if residual and amounts:
-        last_key = sorted(amounts, key=str)[-1]
-        amounts[last_key] += residual
+    numbers = {link.parcel.pk: link.parcel.parcel_number for link in served_links}
+    place_leftover(amounts, total, tie=numbers.get)
 
     rows = []
     for link in served_links:
