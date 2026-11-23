@@ -74,19 +74,19 @@
     "budget": "D:2660.4716",
     "carryover": "D:0",
     "available": "D:2660.4716",
-    "used": "D:3149.3536",
+    "used": "D:3149.4548",
     "used_lines": [
      {
       "kind": "metered",
       "pill": "Metered",
       "pill_class": "metered",
-      "amount": "D:1757.93"
+      "amount": "D:1757.94"
      },
      {
       "kind": "estimated",
       "pill": "Estimated",
       "pill_class": "estimated",
-      "amount": "D:1391.42"
+      "amount": "D:1391.51"
      }
     ],
     "used_label": "pumped",
@@ -102,7 +102,7 @@
       "D:2369.3424"
      ]
     ],
-    "remaining": "D:-488.8820",
+    "remaining": "D:-488.9832",
     "ledger_count": 646
    },
    {
@@ -111,19 +111,19 @@
     "budget": "D:2660.4716",
     "carryover": "D:0",
     "available": "D:2660.4716",
-    "used": "D:3216.7101",
+    "used": "D:3216.8051",
     "used_lines": [
      {
       "kind": "metered",
       "pill": "Metered",
       "pill_class": "metered",
-      "amount": "D:1878.60"
+      "amount": "D:1878.61"
      },
      {
       "kind": "estimated",
       "pill": "Estimated",
       "pill_class": "estimated",
-      "amount": "D:1338.11"
+      "amount": "D:1338.20"
      }
     ],
     "used_label": "pumped",
@@ -139,7 +139,7 @@
       "D:2679.0100"
      ]
     ],
-    "remaining": "D:-556.2385"
+    "remaining": "D:-556.3335"
    }
   ],
   "MER Surface Service Area: Ashvale-Dunmoor Water District (MER-WR-005-DEMO)": [
@@ -566,7 +566,7 @@
     "MER-APN-001",
     "2025-04-01",
     "surface_delivered",
-    "D:47.9400",
+    "D:47.9300",
     "",
     ""
    ],
@@ -593,7 +593,7 @@
     "MER-APN-001",
     "2025-05-01",
     "surface_delivered",
-    "D:50.3500",
+    "D:50.3400",
     "",
     ""
    ],
@@ -728,7 +728,7 @@
     "MER-APN-001",
     null,
     "surface_delivered",
-    "D:259.8000",
+    "D:259.7800",
     "",
     ""
    ],
@@ -746,7 +746,7 @@
     "MER-APN-001",
     null,
     "supplies",
-    "D:327.7167",
+    "D:327.6907",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -773,7 +773,7 @@
     "MER-APN-001",
     null,
     "balance",
-    "D:-115.1046",
+    "D:-115.1306",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -1295,7 +1295,7 @@
     "MER-APN-003",
     "2024-10-01",
     "surface_delivered",
-    "D:18.0400",
+    "D:18.0300",
     "",
     ""
    ],
@@ -1403,7 +1403,7 @@
     "MER-APN-003",
     "2025-01-01",
     "surface_delivered",
-    "D:2.6400",
+    "D:2.6500",
     "",
     ""
    ],
@@ -1412,7 +1412,7 @@
     "MER-APN-003",
     "2025-01-01",
     "groundwater_extraction",
-    "D:1.5500",
+    "D:1.5400",
     "",
     ""
    ],
@@ -1520,7 +1520,7 @@
     "MER-APN-003",
     "2025-04-01",
     "groundwater_extraction",
-    "D:13.0300",
+    "D:13.0400",
     "",
     ""
    ],
@@ -1556,7 +1556,7 @@
     "MER-APN-003",
     "2025-05-01",
     "groundwater_extraction",
-    "D:14.4200",
+    "D:14.4300",
     "",
     ""
    ],
@@ -1655,7 +1655,7 @@
     "MER-APN-003",
     "2025-08-01",
     "surface_delivered",
-    "D:29.7600",
+    "D:29.7500",
     "",
     ""
    ],
@@ -1691,7 +1691,7 @@
     "MER-APN-003",
     "2025-09-01",
     "surface_delivered",
-    "D:25.4300",
+    "D:25.4200",
     "",
     ""
    ],
@@ -1727,7 +1727,7 @@
     "MER-APN-003",
     null,
     "surface_delivered",
-    "D:245.0800",
+    "D:245.0600",
     "",
     ""
    ],
@@ -1736,7 +1736,7 @@
     "MER-APN-003",
     null,
     "groundwater_extraction",
-    "D:41.6100",
+    "D:41.6200",
     "",
     ""
    ],
@@ -1754,7 +1754,7 @@
     "MER-APN-003",
     null,
     "supplies",
-    "D:345.8595",
+    "D:345.8487",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -1763,7 +1763,7 @@
     "MER-APN-003",
     null,
     "uses",
-    "D:272.7388",
+    "D:272.7405",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -1772,7 +1772,7 @@
     "MER-APN-003",
     null,
     "water_not_consumed",
-    "D:5.4089",
+    "D:5.4106",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -1781,7 +1781,7 @@
     "MER-APN-003",
     null,
     "balance",
-    "D:73.1207",
+    "D:73.1082",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -2015,7 +2015,7 @@
     "MER-APN-004",
     "2025-06-01",
     "surface_delivered",
-    "D:20.9500",
+    "D:20.9400",
     "",
     ""
    ],
@@ -2069,7 +2069,7 @@
     "MER-APN-004",
     "2025-08-01",
     "surface_delivered",
-    "D:28.9700",
+    "D:28.9600",
     "",
     ""
    ],
@@ -2123,7 +2123,7 @@
     "MER-APN-004",
     null,
     "surface_delivered",
-    "D:238.5800",
+    "D:238.5600",
     "",
     ""
    ],
@@ -2141,7 +2141,7 @@
     "MER-APN-004",
     null,
     "supplies",
-    "D:301.4274",
+    "D:301.4037",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -2168,7 +2168,7 @@
     "MER-APN-004",
     null,
     "balance",
-    "D:-40.4443",
+    "D:-40.4680",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -2222,7 +2222,7 @@
     "MER-APN-005",
     "2024-11-01",
     "surface_delivered",
-    "D:6.0300",
+    "D:6.0200",
     "",
     ""
    ],
@@ -2402,7 +2402,7 @@
     "MER-APN-005",
     "2025-04-01",
     "surface_delivered",
-    "D:45.5100",
+    "D:45.5000",
     "",
     ""
    ],
@@ -2411,7 +2411,7 @@
     "MER-APN-005",
     "2025-04-01",
     "groundwater_extraction",
-    "D:7.8200",
+    "D:7.8300",
     "",
     ""
    ],
@@ -2618,7 +2618,7 @@
     "MER-APN-005",
     null,
     "surface_delivered",
-    "D:246.6200",
+    "D:246.6000",
     "",
     ""
    ],
@@ -2627,7 +2627,7 @@
     "MER-APN-005",
     null,
     "groundwater_extraction",
-    "D:33.8200",
+    "D:33.8300",
     "",
     ""
    ],
@@ -2645,7 +2645,7 @@
     "MER-APN-005",
     null,
     "supplies",
-    "D:339.8165",
+    "D:339.8054",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -2672,7 +2672,7 @@
     "MER-APN-005",
     null,
     "balance",
-    "D:60.0316",
+    "D:60.0205",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -3383,7 +3383,7 @@
     "MER-APN-007",
     "2025-05-01",
     "surface_delivered",
-    "D:50.4800",
+    "D:50.4700",
     "",
     ""
    ],
@@ -3464,7 +3464,7 @@
     "MER-APN-007",
     "2025-08-01",
     "surface_delivered",
-    "D:31.6300",
+    "D:31.6200",
     "",
     ""
    ],
@@ -3491,7 +3491,7 @@
     "MER-APN-007",
     "2025-09-01",
     "surface_delivered",
-    "D:27.0300",
+    "D:27.0200",
     "",
     ""
    ],
@@ -3518,7 +3518,7 @@
     "MER-APN-007",
     null,
     "surface_delivered",
-    "D:260.4900",
+    "D:260.4600",
     "",
     ""
    ],
@@ -3536,7 +3536,7 @@
     "MER-APN-007",
     null,
     "supplies",
-    "D:323.8770",
+    "D:323.8510",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -3563,7 +3563,7 @@
     "MER-APN-007",
     null,
     "balance",
-    "D:47.1497",
+    "D:47.1237",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -3770,7 +3770,7 @@
     "MER-APN-008",
     "2025-05-01",
     "surface_delivered",
-    "D:47.5300",
+    "D:47.5200",
     "",
     ""
    ],
@@ -3851,7 +3851,7 @@
     "MER-APN-008",
     "2025-08-01",
     "surface_delivered",
-    "D:29.7800",
+    "D:29.7700",
     "",
     ""
    ],
@@ -3905,7 +3905,7 @@
     "MER-APN-008",
     null,
     "surface_delivered",
-    "D:245.2500",
+    "D:245.2300",
     "",
     ""
    ],
@@ -3923,7 +3923,7 @@
     "MER-APN-008",
     null,
     "supplies",
-    "D:309.3201",
+    "D:309.2954",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -3950,7 +3950,7 @@
     "MER-APN-008",
     null,
     "balance",
-    "D:-105.8260",
+    "D:-105.8507",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -3968,7 +3968,7 @@
     "MER-APN-009",
     "2024-10-01",
     "surface_delivered",
-    "D:15.8700",
+    "D:15.8800",
     "",
     ""
    ],
@@ -4076,7 +4076,7 @@
     "MER-APN-009",
     "2025-02-01",
     "surface_delivered",
-    "D:4.6300",
+    "D:4.6400",
     "",
     ""
    ],
@@ -4130,7 +4130,7 @@
     "MER-APN-009",
     "2025-04-01",
     "surface_delivered",
-    "D:39.7900",
+    "D:39.8200",
     "",
     ""
    ],
@@ -4157,7 +4157,7 @@
     "MER-APN-009",
     "2025-05-01",
     "surface_delivered",
-    "D:41.7900",
+    "D:41.8200",
     "",
     ""
    ],
@@ -4184,7 +4184,7 @@
     "MER-APN-009",
     "2025-06-01",
     "surface_delivered",
-    "D:18.9300",
+    "D:18.9500",
     "",
     ""
    ],
@@ -4211,7 +4211,7 @@
     "MER-APN-009",
     "2025-07-01",
     "surface_delivered",
-    "D:20.4100",
+    "D:20.4200",
     "",
     ""
    ],
@@ -4238,7 +4238,7 @@
     "MER-APN-009",
     "2025-08-01",
     "surface_delivered",
-    "D:26.1800",
+    "D:26.2000",
     "",
     ""
    ],
@@ -4265,7 +4265,7 @@
     "MER-APN-009",
     "2025-09-01",
     "surface_delivered",
-    "D:22.3700",
+    "D:22.3900",
     "",
     ""
    ],
@@ -4292,7 +4292,7 @@
     "MER-APN-009",
     null,
     "surface_delivered",
-    "D:215.6500",
+    "D:215.8000",
     "",
     ""
    ],
@@ -4310,7 +4310,7 @@
     "MER-APN-009",
     null,
     "supplies",
-    "D:268.0026",
+    "D:268.1522",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -4337,7 +4337,7 @@
     "MER-APN-009",
     null,
     "balance",
-    "D:105.4639",
+    "D:105.6135",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -4544,7 +4544,7 @@
     "MER-APN-010",
     "2025-05-01",
     "surface_delivered",
-    "D:24.7800",
+    "D:24.7900",
     "",
     ""
    ],
@@ -4679,7 +4679,7 @@
     "MER-APN-010",
     null,
     "surface_delivered",
-    "D:125.0800",
+    "D:125.0900",
     "",
     ""
    ],
@@ -4697,7 +4697,7 @@
     "MER-APN-010",
     null,
     "supplies",
-    "D:188.5486",
+    "D:188.5611",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -4724,7 +4724,7 @@
     "MER-APN-010",
     null,
     "balance",
-    "D:-141.7285",
+    "D:-141.7160",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -4823,7 +4823,7 @@
     "MER-APN-011",
     "2025-01-01",
     "surface_delivered",
-    "D:3.6000",
+    "D:3.6100",
     "",
     ""
    ],
@@ -5066,7 +5066,7 @@
     "MER-APN-011",
     null,
     "surface_delivered",
-    "D:143.0400",
+    "D:143.0500",
     "",
     ""
    ],
@@ -5084,7 +5084,7 @@
     "MER-APN-011",
     null,
     "supplies",
-    "D:219.4858",
+    "D:219.5001",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -5111,7 +5111,7 @@
     "MER-APN-011",
     null,
     "balance",
-    "D:-217.5280",
+    "D:-217.5137",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -5183,7 +5183,7 @@
     "MER-APN-012",
     "2024-12-01",
     "surface_delivered",
-    "D:5.9300",
+    "D:5.9400",
     "",
     ""
    ],
@@ -5291,7 +5291,7 @@
     "MER-APN-012",
     "2025-04-01",
     "surface_delivered",
-    "D:51.7000",
+    "D:51.7100",
     "",
     ""
    ],
@@ -5453,7 +5453,7 @@
     "MER-APN-012",
     null,
     "surface_delivered",
-    "D:196.8200",
+    "D:196.8400",
     "",
     ""
    ],
@@ -5471,7 +5471,7 @@
     "MER-APN-012",
     null,
     "supplies",
-    "D:301.1831",
+    "D:301.2026",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -5498,7 +5498,7 @@
     "MER-APN-012",
     null,
     "balance",
-    "D:-16.3942",
+    "D:-16.3747",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -5705,7 +5705,7 @@
     "MER-APN-013",
     "2025-05-01",
     "surface_delivered",
-    "D:23.0200",
+    "D:23.0300",
     "",
     ""
    ],
@@ -5840,7 +5840,7 @@
     "MER-APN-013",
     null,
     "surface_delivered",
-    "D:116.2100",
+    "D:116.2200",
     "",
     ""
    ],
@@ -5858,7 +5858,7 @@
     "MER-APN-013",
     null,
     "supplies",
-    "D:177.8655",
+    "D:177.8771",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -5885,7 +5885,7 @@
     "MER-APN-013",
     null,
     "balance",
-    "D:-139.3792",
+    "D:-139.3676",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -6065,7 +6065,7 @@
     "MER-APN-014",
     "2025-04-01",
     "surface_delivered",
-    "D:28.3100",
+    "D:28.3200",
     "",
     ""
    ],
@@ -6227,7 +6227,7 @@
     "MER-APN-014",
     null,
     "surface_delivered",
-    "D:107.7900",
+    "D:107.8000",
     "",
     ""
    ],
@@ -6245,7 +6245,7 @@
     "MER-APN-014",
     null,
     "supplies",
-    "D:167.2921",
+    "D:167.3029",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -6272,7 +6272,7 @@
     "MER-APN-014",
     null,
     "balance",
-    "D:-162.1324",
+    "D:-162.1216",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -6506,7 +6506,7 @@
     "MER-APN-015",
     "2025-04-01",
     "surface_delivered",
-    "D:17.1600",
+    "D:17.1700",
     "",
     ""
    ],
@@ -6551,7 +6551,7 @@
     "MER-APN-015",
     "2025-05-01",
     "groundwater_extraction",
-    "D:12.8200",
+    "D:12.8100",
     "",
     ""
    ],
@@ -6722,7 +6722,7 @@
     "MER-APN-015",
     null,
     "surface_delivered",
-    "D:65.3400",
+    "D:65.3500",
     "",
     ""
    ],
@@ -6731,7 +6731,7 @@
     "MER-APN-015",
     null,
     "groundwater_extraction",
-    "D:98.3700",
+    "D:98.3600",
     "",
     ""
    ],
@@ -6749,7 +6749,7 @@
     "MER-APN-015",
     null,
     "supplies",
-    "D:196.6304",
+    "D:196.6337",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -6776,7 +6776,7 @@
     "MER-APN-015",
     null,
     "balance",
-    "D:28.6522",
+    "D:28.6555",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -6794,7 +6794,7 @@
     "MER-APN-016",
     "2024-10-01",
     "surface_delivered",
-    "D:6.0300",
+    "D:6.0400",
     "",
     ""
    ],
@@ -6947,7 +6947,7 @@
     "MER-APN-016",
     "2025-02-01",
     "groundwater_extraction",
-    "D:0.6200",
+    "D:0.6100",
     "",
     ""
    ],
@@ -7199,7 +7199,7 @@
     "MER-APN-016",
     "2025-09-01",
     "groundwater_extraction",
-    "D:7.7300",
+    "D:7.7400",
     "",
     ""
    ],
@@ -7226,7 +7226,7 @@
     "MER-APN-016",
     null,
     "surface_delivered",
-    "D:78.1400",
+    "D:78.1500",
     "",
     ""
    ],
@@ -7253,7 +7253,7 @@
     "MER-APN-016",
     null,
     "supplies",
-    "D:163.6224",
+    "D:163.6253",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -7262,7 +7262,7 @@
     "MER-APN-016",
     null,
     "uses",
-    "D:132.2567",
+    "D:132.2555",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -7271,7 +7271,7 @@
     "MER-APN-016",
     null,
     "water_not_consumed",
-    "D:11.1585",
+    "D:11.1573",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -7280,7 +7280,7 @@
     "MER-APN-016",
     null,
     "balance",
-    "D:31.3657",
+    "D:31.3698",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -7514,7 +7514,7 @@
     "MER-APN-017",
     "2025-04-01",
     "surface_delivered",
-    "D:36.5100",
+    "D:36.5200",
     "",
     ""
    ],
@@ -7523,7 +7523,7 @@
     "MER-APN-017",
     "2025-04-01",
     "groundwater_extraction",
-    "D:12.7400",
+    "D:12.7300",
     "",
     ""
    ],
@@ -7730,7 +7730,7 @@
     "MER-APN-017",
     null,
     "surface_delivered",
-    "D:139.0000",
+    "D:139.0100",
     "",
     ""
    ],
@@ -7739,7 +7739,7 @@
     "MER-APN-017",
     null,
     "groundwater_extraction",
-    "D:321.1500",
+    "D:321.1400",
     "",
     ""
    ],
@@ -7757,7 +7757,7 @@
     "MER-APN-017",
     null,
     "supplies",
-    "D:537.1357",
+    "D:537.1408",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -7784,7 +7784,7 @@
     "MER-APN-017",
     null,
     "balance",
-    "D:38.6057",
+    "D:38.6108",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -8306,7 +8306,7 @@
     "MER-APN-019",
     "2024-10-01",
     "surface_delivered",
-    "D:11.6900",
+    "D:11.6800",
     "",
     ""
    ],
@@ -8414,7 +8414,7 @@
     "MER-APN-019",
     "2025-02-01",
     "surface_delivered",
-    "D:5.2300",
+    "D:5.2200",
     "",
     ""
    ],
@@ -8441,7 +8441,7 @@
     "MER-APN-019",
     "2025-03-01",
     "surface_delivered",
-    "D:14.1800",
+    "D:14.1700",
     "",
     ""
    ],
@@ -8468,7 +8468,7 @@
     "MER-APN-019",
     "2025-04-01",
     "surface_delivered",
-    "D:39.7600",
+    "D:39.7300",
     "",
     ""
    ],
@@ -8495,7 +8495,7 @@
     "MER-APN-019",
     "2025-05-01",
     "surface_delivered",
-    "D:29.9900",
+    "D:29.9700",
     "",
     ""
    ],
@@ -8522,7 +8522,7 @@
     "MER-APN-019",
     "2025-06-01",
     "surface_delivered",
-    "D:35.5800",
+    "D:35.5600",
     "",
     ""
    ],
@@ -8630,7 +8630,7 @@
     "MER-APN-019",
     null,
     "surface_delivered",
-    "D:151.3500",
+    "D:151.2500",
     "",
     ""
    ],
@@ -8648,7 +8648,7 @@
     "MER-APN-019",
     null,
     "supplies",
-    "D:232.3403",
+    "D:232.2433",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -8675,7 +8675,7 @@
     "MER-APN-019",
     null,
     "balance",
-    "D:-216.9686",
+    "D:-217.0656",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -9413,7 +9413,7 @@
     "MER-APN-021",
     "2025-06-01",
     "surface_delivered",
-    "D:27.8000",
+    "D:27.7900",
     "",
     ""
    ],
@@ -9440,7 +9440,7 @@
     "MER-APN-021",
     "2025-07-01",
     "surface_delivered",
-    "D:27.2900",
+    "D:27.2800",
     "",
     ""
    ],
@@ -9467,7 +9467,7 @@
     "MER-APN-021",
     "2025-08-01",
     "surface_delivered",
-    "D:25.3500",
+    "D:25.3400",
     "",
     ""
    ],
@@ -9521,7 +9521,7 @@
     "MER-APN-021",
     null,
     "surface_delivered",
-    "D:158.0000",
+    "D:157.9700",
     "",
     ""
    ],
@@ -9539,7 +9539,7 @@
     "MER-APN-021",
     null,
     "supplies",
-    "D:191.1000",
+    "D:191.0683",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -9566,7 +9566,7 @@
     "MER-APN-021",
     null,
     "balance",
-    "D:12.3833",
+    "D:12.3516",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -9638,7 +9638,7 @@
     "MER-APN-022",
     "2024-12-01",
     "surface_delivered",
-    "D:0.2500",
+    "D:0.2600",
     "",
     ""
    ],
@@ -9800,7 +9800,7 @@
     "MER-APN-022",
     "2025-06-01",
     "surface_delivered",
-    "D:3.8900",
+    "D:3.8800",
     "",
     ""
    ],
@@ -9926,7 +9926,7 @@
     "MER-APN-022",
     null,
     "supplies",
-    "D:26.7048",
+    "D:26.7003",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -9953,7 +9953,7 @@
     "MER-APN-022",
     null,
     "balance",
-    "D:2.2840",
+    "D:2.2795",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -9971,7 +9971,7 @@
     "MER-APN-023",
     "2024-10-01",
     "surface_delivered",
-    "D:38.3700",
+    "D:38.3600",
     "",
     ""
    ],
@@ -10133,7 +10133,7 @@
     "MER-APN-023",
     "2025-04-01",
     "surface_delivered",
-    "D:46.1200",
+    "D:46.1100",
     "",
     ""
    ],
@@ -10160,7 +10160,7 @@
     "MER-APN-023",
     "2025-05-01",
     "surface_delivered",
-    "D:85.1900",
+    "D:85.1700",
     "",
     ""
    ],
@@ -10187,7 +10187,7 @@
     "MER-APN-023",
     "2025-06-01",
     "surface_delivered",
-    "D:87.1500",
+    "D:87.1300",
     "",
     ""
    ],
@@ -10214,7 +10214,7 @@
     "MER-APN-023",
     "2025-07-01",
     "surface_delivered",
-    "D:85.5400",
+    "D:85.5200",
     "",
     ""
    ],
@@ -10241,7 +10241,7 @@
     "MER-APN-023",
     "2025-08-01",
     "surface_delivered",
-    "D:79.4600",
+    "D:79.4400",
     "",
     ""
    ],
@@ -10295,7 +10295,7 @@
     "MER-APN-023",
     null,
     "surface_delivered",
-    "D:495.3200",
+    "D:495.2200",
     "",
     ""
    ],
@@ -10313,7 +10313,7 @@
     "MER-APN-023",
     null,
     "supplies",
-    "D:600.4106",
+    "D:600.3112",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -10340,7 +10340,7 @@
     "MER-APN-023",
     null,
     "balance",
-    "D:32.0718",
+    "D:31.9724",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -10358,7 +10358,7 @@
     "MER-APN-024",
     "2024-10-01",
     "surface_delivered",
-    "D:37.9000",
+    "D:37.8900",
     "",
     ""
    ],
@@ -10520,7 +10520,7 @@
     "MER-APN-024",
     "2025-04-01",
     "surface_delivered",
-    "D:45.5500",
+    "D:45.5400",
     "",
     ""
    ],
@@ -10547,7 +10547,7 @@
     "MER-APN-024",
     "2025-05-01",
     "surface_delivered",
-    "D:84.1400",
+    "D:84.1200",
     "",
     ""
    ],
@@ -10574,7 +10574,7 @@
     "MER-APN-024",
     "2025-06-01",
     "surface_delivered",
-    "D:86.0800",
+    "D:86.0600",
     "",
     ""
    ],
@@ -10601,7 +10601,7 @@
     "MER-APN-024",
     "2025-07-01",
     "surface_delivered",
-    "D:84.4900",
+    "D:84.4700",
     "",
     ""
    ],
@@ -10628,7 +10628,7 @@
     "MER-APN-024",
     "2025-08-01",
     "surface_delivered",
-    "D:78.4800",
+    "D:78.4700",
     "",
     ""
    ],
@@ -10655,7 +10655,7 @@
     "MER-APN-024",
     "2025-09-01",
     "surface_delivered",
-    "D:53.1400",
+    "D:53.1300",
     "",
     ""
    ],
@@ -10682,7 +10682,7 @@
     "MER-APN-024",
     null,
     "surface_delivered",
-    "D:489.2300",
+    "D:489.1300",
     "",
     ""
    ],
@@ -10700,7 +10700,7 @@
     "MER-APN-024",
     null,
     "supplies",
-    "D:593.0012",
+    "D:592.9035",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -10727,7 +10727,7 @@
     "MER-APN-024",
     null,
     "balance",
-    "D:-21.2458",
+    "D:-21.3435",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -10745,7 +10745,7 @@
     "MER-APN-025",
     "2024-10-01",
     "surface_delivered",
-    "D:27.7900",
+    "D:27.7800",
     "",
     ""
    ],
@@ -10934,7 +10934,7 @@
     "MER-APN-025",
     "2025-05-01",
     "surface_delivered",
-    "D:61.6800",
+    "D:61.6700",
     "",
     ""
    ],
@@ -10961,7 +10961,7 @@
     "MER-APN-025",
     "2025-06-01",
     "surface_delivered",
-    "D:63.1000",
+    "D:63.0900",
     "",
     ""
    ],
@@ -10988,7 +10988,7 @@
     "MER-APN-025",
     "2025-07-01",
     "surface_delivered",
-    "D:61.9400",
+    "D:61.9200",
     "",
     ""
    ],
@@ -11015,7 +11015,7 @@
     "MER-APN-025",
     "2025-08-01",
     "surface_delivered",
-    "D:57.5300",
+    "D:57.5200",
     "",
     ""
    ],
@@ -11042,7 +11042,7 @@
     "MER-APN-025",
     "2025-09-01",
     "surface_delivered",
-    "D:38.9500",
+    "D:38.9400",
     "",
     ""
    ],
@@ -11069,7 +11069,7 @@
     "MER-APN-025",
     null,
     "surface_delivered",
-    "D:358.6400",
+    "D:358.5700",
     "",
     ""
    ],
@@ -11087,7 +11087,7 @@
     "MER-APN-025",
     null,
     "supplies",
-    "D:429.6126",
+    "D:429.5408",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -11114,7 +11114,7 @@
     "MER-APN-025",
     null,
     "balance",
-    "D:-0.0663",
+    "D:-0.1381",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -11429,7 +11429,7 @@
     "MER-APN-026",
     "2025-09-01",
     "surface_delivered",
-    "D:3.8500",
+    "D:3.8400",
     "",
     ""
    ],
@@ -11456,7 +11456,7 @@
     "MER-APN-026",
     null,
     "surface_delivered",
-    "D:35.4100",
+    "D:35.4000",
     "",
     ""
    ],
@@ -11474,7 +11474,7 @@
     "MER-APN-026",
     null,
     "supplies",
-    "D:42.6200",
+    "D:42.6131",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -11501,7 +11501,7 @@
     "MER-APN-026",
     null,
     "balance",
-    "D:1.6009",
+    "D:1.5940",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -11708,7 +11708,7 @@
     "MER-APN-027",
     "2025-05-01",
     "surface_delivered",
-    "D:10.3500",
+    "D:10.3400",
     "",
     ""
    ],
@@ -11843,7 +11843,7 @@
     "MER-APN-027",
     null,
     "surface_delivered",
-    "D:60.1500",
+    "D:60.1400",
     "",
     ""
    ],
@@ -11861,7 +11861,7 @@
     "MER-APN-027",
     null,
     "supplies",
-    "D:72.5982",
+    "D:72.5860",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -11888,7 +11888,7 @@
     "MER-APN-027",
     null,
     "balance",
-    "D:-5.9290",
+    "D:-5.9412",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -11987,7 +11987,7 @@
     "MER-APN-028",
     "2025-01-01",
     "surface_delivered",
-    "D:0.5300",
+    "D:0.5200",
     "",
     ""
    ],
@@ -12149,7 +12149,7 @@
     "MER-APN-028",
     "2025-07-01",
     "surface_delivered",
-    "D:16.5700",
+    "D:16.5600",
     "",
     ""
    ],
@@ -12230,7 +12230,7 @@
     "MER-APN-028",
     null,
     "surface_delivered",
-    "D:95.9400",
+    "D:95.9200",
     "",
     ""
    ],
@@ -12248,7 +12248,7 @@
     "MER-APN-028",
     null,
     "supplies",
-    "D:115.6840",
+    "D:115.6650",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -12275,7 +12275,7 @@
     "MER-APN-028",
     null,
     "balance",
-    "D:-1.9169",
+    "D:-1.9359",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -12293,7 +12293,7 @@
     "MER-APN-029",
     "2024-10-01",
     "surface_delivered",
-    "D:32.9200",
+    "D:32.9100",
     "",
     ""
    ],
@@ -12455,7 +12455,7 @@
     "MER-APN-029",
     "2025-04-01",
     "surface_delivered",
-    "D:39.5600",
+    "D:39.5500",
     "",
     ""
    ],
@@ -12482,7 +12482,7 @@
     "MER-APN-029",
     "2025-05-01",
     "surface_delivered",
-    "D:73.0700",
+    "D:73.0600",
     "",
     ""
    ],
@@ -12509,7 +12509,7 @@
     "MER-APN-029",
     "2025-06-01",
     "surface_delivered",
-    "D:74.7600",
+    "D:74.7400",
     "",
     ""
    ],
@@ -12536,7 +12536,7 @@
     "MER-APN-029",
     "2025-07-01",
     "surface_delivered",
-    "D:73.3800",
+    "D:73.3600",
     "",
     ""
    ],
@@ -12563,7 +12563,7 @@
     "MER-APN-029",
     "2025-08-01",
     "surface_delivered",
-    "D:68.1600",
+    "D:68.1500",
     "",
     ""
    ],
@@ -12590,7 +12590,7 @@
     "MER-APN-029",
     "2025-09-01",
     "surface_delivered",
-    "D:46.1500",
+    "D:46.1400",
     "",
     ""
    ],
@@ -12617,7 +12617,7 @@
     "MER-APN-029",
     null,
     "surface_delivered",
-    "D:424.8900",
+    "D:424.8000",
     "",
     ""
    ],
@@ -12635,7 +12635,7 @@
     "MER-APN-029",
     null,
     "supplies",
-    "D:512.5308",
+    "D:512.4457",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -12662,7 +12662,7 @@
     "MER-APN-029",
     null,
     "balance",
-    "D:38.1662",
+    "D:38.0811",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -13022,7 +13022,7 @@
     "MER-APN-030",
     null,
     "supplies",
-    "D:32.1049",
+    "D:32.0995",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -13049,7 +13049,7 @@
     "MER-APN-030",
     null,
     "balance",
-    "D:-1.3549",
+    "D:-1.3603",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -13256,7 +13256,7 @@
     "MER-APN-031",
     "2025-05-01",
     "surface_delivered",
-    "D:27.3700",
+    "D:27.3600",
     "",
     ""
    ],
@@ -13283,7 +13283,7 @@
     "MER-APN-031",
     "2025-06-01",
     "surface_delivered",
-    "D:28.0000",
+    "D:27.9900",
     "",
     ""
    ],
@@ -13337,7 +13337,7 @@
     "MER-APN-031",
     "2025-08-01",
     "surface_delivered",
-    "D:25.5300",
+    "D:25.5200",
     "",
     ""
    ],
@@ -13391,7 +13391,7 @@
     "MER-APN-031",
     null,
     "surface_delivered",
-    "D:159.1400",
+    "D:159.1100",
     "",
     ""
    ],
@@ -13409,7 +13409,7 @@
     "MER-APN-031",
     null,
     "supplies",
-    "D:190.5292",
+    "D:190.4974",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -13436,7 +13436,7 @@
     "MER-APN-031",
     null,
     "balance",
-    "D:-2.5906",
+    "D:-2.6224",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -13454,7 +13454,7 @@
     "MER-APN-032",
     "2024-10-01",
     "surface_delivered",
-    "D:33.2100",
+    "D:33.2000",
     "",
     ""
    ],
@@ -13463,7 +13463,7 @@
     "MER-APN-032",
     "2024-10-01",
     "groundwater_extraction",
-    "D:17.7300",
+    "D:17.7400",
     "",
     ""
    ],
@@ -13670,7 +13670,7 @@
     "MER-APN-032",
     "2025-04-01",
     "surface_delivered",
-    "D:39.9200",
+    "D:39.9100",
     "",
     ""
    ],
@@ -13706,7 +13706,7 @@
     "MER-APN-032",
     "2025-05-01",
     "surface_delivered",
-    "D:73.7300",
+    "D:73.7100",
     "",
     ""
    ],
@@ -13715,7 +13715,7 @@
     "MER-APN-032",
     "2025-05-01",
     "groundwater_extraction",
-    "D:39.7700",
+    "D:39.7900",
     "",
     ""
    ],
@@ -13742,7 +13742,7 @@
     "MER-APN-032",
     "2025-06-01",
     "surface_delivered",
-    "D:75.4200",
+    "D:75.4100",
     "",
     ""
    ],
@@ -13751,7 +13751,7 @@
     "MER-APN-032",
     "2025-06-01",
     "groundwater_extraction",
-    "D:46.9300",
+    "D:46.9400",
     "",
     ""
    ],
@@ -13778,7 +13778,7 @@
     "MER-APN-032",
     "2025-07-01",
     "surface_delivered",
-    "D:74.0300",
+    "D:74.0200",
     "",
     ""
    ],
@@ -13787,7 +13787,7 @@
     "MER-APN-032",
     "2025-07-01",
     "groundwater_extraction",
-    "D:46.3200",
+    "D:46.3300",
     "",
     ""
    ],
@@ -13814,7 +13814,7 @@
     "MER-APN-032",
     "2025-08-01",
     "surface_delivered",
-    "D:68.7700",
+    "D:68.7600",
     "",
     ""
    ],
@@ -13823,7 +13823,7 @@
     "MER-APN-032",
     "2025-08-01",
     "groundwater_extraction",
-    "D:42.5900",
+    "D:42.6100",
     "",
     ""
    ],
@@ -13850,7 +13850,7 @@
     "MER-APN-032",
     "2025-09-01",
     "surface_delivered",
-    "D:46.5600",
+    "D:46.5500",
     "",
     ""
    ],
@@ -13859,7 +13859,7 @@
     "MER-APN-032",
     "2025-09-01",
     "groundwater_extraction",
-    "D:27.8000",
+    "D:27.8100",
     "",
     ""
    ],
@@ -13886,7 +13886,7 @@
     "MER-APN-032",
     null,
     "surface_delivered",
-    "D:428.6900",
+    "D:428.6100",
     "",
     ""
    ],
@@ -13895,7 +13895,7 @@
     "MER-APN-032",
     null,
     "groundwater_extraction",
-    "D:247.2300",
+    "D:247.3100",
     "",
     ""
    ],
@@ -13913,7 +13913,7 @@
     "MER-APN-032",
     null,
     "supplies",
-    "D:765.2820",
+    "D:765.2814",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -13922,7 +13922,7 @@
     "MER-APN-032",
     null,
     "uses",
-    "D:654.3948",
+    "D:654.4161",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -13931,7 +13931,7 @@
     "MER-APN-032",
     null,
     "water_not_consumed",
-    "D:61.8066",
+    "D:61.8279",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -13940,7 +13940,7 @@
     "MER-APN-032",
     null,
     "balance",
-    "D:110.8872",
+    "D:110.8653",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -14120,7 +14120,7 @@
     "MER-APN-033",
     "2025-04-01",
     "surface_delivered",
-    "D:7.9100",
+    "D:7.9000",
     "",
     ""
    ],
@@ -14174,7 +14174,7 @@
     "MER-APN-033",
     "2025-06-01",
     "surface_delivered",
-    "D:14.9400",
+    "D:14.9300",
     "",
     ""
    ],
@@ -14282,7 +14282,7 @@
     "MER-APN-033",
     null,
     "surface_delivered",
-    "D:84.9000",
+    "D:84.8800",
     "",
     ""
    ],
@@ -14300,7 +14300,7 @@
     "MER-APN-033",
     null,
     "supplies",
-    "D:102.2855",
+    "D:102.2686",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -14327,7 +14327,7 @@
     "MER-APN-033",
     null,
     "balance",
-    "D:-4.1279",
+    "D:-4.1448",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -14345,7 +14345,7 @@
     "MER-APN-034",
     "2024-10-01",
     "surface_delivered",
-    "D:13.1000",
+    "D:13.0900",
     "",
     ""
    ],
@@ -14561,7 +14561,7 @@
     "MER-APN-034",
     "2025-06-01",
     "surface_delivered",
-    "D:29.7400",
+    "D:29.7300",
     "",
     ""
    ],
@@ -14615,7 +14615,7 @@
     "MER-APN-034",
     "2025-08-01",
     "surface_delivered",
-    "D:27.1200",
+    "D:27.1100",
     "",
     ""
    ],
@@ -14669,7 +14669,7 @@
     "MER-APN-034",
     null,
     "surface_delivered",
-    "D:169.0400",
+    "D:169.0100",
     "",
     ""
    ],
@@ -14687,7 +14687,7 @@
     "MER-APN-034",
     null,
     "supplies",
-    "D:203.7959",
+    "D:203.7622",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -14714,7 +14714,7 @@
     "MER-APN-034",
     null,
     "balance",
-    "D:2.2135",
+    "D:2.1798",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -15002,7 +15002,7 @@
     "MER-APN-035",
     "2025-08-01",
     "surface_delivered",
-    "D:8.2500",
+    "D:8.2400",
     "",
     ""
    ],
@@ -15056,7 +15056,7 @@
     "MER-APN-035",
     null,
     "surface_delivered",
-    "D:51.4000",
+    "D:51.3900",
     "",
     ""
    ],
@@ -15074,7 +15074,7 @@
     "MER-APN-035",
     null,
     "supplies",
-    "D:61.7966",
+    "D:61.7864",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -15101,7 +15101,7 @@
     "MER-APN-035",
     null,
     "balance",
-    "D:2.2689",
+    "D:2.2587",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -15308,7 +15308,7 @@
     "MER-APN-036",
     "2025-05-01",
     "surface_delivered",
-    "D:58.2100",
+    "D:58.2000",
     "",
     ""
    ],
@@ -15335,7 +15335,7 @@
     "MER-APN-036",
     "2025-06-01",
     "surface_delivered",
-    "D:59.5500",
+    "D:59.5400",
     "",
     ""
    ],
@@ -15362,7 +15362,7 @@
     "MER-APN-036",
     "2025-07-01",
     "surface_delivered",
-    "D:58.4500",
+    "D:58.4400",
     "",
     ""
    ],
@@ -15389,7 +15389,7 @@
     "MER-APN-036",
     "2025-08-01",
     "surface_delivered",
-    "D:54.3000",
+    "D:54.2800",
     "",
     ""
    ],
@@ -15416,7 +15416,7 @@
     "MER-APN-036",
     "2025-09-01",
     "surface_delivered",
-    "D:36.7600",
+    "D:36.7500",
     "",
     ""
    ],
@@ -15443,7 +15443,7 @@
     "MER-APN-036",
     null,
     "surface_delivered",
-    "D:338.4600",
+    "D:338.4000",
     "",
     ""
    ],
@@ -15461,7 +15461,7 @@
     "MER-APN-036",
     null,
     "supplies",
-    "D:407.9775",
+    "D:407.9098",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -15488,7 +15488,7 @@
     "MER-APN-036",
     null,
     "balance",
-    "D:-2.0060",
+    "D:-2.0737",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -15506,7 +15506,7 @@
     "MER-APN-037",
     "2024-10-01",
     "surface_delivered",
-    "D:21.1800",
+    "D:21.1700",
     "",
     ""
    ],
@@ -15614,7 +15614,7 @@
     "MER-APN-037",
     "2025-02-01",
     "surface_delivered",
-    "D:1.9400",
+    "D:1.9300",
     "",
     ""
    ],
@@ -15695,7 +15695,7 @@
     "MER-APN-037",
     "2025-05-01",
     "surface_delivered",
-    "D:47.0100",
+    "D:47.0000",
     "",
     ""
    ],
@@ -15749,7 +15749,7 @@
     "MER-APN-037",
     "2025-07-01",
     "surface_delivered",
-    "D:47.2100",
+    "D:47.2000",
     "",
     ""
    ],
@@ -15776,7 +15776,7 @@
     "MER-APN-037",
     "2025-08-01",
     "surface_delivered",
-    "D:43.8500",
+    "D:43.8400",
     "",
     ""
    ],
@@ -15803,7 +15803,7 @@
     "MER-APN-037",
     "2025-09-01",
     "surface_delivered",
-    "D:29.6900",
+    "D:29.6800",
     "",
     ""
    ],
@@ -15830,7 +15830,7 @@
     "MER-APN-037",
     null,
     "surface_delivered",
-    "D:273.3600",
+    "D:273.3000",
     "",
     ""
    ],
@@ -15848,7 +15848,7 @@
     "MER-APN-037",
     null,
     "supplies",
-    "D:330.0908",
+    "D:330.0362",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -15875,7 +15875,7 @@
     "MER-APN-037",
     null,
     "balance",
-    "D:6.2136",
+    "D:6.1590",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -15893,7 +15893,7 @@
     "MER-APN-038",
     "2024-10-01",
     "surface_delivered",
-    "D:10.5300",
+    "D:10.5900",
     "",
     ""
    ],
@@ -15947,7 +15947,7 @@
     "MER-APN-038",
     "2024-12-01",
     "surface_delivered",
-    "D:1.5700",
+    "D:1.5800",
     "",
     ""
    ],
@@ -16001,7 +16001,7 @@
     "MER-APN-038",
     "2025-02-01",
     "surface_delivered",
-    "D:0.9600",
+    "D:0.9700",
     "",
     ""
    ],
@@ -16028,7 +16028,7 @@
     "MER-APN-038",
     "2025-03-01",
     "surface_delivered",
-    "D:1.1800",
+    "D:1.1900",
     "",
     ""
    ],
@@ -16055,7 +16055,7 @@
     "MER-APN-038",
     "2025-04-01",
     "surface_delivered",
-    "D:12.6600",
+    "D:12.7200",
     "",
     ""
    ],
@@ -16082,7 +16082,7 @@
     "MER-APN-038",
     "2025-05-01",
     "surface_delivered",
-    "D:23.3800",
+    "D:23.5000",
     "",
     ""
    ],
@@ -16109,7 +16109,7 @@
     "MER-APN-038",
     "2025-06-01",
     "surface_delivered",
-    "D:23.9100",
+    "D:24.0400",
     "",
     ""
    ],
@@ -16136,7 +16136,7 @@
     "MER-APN-038",
     "2025-07-01",
     "surface_delivered",
-    "D:23.4700",
+    "D:23.6000",
     "",
     ""
    ],
@@ -16163,7 +16163,7 @@
     "MER-APN-038",
     "2025-08-01",
     "surface_delivered",
-    "D:21.8000",
+    "D:21.9200",
     "",
     ""
    ],
@@ -16190,7 +16190,7 @@
     "MER-APN-038",
     "2025-09-01",
     "surface_delivered",
-    "D:14.7600",
+    "D:14.8400",
     "",
     ""
    ],
@@ -16217,7 +16217,7 @@
     "MER-APN-038",
     null,
     "surface_delivered",
-    "D:135.9200",
+    "D:136.6500",
     "",
     ""
    ],
@@ -16235,7 +16235,7 @@
     "MER-APN-038",
     null,
     "supplies",
-    "D:164.1284",
+    "D:164.8628",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -16262,7 +16262,7 @@
     "MER-APN-038",
     null,
     "balance",
-    "D:-4.2919",
+    "D:-3.5575",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -21311,7 +21311,7 @@
     "MER-APN-049",
     null,
     "supplies",
-    "D:428.8367",
+    "D:428.8364",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -21338,7 +21338,7 @@
     "MER-APN-049",
     null,
     "balance",
-    "D:89.5258",
+    "D:89.5255",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -21815,7 +21815,7 @@
     "MER-APN-050",
     null,
     "supplies",
-    "D:194.4739",
+    "D:194.4737",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -21824,7 +21824,7 @@
     "MER-APN-050",
     null,
     "uses",
-    "D:171.0038",
+    "D:171.0036",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -21833,7 +21833,7 @@
     "MER-APN-050",
     null,
     "water_not_consumed",
-    "D:20.2697",
+    "D:20.2695",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -29609,7 +29609,7 @@
     "MER-APN-067",
     "2025-08-01",
     "surface_delivered",
-    "D:3.2600",
+    "D:3.2700",
     "",
     ""
    ],
@@ -29663,7 +29663,7 @@
     "MER-APN-067",
     null,
     "surface_delivered",
-    "D:23.9100",
+    "D:23.9200",
     "",
     ""
    ],
@@ -29681,7 +29681,7 @@
     "MER-APN-067",
     null,
     "supplies",
-    "D:27.5059",
+    "D:27.5083",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -29708,7 +29708,7 @@
     "MER-APN-067",
     null,
     "balance",
-    "D:9.1914",
+    "D:9.1938",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -30068,7 +30068,7 @@
     "MER-APN-068",
     null,
     "supplies",
-    "D:16.5527",
+    "D:16.5541",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -30095,7 +30095,7 @@
     "MER-APN-068",
     null,
     "balance",
-    "D:6.3858",
+    "D:6.3872",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -30455,7 +30455,7 @@
     "MER-APN-069",
     null,
     "supplies",
-    "D:37.2991",
+    "D:37.3022",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -30482,7 +30482,7 @@
     "MER-APN-069",
     null,
     "balance",
-    "D:4.7086",
+    "D:4.7117",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -30842,7 +30842,7 @@
     "MER-APN-070",
     null,
     "supplies",
-    "D:12.4874",
+    "D:12.4886",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -30869,7 +30869,7 @@
     "MER-APN-070",
     null,
     "balance",
-    "D:4.6521",
+    "D:4.6533",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -31076,7 +31076,7 @@
     "MER-APN-071",
     "2025-05-01",
     "surface_delivered",
-    "D:3.5500",
+    "D:3.5600",
     "",
     ""
    ],
@@ -31211,7 +31211,7 @@
     "MER-APN-071",
     null,
     "surface_delivered",
-    "D:20.0600",
+    "D:20.0700",
     "",
     ""
    ],
@@ -31229,7 +31229,7 @@
     "MER-APN-071",
     null,
     "supplies",
-    "D:22.9732",
+    "D:22.9751",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -31256,7 +31256,7 @@
     "MER-APN-071",
     null,
     "balance",
-    "D:8.0718",
+    "D:8.0737",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -31616,7 +31616,7 @@
     "MER-APN-072",
     null,
     "supplies",
-    "D:28.4550",
+    "D:28.4576",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -31643,7 +31643,7 @@
     "MER-APN-072",
     null,
     "balance",
-    "D:10.4019",
+    "D:10.4045",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -32003,7 +32003,7 @@
     "MER-APN-073",
     null,
     "supplies",
-    "D:28.9837",
+    "D:28.9862",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -32030,7 +32030,7 @@
     "MER-APN-073",
     null,
     "balance",
-    "D:9.5274",
+    "D:9.5299",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -32390,7 +32390,7 @@
     "MER-APN-074",
     null,
     "supplies",
-    "D:33.0875",
+    "D:33.0900",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -32417,7 +32417,7 @@
     "MER-APN-074",
     null,
     "balance",
-    "D:11.5403",
+    "D:11.5428",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -32489,7 +32489,7 @@
     "MER-APN-075",
     "2024-12-01",
     "surface_delivered",
-    "D:3.5600",
+    "D:3.5700",
     "",
     ""
    ],
@@ -32597,7 +32597,7 @@
     "MER-APN-075",
     "2025-04-01",
     "surface_delivered",
-    "D:33.1600",
+    "D:33.1700",
     "",
     ""
    ],
@@ -32732,7 +32732,7 @@
     "MER-APN-075",
     "2025-09-01",
     "surface_delivered",
-    "D:26.0500",
+    "D:26.0600",
     "",
     ""
    ],
@@ -32759,7 +32759,7 @@
     "MER-APN-075",
     null,
     "surface_delivered",
-    "D:275.5900",
+    "D:275.6200",
     "",
     ""
    ],
@@ -32777,7 +32777,7 @@
     "MER-APN-075",
     null,
     "supplies",
-    "D:317.7033",
+    "D:317.7307",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -32804,7 +32804,7 @@
     "MER-APN-075",
     null,
     "balance",
-    "D:22.7889",
+    "D:22.8163",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33011,7 +33011,7 @@
     "MER-APN-076",
     "2025-05-01",
     "surface_delivered",
-    "D:81.5500",
+    "D:81.5400",
     "",
     ""
    ],
@@ -33038,7 +33038,7 @@
     "MER-APN-076",
     "2025-06-01",
     "surface_delivered",
-    "D:77.9700",
+    "D:77.9600",
     "",
     ""
    ],
@@ -33065,7 +33065,7 @@
     "MER-APN-076",
     "2025-07-01",
     "surface_delivered",
-    "D:72.8200",
+    "D:72.8100",
     "",
     ""
    ],
@@ -33119,7 +33119,7 @@
     "MER-APN-076",
     "2025-09-01",
     "surface_delivered",
-    "D:43.5200",
+    "D:43.5100",
     "",
     ""
    ],
@@ -33146,7 +33146,7 @@
     "MER-APN-076",
     null,
     "surface_delivered",
-    "D:460.3000",
+    "D:460.2600",
     "",
     ""
    ],
@@ -33164,7 +33164,7 @@
     "MER-APN-076",
     null,
     "supplies",
-    "D:528.9852",
+    "D:528.9402",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33191,7 +33191,7 @@
     "MER-APN-076",
     null,
     "balance",
-    "D:47.0865",
+    "D:47.0415",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33218,7 +33218,7 @@
     "MER-ACCT-001 \u00b7 Ashvale Orchards Inc.",
     null,
     "groundwater_extraction",
-    "D:247.2265",
+    "D:247.3117",
     "",
     ""
    ],
@@ -33236,7 +33236,7 @@
     "MER-ACCT-001 \u00b7 Ashvale Orchards Inc.",
     null,
     "supplies",
-    "D:4842.2530",
+    "D:4842.3382",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33245,7 +33245,7 @@
     "MER-ACCT-001 \u00b7 Ashvale Orchards Inc.",
     null,
     "uses",
-    "D:4677.6929",
+    "D:4677.7142",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33254,7 +33254,7 @@
     "MER-ACCT-001 \u00b7 Ashvale Orchards Inc.",
     null,
     "water_not_consumed",
-    "D:61.8066",
+    "D:61.8279",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33263,7 +33263,7 @@
     "MER-ACCT-001 \u00b7 Ashvale Orchards Inc.",
     null,
     "balance",
-    "D:164.5601",
+    "D:164.6240",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33281,7 +33281,7 @@
     "MER-ACCT-001 \u00b7 Ashvale Orchards Inc.",
     null,
     "used",
-    "D:247.2265",
+    "D:247.3117",
     "",
     ""
    ],
@@ -33290,7 +33290,7 @@
     "MER-ACCT-001 \u00b7 Ashvale Orchards Inc.",
     null,
     "remaining",
-    "D:747.8577",
+    "D:747.7725",
     "",
     ""
    ],
@@ -33416,7 +33416,7 @@
     "MER-ACCT-003 \u00b7 Dunmoor Bottoms Farming",
     null,
     "groundwater_extraction",
-    "D:351.7909",
+    "D:351.7904",
     "",
     ""
    ],
@@ -33434,7 +33434,7 @@
     "MER-ACCT-003 \u00b7 Dunmoor Bottoms Farming",
     null,
     "supplies",
-    "D:2115.3710",
+    "D:2115.3705",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33443,7 +33443,7 @@
     "MER-ACCT-003 \u00b7 Dunmoor Bottoms Farming",
     null,
     "uses",
-    "D:1874.6609",
+    "D:1874.6607",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33452,7 +33452,7 @@
     "MER-ACCT-003 \u00b7 Dunmoor Bottoms Farming",
     null,
     "water_not_consumed",
-    "D:49.8975",
+    "D:49.8973",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33461,7 +33461,7 @@
     "MER-ACCT-003 \u00b7 Dunmoor Bottoms Farming",
     null,
     "balance",
-    "D:240.7101",
+    "D:240.7098",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33479,7 +33479,7 @@
     "MER-ACCT-003 \u00b7 Dunmoor Bottoms Farming",
     null,
     "used",
-    "D:351.7909",
+    "D:351.7904",
     "",
     ""
    ],
@@ -33488,7 +33488,7 @@
     "MER-ACCT-003 \u00b7 Dunmoor Bottoms Farming",
     null,
     "remaining",
-    "D:90.2387",
+    "D:90.2392",
     "",
     ""
    ],
@@ -33812,7 +33812,7 @@
     "MER-ACCT-007 \u00b7 Saddlebow Ag Holdings",
     null,
     "groundwater_extraction",
-    "D:464.1461",
+    "D:464.1291",
     "",
     ""
    ],
@@ -33830,7 +33830,7 @@
     "MER-ACCT-007 \u00b7 Saddlebow Ag Holdings",
     null,
     "supplies",
-    "D:2184.1039",
+    "D:2184.0869",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33839,7 +33839,7 @@
     "MER-ACCT-007 \u00b7 Saddlebow Ag Holdings",
     null,
     "uses",
-    "D:2979.6112",
+    "D:2979.6100",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33848,7 +33848,7 @@
     "MER-ACCT-007 \u00b7 Saddlebow Ag Holdings",
     null,
     "water_not_consumed",
-    "D:143.3412",
+    "D:143.3400",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33857,7 +33857,7 @@
     "MER-ACCT-007 \u00b7 Saddlebow Ag Holdings",
     null,
     "balance",
-    "D:-795.5073",
+    "D:-795.5231",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -33875,7 +33875,7 @@
     "MER-ACCT-007 \u00b7 Saddlebow Ag Holdings",
     null,
     "used",
-    "D:464.1461",
+    "D:464.1291",
     "",
     ""
    ],
@@ -33884,7 +33884,7 @@
     "MER-ACCT-007 \u00b7 Saddlebow Ag Holdings",
     null,
     "remaining",
-    "D:135.8465",
+    "D:135.8635",
     "",
     ""
    ],
@@ -34208,7 +34208,7 @@
     "MER-ACCT-011 \u00b7 Wrenfield Land & Cattle",
     null,
     "groundwater_extraction",
-    "D:75.4262",
+    "D:75.4535",
     "",
     ""
    ],
@@ -34226,7 +34226,7 @@
     "MER-ACCT-011 \u00b7 Wrenfield Land & Cattle",
     null,
     "supplies",
-    "D:2216.0198",
+    "D:2216.0471",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34235,7 +34235,7 @@
     "MER-ACCT-011 \u00b7 Wrenfield Land & Cattle",
     null,
     "uses",
-    "D:2191.6288",
+    "D:2191.6305",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34244,7 +34244,7 @@
     "MER-ACCT-011 \u00b7 Wrenfield Land & Cattle",
     null,
     "water_not_consumed",
-    "D:16.2284",
+    "D:16.2301",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34253,7 +34253,7 @@
     "MER-ACCT-011 \u00b7 Wrenfield Land & Cattle",
     null,
     "balance",
-    "D:24.3910",
+    "D:24.4166",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34271,7 +34271,7 @@
     "MER-ACCT-011 \u00b7 Wrenfield Land & Cattle",
     null,
     "used",
-    "D:75.4262",
+    "D:75.4535",
     "",
     ""
    ],
@@ -34280,7 +34280,7 @@
     "MER-ACCT-011 \u00b7 Wrenfield Land & Cattle",
     null,
     "remaining",
-    "D:418.3858",
+    "D:418.3585",
     "",
     ""
    ],
@@ -34631,7 +34631,7 @@
     "Halvern Irrigation-Urban GSA",
     null,
     "surface_delivered",
-    "D:843.0983",
+    "D:843.0661",
     "",
     ""
    ],
@@ -34658,7 +34658,7 @@
     "Halvern Irrigation-Urban GSA",
     null,
     "supplies",
-    "D:1185.4254",
+    "D:1185.3932",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34676,7 +34676,7 @@
     "Halvern Irrigation-Urban GSA",
     null,
     "balance",
-    "D:7.4945",
+    "D:7.4623",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34739,7 +34739,7 @@
     "Halvern Valley GSA",
     null,
     "surface_delivered",
-    "D:8002.9751",
+    "D:8003.0073",
     "",
     ""
    ],
@@ -34748,7 +34748,7 @@
     "Halvern Valley GSA",
     null,
     "groundwater_extraction",
-    "D:3216.7101",
+    "D:3216.8051",
     "",
     ""
    ],
@@ -34766,7 +34766,7 @@
     "Halvern Valley GSA",
     null,
     "supplies",
-    "D:13821.7740",
+    "D:13821.9012",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34775,7 +34775,7 @@
     "Halvern Valley GSA",
     null,
     "water_not_consumed",
-    "D:807.5645",
+    "D:807.5861",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34784,7 +34784,7 @@
     "Halvern Valley GSA",
     null,
     "balance",
-    "D:-313.3732",
+    "D:-313.2676",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34811,7 +34811,7 @@
     "Halvern Valley GSA",
     null,
     "remaining",
-    "D:-556.2385",
+    "D:-556.3335",
     "",
     ""
    ],
@@ -34829,7 +34829,7 @@
     "Halvern Valley GSA",
     null,
     "used",
-    "D:3216.7101",
+    "D:3216.8051",
     "",
     ""
    ],
@@ -34964,7 +34964,7 @@
     "MER Surface Service Area: Ashvale-Dunmoor Water District (MER-WR-005-DEMO)",
     null,
     "groundwater_extraction",
-    "D:247.2265",
+    "D:247.3117",
     "",
     ""
    ],
@@ -34982,7 +34982,7 @@
     "MER Surface Service Area: Ashvale-Dunmoor Water District (MER-WR-005-DEMO)",
     null,
     "supplies",
-    "D:4842.2530",
+    "D:4842.3382",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34991,7 +34991,7 @@
     "MER Surface Service Area: Ashvale-Dunmoor Water District (MER-WR-005-DEMO)",
     null,
     "water_not_consumed",
-    "D:61.8066",
+    "D:61.8279",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35000,7 +35000,7 @@
     "MER Surface Service Area: Ashvale-Dunmoor Water District (MER-WR-005-DEMO)",
     null,
     "balance",
-    "D:164.5601",
+    "D:164.6240",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35036,7 +35036,7 @@
     "MER Surface Service Area: Halvern Irrigation District (MER-WR-004-DEMO)",
     null,
     "groundwater_extraction",
-    "D:351.7909",
+    "D:351.7904",
     "",
     ""
    ],
@@ -35054,7 +35054,7 @@
     "MER Surface Service Area: Halvern Irrigation District (MER-WR-004-DEMO)",
     null,
     "supplies",
-    "D:2142.8890",
+    "D:2142.8885",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35063,7 +35063,7 @@
     "MER Surface Service Area: Halvern Irrigation District (MER-WR-004-DEMO)",
     null,
     "water_not_consumed",
-    "D:49.8975",
+    "D:49.8973",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35072,7 +35072,7 @@
     "MER Surface Service Area: Halvern Irrigation District (MER-WR-004-DEMO)",
     null,
     "balance",
-    "D:166.3227",
+    "D:166.3224",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35108,7 +35108,7 @@
     "MER Surface Service Area: Saddlebow Irrigation District (MER-WR-009-DEMO)",
     null,
     "groundwater_extraction",
-    "D:464.1461",
+    "D:464.1291",
     "",
     ""
    ],
@@ -35126,7 +35126,7 @@
     "MER Surface Service Area: Saddlebow Irrigation District (MER-WR-009-DEMO)",
     null,
     "supplies",
-    "D:2184.1039",
+    "D:2184.0869",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35135,7 +35135,7 @@
     "MER Surface Service Area: Saddlebow Irrigation District (MER-WR-009-DEMO)",
     null,
     "water_not_consumed",
-    "D:143.3412",
+    "D:143.3400",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35144,7 +35144,7 @@
     "MER Surface Service Area: Saddlebow Irrigation District (MER-WR-009-DEMO)",
     null,
     "balance",
-    "D:-795.5073",
+    "D:-795.5231",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35252,7 +35252,7 @@
     "MER Surface Service Area: Wrenfield Water District (MER-WR-006-DEMO)",
     null,
     "groundwater_extraction",
-    "D:75.4262",
+    "D:75.4535",
     "",
     ""
    ],
@@ -35270,7 +35270,7 @@
     "MER Surface Service Area: Wrenfield Water District (MER-WR-006-DEMO)",
     null,
     "supplies",
-    "D:2216.0198",
+    "D:2216.0471",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35279,7 +35279,7 @@
     "MER Surface Service Area: Wrenfield Water District (MER-WR-006-DEMO)",
     null,
     "water_not_consumed",
-    "D:16.2284",
+    "D:16.2301",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35288,7 +35288,7 @@
     "MER Surface Service Area: Wrenfield Water District (MER-WR-006-DEMO)",
     null,
     "balance",
-    "D:24.3910",
+    "D:24.4166",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35324,7 +35324,7 @@
     "",
     null,
     "groundwater_extraction",
-    "D:4470.8774",
+    "D:4470.9724",
     "",
     ""
    ],
@@ -35342,7 +35342,7 @@
     "",
     null,
     "supplies",
-    "D:16275.5238",
+    "D:16275.6188",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35351,7 +35351,7 @@
     "",
     null,
     "uses",
-    "D:16581.4023",
+    "D:16581.4239",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35360,7 +35360,7 @@
     "",
     null,
     "water_not_consumed",
-    "D:1108.9616",
+    "D:1108.9832",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35369,16 +35369,16 @@
     "",
     null,
     "balance",
-    "D:-305.8785",
+    "D:-305.8051",
     "Default Methodology 721bc1ae69a9",
     ""
    ]
   ],
   "dashboard": {
    "grand_consumptive_use": "D:15472.4407",
-   "grand_supply_total": "D:16275.5238",
+   "grand_supply_total": "D:16275.6188",
    "grand_supply_surface": "D:8846.0734",
-   "grand_supply_groundwater": "D:4470.8774",
+   "grand_supply_groundwater": "D:4470.9724",
    "grand_supply_precip": "D:2958.5730",
    "grand_surface_lines": [
     {
@@ -35405,12 +35405,12 @@
      "kind": "estimated",
      "pill": "Estimated",
      "pill_class": "estimated",
-     "amount": "D:1873.39"
+     "amount": "D:1873.48"
     }
    ],
-   "grand_not_consumed": "D:1108.9616",
-   "grand_uses_total": "D:16581.4023",
-   "grand_net": "D:-305.8785",
+   "grand_not_consumed": "D:1108.9832",
+   "grand_uses_total": "D:16581.4239",
+   "grand_net": "D:-305.8051",
    "accounts_with_estimates": 11,
    "grand_calculation_runs": 912,
    "accounts_in_surplus": 4,
@@ -35423,42 +35423,42 @@
     {
      "parcel_number": "MER-APN-019",
      "gross_et": "D:430.2515",
-     "unmet": "D:263.1396"
+     "unmet": "D:263.2073"
     },
     {
      "parcel_number": "MER-APN-011",
      "gross_et": "D:399.2349",
-     "unmet": "D:262.7153"
+     "unmet": "D:262.7076"
     },
     {
      "parcel_number": "MER-APN-010",
      "gross_et": "D:245.4122",
-     "unmet": "D:196.6428"
+     "unmet": "D:196.6380"
     },
     {
      "parcel_number": "MER-APN-014",
      "gross_et": "D:293.9531",
-     "unmet": "D:191.8305"
+     "unmet": "D:191.8232"
     },
     {
      "parcel_number": "MER-APN-013",
      "gross_et": "D:298.4369",
-     "unmet": "D:177.0764"
+     "unmet": "D:177.0689"
     },
     {
      "parcel_number": "MER-APN-008",
      "gross_et": "D:324.0986",
-     "unmet": "D:152.7306"
+     "unmet": "D:152.7457"
     },
     {
      "parcel_number": "MER-APN-001",
      "gross_et": "D:435.9974",
-     "unmet": "D:152.2068"
+     "unmet": "D:152.2290"
     },
     {
      "parcel_number": "MER-APN-024",
      "gross_et": "D:602.2126",
-     "unmet": "D:147.7914"
+     "unmet": "D:147.8639"
     },
     {
      "parcel_number": "MER-APN-040",
@@ -35468,47 +35468,47 @@
     {
      "parcel_number": "MER-APN-023",
      "gross_et": "D:466.6234",
-     "unmet": "D:99.4414"
+     "unmet": "D:99.5130"
     },
     {
      "parcel_number": "MER-APN-025",
      "gross_et": "D:375.6175",
-     "unmet": "D:97.8864"
+     "unmet": "D:97.9385"
     },
     {
      "parcel_number": "MER-APN-012",
      "gross_et": "D:261.4939",
-     "unmet": "D:90.5611"
+     "unmet": "D:90.5522"
     },
     {
      "parcel_number": "MER-APN-036",
      "gross_et": "D:378.8190",
-     "unmet": "D:89.8908"
+     "unmet": "D:89.9405"
     },
     {
      "parcel_number": "MER-APN-004",
      "gross_et": "D:281.5569",
-     "unmet": "D:85.8877"
+     "unmet": "D:85.9051"
     },
     {
      "parcel_number": "MER-APN-029",
      "gross_et": "D:405.0186",
-     "unmet": "D:75.8246"
+     "unmet": "D:75.8865"
     },
     {
      "parcel_number": "MER-APN-076",
      "gross_et": "D:440.8221",
-     "unmet": "D:73.2172"
+     "unmet": "D:73.2503"
     },
     {
      "parcel_number": "MER-APN-037",
      "gross_et": "D:304.3624",
-     "unmet": "D:64.5281"
+     "unmet": "D:64.5685"
     },
     {
      "parcel_number": "MER-APN-075",
      "gross_et": "D:270.0894",
-     "unmet": "D:49.5435"
+     "unmet": "D:49.5232"
     },
     {
      "parcel_number": "MER-APN-060",
@@ -35518,42 +35518,42 @@
     {
      "parcel_number": "MER-APN-031",
      "gross_et": "D:168.8979",
-     "unmet": "D:45.7266"
+     "unmet": "D:45.7498"
     },
     {
      "parcel_number": "MER-APN-034",
      "gross_et": "D:178.1420",
-     "unmet": "D:42.0032"
-    },
-    {
-     "parcel_number": "MER-APN-038",
-     "gross_et": "D:165.1634",
-     "unmet": "D:39.4488"
+     "unmet": "D:42.0281"
     },
     {
      "parcel_number": "MER-APN-007",
      "gross_et": "D:185.4284",
-     "unmet": "D:38.9326"
+     "unmet": "D:38.9433"
+    },
+    {
+     "parcel_number": "MER-APN-038",
+     "gross_et": "D:165.1634",
+     "unmet": "D:38.9045"
     },
     {
      "parcel_number": "MER-APN-021",
      "gross_et": "D:158.1015",
-     "unmet": "D:29.5990"
+     "unmet": "D:29.6220"
     },
     {
      "parcel_number": "MER-APN-028",
      "gross_et": "D:104.4112",
-     "unmet": "D:27.1490"
+     "unmet": "D:27.1627"
     },
     {
      "parcel_number": "MER-APN-033",
      "gross_et": "D:104.2871",
-     "unmet": "D:26.0886"
+     "unmet": "D:26.1013"
     },
     {
      "parcel_number": "MER-APN-027",
      "gross_et": "D:74.1312",
-     "unmet": "D:21.5093"
+     "unmet": "D:21.5185"
     },
     {
      "parcel_number": "MER-APN-049",
@@ -35563,7 +35563,7 @@
     {
      "parcel_number": "MER-APN-035",
      "gross_et": "D:55.9106",
-     "unmet": "D:11.0361"
+     "unmet": "D:11.0434"
     },
     {
      "parcel_number": "MER-APN-058",
@@ -35573,7 +35573,7 @@
     {
      "parcel_number": "MER-APN-030",
      "gross_et": "D:32.7785",
-     "unmet": "D:8.2484"
+     "unmet": "D:8.2522"
     },
     {
      "parcel_number": "MER-APN-059",
@@ -35583,7 +35583,7 @@
     {
      "parcel_number": "MER-APN-026",
      "gross_et": "D:36.3847",
-     "unmet": "D:7.8987"
+     "unmet": "D:7.9036"
     },
     {
      "parcel_number": "MER-APN-064",
@@ -35598,22 +35598,22 @@
     {
      "parcel_number": "MER-APN-009",
      "gross_et": "D:50.7913",
-     "unmet": "D:4.2067"
+     "unmet": "D:4.1949"
     },
     {
      "parcel_number": "MER-APN-069",
      "gross_et": "D:29.5015",
-     "unmet": "D:3.6782"
+     "unmet": "D:3.6760"
     },
     {
      "parcel_number": "MER-APN-022",
      "gross_et": "D:19.9254",
-     "unmet": "D:3.5690"
+     "unmet": "D:3.5721"
     },
     {
      "parcel_number": "MER-APN-074",
      "gross_et": "D:11.9658",
-     "unmet": "D:1.7462"
+     "unmet": "D:1.7454"
     },
     {
      "parcel_number": "MER-APN-046",
@@ -35623,35 +35623,35 @@
     {
      "parcel_number": "MER-APN-073",
      "gross_et": "D:10.4564",
-     "unmet": "D:1.5369"
+     "unmet": "D:1.5361"
     },
     {
      "parcel_number": "MER-APN-072",
      "gross_et": "D:10.2098",
-     "unmet": "D:1.4233"
+     "unmet": "D:1.4224"
     },
     {
      "parcel_number": "MER-APN-067",
      "gross_et": "D:9.8223",
-     "unmet": "D:1.3563"
+     "unmet": "D:1.3557"
     },
     {
      "parcel_number": "MER-APN-071",
      "gross_et": "D:8.3357",
-     "unmet": "D:1.2337"
+     "unmet": "D:1.2331"
     },
     {
      "parcel_number": "MER-APN-068",
      "gross_et": "D:5.7399",
-     "unmet": "D:0.6234"
+     "unmet": "D:0.6228"
     },
     {
      "parcel_number": "MER-APN-070",
      "gross_et": "D:4.2811",
-     "unmet": "D:0.4246"
+     "unmet": "D:0.4243"
     }
    ],
-   "unmet_demand_total": "D:2826.2631",
+   "unmet_demand_total": "D:2826.2839",
    "unmet_demand_count": 46,
    "attention_total": 77,
    "periods_to_close": 1,
@@ -35663,13 +35663,13 @@
       "consumptive_use_gross": "D:4615.8863",
       "consumptive_use_net": "D:3828.0940",
       "surface": "D:3807.2342",
-      "groundwater": "D:247.2265",
+      "groundwater": "D:247.3117",
       "precip": "D:787.7923",
-      "supply_total": "D:4842.2530",
-      "water_not_consumed": "D:61.8066",
-      "net_vs_supply": "D:164.5601",
+      "supply_total": "D:4842.3382",
+      "water_not_consumed": "D:61.8279",
+      "net_vs_supply": "D:164.6240",
       "allocation": "D:995.0842",
-      "remaining": "D:747.8577",
+      "remaining": "D:747.7725",
       "calculation_runs": 216
      }
     ],
@@ -35697,13 +35697,13 @@
       "consumptive_use_gross": "D:1824.7634",
       "consumptive_use_net": "D:1349.5834",
       "surface": "D:1288.4001",
-      "groundwater": "D:351.7909",
+      "groundwater": "D:351.7904",
       "precip": "D:475.1800",
-      "supply_total": "D:2115.3710",
-      "water_not_consumed": "D:49.8975",
-      "net_vs_supply": "D:240.7101",
+      "supply_total": "D:2115.3705",
+      "water_not_consumed": "D:49.8973",
+      "net_vs_supply": "D:240.7098",
       "allocation": "D:442.0296",
-      "remaining": "D:90.2387",
+      "remaining": "D:90.2392",
       "calculation_runs": 120
      }
     ],
@@ -35765,13 +35765,13 @@
       "consumptive_use_gross": "D:2836.2700",
       "consumptive_use_net": "D:2239.0763",
       "surface": "D:1122.7641",
-      "groundwater": "D:464.1461",
+      "groundwater": "D:464.1291",
       "precip": "D:597.1937",
-      "supply_total": "D:2184.1039",
-      "water_not_consumed": "D:143.3412",
-      "net_vs_supply": "D:-795.5073",
+      "supply_total": "D:2184.0869",
+      "water_not_consumed": "D:143.3400",
+      "net_vs_supply": "D:-795.5231",
       "allocation": "D:599.9926",
-      "remaining": "D:135.8465",
+      "remaining": "D:135.8635",
       "calculation_runs": 108
      }
     ],
@@ -35833,13 +35833,13 @@
       "consumptive_use_gross": "D:2175.4004",
       "consumptive_use_net": "D:1746.2790",
       "surface": "D:1711.4722",
-      "groundwater": "D:75.4262",
+      "groundwater": "D:75.4535",
       "precip": "D:429.1214",
-      "supply_total": "D:2216.0198",
-      "water_not_consumed": "D:16.2284",
-      "net_vs_supply": "D:24.3910",
+      "supply_total": "D:2216.0471",
+      "water_not_consumed": "D:16.2301",
+      "net_vs_supply": "D:24.4166",
       "allocation": "D:493.8120",
-      "remaining": "D:418.3858",
+      "remaining": "D:418.3585",
       "calculation_runs": 84
      }
     ],
@@ -35868,12 +35868,12 @@
       "has_calculations": true,
       "consumptive_use_gross": "D:1152.1930",
       "consumptive_use_net": "D:951.9184",
-      "surface": "D:843.0983",
+      "surface": "D:843.0661",
       "groundwater": "D:142.0525",
       "precip": "D:200.2746",
-      "supply_total": "D:1185.4254",
+      "supply_total": "D:1185.3932",
       "water_not_consumed": "D:25.7379",
-      "net_vs_supply": "D:7.4945",
+      "net_vs_supply": "D:7.4623",
       "allocation": "D:750.3200",
       "carryover": "D:0",
       "remaining": "D:608.2675",
@@ -35886,15 +35886,15 @@
       "has_calculations": true,
       "consumptive_use_gross": "D:13327.5827",
       "consumptive_use_net": "D:10725.4939",
-      "surface": "D:8002.9751",
-      "groundwater": "D:3216.7101",
+      "surface": "D:8003.0073",
+      "groundwater": "D:3216.8051",
       "precip": "D:2602.0888",
-      "supply_total": "D:13821.7740",
-      "water_not_consumed": "D:807.5645",
-      "net_vs_supply": "D:-313.3732",
+      "supply_total": "D:13821.9012",
+      "water_not_consumed": "D:807.5861",
+      "net_vs_supply": "D:-313.2676",
       "allocation": "D:2660.4716",
       "carryover": "D:0",
-      "remaining": "D:-556.2385",
+      "remaining": "D:-556.3335",
       "has_groundwater_budget": true
      }
     ],
@@ -35923,11 +35923,11 @@
       "consumptive_use_gross": "D:4615.8863",
       "consumptive_use_net": "D:3828.0940",
       "surface": "D:3807.2342",
-      "groundwater": "D:247.2265",
+      "groundwater": "D:247.3117",
       "precip": "D:787.7923",
-      "supply_total": "D:4842.2530",
-      "water_not_consumed": "D:61.8066",
-      "net_vs_supply": "D:164.5601",
+      "supply_total": "D:4842.3382",
+      "water_not_consumed": "D:61.8279",
+      "net_vs_supply": "D:164.6240",
       "allocation": null,
       "carryover": null,
       "remaining": null,
@@ -35941,11 +35941,11 @@
       "consumptive_use_gross": "D:1926.6688",
       "consumptive_use_net": "D:1423.9708",
       "surface": "D:1288.4001",
-      "groundwater": "D:351.7909",
+      "groundwater": "D:351.7904",
       "precip": "D:502.6980",
-      "supply_total": "D:2142.8890",
-      "water_not_consumed": "D:49.8975",
-      "net_vs_supply": "D:166.3227",
+      "supply_total": "D:2142.8885",
+      "water_not_consumed": "D:49.8973",
+      "net_vs_supply": "D:166.3224",
       "allocation": null,
       "carryover": null,
       "remaining": null,
@@ -35959,11 +35959,11 @@
       "consumptive_use_gross": "D:2836.2700",
       "consumptive_use_net": "D:2239.0763",
       "surface": "D:1122.7641",
-      "groundwater": "D:464.1461",
+      "groundwater": "D:464.1291",
       "precip": "D:597.1937",
-      "supply_total": "D:2184.1039",
-      "water_not_consumed": "D:143.3412",
-      "net_vs_supply": "D:-795.5073",
+      "supply_total": "D:2184.0869",
+      "water_not_consumed": "D:143.3400",
+      "net_vs_supply": "D:-795.5231",
       "allocation": null,
       "carryover": null,
       "remaining": null,
@@ -35995,11 +35995,11 @@
       "consumptive_use_gross": "D:2175.4004",
       "consumptive_use_net": "D:1746.2790",
       "surface": "D:1711.4722",
-      "groundwater": "D:75.4262",
+      "groundwater": "D:75.4535",
       "precip": "D:429.1214",
-      "supply_total": "D:2216.0198",
-      "water_not_consumed": "D:16.2284",
-      "net_vs_supply": "D:24.3910",
+      "supply_total": "D:2216.0471",
+      "water_not_consumed": "D:16.2301",
+      "net_vs_supply": "D:24.4166",
       "allocation": null,
       "carryover": null,
       "remaining": null,
@@ -36010,12 +36010,12 @@
   },
   "accounts_list": {
    "grand_consumptive_use": "D:15472.4407",
-   "grand_supply_total": "D:16275.5238",
+   "grand_supply_total": "D:16275.6188",
    "grand_supply_surface": "D:8846.0734",
-   "grand_supply_groundwater": "D:4470.8774",
+   "grand_supply_groundwater": "D:4470.9724",
    "grand_supply_precip": "D:2958.5730",
-   "grand_not_consumed": "D:1108.9616",
-   "grand_net": "D:-305.8785",
+   "grand_not_consumed": "D:1108.9832",
+   "grand_net": "D:-305.8051",
    "has_allocations": true,
    "engine_has_never_run": false,
    "total_count": 12,
@@ -36028,13 +36028,13 @@
       "consumptive_use_gross": "D:4615.8863",
       "consumptive_use_net": "D:3828.0940",
       "surface": "D:3807.2342",
-      "groundwater": "D:247.2265",
+      "groundwater": "D:247.3117",
       "precip": "D:787.7923",
-      "supply_total": "D:4842.2530",
-      "water_not_consumed": "D:61.8066",
-      "net_vs_supply": "D:164.5601",
+      "supply_total": "D:4842.3382",
+      "water_not_consumed": "D:61.8279",
+      "net_vs_supply": "D:164.6240",
       "allocation": "D:995.0842",
-      "remaining": "D:747.8577",
+      "remaining": "D:747.7725",
       "calculation_runs": 216
      }
     ],
@@ -36062,13 +36062,13 @@
       "consumptive_use_gross": "D:1824.7634",
       "consumptive_use_net": "D:1349.5834",
       "surface": "D:1288.4001",
-      "groundwater": "D:351.7909",
+      "groundwater": "D:351.7904",
       "precip": "D:475.1800",
-      "supply_total": "D:2115.3710",
-      "water_not_consumed": "D:49.8975",
-      "net_vs_supply": "D:240.7101",
+      "supply_total": "D:2115.3705",
+      "water_not_consumed": "D:49.8973",
+      "net_vs_supply": "D:240.7098",
       "allocation": "D:442.0296",
-      "remaining": "D:90.2387",
+      "remaining": "D:90.2392",
       "calculation_runs": 120
      }
     ],
@@ -36130,13 +36130,13 @@
       "consumptive_use_gross": "D:2836.2700",
       "consumptive_use_net": "D:2239.0763",
       "surface": "D:1122.7641",
-      "groundwater": "D:464.1461",
+      "groundwater": "D:464.1291",
       "precip": "D:597.1937",
-      "supply_total": "D:2184.1039",
-      "water_not_consumed": "D:143.3412",
-      "net_vs_supply": "D:-795.5073",
+      "supply_total": "D:2184.0869",
+      "water_not_consumed": "D:143.3400",
+      "net_vs_supply": "D:-795.5231",
       "allocation": "D:599.9926",
-      "remaining": "D:135.8465",
+      "remaining": "D:135.8635",
       "calculation_runs": 108
      }
     ],
@@ -36198,13 +36198,13 @@
       "consumptive_use_gross": "D:2175.4004",
       "consumptive_use_net": "D:1746.2790",
       "surface": "D:1711.4722",
-      "groundwater": "D:75.4262",
+      "groundwater": "D:75.4535",
       "precip": "D:429.1214",
-      "supply_total": "D:2216.0198",
-      "water_not_consumed": "D:16.2284",
-      "net_vs_supply": "D:24.3910",
+      "supply_total": "D:2216.0471",
+      "water_not_consumed": "D:16.2301",
+      "net_vs_supply": "D:24.4166",
       "allocation": "D:493.8120",
-      "remaining": "D:418.3858",
+      "remaining": "D:418.3585",
       "calculation_runs": 84
      }
     ],
@@ -36433,7 +36433,7 @@
     "MER-APN-001",
     "2026-05-01",
     "surface_delivered",
-    "D:29.2800",
+    "D:29.2700",
     "",
     ""
    ],
@@ -36541,7 +36541,7 @@
     "MER-APN-001",
     "2026-09-01",
     "surface_delivered",
-    "D:26.8600",
+    "D:26.8500",
     "",
     ""
    ],
@@ -36568,7 +36568,7 @@
     "MER-APN-001",
     null,
     "surface_delivered",
-    "D:245.4300",
+    "D:245.4100",
     "",
     ""
    ],
@@ -36586,7 +36586,7 @@
     "MER-APN-001",
     null,
     "supplies",
-    "D:313.0604",
+    "D:313.0360",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -36613,7 +36613,7 @@
     "MER-APN-001",
     null,
     "balance",
-    "D:-158.8717",
+    "D:-158.8961",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -37135,7 +37135,7 @@
     "MER-APN-003",
     "2025-10-01",
     "surface_delivered",
-    "D:14.1000",
+    "D:14.0900",
     "",
     ""
    ],
@@ -37315,7 +37315,7 @@
     "MER-APN-003",
     "2026-03-01",
     "surface_delivered",
-    "D:41.4000",
+    "D:41.3900",
     "",
     ""
    ],
@@ -37531,7 +37531,7 @@
     "MER-APN-003",
     "2026-09-01",
     "surface_delivered",
-    "D:25.3400",
+    "D:25.3300",
     "",
     ""
    ],
@@ -37567,7 +37567,7 @@
     "MER-APN-003",
     null,
     "surface_delivered",
-    "D:231.5300",
+    "D:231.5000",
     "",
     ""
    ],
@@ -37594,7 +37594,7 @@
     "MER-APN-003",
     null,
     "supplies",
-    "D:304.3771",
+    "D:304.3622",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -37603,7 +37603,7 @@
     "MER-APN-003",
     null,
     "uses",
-    "D:220.2495",
+    "D:220.2505",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -37612,7 +37612,7 @@
     "MER-APN-003",
     null,
     "water_not_consumed",
-    "D:2.5775",
+    "D:2.5785",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -37621,7 +37621,7 @@
     "MER-APN-003",
     null,
     "balance",
-    "D:84.1276",
+    "D:84.1117",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -37720,7 +37720,7 @@
     "MER-APN-004",
     "2026-01-01",
     "surface_delivered",
-    "D:7.2400",
+    "D:7.2500",
     "",
     ""
    ],
@@ -37801,7 +37801,7 @@
     "MER-APN-004",
     "2026-04-01",
     "surface_delivered",
-    "D:26.5100",
+    "D:26.5000",
     "",
     ""
    ],
@@ -37828,7 +37828,7 @@
     "MER-APN-004",
     "2026-05-01",
     "surface_delivered",
-    "D:26.8900",
+    "D:26.8800",
     "",
     ""
    ],
@@ -37855,7 +37855,7 @@
     "MER-APN-004",
     "2026-06-01",
     "surface_delivered",
-    "D:20.8200",
+    "D:20.8100",
     "",
     ""
    ],
@@ -37963,7 +37963,7 @@
     "MER-APN-004",
     null,
     "surface_delivered",
-    "D:225.3800",
+    "D:225.3600",
     "",
     ""
    ],
@@ -37981,7 +37981,7 @@
     "MER-APN-004",
     null,
     "supplies",
-    "D:291.1065",
+    "D:291.0841",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -38008,7 +38008,7 @@
     "MER-APN-004",
     null,
     "balance",
-    "D:-67.9773",
+    "D:-67.9997",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -38026,7 +38026,7 @@
     "MER-APN-005",
     "2025-10-01",
     "surface_delivered",
-    "D:14.1900",
+    "D:14.1800",
     "",
     ""
    ],
@@ -38215,7 +38215,7 @@
     "MER-APN-005",
     "2026-03-01",
     "groundwater_extraction",
-    "D:8.0100",
+    "D:8.0200",
     "",
     ""
    ],
@@ -38422,7 +38422,7 @@
     "MER-APN-005",
     "2026-09-01",
     "surface_delivered",
-    "D:25.5000",
+    "D:25.4900",
     "",
     ""
    ],
@@ -38458,7 +38458,7 @@
     "MER-APN-005",
     null,
     "surface_delivered",
-    "D:232.9800",
+    "D:232.9600",
     "",
     ""
    ],
@@ -38467,7 +38467,7 @@
     "MER-APN-005",
     null,
     "groundwater_extraction",
-    "D:32.1200",
+    "D:32.1300",
     "",
     ""
    ],
@@ -38485,7 +38485,7 @@
     "MER-APN-005",
     null,
     "supplies",
-    "D:319.9708",
+    "D:319.9529",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -38512,7 +38512,7 @@
     "MER-APN-005",
     null,
     "balance",
-    "D:83.4181",
+    "D:83.4002",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -39169,7 +39169,7 @@
     "MER-APN-007",
     "2026-03-01",
     "surface_delivered",
-    "D:44.0000",
+    "D:43.9900",
     "",
     ""
    ],
@@ -39223,7 +39223,7 @@
     "MER-APN-007",
     "2026-05-01",
     "surface_delivered",
-    "D:29.3600",
+    "D:29.3500",
     "",
     ""
    ],
@@ -39277,7 +39277,7 @@
     "MER-APN-007",
     "2026-07-01",
     "surface_delivered",
-    "D:24.7200",
+    "D:24.7100",
     "",
     ""
    ],
@@ -39358,7 +39358,7 @@
     "MER-APN-007",
     null,
     "surface_delivered",
-    "D:246.0800",
+    "D:246.0500",
     "",
     ""
    ],
@@ -39376,7 +39376,7 @@
     "MER-APN-007",
     null,
     "supplies",
-    "D:304.7553",
+    "D:304.7306",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -39403,7 +39403,7 @@
     "MER-APN-007",
     null,
     "balance",
-    "D:71.3046",
+    "D:71.2799",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -39421,7 +39421,7 @@
     "MER-APN-008",
     "2025-10-01",
     "surface_delivered",
-    "D:14.1100",
+    "D:14.1000",
     "",
     ""
    ],
@@ -39583,7 +39583,7 @@
     "MER-APN-008",
     "2026-04-01",
     "surface_delivered",
-    "D:27.2500",
+    "D:27.2400",
     "",
     ""
    ],
@@ -39691,7 +39691,7 @@
     "MER-APN-008",
     "2026-08-01",
     "surface_delivered",
-    "D:27.8700",
+    "D:27.8600",
     "",
     ""
    ],
@@ -39745,7 +39745,7 @@
     "MER-APN-008",
     null,
     "surface_delivered",
-    "D:231.6900",
+    "D:231.6600",
     "",
     ""
    ],
@@ -39763,7 +39763,7 @@
     "MER-APN-008",
     null,
     "supplies",
-    "D:297.0514",
+    "D:297.0281",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -39790,7 +39790,7 @@
     "MER-APN-008",
     null,
     "balance",
-    "D:-71.0513",
+    "D:-71.0746",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -39808,7 +39808,7 @@
     "MER-APN-009",
     "2025-10-01",
     "surface_delivered",
-    "D:12.4000",
+    "D:12.4100",
     "",
     ""
    ],
@@ -39916,7 +39916,7 @@
     "MER-APN-009",
     "2026-02-01",
     "surface_delivered",
-    "D:5.3900",
+    "D:5.4000",
     "",
     ""
    ],
@@ -39943,7 +39943,7 @@
     "MER-APN-009",
     "2026-03-01",
     "surface_delivered",
-    "D:36.4200",
+    "D:36.4500",
     "",
     ""
    ],
@@ -39970,7 +39970,7 @@
     "MER-APN-009",
     "2026-04-01",
     "surface_delivered",
-    "D:23.9600",
+    "D:23.9800",
     "",
     ""
    ],
@@ -39997,7 +39997,7 @@
     "MER-APN-009",
     "2026-05-01",
     "surface_delivered",
-    "D:24.3000",
+    "D:24.3200",
     "",
     ""
    ],
@@ -40024,7 +40024,7 @@
     "MER-APN-009",
     "2026-06-01",
     "surface_delivered",
-    "D:18.8200",
+    "D:18.8300",
     "",
     ""
    ],
@@ -40051,7 +40051,7 @@
     "MER-APN-009",
     "2026-07-01",
     "surface_delivered",
-    "D:20.4600",
+    "D:20.4700",
     "",
     ""
    ],
@@ -40078,7 +40078,7 @@
     "MER-APN-009",
     "2026-08-01",
     "surface_delivered",
-    "D:24.5000",
+    "D:24.5200",
     "",
     ""
    ],
@@ -40105,7 +40105,7 @@
     "MER-APN-009",
     "2026-09-01",
     "surface_delivered",
-    "D:22.3000",
+    "D:22.3100",
     "",
     ""
    ],
@@ -40132,7 +40132,7 @@
     "MER-APN-009",
     null,
     "surface_delivered",
-    "D:203.7200",
+    "D:203.8600",
     "",
     ""
    ],
@@ -40150,7 +40150,7 @@
     "MER-APN-009",
     null,
     "supplies",
-    "D:246.8935",
+    "D:247.0346",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -40177,7 +40177,7 @@
     "MER-APN-009",
     null,
     "balance",
-    "D:89.4314",
+    "D:89.5725",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -45037,7 +45037,7 @@
     "MER-APN-021",
     "2025-10-01",
     "surface_delivered",
-    "D:6.2900",
+    "D:6.2800",
     "",
     ""
    ],
@@ -45091,7 +45091,7 @@
     "MER-APN-021",
     "2025-12-01",
     "surface_delivered",
-    "D:1.8200",
+    "D:1.8300",
     "",
     ""
    ],
@@ -45199,7 +45199,7 @@
     "MER-APN-021",
     "2026-04-01",
     "surface_delivered",
-    "D:14.6200",
+    "D:14.6100",
     "",
     ""
    ],
@@ -45226,7 +45226,7 @@
     "MER-APN-021",
     "2026-05-01",
     "surface_delivered",
-    "D:25.7500",
+    "D:25.7400",
     "",
     ""
    ],
@@ -45253,7 +45253,7 @@
     "MER-APN-021",
     "2026-06-01",
     "surface_delivered",
-    "D:28.5200",
+    "D:28.5100",
     "",
     ""
    ],
@@ -45361,7 +45361,7 @@
     "MER-APN-021",
     null,
     "surface_delivered",
-    "D:166.9800",
+    "D:166.9500",
     "",
     ""
    ],
@@ -45379,7 +45379,7 @@
     "MER-APN-021",
     null,
     "supplies",
-    "D:195.8827",
+    "D:195.8495",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -45406,7 +45406,7 @@
     "MER-APN-021",
     null,
     "balance",
-    "D:15.8776",
+    "D:15.8444",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -45667,7 +45667,7 @@
     "MER-APN-022",
     "2026-07-01",
     "surface_delivered",
-    "D:3.9700",
+    "D:3.9600",
     "",
     ""
    ],
@@ -45748,7 +45748,7 @@
     "MER-APN-022",
     null,
     "surface_delivered",
-    "D:23.3400",
+    "D:23.3300",
     "",
     ""
    ],
@@ -45766,7 +45766,7 @@
     "MER-APN-022",
     null,
     "supplies",
-    "D:27.2748",
+    "D:27.2698",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -45793,7 +45793,7 @@
     "MER-APN-022",
     null,
     "balance",
-    "D:2.1907",
+    "D:2.1857",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -45811,7 +45811,7 @@
     "MER-APN-023",
     "2025-10-01",
     "surface_delivered",
-    "D:19.7100",
+    "D:19.7000",
     "",
     ""
    ],
@@ -45919,7 +45919,7 @@
     "MER-APN-023",
     "2026-02-01",
     "surface_delivered",
-    "D:3.1700",
+    "D:3.1600",
     "",
     ""
    ],
@@ -45946,7 +45946,7 @@
     "MER-APN-023",
     "2026-03-01",
     "surface_delivered",
-    "D:42.3800",
+    "D:42.3700",
     "",
     ""
    ],
@@ -45973,7 +45973,7 @@
     "MER-APN-023",
     "2026-04-01",
     "surface_delivered",
-    "D:45.8200",
+    "D:45.8100",
     "",
     ""
    ],
@@ -46000,7 +46000,7 @@
     "MER-APN-023",
     "2026-05-01",
     "surface_delivered",
-    "D:80.7200",
+    "D:80.7100",
     "",
     ""
    ],
@@ -46027,7 +46027,7 @@
     "MER-APN-023",
     "2026-06-01",
     "surface_delivered",
-    "D:89.4100",
+    "D:89.3900",
     "",
     ""
    ],
@@ -46054,7 +46054,7 @@
     "MER-APN-023",
     "2026-07-01",
     "surface_delivered",
-    "D:88.9400",
+    "D:88.9300",
     "",
     ""
    ],
@@ -46081,7 +46081,7 @@
     "MER-APN-023",
     "2026-08-01",
     "surface_delivered",
-    "D:75.0000",
+    "D:74.9800",
     "",
     ""
    ],
@@ -46108,7 +46108,7 @@
     "MER-APN-023",
     "2026-09-01",
     "surface_delivered",
-    "D:53.0800",
+    "D:53.0700",
     "",
     ""
    ],
@@ -46135,7 +46135,7 @@
     "MER-APN-023",
     null,
     "surface_delivered",
-    "D:523.4700",
+    "D:523.3600",
     "",
     ""
    ],
@@ -46153,7 +46153,7 @@
     "MER-APN-023",
     null,
     "supplies",
-    "D:615.8175",
+    "D:615.7122",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -46180,7 +46180,7 @@
     "MER-APN-023",
     null,
     "balance",
-    "D:27.5260",
+    "D:27.4207",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -46279,7 +46279,7 @@
     "MER-APN-024",
     "2026-01-01",
     "surface_delivered",
-    "D:10.8100",
+    "D:10.8000",
     "",
     ""
    ],
@@ -46333,7 +46333,7 @@
     "MER-APN-024",
     "2026-03-01",
     "surface_delivered",
-    "D:41.8600",
+    "D:41.8500",
     "",
     ""
    ],
@@ -46360,7 +46360,7 @@
     "MER-APN-024",
     "2026-04-01",
     "surface_delivered",
-    "D:45.2600",
+    "D:45.2500",
     "",
     ""
    ],
@@ -46387,7 +46387,7 @@
     "MER-APN-024",
     "2026-05-01",
     "surface_delivered",
-    "D:79.7300",
+    "D:79.7200",
     "",
     ""
    ],
@@ -46414,7 +46414,7 @@
     "MER-APN-024",
     "2026-06-01",
     "surface_delivered",
-    "D:88.3100",
+    "D:88.2900",
     "",
     ""
    ],
@@ -46441,7 +46441,7 @@
     "MER-APN-024",
     "2026-07-01",
     "surface_delivered",
-    "D:87.8500",
+    "D:87.8300",
     "",
     ""
    ],
@@ -46468,7 +46468,7 @@
     "MER-APN-024",
     "2026-08-01",
     "surface_delivered",
-    "D:74.0700",
+    "D:74.0600",
     "",
     ""
    ],
@@ -46495,7 +46495,7 @@
     "MER-APN-024",
     "2026-09-01",
     "surface_delivered",
-    "D:52.4300",
+    "D:52.4200",
     "",
     ""
    ],
@@ -46522,7 +46522,7 @@
     "MER-APN-024",
     null,
     "surface_delivered",
-    "D:517.0300",
+    "D:516.9300",
     "",
     ""
    ],
@@ -46540,7 +46540,7 @@
     "MER-APN-024",
     null,
     "supplies",
-    "D:609.9275",
+    "D:609.8240",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -46567,7 +46567,7 @@
     "MER-APN-024",
     null,
     "balance",
-    "D:-6.4757",
+    "D:-6.5792",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -46720,7 +46720,7 @@
     "MER-APN-025",
     "2026-03-01",
     "surface_delivered",
-    "D:30.6900",
+    "D:30.6800",
     "",
     ""
    ],
@@ -46747,7 +46747,7 @@
     "MER-APN-025",
     "2026-04-01",
     "surface_delivered",
-    "D:33.1800",
+    "D:33.1700",
     "",
     ""
    ],
@@ -46774,7 +46774,7 @@
     "MER-APN-025",
     "2026-05-01",
     "surface_delivered",
-    "D:58.4500",
+    "D:58.4400",
     "",
     ""
    ],
@@ -46801,7 +46801,7 @@
     "MER-APN-025",
     "2026-06-01",
     "surface_delivered",
-    "D:64.7400",
+    "D:64.7200",
     "",
     ""
    ],
@@ -46828,7 +46828,7 @@
     "MER-APN-025",
     "2026-07-01",
     "surface_delivered",
-    "D:64.4000",
+    "D:64.3900",
     "",
     ""
    ],
@@ -46855,7 +46855,7 @@
     "MER-APN-025",
     "2026-08-01",
     "surface_delivered",
-    "D:54.3000",
+    "D:54.2900",
     "",
     ""
    ],
@@ -46909,7 +46909,7 @@
     "MER-APN-025",
     null,
     "surface_delivered",
-    "D:379.0200",
+    "D:378.9500",
     "",
     ""
    ],
@@ -46927,7 +46927,7 @@
     "MER-APN-025",
     null,
     "supplies",
-    "D:444.5874",
+    "D:444.5115",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -46954,7 +46954,7 @@
     "MER-APN-025",
     null,
     "balance",
-    "D:-7.2750",
+    "D:-7.3509",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -47134,7 +47134,7 @@
     "MER-APN-026",
     "2026-04-01",
     "surface_delivered",
-    "D:3.2800",
+    "D:3.2700",
     "",
     ""
    ],
@@ -47296,7 +47296,7 @@
     "MER-APN-026",
     null,
     "surface_delivered",
-    "D:37.4200",
+    "D:37.4100",
     "",
     ""
    ],
@@ -47314,7 +47314,7 @@
     "MER-APN-026",
     null,
     "supplies",
-    "D:43.8608",
+    "D:43.8534",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -47341,7 +47341,7 @@
     "MER-APN-026",
     null,
     "balance",
-    "D:0.7902",
+    "D:0.7828",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -47413,7 +47413,7 @@
     "MER-APN-027",
     "2025-12-01",
     "surface_delivered",
-    "D:0.7000",
+    "D:0.6900",
     "",
     ""
    ],
@@ -47683,7 +47683,7 @@
     "MER-APN-027",
     null,
     "surface_delivered",
-    "D:63.5700",
+    "D:63.5600",
     "",
     ""
    ],
@@ -47701,7 +47701,7 @@
     "MER-APN-027",
     null,
     "supplies",
-    "D:74.6795",
+    "D:74.6666",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -47728,7 +47728,7 @@
     "MER-APN-027",
     null,
     "balance",
-    "D:-5.0078",
+    "D:-5.0207",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -47962,7 +47962,7 @@
     "MER-APN-028",
     "2026-06-01",
     "surface_delivered",
-    "D:17.3200",
+    "D:17.3100",
     "",
     ""
    ],
@@ -48016,7 +48016,7 @@
     "MER-APN-028",
     "2026-08-01",
     "surface_delivered",
-    "D:14.5300",
+    "D:14.5200",
     "",
     ""
    ],
@@ -48070,7 +48070,7 @@
     "MER-APN-028",
     null,
     "surface_delivered",
-    "D:101.3900",
+    "D:101.3700",
     "",
     ""
    ],
@@ -48088,7 +48088,7 @@
     "MER-APN-028",
     null,
     "supplies",
-    "D:119.0243",
+    "D:119.0039",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -48115,7 +48115,7 @@
     "MER-APN-028",
     null,
     "balance",
-    "D:-2.4222",
+    "D:-2.4426",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -48214,7 +48214,7 @@
     "MER-APN-029",
     "2026-01-01",
     "surface_delivered",
-    "D:9.3900",
+    "D:9.3800",
     "",
     ""
    ],
@@ -48295,7 +48295,7 @@
     "MER-APN-029",
     "2026-04-01",
     "surface_delivered",
-    "D:39.3100",
+    "D:39.3000",
     "",
     ""
    ],
@@ -48322,7 +48322,7 @@
     "MER-APN-029",
     "2026-05-01",
     "surface_delivered",
-    "D:69.2500",
+    "D:69.2300",
     "",
     ""
    ],
@@ -48349,7 +48349,7 @@
     "MER-APN-029",
     "2026-06-01",
     "surface_delivered",
-    "D:76.6900",
+    "D:76.6800",
     "",
     ""
    ],
@@ -48376,7 +48376,7 @@
     "MER-APN-029",
     "2026-07-01",
     "surface_delivered",
-    "D:76.3000",
+    "D:76.2800",
     "",
     ""
    ],
@@ -48403,7 +48403,7 @@
     "MER-APN-029",
     "2026-08-01",
     "surface_delivered",
-    "D:64.3300",
+    "D:64.3200",
     "",
     ""
    ],
@@ -48430,7 +48430,7 @@
     "MER-APN-029",
     "2026-09-01",
     "surface_delivered",
-    "D:45.5300",
+    "D:45.5200",
     "",
     ""
    ],
@@ -48457,7 +48457,7 @@
     "MER-APN-029",
     null,
     "surface_delivered",
-    "D:449.0300",
+    "D:448.9400",
     "",
     ""
    ],
@@ -48475,7 +48475,7 @@
     "MER-APN-029",
     null,
     "supplies",
-    "D:525.5027",
+    "D:525.4133",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -48502,7 +48502,7 @@
     "MER-APN-029",
     null,
     "balance",
-    "D:38.7821",
+    "D:38.6927",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -48763,7 +48763,7 @@
     "MER-APN-030",
     "2026-07-01",
     "surface_delivered",
-    "D:4.7900",
+    "D:4.7800",
     "",
     ""
    ],
@@ -48844,7 +48844,7 @@
     "MER-APN-030",
     null,
     "surface_delivered",
-    "D:28.1700",
+    "D:28.1600",
     "",
     ""
    ],
@@ -48862,7 +48862,7 @@
     "MER-APN-030",
     null,
     "supplies",
-    "D:33.0014",
+    "D:32.9958",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -48889,7 +48889,7 @@
     "MER-APN-030",
     null,
     "balance",
-    "D:-0.6675",
+    "D:-0.6731",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -49042,7 +49042,7 @@
     "MER-APN-031",
     "2026-03-01",
     "surface_delivered",
-    "D:13.6200",
+    "D:13.6100",
     "",
     ""
    ],
@@ -49096,7 +49096,7 @@
     "MER-APN-031",
     "2026-05-01",
     "surface_delivered",
-    "D:25.9400",
+    "D:25.9300",
     "",
     ""
    ],
@@ -49123,7 +49123,7 @@
     "MER-APN-031",
     "2026-06-01",
     "surface_delivered",
-    "D:28.7300",
+    "D:28.7200",
     "",
     ""
    ],
@@ -49150,7 +49150,7 @@
     "MER-APN-031",
     "2026-07-01",
     "surface_delivered",
-    "D:28.5800",
+    "D:28.5700",
     "",
     ""
    ],
@@ -49231,7 +49231,7 @@
     "MER-APN-031",
     null,
     "surface_delivered",
-    "D:168.1900",
+    "D:168.1500",
     "",
     ""
    ],
@@ -49249,7 +49249,7 @@
     "MER-APN-031",
     null,
     "supplies",
-    "D:196.7894",
+    "D:196.7557",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -49276,7 +49276,7 @@
     "MER-APN-031",
     null,
     "balance",
-    "D:-1.6070",
+    "D:-1.6407",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -49474,7 +49474,7 @@
     "MER-APN-032",
     "2026-03-01",
     "surface_delivered",
-    "D:36.6800",
+    "D:36.6700",
     "",
     ""
    ],
@@ -49483,7 +49483,7 @@
     "MER-APN-032",
     "2026-03-01",
     "groundwater_extraction",
-    "D:12.4900",
+    "D:12.5000",
     "",
     ""
    ],
@@ -49510,7 +49510,7 @@
     "MER-APN-032",
     "2026-04-01",
     "surface_delivered",
-    "D:39.6600",
+    "D:39.6500",
     "",
     ""
    ],
@@ -49519,7 +49519,7 @@
     "MER-APN-032",
     "2026-04-01",
     "groundwater_extraction",
-    "D:20.1400",
+    "D:20.1500",
     "",
     ""
    ],
@@ -49546,7 +49546,7 @@
     "MER-APN-032",
     "2026-05-01",
     "surface_delivered",
-    "D:69.8700",
+    "D:69.8500",
     "",
     ""
    ],
@@ -49555,7 +49555,7 @@
     "MER-APN-032",
     "2026-05-01",
     "groundwater_extraction",
-    "D:42.2400",
+    "D:42.2600",
     "",
     ""
    ],
@@ -49582,7 +49582,7 @@
     "MER-APN-032",
     "2026-06-01",
     "surface_delivered",
-    "D:77.3800",
+    "D:77.3700",
     "",
     ""
    ],
@@ -49591,7 +49591,7 @@
     "MER-APN-032",
     "2026-06-01",
     "groundwater_extraction",
-    "D:47.6900",
+    "D:47.7000",
     "",
     ""
    ],
@@ -49618,7 +49618,7 @@
     "MER-APN-032",
     "2026-07-01",
     "surface_delivered",
-    "D:76.9800",
+    "D:76.9600",
     "",
     ""
    ],
@@ -49627,7 +49627,7 @@
     "MER-APN-032",
     "2026-07-01",
     "groundwater_extraction",
-    "D:45.7500",
+    "D:45.7600",
     "",
     ""
    ],
@@ -49654,7 +49654,7 @@
     "MER-APN-032",
     "2026-08-01",
     "surface_delivered",
-    "D:64.9100",
+    "D:64.9000",
     "",
     ""
    ],
@@ -49663,7 +49663,7 @@
     "MER-APN-032",
     "2026-08-01",
     "groundwater_extraction",
-    "D:38.4800",
+    "D:38.5000",
     "",
     ""
    ],
@@ -49690,7 +49690,7 @@
     "MER-APN-032",
     "2026-09-01",
     "surface_delivered",
-    "D:45.9400",
+    "D:45.9300",
     "",
     ""
    ],
@@ -49699,7 +49699,7 @@
     "MER-APN-032",
     "2026-09-01",
     "groundwater_extraction",
-    "D:27.5400",
+    "D:27.5500",
     "",
     ""
    ],
@@ -49726,7 +49726,7 @@
     "MER-APN-032",
     null,
     "surface_delivered",
-    "D:453.0600",
+    "D:452.9700",
     "",
     ""
    ],
@@ -49735,7 +49735,7 @@
     "MER-APN-032",
     null,
     "groundwater_extraction",
-    "D:247.8300",
+    "D:247.9200",
     "",
     ""
    ],
@@ -49753,7 +49753,7 @@
     "MER-APN-032",
     null,
     "supplies",
-    "D:781.9643",
+    "D:781.9615",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -49762,7 +49762,7 @@
     "MER-APN-032",
     null,
     "uses",
-    "D:658.3806",
+    "D:658.4025",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -49771,7 +49771,7 @@
     "MER-APN-032",
     null,
     "water_not_consumed",
-    "D:61.9587",
+    "D:61.9806",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -49780,7 +49780,7 @@
     "MER-APN-032",
     null,
     "balance",
-    "D:123.5837",
+    "D:123.5590",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -50014,7 +50014,7 @@
     "MER-APN-033",
     "2026-06-01",
     "surface_delivered",
-    "D:15.3300",
+    "D:15.3200",
     "",
     ""
    ],
@@ -50041,7 +50041,7 @@
     "MER-APN-033",
     "2026-07-01",
     "surface_delivered",
-    "D:15.2500",
+    "D:15.2400",
     "",
     ""
    ],
@@ -50122,7 +50122,7 @@
     "MER-APN-033",
     null,
     "surface_delivered",
-    "D:89.7300",
+    "D:89.7100",
     "",
     ""
    ],
@@ -50140,7 +50140,7 @@
     "MER-APN-033",
     null,
     "supplies",
-    "D:105.6246",
+    "D:105.6066",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -50167,7 +50167,7 @@
     "MER-APN-033",
     null,
     "balance",
-    "D:-4.1564",
+    "D:-4.1744",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -50185,7 +50185,7 @@
     "MER-APN-034",
     "2025-10-01",
     "surface_delivered",
-    "D:6.7300",
+    "D:6.7200",
     "",
     ""
    ],
@@ -50374,7 +50374,7 @@
     "MER-APN-034",
     "2026-05-01",
     "surface_delivered",
-    "D:27.5500",
+    "D:27.5400",
     "",
     ""
    ],
@@ -50428,7 +50428,7 @@
     "MER-APN-034",
     "2026-07-01",
     "surface_delivered",
-    "D:30.3600",
+    "D:30.3500",
     "",
     ""
    ],
@@ -50482,7 +50482,7 @@
     "MER-APN-034",
     "2026-09-01",
     "surface_delivered",
-    "D:18.1200",
+    "D:18.1100",
     "",
     ""
    ],
@@ -50509,7 +50509,7 @@
     "MER-APN-034",
     null,
     "surface_delivered",
-    "D:178.6500",
+    "D:178.6100",
     "",
     ""
    ],
@@ -50527,7 +50527,7 @@
     "MER-APN-034",
     null,
     "supplies",
-    "D:209.2599",
+    "D:209.2243",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -50554,7 +50554,7 @@
     "MER-APN-034",
     null,
     "balance",
-    "D:0.9146",
+    "D:0.8790",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -50761,7 +50761,7 @@
     "MER-APN-035",
     "2026-05-01",
     "surface_delivered",
-    "D:8.3800",
+    "D:8.3700",
     "",
     ""
    ],
@@ -50896,7 +50896,7 @@
     "MER-APN-035",
     null,
     "surface_delivered",
-    "D:54.3200",
+    "D:54.3100",
     "",
     ""
    ],
@@ -50914,7 +50914,7 @@
     "MER-APN-035",
     null,
     "supplies",
-    "D:63.5628",
+    "D:63.5521",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -50941,7 +50941,7 @@
     "MER-APN-035",
     null,
     "balance",
-    "D:2.3122",
+    "D:2.3015",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -50959,7 +50959,7 @@
     "MER-APN-036",
     "2025-10-01",
     "surface_delivered",
-    "D:13.4700",
+    "D:13.4600",
     "",
     ""
    ],
@@ -51094,7 +51094,7 @@
     "MER-APN-036",
     "2026-03-01",
     "surface_delivered",
-    "D:28.9600",
+    "D:28.9500",
     "",
     ""
    ],
@@ -51121,7 +51121,7 @@
     "MER-APN-036",
     "2026-04-01",
     "surface_delivered",
-    "D:31.3100",
+    "D:31.3000",
     "",
     ""
    ],
@@ -51148,7 +51148,7 @@
     "MER-APN-036",
     "2026-05-01",
     "surface_delivered",
-    "D:55.1600",
+    "D:55.1500",
     "",
     ""
    ],
@@ -51175,7 +51175,7 @@
     "MER-APN-036",
     "2026-06-01",
     "surface_delivered",
-    "D:61.0900",
+    "D:61.0800",
     "",
     ""
    ],
@@ -51202,7 +51202,7 @@
     "MER-APN-036",
     "2026-07-01",
     "surface_delivered",
-    "D:60.7800",
+    "D:60.7700",
     "",
     ""
    ],
@@ -51229,7 +51229,7 @@
     "MER-APN-036",
     "2026-08-01",
     "surface_delivered",
-    "D:51.2500",
+    "D:51.2400",
     "",
     ""
    ],
@@ -51283,7 +51283,7 @@
     "MER-APN-036",
     null,
     "surface_delivered",
-    "D:357.7000",
+    "D:357.6300",
     "",
     ""
    ],
@@ -51301,7 +51301,7 @@
     "MER-APN-036",
     null,
     "supplies",
-    "D:420.6137",
+    "D:420.5423",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -51328,7 +51328,7 @@
     "MER-APN-036",
     null,
     "balance",
-    "D:5.3326",
+    "D:5.2612",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -51481,7 +51481,7 @@
     "MER-APN-037",
     "2026-03-01",
     "surface_delivered",
-    "D:23.3900",
+    "D:23.3800",
     "",
     ""
    ],
@@ -51508,7 +51508,7 @@
     "MER-APN-037",
     "2026-04-01",
     "surface_delivered",
-    "D:25.2900",
+    "D:25.2800",
     "",
     ""
    ],
@@ -51535,7 +51535,7 @@
     "MER-APN-037",
     "2026-05-01",
     "surface_delivered",
-    "D:44.5500",
+    "D:44.5400",
     "",
     ""
    ],
@@ -51562,7 +51562,7 @@
     "MER-APN-037",
     "2026-06-01",
     "surface_delivered",
-    "D:49.3400",
+    "D:49.3300",
     "",
     ""
    ],
@@ -51616,7 +51616,7 @@
     "MER-APN-037",
     "2026-08-01",
     "surface_delivered",
-    "D:41.3900",
+    "D:41.3800",
     "",
     ""
    ],
@@ -51670,7 +51670,7 @@
     "MER-APN-037",
     null,
     "surface_delivered",
-    "D:288.8900",
+    "D:288.8400",
     "",
     ""
    ],
@@ -51688,7 +51688,7 @@
     "MER-APN-037",
     null,
     "supplies",
-    "D:338.7968",
+    "D:338.7390",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -51715,7 +51715,7 @@
     "MER-APN-037",
     null,
     "balance",
-    "D:19.5958",
+    "D:19.5380",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -51733,7 +51733,7 @@
     "MER-APN-038",
     "2025-10-01",
     "surface_delivered",
-    "D:5.4100",
+    "D:5.4400",
     "",
     ""
    ],
@@ -51760,7 +51760,7 @@
     "MER-APN-038",
     "2025-11-01",
     "surface_delivered",
-    "D:2.3500",
+    "D:2.3700",
     "",
     ""
    ],
@@ -51787,7 +51787,7 @@
     "MER-APN-038",
     "2025-12-01",
     "surface_delivered",
-    "D:1.5700",
+    "D:1.5800",
     "",
     ""
    ],
@@ -51814,7 +51814,7 @@
     "MER-APN-038",
     "2026-01-01",
     "surface_delivered",
-    "D:3.0000",
+    "D:3.0200",
     "",
     ""
    ],
@@ -51868,7 +51868,7 @@
     "MER-APN-038",
     "2026-03-01",
     "surface_delivered",
-    "D:11.6300",
+    "D:11.6900",
     "",
     ""
    ],
@@ -51895,7 +51895,7 @@
     "MER-APN-038",
     "2026-04-01",
     "surface_delivered",
-    "D:12.5700",
+    "D:12.6400",
     "",
     ""
    ],
@@ -51922,7 +51922,7 @@
     "MER-APN-038",
     "2026-05-01",
     "surface_delivered",
-    "D:22.1500",
+    "D:22.2700",
     "",
     ""
    ],
@@ -51949,7 +51949,7 @@
     "MER-APN-038",
     "2026-06-01",
     "surface_delivered",
-    "D:24.5300",
+    "D:24.6700",
     "",
     ""
    ],
@@ -51976,7 +51976,7 @@
     "MER-APN-038",
     "2026-07-01",
     "surface_delivered",
-    "D:24.4100",
+    "D:24.5400",
     "",
     ""
    ],
@@ -52003,7 +52003,7 @@
     "MER-APN-038",
     "2026-08-01",
     "surface_delivered",
-    "D:20.5800",
+    "D:20.6900",
     "",
     ""
    ],
@@ -52030,7 +52030,7 @@
     "MER-APN-038",
     "2026-09-01",
     "surface_delivered",
-    "D:14.5700",
+    "D:14.6400",
     "",
     ""
    ],
@@ -52057,7 +52057,7 @@
     "MER-APN-038",
     null,
     "surface_delivered",
-    "D:143.6400",
+    "D:144.4200",
     "",
     ""
    ],
@@ -52075,7 +52075,7 @@
     "MER-APN-038",
     null,
     "supplies",
-    "D:168.5812",
+    "D:169.3575",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -52102,7 +52102,7 @@
     "MER-APN-038",
     null,
     "balance",
-    "D:1.3131",
+    "D:2.0894",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -57151,7 +57151,7 @@
     "MER-APN-049",
     null,
     "supplies",
-    "D:445.4615",
+    "D:445.4613",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -57178,7 +57178,7 @@
     "MER-APN-049",
     null,
     "balance",
-    "D:119.3670",
+    "D:119.3668",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -57655,7 +57655,7 @@
     "MER-APN-050",
     null,
     "supplies",
-    "D:203.4852",
+    "D:203.4854",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -57682,7 +57682,7 @@
     "MER-APN-050",
     null,
     "balance",
-    "D:25.5165",
+    "D:25.5167",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -65521,7 +65521,7 @@
     "MER-APN-067",
     null,
     "supplies",
-    "D:27.9210",
+    "D:27.9236",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -65548,7 +65548,7 @@
     "MER-APN-067",
     null,
     "balance",
-    "D:10.5946",
+    "D:10.5972",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -65908,7 +65908,7 @@
     "MER-APN-068",
     null,
     "supplies",
-    "D:16.8592",
+    "D:16.8608",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -65935,7 +65935,7 @@
     "MER-APN-068",
     null,
     "balance",
-    "D:7.0060",
+    "D:7.0076",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -66295,7 +66295,7 @@
     "MER-APN-069",
     null,
     "supplies",
-    "D:37.5480",
+    "D:37.5514",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -66322,7 +66322,7 @@
     "MER-APN-069",
     null,
     "balance",
-    "D:5.0342",
+    "D:5.0376",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -66682,7 +66682,7 @@
     "MER-APN-070",
     null,
     "supplies",
-    "D:12.7141",
+    "D:12.7150",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -66709,7 +66709,7 @@
     "MER-APN-070",
     null,
     "balance",
-    "D:5.0448",
+    "D:5.0457",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -67069,7 +67069,7 @@
     "MER-APN-071",
     null,
     "supplies",
-    "D:23.3573",
+    "D:23.3593",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -67096,7 +67096,7 @@
     "MER-APN-071",
     null,
     "balance",
-    "D:9.4326",
+    "D:9.4346",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -67456,7 +67456,7 @@
     "MER-APN-072",
     null,
     "supplies",
-    "D:28.9073",
+    "D:28.9098",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -67483,7 +67483,7 @@
     "MER-APN-072",
     null,
     "balance",
-    "D:11.8011",
+    "D:11.8036",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -67843,7 +67843,7 @@
     "MER-APN-073",
     null,
     "supplies",
-    "D:29.3182",
+    "D:29.3209",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -67870,7 +67870,7 @@
     "MER-APN-073",
     null,
     "balance",
-    "D:10.9251",
+    "D:10.9278",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -68230,7 +68230,7 @@
     "MER-APN-074",
     null,
     "supplies",
-    "D:33.6335",
+    "D:33.6363",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -68257,7 +68257,7 @@
     "MER-APN-074",
     null,
     "balance",
-    "D:14.0708",
+    "D:14.0736",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -68437,7 +68437,7 @@
     "MER-APN-075",
     "2026-04-01",
     "surface_delivered",
-    "D:24.7900",
+    "D:24.8000",
     "",
     ""
    ],
@@ -68491,7 +68491,7 @@
     "MER-APN-075",
     "2026-06-01",
     "surface_delivered",
-    "D:48.1300",
+    "D:48.1400",
     "",
     ""
    ],
@@ -68518,7 +68518,7 @@
     "MER-APN-075",
     "2026-07-01",
     "surface_delivered",
-    "D:43.7900",
+    "D:43.8000",
     "",
     ""
    ],
@@ -68599,7 +68599,7 @@
     "MER-APN-075",
     null,
     "surface_delivered",
-    "D:276.3600",
+    "D:276.3900",
     "",
     ""
    ],
@@ -68617,7 +68617,7 @@
     "MER-APN-075",
     null,
     "supplies",
-    "D:319.9931",
+    "D:320.0209",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -68644,7 +68644,7 @@
     "MER-APN-075",
     null,
     "balance",
-    "D:25.1709",
+    "D:25.1987",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -68716,7 +68716,7 @@
     "MER-APN-076",
     "2025-12-01",
     "surface_delivered",
-    "D:5.8300",
+    "D:5.8200",
     "",
     ""
    ],
@@ -68797,7 +68797,7 @@
     "MER-APN-076",
     "2026-03-01",
     "surface_delivered",
-    "D:51.6600",
+    "D:51.6500",
     "",
     ""
    ],
@@ -68851,7 +68851,7 @@
     "MER-APN-076",
     "2026-05-01",
     "surface_delivered",
-    "D:77.0600",
+    "D:77.0500",
     "",
     ""
    ],
@@ -68932,7 +68932,7 @@
     "MER-APN-076",
     "2026-08-01",
     "surface_delivered",
-    "D:58.0300",
+    "D:58.0200",
     "",
     ""
    ],
@@ -68959,7 +68959,7 @@
     "MER-APN-076",
     "2026-09-01",
     "surface_delivered",
-    "D:41.0600",
+    "D:41.0500",
     "",
     ""
    ],
@@ -68986,7 +68986,7 @@
     "MER-APN-076",
     null,
     "surface_delivered",
-    "D:461.5900",
+    "D:461.5400",
     "",
     ""
    ],
@@ -69004,7 +69004,7 @@
     "MER-APN-076",
     null,
     "supplies",
-    "D:532.2812",
+    "D:532.2349",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -69031,7 +69031,7 @@
     "MER-APN-076",
     null,
     "balance",
-    "D:46.2325",
+    "D:46.1862",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -69058,7 +69058,7 @@
     "MER-ACCT-001 \u00b7 Ashvale Orchards Inc.",
     null,
     "groundwater_extraction",
-    "D:247.8344",
+    "D:247.9221",
     "",
     ""
    ],
@@ -69076,7 +69076,7 @@
     "MER-ACCT-001 \u00b7 Ashvale Orchards Inc.",
     null,
     "supplies",
-    "D:4974.7513",
+    "D:4974.8390",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -69085,7 +69085,7 @@
     "MER-ACCT-001 \u00b7 Ashvale Orchards Inc.",
     null,
     "uses",
-    "D:4764.1443",
+    "D:4764.1662",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -69094,7 +69094,7 @@
     "MER-ACCT-001 \u00b7 Ashvale Orchards Inc.",
     null,
     "water_not_consumed",
-    "D:61.9587",
+    "D:61.9806",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -69103,7 +69103,7 @@
     "MER-ACCT-001 \u00b7 Ashvale Orchards Inc.",
     null,
     "balance",
-    "D:210.6070",
+    "D:210.6728",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -69121,7 +69121,7 @@
     "MER-ACCT-001 \u00b7 Ashvale Orchards Inc.",
     null,
     "used",
-    "D:247.8344",
+    "D:247.9221",
     "",
     ""
    ],
@@ -69130,7 +69130,7 @@
     "MER-ACCT-001 \u00b7 Ashvale Orchards Inc.",
     null,
     "remaining",
-    "D:747.2498",
+    "D:747.1621",
     "",
     ""
    ],
@@ -70048,7 +70048,7 @@
     "MER-ACCT-011 \u00b7 Wrenfield Land & Cattle",
     null,
     "groundwater_extraction",
-    "D:51.9492",
+    "D:51.9627",
     "",
     ""
    ],
@@ -70066,7 +70066,7 @@
     "MER-ACCT-011 \u00b7 Wrenfield Land & Cattle",
     null,
     "supplies",
-    "D:2077.2150",
+    "D:2077.2285",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70075,7 +70075,7 @@
     "MER-ACCT-011 \u00b7 Wrenfield Land & Cattle",
     null,
     "uses",
-    "D:2046.8336",
+    "D:2046.8346",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70084,7 +70084,7 @@
     "MER-ACCT-011 \u00b7 Wrenfield Land & Cattle",
     null,
     "water_not_consumed",
-    "D:24.2165",
+    "D:24.2175",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70093,7 +70093,7 @@
     "MER-ACCT-011 \u00b7 Wrenfield Land & Cattle",
     null,
     "balance",
-    "D:30.3814",
+    "D:30.3939",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70111,7 +70111,7 @@
     "MER-ACCT-011 \u00b7 Wrenfield Land & Cattle",
     null,
     "used",
-    "D:51.9492",
+    "D:51.9627",
     "",
     ""
    ],
@@ -70120,7 +70120,7 @@
     "MER-ACCT-011 \u00b7 Wrenfield Land & Cattle",
     null,
     "remaining",
-    "D:441.8628",
+    "D:441.8493",
     "",
     ""
    ],
@@ -70345,7 +70345,7 @@
     "Halvern Irrigation-Urban GSA",
     null,
     "surface_delivered",
-    "D:866.3764",
+    "D:866.3408",
     "",
     ""
    ],
@@ -70372,7 +70372,7 @@
     "Halvern Irrigation-Urban GSA",
     null,
     "supplies",
-    "D:1216.1695",
+    "D:1216.1339",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70390,7 +70390,7 @@
     "Halvern Irrigation-Urban GSA",
     null,
     "balance",
-    "D:-5.2851",
+    "D:-5.3207",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70453,7 +70453,7 @@
     "Halvern Valley GSA",
     null,
     "surface_delivered",
-    "D:7065.6433",
+    "D:7065.6789",
     "",
     ""
    ],
@@ -70462,7 +70462,7 @@
     "Halvern Valley GSA",
     null,
     "groundwater_extraction",
-    "D:3149.3536",
+    "D:3149.4548",
     "",
     ""
    ],
@@ -70480,7 +70480,7 @@
     "Halvern Valley GSA",
     null,
     "supplies",
-    "D:12535.1718",
+    "D:12535.3086",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70489,7 +70489,7 @@
     "Halvern Valley GSA",
     null,
     "water_not_consumed",
-    "D:831.5533",
+    "D:831.5762",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70498,7 +70498,7 @@
     "Halvern Valley GSA",
     null,
     "balance",
-    "D:-1342.2905",
+    "D:-1342.1766",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70525,7 +70525,7 @@
     "Halvern Valley GSA",
     null,
     "remaining",
-    "D:-488.8820",
+    "D:-488.9832",
     "",
     ""
    ],
@@ -70543,7 +70543,7 @@
     "Halvern Valley GSA",
     null,
     "used",
-    "D:3149.3536",
+    "D:3149.4548",
     "",
     ""
    ],
@@ -70678,7 +70678,7 @@
     "MER Surface Service Area: Ashvale-Dunmoor Water District (MER-WR-005-DEMO)",
     null,
     "groundwater_extraction",
-    "D:247.8344",
+    "D:247.9221",
     "",
     ""
    ],
@@ -70696,7 +70696,7 @@
     "MER Surface Service Area: Ashvale-Dunmoor Water District (MER-WR-005-DEMO)",
     null,
     "supplies",
-    "D:4974.7513",
+    "D:4974.8390",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70705,7 +70705,7 @@
     "MER Surface Service Area: Ashvale-Dunmoor Water District (MER-WR-005-DEMO)",
     null,
     "water_not_consumed",
-    "D:61.9587",
+    "D:61.9806",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70714,7 +70714,7 @@
     "MER Surface Service Area: Ashvale-Dunmoor Water District (MER-WR-005-DEMO)",
     null,
     "balance",
-    "D:210.6070",
+    "D:210.6728",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70966,7 +70966,7 @@
     "MER Surface Service Area: Wrenfield Water District (MER-WR-006-DEMO)",
     null,
     "groundwater_extraction",
-    "D:51.9492",
+    "D:51.9627",
     "",
     ""
    ],
@@ -70984,7 +70984,7 @@
     "MER Surface Service Area: Wrenfield Water District (MER-WR-006-DEMO)",
     null,
     "supplies",
-    "D:2077.2150",
+    "D:2077.2285",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70993,7 +70993,7 @@
     "MER Surface Service Area: Wrenfield Water District (MER-WR-006-DEMO)",
     null,
     "water_not_consumed",
-    "D:24.2165",
+    "D:24.2175",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -71002,7 +71002,7 @@
     "MER Surface Service Area: Wrenfield Water District (MER-WR-006-DEMO)",
     null,
     "balance",
-    "D:30.3814",
+    "D:30.3939",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -71038,7 +71038,7 @@
     "",
     null,
     "groundwater_extraction",
-    "D:4380.0280",
+    "D:4380.1292",
     "",
     ""
    ],
@@ -71056,7 +71056,7 @@
     "",
     null,
     "supplies",
-    "D:14986.2202",
+    "D:14986.3214",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -71065,7 +71065,7 @@
     "",
     null,
     "uses",
-    "D:16333.7959",
+    "D:16333.8188",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -71074,7 +71074,7 @@
     "",
     null,
     "water_not_consumed",
-    "D:1118.9248",
+    "D:1118.9477",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -71083,16 +71083,16 @@
     "",
     null,
     "balance",
-    "D:-1347.5757",
+    "D:-1347.4974",
     "Default Methodology 721bc1ae69a9",
     ""
    ]
   ],
   "dashboard": {
    "grand_consumptive_use": "D:15214.8711",
-   "grand_supply_total": "D:14986.2202",
+   "grand_supply_total": "D:14986.3214",
    "grand_supply_surface": "D:7932.0197",
-   "grand_supply_groundwater": "D:4380.0280",
+   "grand_supply_groundwater": "D:4380.1292",
    "grand_supply_precip": "D:2674.1725",
    "grand_surface_lines": [
     {
@@ -71113,18 +71113,18 @@
      "kind": "metered",
      "pill": "Metered",
      "pill_class": "metered",
-     "amount": "D:2501.75"
+     "amount": "D:2501.76"
     },
     {
      "kind": "estimated",
      "pill": "Estimated",
      "pill_class": "estimated",
-     "amount": "D:1878.28"
+     "amount": "D:1878.37"
     }
    ],
-   "grand_not_consumed": "D:1118.9248",
-   "grand_uses_total": "D:16333.7959",
-   "grand_net": "D:-1347.5757",
+   "grand_not_consumed": "D:1118.9477",
+   "grand_uses_total": "D:16333.8188",
+   "grand_net": "D:-1347.4974",
    "accounts_with_estimates": 11,
    "grand_calculation_runs": 912,
    "accounts_in_surplus": 4,
@@ -71162,7 +71162,7 @@
     {
      "parcel_number": "MER-APN-001",
      "gross_et": "D:380.6251",
-     "unmet": "D:228.6794"
+     "unmet": "D:228.6928"
     },
     {
      "parcel_number": "MER-APN-013",
@@ -71177,42 +71177,42 @@
     {
      "parcel_number": "MER-APN-024",
      "gross_et": "D:584.1681",
-     "unmet": "D:146.3295"
+     "unmet": "D:146.4049"
     },
     {
      "parcel_number": "MER-APN-008",
      "gross_et": "D:312.3812",
-     "unmet": "D:117.1594"
+     "unmet": "D:117.1765"
     },
     {
      "parcel_number": "MER-APN-023",
      "gross_et": "D:557.4002",
-     "unmet": "D:114.0686"
+     "unmet": "D:114.1454"
     },
     {
      "parcel_number": "MER-APN-004",
      "gross_et": "D:302.5954",
-     "unmet": "D:112.4482"
+     "unmet": "D:112.4647"
     },
     {
      "parcel_number": "MER-APN-025",
      "gross_et": "D:414.2638",
-     "unmet": "D:111.5164"
+     "unmet": "D:111.5715"
     },
     {
      "parcel_number": "MER-APN-036",
      "gross_et": "D:378.3572",
-     "unmet": "D:92.7957"
+     "unmet": "D:92.8475"
     },
     {
      "parcel_number": "MER-APN-029",
      "gross_et": "D:442.9281",
-     "unmet": "D:84.7138"
+     "unmet": "D:84.7786"
     },
     {
      "parcel_number": "MER-APN-076",
      "gross_et": "D:464.7395",
-     "unmet": "D:80.2332"
+     "unmet": "D:80.2666"
     },
     {
      "parcel_number": "MER-APN-060",
@@ -71222,52 +71222,52 @@
     {
      "parcel_number": "MER-APN-037",
      "gross_et": "D:290.0134",
-     "unmet": "D:59.4590"
+     "unmet": "D:59.5011"
     },
     {
      "parcel_number": "MER-APN-075",
      "gross_et": "D:270.0439",
-     "unmet": "D:50.6457"
+     "unmet": "D:50.6256"
     },
     {
      "parcel_number": "MER-APN-034",
      "gross_et": "D:190.7901",
-     "unmet": "D:48.2183"
+     "unmet": "D:48.2440"
     },
     {
      "parcel_number": "MER-APN-031",
      "gross_et": "D:182.0939",
-     "unmet": "D:47.8628"
+     "unmet": "D:47.8874"
     },
     {
      "parcel_number": "MER-APN-038",
      "gross_et": "D:152.8649",
-     "unmet": "D:38.1084"
+     "unmet": "D:37.5457"
     },
     {
      "parcel_number": "MER-APN-028",
      "gross_et": "D:111.2884",
-     "unmet": "D:30.3082"
+     "unmet": "D:30.3232"
     },
     {
      "parcel_number": "MER-APN-021",
      "gross_et": "D:170.4658",
-     "unmet": "D:29.2891"
+     "unmet": "D:29.3133"
     },
     {
      "parcel_number": "MER-APN-033",
      "gross_et": "D:100.1395",
-     "unmet": "D:28.5274"
+     "unmet": "D:28.5404"
     },
     {
      "parcel_number": "MER-APN-027",
      "gross_et": "D:73.1947",
-     "unmet": "D:22.4232"
+     "unmet": "D:22.4326"
     },
     {
      "parcel_number": "MER-APN-007",
      "gross_et": "D:127.6560",
-     "unmet": "D:20.9759"
+     "unmet": "D:20.9834"
     },
     {
      "parcel_number": "MER-APN-044",
@@ -71282,12 +71282,12 @@
     {
      "parcel_number": "MER-APN-009",
      "gross_et": "D:72.6417",
-     "unmet": "D:13.5862"
+     "unmet": "D:13.5570"
     },
     {
      "parcel_number": "MER-APN-049",
      "gross_et": "D:86.5881",
-     "unmet": "D:13.4275"
+     "unmet": "D:13.4276"
     },
     {
      "parcel_number": "MER-APN-059",
@@ -71297,7 +71297,7 @@
     {
      "parcel_number": "MER-APN-035",
      "gross_et": "D:55.7834",
-     "unmet": "D:12.5006"
+     "unmet": "D:12.5085"
     },
     {
      "parcel_number": "MER-APN-058",
@@ -71307,12 +71307,12 @@
     {
      "parcel_number": "MER-APN-026",
      "gross_et": "D:39.3810",
-     "unmet": "D:9.5013"
+     "unmet": "D:9.5066"
     },
     {
      "parcel_number": "MER-APN-030",
      "gross_et": "D:30.8389",
-     "unmet": "D:8.3863"
+     "unmet": "D:8.3905"
     },
     {
      "parcel_number": "MER-APN-063",
@@ -71327,50 +71327,50 @@
     {
      "parcel_number": "MER-APN-022",
      "gross_et": "D:23.8311",
-     "unmet": "D:4.1219"
+     "unmet": "D:4.1255"
     },
     {
      "parcel_number": "MER-APN-069",
      "gross_et": "D:30.8708",
-     "unmet": "D:3.7761"
+     "unmet": "D:3.7737"
     },
     {
      "parcel_number": "MER-APN-073",
      "gross_et": "D:8.2580",
-     "unmet": "D:1.0795"
+     "unmet": "D:1.0789"
     },
     {
      "parcel_number": "MER-APN-067",
      "gross_et": "D:7.7502",
-     "unmet": "D:0.9376"
+     "unmet": "D:0.9371"
     },
     {
      "parcel_number": "MER-APN-072",
      "gross_et": "D:7.7542",
-     "unmet": "D:0.6784"
+     "unmet": "D:0.6778"
     },
     {
      "parcel_number": "MER-APN-071",
      "gross_et": "D:6.2751",
-     "unmet": "D:0.5643"
+     "unmet": "D:0.5640"
     },
     {
      "parcel_number": "MER-APN-074",
      "gross_et": "D:5.0542",
-     "unmet": "D:0.5569"
+     "unmet": "D:0.5567"
     },
     {
      "parcel_number": "MER-APN-068",
      "gross_et": "D:4.5496",
-     "unmet": "D:0.4313"
+     "unmet": "D:0.4309"
     },
     {
      "parcel_number": "MER-APN-070",
      "gross_et": "D:3.3772",
-     "unmet": "D:0.2727"
+     "unmet": "D:0.2725"
     }
    ],
-   "unmet_demand_total": "D:3678.6361",
+   "unmet_demand_total": "D:3678.6058",
    "unmet_demand_count": 47,
    "attention_total": 77,
    "periods_to_close": 1,
@@ -71382,13 +71382,13 @@
       "consumptive_use_gross": "D:4702.1856",
       "consumptive_use_net": "D:3998.8533",
       "surface": "D:4023.5846",
-      "groundwater": "D:247.8344",
+      "groundwater": "D:247.9221",
       "precip": "D:703.3323",
-      "supply_total": "D:4974.7513",
-      "water_not_consumed": "D:61.9587",
-      "net_vs_supply": "D:210.6070",
+      "supply_total": "D:4974.8390",
+      "water_not_consumed": "D:61.9806",
+      "net_vs_supply": "D:210.6728",
       "allocation": "D:995.0842",
-      "remaining": "D:747.2498",
+      "remaining": "D:747.1621",
       "calculation_runs": 216
      }
     ],
@@ -71552,13 +71552,13 @@
       "consumptive_use_gross": "D:2022.6171",
       "consumptive_use_net": "D:1614.1484",
       "surface": "D:1616.7971",
-      "groundwater": "D:51.9492",
+      "groundwater": "D:51.9627",
       "precip": "D:408.4687",
-      "supply_total": "D:2077.2150",
-      "water_not_consumed": "D:24.2165",
-      "net_vs_supply": "D:30.3814",
+      "supply_total": "D:2077.2285",
+      "water_not_consumed": "D:24.2175",
+      "net_vs_supply": "D:30.3939",
       "allocation": "D:493.8120",
-      "remaining": "D:441.8628",
+      "remaining": "D:441.8493",
       "calculation_runs": 84
      }
     ],
@@ -71587,12 +71587,12 @@
       "has_calculations": true,
       "consumptive_use_gross": "D:1193.5475",
       "consumptive_use_net": "D:997.0037",
-      "surface": "D:866.3764",
+      "surface": "D:866.3408",
       "groundwater": "D:153.2493",
       "precip": "D:196.5438",
-      "supply_total": "D:1216.1695",
+      "supply_total": "D:1216.1339",
       "water_not_consumed": "D:27.9071",
-      "net_vs_supply": "D:-5.2851",
+      "net_vs_supply": "D:-5.3207",
       "allocation": "D:750.3200",
       "carryover": "D:0",
       "remaining": "D:597.0707",
@@ -71605,15 +71605,15 @@
       "has_calculations": true,
       "consumptive_use_gross": "D:13045.9090",
       "consumptive_use_net": "D:10725.7341",
-      "surface": "D:7065.6433",
-      "groundwater": "D:3149.3536",
+      "surface": "D:7065.6789",
+      "groundwater": "D:3149.4548",
       "precip": "D:2320.1749",
-      "supply_total": "D:12535.1718",
-      "water_not_consumed": "D:831.5533",
-      "net_vs_supply": "D:-1342.2905",
+      "supply_total": "D:12535.3086",
+      "water_not_consumed": "D:831.5762",
+      "net_vs_supply": "D:-1342.1766",
       "allocation": "D:2660.4716",
       "carryover": "D:0",
-      "remaining": "D:-488.8820",
+      "remaining": "D:-488.9832",
       "has_groundwater_budget": true
      }
     ],
@@ -71642,11 +71642,11 @@
       "consumptive_use_gross": "D:4702.1856",
       "consumptive_use_net": "D:3998.8533",
       "surface": "D:4023.5846",
-      "groundwater": "D:247.8344",
+      "groundwater": "D:247.9221",
       "precip": "D:703.3323",
-      "supply_total": "D:4974.7513",
-      "water_not_consumed": "D:61.9587",
-      "net_vs_supply": "D:210.6070",
+      "supply_total": "D:4974.8390",
+      "water_not_consumed": "D:61.9806",
+      "net_vs_supply": "D:210.6728",
       "allocation": null,
       "carryover": null,
       "remaining": null,
@@ -71714,11 +71714,11 @@
       "consumptive_use_gross": "D:2022.6171",
       "consumptive_use_net": "D:1614.1484",
       "surface": "D:1616.7971",
-      "groundwater": "D:51.9492",
+      "groundwater": "D:51.9627",
       "precip": "D:408.4687",
-      "supply_total": "D:2077.2150",
-      "water_not_consumed": "D:24.2165",
-      "net_vs_supply": "D:30.3814",
+      "supply_total": "D:2077.2285",
+      "water_not_consumed": "D:24.2175",
+      "net_vs_supply": "D:30.3939",
       "allocation": null,
       "carryover": null,
       "remaining": null,
@@ -71729,12 +71729,12 @@
   },
   "accounts_list": {
    "grand_consumptive_use": "D:15214.8711",
-   "grand_supply_total": "D:14986.2202",
+   "grand_supply_total": "D:14986.3214",
    "grand_supply_surface": "D:7932.0197",
-   "grand_supply_groundwater": "D:4380.0280",
+   "grand_supply_groundwater": "D:4380.1292",
    "grand_supply_precip": "D:2674.1725",
-   "grand_not_consumed": "D:1118.9248",
-   "grand_net": "D:-1347.5757",
+   "grand_not_consumed": "D:1118.9477",
+   "grand_net": "D:-1347.4974",
    "has_allocations": true,
    "engine_has_never_run": false,
    "total_count": 12,
@@ -71747,13 +71747,13 @@
       "consumptive_use_gross": "D:4702.1856",
       "consumptive_use_net": "D:3998.8533",
       "surface": "D:4023.5846",
-      "groundwater": "D:247.8344",
+      "groundwater": "D:247.9221",
       "precip": "D:703.3323",
-      "supply_total": "D:4974.7513",
-      "water_not_consumed": "D:61.9587",
-      "net_vs_supply": "D:210.6070",
+      "supply_total": "D:4974.8390",
+      "water_not_consumed": "D:61.9806",
+      "net_vs_supply": "D:210.6728",
       "allocation": "D:995.0842",
-      "remaining": "D:747.2498",
+      "remaining": "D:747.1621",
       "calculation_runs": 216
      }
     ],
@@ -71917,13 +71917,13 @@
       "consumptive_use_gross": "D:2022.6171",
       "consumptive_use_net": "D:1614.1484",
       "surface": "D:1616.7971",
-      "groundwater": "D:51.9492",
+      "groundwater": "D:51.9627",
       "precip": "D:408.4687",
-      "supply_total": "D:2077.2150",
-      "water_not_consumed": "D:24.2165",
-      "net_vs_supply": "D:30.3814",
+      "supply_total": "D:2077.2285",
+      "water_not_consumed": "D:24.2175",
+      "net_vs_supply": "D:30.3939",
       "allocation": "D:493.8120",
-      "remaining": "D:441.8628",
+      "remaining": "D:441.8493",
       "calculation_runs": 84
      }
     ],

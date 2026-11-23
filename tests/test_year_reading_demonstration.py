@@ -10,6 +10,11 @@ module on the commit before the pages read the year at once:
 
     docker compose exec -T -e OPENH2O_MODULES=all -e YEAR_FIGURES_WRITE=1 web python -m pytest \
         tests/test_year_reading_demonstration.py --ds=config.settings.local -m release
+
+It was written again, the same way, once a headgate's delivery was divided by
+exact shares with the rounding leftover to the largest part: that change moves
+printed figures by design, and the commit that rewrote the file says which. A
+figure that moves for any other reason is a fault to find, not a file to rewrite.
 """
 import io
 import json
