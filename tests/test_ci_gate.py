@@ -282,3 +282,112 @@ def test_fetch_without_a_plain_repo_is_bad_input_and_asks_nothing(monkeypatch, c
         argv += ["--repo", repo]
     assert ci_gate.main(argv) == 3
     assert "BAD INPUT" in capsys.readouterr().out
+
+
+# -- A run found by its title (--title): the deploy checks for one pair ---------
+#
+# deploy-checks.yml is started by hand for a pair of commits, so its runs carry the commit the
+# workflow ran from, not the candidate; the title `deploy checks <head> from <base>` names the
+# pair. The release typed on the server asks this way, anonymously, before it changes anything.
+
+HEAD = "b" * 40
+BASE = "c" * 40
+TITLE = f"deploy checks {HEAD} from {BASE}"
+
+
+def _rest(*runs):
+    """REST-shaped runs, oldest first: (title, status, conclusion) each."""
+    return json.dumps(
+        {
+            "workflow_runs": [
+                {
+                    "id": n,
+                    "display_title": title,
+                    "status": status,
+                    "conclusion": conclusion,
+                    "run_attempt": 1,
+                    "created_at": f"2026-11-22T10:{n:02d}:00Z",
+                    "html_url": f"https://example.invalid/runs/{n}",
+                    "head_sha": "d" * 40,
+                }
+                for n, (title, status, conclusion) in enumerate(runs, start=1)
+            ]
+        }
+    )
+
+
+def title_gate(stdin, title=TITLE):
+    return subprocess.run(
+        [sys.executable, str(SCRIPT), "--title", title, "--workflow", "deploy-checks.yml"],
+        input=stdin,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+
+def test_title_green_run_for_the_pair_passes():
+    result = title_gate(_rest((TITLE, "completed", "success")))
+    assert result.returncode == 0, result.stdout
+    assert "PASS" in result.stdout
+    assert "https://example.invalid/runs/1" in result.stdout
+
+
+def test_title_run_from_another_base_does_not_count():
+    other = f"deploy checks {HEAD} from {'e' * 40}"
+    result = title_gate(_rest((other, "completed", "success")))
+    assert result.returncode == 2, result.stdout
+    assert "no run titled" in result.stdout
+
+
+def test_title_red_run_refused():
+    result = title_gate(_rest((TITLE, "completed", "failure")))
+    assert result.returncode == 2, result.stdout
+    assert "concluded failure" in result.stdout
+
+
+def test_title_running_run_refused():
+    result = title_gate(_rest((TITLE, "in_progress", None)))
+    assert result.returncode == 2, result.stdout
+    assert "still running" in result.stdout
+
+
+def test_title_newest_run_decides():
+    result = title_gate(_rest((TITLE, "completed", "success"), (TITLE, "completed", "failure")))
+    assert result.returncode == 2, result.stdout
+
+
+def test_title_with_a_line_break_is_bad_input():
+    result = title_gate(_rest((TITLE, "completed", "success")), title=TITLE + "\nx")
+    assert result.returncode == 3, result.stdout
+
+
+def test_sha_and_title_together_are_bad_input():
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), "--sha", SHA, "--title", TITLE, "--workflow", "deploy-checks.yml"],
+        input=_rest((TITLE, "completed", "success")),
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 3, result.stdout
+
+
+def test_fetch_by_title_asks_for_the_workflows_runs_without_a_sha(monkeypatch, capsys):
+    asked = []
+
+    def urlopen(request, timeout):
+        asked.append(request.full_url)
+        return _Answer(_rest((TITLE, "completed", "success")))
+
+    monkeypatch.setattr(ci_gate.urllib.request, "urlopen", urlopen)
+    argv = ["--fetch", "--repo", "Open-H2O/openh2o", "--workflow", "deploy-checks.yml", "--title", TITLE]
+    code = ci_gate.main(argv)
+    out = capsys.readouterr().out
+    assert code == 0, out
+    [url] = asked
+    assert url.startswith(
+        "https://api.github.com/repos/Open-H2O/openh2o/actions/workflows/deploy-checks.yml/runs?"
+    )
+    assert "head_sha" not in url
+    assert "per_page=100" in url

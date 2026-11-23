@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Tests for scripts/release.sh. No network and no Docker: stand-ins for make, docker, git and
-# curl go first on PATH, each logging its arguments to calls.log, and a temporary folder plays
-# the checkout, the snapshot folder and the live page. scripts/smoke.sh is the real one; only
-# curl underneath it is a stand-in.
+# Tests for scripts/release.sh. No network and no Docker: stand-ins for make, docker, git, curl
+# and python3 go first on PATH, each logging its arguments to calls.log, and a temporary folder
+# plays the checkout, the snapshot folder, the live page and GitHub's list of deploy-checks runs.
+# scripts/smoke.sh and scripts/ci_gate.py are the real ones; only curl underneath smoke.sh is a
+# stand-in, and python3 hands ci_gate.py the runs in runs.json instead of letting it ask GitHub.
 #
 # The stand-ins model what matters to a rollback: `git reset --hard` moves HEAD and, when it goes
 # back to the previous commit, deletes the checkout's release.sh and smoke.sh (that commit has
@@ -28,6 +29,9 @@ NEW=2222222222222222222222222222222222222222
 PREV_DESC=v2.17-273-g11111111
 NEW_DESC=v2.17-300-g22222222
 MISSING=$SITE/smoke-drill-page-that-does-not-exist/
+OTHER=3333333333333333333333333333333333333333
+FORK=4444444444444444444444444444444444444444
+REAL_PY=$(command -v python3)
 
 mkdir -p "$T/bin"
 
@@ -74,7 +78,23 @@ cat > "$T/bin/git" <<'EOF'
 #!/usr/bin/env bash
 echo "git $*" >> "$S/calls.log"
 case $1 in
-  rev-parse) cat "$S/head" ;;
+  rev-parse)
+    if [ "$2" = --verify ]; then
+      shift 2; [ "${1:-}" = --quiet ] && shift
+      r=${1%"^{commit}"}
+      case $r in ""|*[!0-9a-f]*) exit 1 ;; esac
+      [ ${#r} = 40 ] || exit 1
+      echo "$r"
+    else
+      cat "$S/head"
+    fi
+    ;;
+  merge-base)
+    # --is-ancestor <a> <b>: true when they are the same commit or the case says the candidate
+    # is older than the live one; otherwise the common ancestor the case set.
+    if [ "$2" = --is-ancestor ]; then [ "$3" = "$4" ] || [ -f "$S/older" ]; exit; fi
+    cat "$S/merge_base"
+    ;;
   describe) cat "$S/describe_$(cat "$S/head")" ;;
   reset)
     echo "$3" > "$S/head"
@@ -141,14 +161,51 @@ else
   printf 'Not Found' > "$out"; printf 404
 fi
 EOF
+
+# python3: a call of ci_gate.py --fetch gets the runs in runs.json on stdin instead of asking
+# GitHub (or, with github_down, the refusal ci_gate prints when GitHub cannot be asked); every
+# other call goes to the real python3.
+printf '#!/usr/bin/env bash\nREAL=%s\n' "$REAL_PY" > "$T/bin/python3"
+cat >> "$T/bin/python3" <<'EOF'
+echo "python3 $*" >> "$S/calls.log"
+case " $* " in
+  *"/ci_gate.py "*" --fetch "*)
+    if [ -f "$S/github_down" ]; then
+      echo "ci_gate: REFUSED: could not ask GitHub (network error: no route to host)"
+      exit 4
+    fi
+    args=() skip=0
+    for a in "$@"; do
+      if [ $skip = 1 ]; then skip=0; continue; fi
+      case $a in --fetch) ;; --repo) skip=1 ;; *) args+=("$a") ;; esac
+    done
+    exec "$REAL" "${args[@]}" < "$S/runs.json"
+    ;;
+esac
+exec "$REAL" "$@"
+EOF
 chmod +x "$T/bin/"*
+
+# runs.json holds one deploy-checks run per argument triple <title> <status> <conclusion>,
+# oldest first, with the field names GitHub's REST API uses.
+runs() {
+  local n=0 sep="" body="" c
+  while [ $# -ge 3 ]; do
+    n=$((n + 1))
+    if [ -n "$3" ]; then c="\"$3\""; else c=null; fi
+    body="$body$sep{\"id\":$n,\"display_title\":\"$1\",\"status\":\"$2\",\"conclusion\":$c,\"run_attempt\":1,\"created_at\":\"2026-11-22T10:0$n:00Z\",\"html_url\":\"https://example.invalid/runs/$n\",\"head_sha\":\"$FORK\"}"
+    sep=,
+    shift 3
+  done
+  printf '{"workflow_runs":[%s]}\n' "$body" > "$S/runs.json"
+}
 
 # A fresh world per case: the checkout at PREV with this repository's release.sh and smoke.sh,
 # the old golden and one older backup, the old image on the web container, the old page live.
 setup() {
   export S="$T/case$1/state" CO="$T/case$1/co" SNAP="$T/case$1/snap" SITE TITLE
   mkdir -p "$S" "$CO/scripts" "$SNAP" "$T/case$1/logs"
-  cp "$REPO/scripts/release.sh" "$REPO/scripts/smoke.sh" "$CO/scripts/" 2>/dev/null
+  cp "$REPO/scripts/release.sh" "$REPO/scripts/smoke.sh" "$REPO/scripts/ci_gate.py" "$CO/scripts/" 2>/dev/null
   : > "$CO/.demo-host"
   cat > "$CO/scripts/reset-demo.sh" <<'EOF'
 echo "reset-demo FORCE=${FORCE:-0} golden=$(cat "$SNAP/golden.dump") meta=$(cat "$SNAP/golden.meta")" >> "$S/calls.log"
@@ -156,6 +213,9 @@ EOF
   : > "$S/calls.log"
   echo ok > "$S/make_mode"
   echo "$PREV" > "$S/head"; echo "$PREV" > "$S/prev_sha"; echo "$NEW" > "$S/new_sha"
+  echo "$PREV" > "$S/merge_base"
+  # The deploy checks passed for exactly this release: the candidate against the live commit.
+  runs "deploy checks $NEW from $PREV" completed success
   echo "$PREV_DESC" > "$S/describe_$PREV"; echo "$NEW_DESC" > "$S/describe_$NEW"
   echo sha256:old > "$S/container_image"; echo sha256:old > "$S/tag_openh2o-web_latest"
   echo "$PREV_DESC" > "$S/imgver_sha256_old"; echo "$NEW_DESC" > "$S/imgver_sha256_new"
@@ -281,6 +341,57 @@ check "14 and a good deploy exits 0" '[ $RC = 0 ]'
 setup 15; echo v3.0 > "$S/describe_$PREV"; echo v2.17-1-g99999999 > "$S/imgver_sha256_old"
 printf '%s</title>\n<footer>v2.17-1-g99999999</footer>\n' "$TITLE" > "$S/live.html"; run REF=$NEW
 check "15 an image built from another commit exits 1" '[ $RC = 1 ] && not_called "make " && not_called "docker tag"'
+
+# (16) to (25): before anything changes, the release asks GitHub for the newest deploy-checks run
+# titled `deploy checks <candidate> from <live>` (from the common ancestor when the live commit is
+# not on the candidate's line) and refuses unless it finished green. Nothing changed means make
+# deploy never ran and the running image was not retagged.
+nothing() { not_called "make " && not_called "docker tag" && is "$S/container_image" sha256:old; }
+
+# (16) no run for the pair: refused, and it says how to start one.
+setup 16; runs; run REF=$NEW
+check "16 no deploy-checks run exits 1 with nothing changed" '[ $RC = 1 ] && called "python3 " && nothing'
+check "16 says deploy.sh starts the missing run" 'says "deploy.sh"'
+
+# (17) the run for the pair failed.
+setup 17; runs "deploy checks $NEW from $PREV" completed failure; run REF=$NEW
+check "17 a red deploy-checks run exits 1 with nothing changed" '[ $RC = 1 ] && called "python3 " && nothing'
+
+# (18) the run for the pair is still running.
+setup 18; runs "deploy checks $NEW from $PREV" in_progress ""; run REF=$NEW
+check "18 a running deploy-checks run exits 1 with nothing changed" '[ $RC = 1 ] && called "python3 " && nothing'
+
+# (19) GitHub cannot be asked: refused, never waved through.
+setup 19; : > "$S/github_down"; run REF=$NEW
+check "19 GitHub unreachable exits 1 with nothing changed" '[ $RC = 1 ] && called "python3 " && nothing'
+check "19 says GitHub could not be asked" 'says "could not ask GitHub"'
+
+# (20) a green run for exactly (candidate, live): the release goes on.
+setup 20; run REF=$NEW
+check "20 a green run for the pair releases" '[ $RC = 0 ] && called "make deploy REF=$NEW"'
+check "20 it asked for exactly this pair" 'called "deploy checks $NEW from $PREV"'
+
+# (21) a green run for the candidate from another base does not count.
+setup 21; runs "deploy checks $NEW from $OTHER" completed success; run REF=$NEW
+check "21 a green run from another base exits 1 with nothing changed" '[ $RC = 1 ] && called "python3 " && nothing'
+
+# (22) the newest run for the pair decides: a red rerun after a green one refuses.
+setup 22; runs "deploy checks $NEW from $PREV" completed success "deploy checks $NEW from $PREV" completed failure; run REF=$NEW
+check "22 the newest run decides" '[ $RC = 1 ] && called "python3 " && nothing'
+
+# (23) the live commit is not on the candidate's line: the pair is the candidate and the common
+# ancestor, as deploy.sh asks it.
+setup 23; echo "$FORK" > "$S/merge_base"; runs "deploy checks $NEW from $FORK" completed success; run REF=$NEW
+check "23 the common ancestor is the base" '[ $RC = 0 ] && called "deploy checks $NEW from $FORK"'
+
+# (24) the candidate is older than the live commit (going back): nothing new to check, as in
+# deploy.sh, so GitHub is not asked.
+setup 24; : > "$S/older"; runs; run REF=$NEW
+check "24 an older candidate is not asked about" '[ $RC = 0 ] && called "make deploy REF=$NEW" && not_called "python3 "'
+
+# (25) a REF that is not a commit here is refused before anything.
+setup 25; run REF=no-such-commit
+check "25 an unknown REF exits 1 with nothing changed" '[ $RC = 1 ] && nothing'
 
 echo "$pass passed, $fail failed"
 [ "$fail" = 0 ]
