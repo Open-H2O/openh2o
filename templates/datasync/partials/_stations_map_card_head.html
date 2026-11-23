@@ -15,9 +15,11 @@ the shared partial's generic branches were never asked to say. So this
 partial takes the finished `line` (datasync/views.py::station_list) and only
 lays out the row.
 
-Colours are the freshness tokens (`--color-fresh`, `--color-stale`,
-`--color-dormant`), never a literal hex: the row dots in app.css and the map's
-`FRESH_META` read the same three, so a state is one colour wherever it shows.
+Each key is the station's triangle (.swatch-mark-station) in its freshness
+token (`--color-fresh`, `--color-stale`, `--color-dormant`, through the
+.state-* classes in map-engine.css), never a literal hex: the row dots in
+app.css and the map's `FRESH_META` read the same three, so a state is one
+colour wherever it shows.
 
 Words, from the including page/partial:
   head_id  the element id; the same id in the page and the results partial
@@ -28,9 +30,9 @@ Words, from the including page/partial:
   <p class="text-base text-secondary">
     <span>{{ line }}</span>
     <span class="map-card-head-keys">
-      <span class="map-card-head-key"><span class="swatch-dot" style="color: var(--color-fresh);"></span>Up to date</span>
-      <span class="map-card-head-key"><span class="swatch-dot" style="color: var(--color-stale);"></span>Slightly behind</span>
-      <span class="map-card-head-key"><span class="swatch-dot" style="color: var(--color-dormant);"></span>Dormant</span>
+      <span class="map-card-head-key"><span class="swatch-mark swatch-mark-station state-fresh"></span>Up to date</span>
+      <span class="map-card-head-key"><span class="swatch-mark swatch-mark-station state-stale"></span>Slightly behind</span>
+      <span class="map-card-head-key"><span class="swatch-mark swatch-mark-station state-dead"></span>Dormant</span>
     </span>
   </p>
 </div>

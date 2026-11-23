@@ -291,6 +291,16 @@ was measured live and fixed at its shared cause where one existed. The rules, ea
   (`OH2O.mountSourceShares`): its use areas outlined, a line to each with its share, and its popup
   placed beside the group, never over it (`OH2O.placePopup`). The map opens without other zones,
   drinking-water facilities and monitoring stations; each is one tick away.
+- **Every map draws the same thing the same way**: the overview maps above a list, a record's own
+  detail map and the form maps take the Map page's system, not their own. A point is its kind's
+  mark through `OH2O.addMarkLayer` (no map paints its own circle or glow; the Monitoring page keeps its
+  three freshness colours on the station triangle with `colorBy`); an area is its role colour
+  through `OH2O.addAreaLayers` (`OH2O.areas`: use areas blue, recharge basins purple, a zone a line
+  with a clear fill to click); every popup is `OH2O.popupHtml` (title, lines, links), styled by
+  `map-engine.css` and never inline. The card head's key takes the mark's shape
+  (`.swatch-mark-<kind>`, `partials/_map_card_key.html`). A form map draws what is being drawn in
+  the frame colour, never gold, and a placed pin takes the colour of the kind being added. The
+  palette names from before the role palette are gone from both files.
 - **A sidebar label wraps** rather than clipping at the rail (`.sidebar-link-text`); **a code string
   wraps** (`.text-mono { overflow-wrap: anywhere }`); **the health cards' badges are the pill size**
   and every badge colour is a token (`--color-muted` joined `tokens.css`; the last hard-coded badge

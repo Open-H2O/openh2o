@@ -3,13 +3,15 @@ Zones overview map: every zone boundary the list is showing, on the Zones
 overview page.
 
 The Bucket-3 overview map (see DESIGN.md "Kinds of page") — the zone
-analogue of datasync's _freshness_map. It draws each zone's polygon (fill +
-outline) from geography:zone_overview_geojson and, on click, opens a popup
+analogue of datasync's _freshness_map. It draws each zone's outline as the
+Map page does (OH2O.addAreaLayers: a management area the sand dashed line,
+any other zone the teal dotted line, a clear fill to click) from
+geography:zone_overview_geojson and, on click, opens a popup
 with the zone name and a link to that zone's full detail page. Modeled on
 _freshness_map.html so the two overview maps stay consistent.
 
 The overview map card (the structure the Surface Diversions overview map
-uses). Three things beyond the fill:
+uses). Three things beyond the outlines:
 
   * An always-on label per ZONE, from a SECOND source,
     geography:zone_labels_geojson (one point_on_surface per zone, so a
@@ -42,7 +44,6 @@ Variables:
     if (!el || el._mapInit) return;
     el._mapInit = true;
 
-    var COLOR = OH2O.entities.zone.color;   // matches the GSA-zone fill on the big map
     var SRC = '{{ map_id }}-source';
     var LABELS_SRC = '{{ map_id }}-labels';
 
@@ -79,26 +80,11 @@ Variables:
         map.addSource(SRC, { type: 'geojson', data: data });
         map.addSource(LABELS_SRC, { type: 'geojson', data: labelData });
 
-        map.addLayer({
-          id: '{{ map_id }}-fill',
-          type: 'fill',
-          source: SRC,
-          paint: { 'fill-color': COLOR, 'fill-opacity': 0.18 }
-        });
+        // Lines only, as the Map page draws zones: a management area is the sand
+        // dashed line, any other zone the teal dotted line. The fill is clear and
+        // is there to be clicked.
+        OH2O.addAreaLayers(map, '{{ map_id }}', SRC, 'zone');
 
-        map.addLayer({
-          id: '{{ map_id }}-outline',
-          type: 'line',
-          source: SRC,
-          paint: { 'line-color': COLOR, 'line-width': 1.5, 'line-opacity': 0.9 }
-        });
-
-        // The always-on label, one per zone regardless of how many polygon
-        // parts it has (zone_labels_geojson is already one point_on_surface
-        // per zone).
-        // A label that would collide yields and the outline stays (the
-        // approved card; never text-allow-overlap, which paints the names
-        // over one another). Variable anchors let a name step aside.
         OH2O.addDetailLabel(map, LABELS_SRC, 'zone', {
           id: '{{ map_id }}-label',
           layout: {
@@ -112,7 +98,7 @@ Variables:
         // list's pks and frame them: now, and after every htmx swap of
         // #results.
         OH2O.followResults(map, {
-          layers: ['{{ map_id }}-fill', '{{ map_id }}-outline', '{{ map_id }}-label'],
+          layers: ['{{ map_id }}-fill', '{{ map_id }}-outline', '{{ map_id }}-outline-other', '{{ map_id }}-label'],
           source: SRC,
           data: data,
           pksEl: 'results-map-pks',
@@ -124,20 +110,15 @@ Variables:
 
         map.on('click', '{{ map_id }}-fill', function(e) {
           var p = e.features[0].properties;
-          var sub = (p.zone_type_label ? p.zone_type_label : '') +
-            (p.parcel_count != null
-              ? (p.zone_type_label ? ' &middot; ' : '') + p.parcel_count + ' use area' + (p.parcel_count == 1 ? '' : 's')
-              : '');
+          var useAreas = p.parcel_count != null
+            ? p.parcel_count + ' use area' + (p.parcel_count == 1 ? '' : 's') : '';
           new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
             .setLngLat(e.lngLat)
-            .setHTML(
-              '<div style="font-family:var(--font-display,sans-serif);color:#e8edf4;background:#1a1e27;padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;min-width:180px;">' +
-              '<div style="font-weight:600;font-size:13px;">' + p.name + '</div>' +
-              (sub ? '<div style="color:#8899aa;font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
-              '<a href="' + detailUrl.replace('/0/', '/' + p.pk + '/') + '" ' +
-                'style="display:inline-block;margin-top:6px;color:#38bdf8;text-decoration:none;font-size:11px;">View zone &rarr;</a>' +
-              '</div>'
-            )
+            .setHTML(OH2O.popupHtml({
+              title: p.label || p.name,
+              lines: [[p.zone_type_label, useAreas].filter(Boolean).join(' · ')],
+              link: { href: detailUrl.replace('/0/', '/' + p.pk + '/'), text: 'View zone →' }
+            }))
             .addTo(map);
         });
 

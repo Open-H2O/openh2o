@@ -5,7 +5,8 @@
      - entities          per-entity symbology + zoom-dependent label specs
      - basemapStyle()    combined dark-vector + aerial-raster MapLibre style
      - switchBasemap()   toggle dark <-> aerial without rebuilding the map
-     - pointPaint/glowPaint/makeLabelLayer  reusable layer generators
+     - addMarkLayer/addAreaLayers/makeLabelLayer  one kind of record drawn the same on every map
+     - popupHtml        one popup style for every map
    Dark basemap is a recolored OpenFreeMap (OpenMapTiles schema) vector style,
    keyless and unlimited, fonts+sprites served by OpenFreeMap. Aerial is Esri.
 
@@ -27,17 +28,12 @@ var OH2O = window.OH2O = window.OH2O || {};
 
 /* ── Entity color palette ─────────────────────────────────────────────── */
 OH2O.colors = {
-    gold: '#E4A317', teal: '#4ECDC4', purple: '#7B68EE', red: '#FF6B6B',
-    blue: '#1B7FAF', blueBright: '#3DB4E0', green: '#55B678', boundary: '#E4A317',
     // Water is one blue: rivers by stream order, canals thinner and greyer.
     river: '#4FA3E0', canal: '#6F9FC4',
-    // Dark casing drawn beneath the mint canal so it lifts off green farm fields.
-    hydroCasing: '#06140e',
     // OpenET's field outlines: a dashed line in the primary text colour, so it reads over the
     // aerial and the dark basemap and never as one of the site's own entities.
     openet: '#E7EEF2',
-    // The Map page's palette by role (tokens.css names each one). The names above
-    // stay while the other maps still read them.
+    // The palette by role (tokens.css names each one). Every map reads these.
     frame: '#E7EEF2', frameCasing: '#0B121B', managementArea: '#D8C7A6', serviceArea: '#46B3C4',
     useArea: '#1B7FAF', useAreaLine: '#3DB4E0',
     well: '#E0A446', pod: '#46B3C4', drinking: '#A9DCFF', recharge: '#9B87F5', station: '#C3CDD6',
@@ -62,29 +58,30 @@ OH2O.marks = {
     recharge: { shape: 'diamond',  color: OH2O.colors.recharge, size: 15 },
     drinking: { shape: 'ring',     color: OH2O.colors.drinking, size: 21 }
 };
+/* Draw one mark onto a canvas and register it as the map image `name`. */
+OH2O.drawMark = function (map, name, m) {
+    if (map.hasImage(name)) return;
+    var R = 2, s = m.size * R, pad = 3 * R, W = s + pad * 2;
+    var c = document.createElement('canvas'); c.width = W; c.height = W;
+    var g = c.getContext('2d'), cx = W / 2, r = s / 2;
+    g.beginPath();
+    if (m.shape === 'circle' || m.shape === 'ring') g.arc(cx, cx, r, 0, Math.PI * 2);
+    else if (m.shape === 'square') g.rect(cx - r * 0.86, cx - r * 0.86, r * 1.72, r * 1.72);
+    else if (m.shape === 'diamond') { g.moveTo(cx, cx - r); g.lineTo(cx + r, cx); g.lineTo(cx, cx + r); g.lineTo(cx - r, cx); g.closePath(); }
+    else if (m.shape === 'triangle') { g.moveTo(cx, cx - r); g.lineTo(cx + r * 0.95, cx + r * 0.75); g.lineTo(cx - r * 0.95, cx + r * 0.75); g.closePath(); }
+    g.lineJoin = 'round';
+    if (m.shape === 'ring') {
+        g.lineWidth = 6 * R; g.strokeStyle = OH2O.colors.frameCasing; g.stroke();
+        g.lineWidth = 3 * R; g.strokeStyle = m.color; g.stroke();
+    } else {
+        g.lineWidth = 4.5 * R; g.strokeStyle = OH2O.colors.frameCasing; g.stroke();
+        g.lineWidth = 2 * R; g.strokeStyle = OH2O.colors.selection; g.stroke();
+        g.fillStyle = m.color; g.fill();
+    }
+    map.addImage(name, g.getImageData(0, 0, W, W), { pixelRatio: R });
+};
 OH2O.registerMarks = function (map) {
-    var R = 2;
-    Object.keys(OH2O.marks).forEach(function (k) {
-        if (map.hasImage('mark-' + k)) return;
-        var m = OH2O.marks[k], s = m.size * R, pad = 3 * R, W = s + pad * 2;
-        var c = document.createElement('canvas'); c.width = W; c.height = W;
-        var g = c.getContext('2d'), cx = W / 2, r = s / 2;
-        g.beginPath();
-        if (m.shape === 'circle' || m.shape === 'ring') g.arc(cx, cx, r, 0, Math.PI * 2);
-        else if (m.shape === 'square') g.rect(cx - r * 0.86, cx - r * 0.86, r * 1.72, r * 1.72);
-        else if (m.shape === 'diamond') { g.moveTo(cx, cx - r); g.lineTo(cx + r, cx); g.lineTo(cx, cx + r); g.lineTo(cx - r, cx); g.closePath(); }
-        else if (m.shape === 'triangle') { g.moveTo(cx, cx - r); g.lineTo(cx + r * 0.95, cx + r * 0.75); g.lineTo(cx - r * 0.95, cx + r * 0.75); g.closePath(); }
-        g.lineJoin = 'round';
-        if (m.shape === 'ring') {
-            g.lineWidth = 6 * R; g.strokeStyle = OH2O.colors.frameCasing; g.stroke();
-            g.lineWidth = 3 * R; g.strokeStyle = m.color; g.stroke();
-        } else {
-            g.lineWidth = 4.5 * R; g.strokeStyle = OH2O.colors.frameCasing; g.stroke();
-            g.lineWidth = 2 * R; g.strokeStyle = OH2O.colors.selection; g.stroke();
-            g.fillStyle = m.color; g.fill();
-        }
-        map.addImage('mark-' + k, g.getImageData(0, 0, W, W), { pixelRatio: R });
-    });
+    Object.keys(OH2O.marks).forEach(function (k) { OH2O.drawMark(map, 'mark-' + k, OH2O.marks[k]); });
 };
 /* A symbol layer's layout for one kind of mark: always drawn, sized by zoom. */
 OH2O.markLayout = function (k, over) {
@@ -92,6 +89,101 @@ OH2O.markLayout = function (k, over) {
         'icon-image': 'mark-' + k, 'icon-allow-overlap': true, 'icon-ignore-placement': false,
         'icon-size': ['interpolate', ['linear'], ['zoom'], 9, 0.75, 13, 1, 16, 1.25]
     }, over || {});
+};
+
+/* One kind of record's marks as a symbol layer, on any map: the overview maps
+   above a list, a record's own detail map and the Map page draw a well, a point
+   of diversion, a station, a recharge point and a drinking-water facility the
+   same way. Registers the marks once per map. opts:
+     size      a fixed icon-size (a detail map's one mark is sized for its band)
+     colorBy   { prop, values: { value: colour }, other: colour }: the kind's
+               shape in a colour per value of `prop` (a station's triangle by
+               freshness on the Monitoring page)
+     filter, beforeId, layout   as MapLibre takes them
+   Returns the layer id. */
+OH2O.addMarkLayer = function (map, id, source, kind, opts) {
+    opts = opts || {};
+    OH2O.registerMarks(map);
+    var layout = OH2O.markLayout(kind);
+    if (opts.colorBy) {
+        var by = opts.colorBy, image = ['match', ['get', by.prop]];
+        Object.keys(by.values).forEach(function (v) {
+            OH2O.drawMark(map, 'mark-' + kind + '-' + v, Object.assign({}, OH2O.marks[kind], { color: by.values[v] }));
+            image.push(v, 'mark-' + kind + '-' + v);
+        });
+        OH2O.drawMark(map, 'mark-' + kind + '-other', Object.assign({}, OH2O.marks[kind], { color: by.other }));
+        image.push('mark-' + kind + '-other');
+        layout['icon-image'] = image;
+    }
+    if (opts.size != null) layout['icon-size'] = opts.size;
+    Object.assign(layout, opts.layout || {});
+    var def = { id: id, type: 'symbol', source: source, layout: layout };
+    if (opts.filter) def.filter = opts.filter;
+    map.addLayer(def, opts.beforeId);
+    return id;
+};
+
+/* An area record's fill and outline by role, on every map: a use area is the
+   use-area blue with its brighter outline, a recharge basin the recharge purple,
+   a zone a line only (a management area the sand dashed line, any other zone the
+   teal dotted line), its fill left clear so the area can still be clicked. */
+OH2O.areas = {
+    parcel:   { fill: 'useArea', fillOpacity: 0.35, line: 'useAreaLine', width: 2 },
+    recharge: { fill: 'recharge', fillOpacity: 0.3, line: 'recharge', width: 2 },
+    zone:     { fill: 'managementArea', fillOpacity: 0, line: 'managementArea', width: 2, dash: [4, 3],
+                other: { line: 'serviceArea', width: 1.5, dash: [1, 2] } }
+};
+/* Adds `<prefix>-fill` and `<prefix>-outline` (a zone also `<prefix>-outline-other`)
+   and returns their ids. opts: filter (fill and outline alike), fillPaint and
+   linePaint (merged over the role's paint), beforeId. */
+OH2O.addAreaLayers = function (map, prefix, source, key, opts) {
+    opts = opts || {};
+    var a = OH2O.areas[key] || OH2O.areas.parcel, C = OH2O.colors, ids = [];
+    function add(def, extraFilter) {
+        var f = opts.filter && extraFilter ? ['all', opts.filter, extraFilter] : (extraFilter || opts.filter);
+        if (f) def.filter = f;
+        map.addLayer(def, opts.beforeId);
+        ids.push(def.id);
+    }
+    function line(spec) {
+        var p = { 'line-color': C[spec.line], 'line-width': spec.width, 'line-opacity': 0.9 };
+        if (spec.dash) p['line-dasharray'] = spec.dash;
+        return Object.assign(p, opts.linePaint || {});
+    }
+    add({ id: prefix + '-fill', type: 'fill', source: source,
+          paint: Object.assign({ 'fill-color': C[a.fill], 'fill-opacity': a.fillOpacity }, opts.fillPaint || {}) });
+    if (a.other) {
+        var isMA = ['==', ['get', 'zone_type'], 'management_area'];
+        add({ id: prefix + '-outline', type: 'line', source: source, paint: line(a) }, isMA);
+        add({ id: prefix + '-outline-other', type: 'line', source: source, paint: line(a.other) }, ['!', isMA]);
+    } else {
+        add({ id: prefix + '-outline', type: 'line', source: source, paint: line(a) });
+    }
+    return ids;
+};
+
+/* ── One popup for every map ──────────────────────────────────────────────
+   The record's name as the popup's title, then its lines, then its links,
+   styled by map-engine.css (.maplibregl-popup-content and .popup-line), never
+   inline. A line is plain text, or { text, muted } for a quieter line, or
+   { html } for markup the caller built from escaped parts. */
+OH2O.escapeHtml = function (t) {
+    return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+};
+OH2O.popupHtml = function (o) {
+    o = o || {};
+    var esc = OH2O.escapeHtml, html = '<strong>' + esc(o.title) + '</strong>';
+    (o.lines || []).forEach(function (l) {
+        if (l == null || l === '') return;
+        var obj = typeof l === 'object';
+        html += '<div class="popup-line' + (obj && l.muted ? ' popup-line-muted' : '') + '">' +
+            (obj ? (l.html != null ? l.html : esc(l.text)) : esc(l)) + '</div>';
+    });
+    (o.links || (o.link ? [o.link] : [])).forEach(function (k) {
+        if (k && k.href) html += '<a href="' + esc(k.href) + '">' + esc(k.text) + '</a>';
+    });
+    return html;
 };
 
 /* ── Crop ET: the one shaded fill ─────────────────────────────────────────
@@ -125,63 +217,33 @@ OH2O.SPRITE = 'https://tiles.openfreemap.org/sprites/ofm_f384/ofm';
    rather than `""` when it has no name, for exactly that reason. `well` is
    untouched — its geojson endpoint does not carry `label` yet. */
 OH2O.entities = {
-    well:    { color: OH2O.colors.gold,   rampLo: 3.5, rampHi: 8.5, labelMin: 10.5,
+    well:    { color: OH2O.colors.well,   rampLo: 3.5, rampHi: 8.5, labelMin: 10.5,
                labelField: ['coalesce', ['get','name'], ['get','well_registration_id'], 'Well'] },
-    pod:     { color: OH2O.colors.teal,   rampLo: 3.5, rampHi: 8.5, labelMin: 10.5,
+    pod:     { color: OH2O.colors.pod,   rampLo: 3.5, rampHi: 8.5, labelMin: 10.5,
                labelField: ['coalesce', ['get','label'], ['get','name'], 'POD'] },
-    station: { color: OH2O.colors.red,    rampLo: 3.5, rampHi: 8.5, labelMin: 10.5,
+    station: { color: OH2O.colors.station,    rampLo: 3.5, rampHi: 8.5, labelMin: 10.5,
                labelField: ['coalesce', ['get','label'], ['get','station_name'], ['get','external_station_id'], 'Station'] },
-    recharge:{ color: OH2O.colors.purple, rampLo: 4.5, rampHi: 10,  labelMin: 10.5,
+    recharge:{ color: OH2O.colors.recharge, rampLo: 4.5, rampHi: 10,  labelMin: 10.5,
                labelField: ['coalesce', ['get','label'], ['get','name'], ['get','site_type'], 'Recharge'] },
-    // Drinking-water facilities. blueBright, NOT gold: on the district map these
-    // dots land on the SAME coordinates as the gold `wells` layer (a supply well
-    // is one physical feature seen from two sides), and two gold dots on one
-    // point is unreadable.
-    drinking:{ color: OH2O.colors.blueBright, rampLo: 3.5, rampHi: 8.5, labelMin: 10.5,
+    // Drinking-water facilities: a light-blue ring, because on the district map
+    // a facility lands on the SAME coordinates as its well (one physical
+    // feature seen from two sides), so the ring sits around the well's circle.
+    drinking:{ color: OH2O.colors.drinking, rampLo: 3.5, rampHi: 8.5, labelMin: 10.5,
                labelField: ['coalesce', ['get','label'], ['get','name'], ['get','facility_id'], 'Facility'] },
-    parcel:  { color: OH2O.colors.blue,   labelMin: 10.5,
+    parcel:  { color: OH2O.colors.useArea,   labelMin: 10.5,
                labelField: ['get','parcel_number'] },
-    zone:    { color: OH2O.colors.green,  labelMin: 9,
+    zone:    { color: OH2O.colors.managementArea,  labelMin: 9,
                labelField: ['coalesce', ['get','label'], ['get','name']] },
-    boundary:{ color: OH2O.colors.gold,   labelMin: 8,
+    boundary:{ color: OH2O.colors.frame,   labelMin: 8,
                labelField: ['get','name'] },
     hydrography:{ color: OH2O.colors.river, labelMin: 11,
                labelField: ['coalesce', ['get','name'], ['get','feature_type'], 'Waterway'] }
 };
 
-/* zoom-interpolated radius for point markers */
-function ramp(lo, hi) {
-    return ['interpolate', ['linear'], ['zoom'], 9, lo, 13, (lo+hi)/2, 16, hi];
-}
-
-/* solid marker paint: filled circle + crisp ring that reads on dark AND aerial */
-OH2O.pointPaint = function (key, over) {
-    var e = OH2O.entities[key] || { color: '#fff', rampLo: 4, rampHi: 8 };
-    return Object.assign({
-        'circle-radius': ramp(e.rampLo || 4, e.rampHi || 8),
-        'circle-color': e.color,
-        'circle-stroke-width': 1.6,
-        'circle-stroke-color': '#ffffff',
-        'circle-stroke-opacity': 0.92,
-        'circle-pitch-alignment': 'map'
-    }, over || {});
-};
-
-/* soft glow halo placed UNDER the marker — gives depth, separates from busy imagery */
-OH2O.glowPaint = function (key) {
-    var e = OH2O.entities[key] || { color: '#fff', rampHi: 8 };
-    return {
-        'circle-radius': ramp((e.rampLo||4)*2, (e.rampHi||8)*2.1),
-        'circle-color': e.color,
-        'circle-opacity': 0.18,
-        'circle-blur': 0.9
-    };
-};
-
 OH2O.labelPaint = function () {
     return {
-        'text-color': '#e8edf4',
-        'text-halo-color': '#040608',
+        'text-color': OH2O.colors.frame,
+        'text-halo-color': OH2O.colors.frameCasing,
         'text-halo-width': 1.5,
         'text-halo-blur': 0.4
     };
@@ -679,9 +741,14 @@ OH2O.frameOnBoundary = function (map, url) {
         .then(function (fc) {
             if (!fc || !fc.features || !fc.features.length) return;
             map.addSource('boundary', { type: 'geojson', data: fc });
+            // The frame, as the Map page draws it: a light line over a dark casing.
+            map.addLayer({
+                id: 'boundary-casing', type: 'line', source: 'boundary',
+                paint: { 'line-color': OH2O.colors.frameCasing, 'line-width': 5, 'line-opacity': 0.55 }
+            });
             map.addLayer({
                 id: 'boundary-outline', type: 'line', source: 'boundary',
-                paint: { 'line-color': OH2O.colors.boundary, 'line-width': 2, 'line-opacity': 0.85 }
+                paint: { 'line-color': OH2O.colors.frame, 'line-width': 2, 'line-opacity': 0.95 }
             });
             // One label per boundary, not one per polygon part: a two-part
             // MultiPolygon labelled from the polygon source paints its name
@@ -764,30 +831,22 @@ OH2O._frameBounds = function (map, bounds) {
                older cached response, or a caller that never asked for this).
      geojson   the FeatureCollection just loaded into `src`, read for the
                `label_point` properties above; ignored when isPoint. */
-/* A detail map's one mark is sized for its band, not
-   the overview's zoom ramp. The detail map frames a single point at zoom 14,
-   where ramp(3.5, 8.5) gives a radius under 7, and the mark sat as "a tiny
-   dot" in a 1,430 x 380 band. Here it is 9 px at every zoom, with the glow
-   halo at the ratio glowPaint keeps to the ramp's top (2.1x). Only
-   _addDetailLayers reads these; the overview maps keep pointPaint's ramp. */
+/* A detail map's one mark is sized for its band, not the overview's zoom ramp:
+   the detail map frames a single point at zoom 14, and a mark drawn at the
+   ramp's size sat as "a tiny dot" in a 1,430 x 380 band. Here the mark is
+   2 x DETAIL_POINT_RADIUS (18 px) across at every zoom, whatever its kind. */
 OH2O.DETAIL_POINT_RADIUS = 9;
-OH2O.DETAIL_GLOW_RADIUS = OH2O.DETAIL_POINT_RADIUS * 2.1;
 
 OH2O._addDetailLayers = function (map, src, key, isPoint, popup, opts) {
     opts = opts || {};
-    var color = (OH2O.entities[key] || {}).color || OH2O.colors.blue;
     if (isPoint) {
-        map.addLayer({ id: src + '-glow', type: 'circle', source: src,
-            paint: Object.assign(OH2O.glowPaint(key), { 'circle-radius': OH2O.DETAIL_GLOW_RADIUS }) });
-        map.addLayer({ id: src + '-point', type: 'circle', source: src,
-            paint: OH2O.pointPaint(key, { 'circle-stroke-width': 2, 'circle-radius': OH2O.DETAIL_POINT_RADIUS }) });
-        OH2O.addDetailLabel(map, src, key, { id: src + '-label' });
+        var mark = OH2O.marks[key] ? key : 'well';
+        OH2O.addMarkLayer(map, src + '-point', src, mark,
+            { size: (2 * OH2O.DETAIL_POINT_RADIUS) / OH2O.marks[mark].size });
+        OH2O.addDetailLabel(map, src, key, { id: src + '-label', offset: [0, 1.3] });
         if (popup) OH2O.attachPopup(map, src + '-point', popup);
     } else {
-        map.addLayer({ id: src + '-fill', type: 'fill', source: src,
-            paint: { 'fill-color': color, 'fill-opacity': 0.35 } });
-        map.addLayer({ id: src + '-outline', type: 'line', source: src,
-            paint: { 'line-color': color, 'line-width': 2 } });
+        OH2O.addAreaLayers(map, src, src, key);
         var labelSrc = src;
         if (opts.labelAt === 'point_on_surface' && opts.geojson) {
             var pts = (opts.geojson.features || [])

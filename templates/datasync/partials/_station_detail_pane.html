@@ -334,8 +334,8 @@
       card: 'detail-map-card', host: 'detail-map', dataEl: 'detail-geojson-data',
       source: 'station',
       popup: function (p) {
-        return '<strong>' + (p.station_name || 'Monitoring station') + '</strong><br>' +
-               'ID: ' + (p.external_station_id || '—');
+        return OH2O.popupHtml({ title: p.station_name || 'Monitoring station',
+          lines: ['ID: ' + (p.external_station_id || '—')] });
       }
     });
   }
@@ -365,7 +365,9 @@
       return value || fallback;
     }
 
-    var axisColor = token('--color-text-secondary', '#8FA3AE');
+    // The page's stylesheet loads before this script, so every token resolves;
+    // no literal is kept as a fallback (it would drift from tokens.css).
+    var axisColor = token('--color-text-secondary');
 
     Chart.defaults.font.family = "'Public Sans', sans-serif";
     Chart.defaults.color = axisColor;
@@ -375,7 +377,7 @@
     var primaryColor = freshness === 'fresh' ? token('--color-fresh', axisColor)
                      : freshness === 'stale' ? token('--color-stale', axisColor)
                      : token('--color-dormant', axisColor);
-    var compareColor = token('--color-blue', '#1B7FAF'); // the compare series
+    var compareColor = token('--color-blue', axisColor); // the compare series
     // Lines for the other daily statistics of the selected parameter. The daily
     // high (or a lone line) keeps primaryColor.
     var averageColor = token('--color-accent', axisColor);

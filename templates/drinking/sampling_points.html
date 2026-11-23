@@ -58,7 +58,7 @@
   {% endcomment %}
   {% comment %} No records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
-    {% include "partials/_map_card_head.html" with head_id="sampling-points-map-head" title="Sampling points" noun="sampling point" noun_plural="sampling points" key_label="Facility with sampling points" swatch="dot" swatch_token="blue-bright" line=line %}
+    {% include "partials/_map_card_head.html" with head_id="sampling-points-map-head" title="Sampling points" noun="sampling point" noun_plural="sampling points" key_label="Facility with sampling points" swatch="mark" swatch_token="drinking" line=line %}
     {% if located_count %}
     <div id="drinking-overview-map" style="height: 380px; width: 100%;"></div>
     {% endif %}

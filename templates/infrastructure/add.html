@@ -408,6 +408,8 @@
   // which on a wells-less deployment is a type that does not exist.
   var typeInput = document.querySelector('input[name="infra_type"]');
   var currentType = typeInput ? typeInput.value : 'well';
+  var MARK_COLOR = { well: OH2O.colors.well, diversion: OH2O.colors.pod,
+                     storage: OH2O.colors.recharge, recharge: OH2O.colors.recharge }[currentType] || OH2O.colors.frame;
   var drawMode = 'point';
   var marker = null;
   var vertices = [];
@@ -505,46 +507,48 @@
     // own center/zoom, unchanged below).
     OH2O.frameOnBoundary(map, '{% url "geography:boundaries_geojson" %}').then(function() {
       map.addSource('drawing', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      // The outline being drawn is in the frame colour, not gold: gold is a well.
       map.addLayer({
         id: 'drawing-line', type: 'line', source: 'drawing',
-        paint: { 'line-color': OH2O.colors.gold, 'line-width': 2, 'line-dasharray': [4, 2] }
+        paint: { 'line-color': OH2O.colors.frame, 'line-width': 2, 'line-dasharray': [4, 2] }
       });
       map.addLayer({
         id: 'drawing-vertices', type: 'circle', source: 'drawing',
         filter: ['==', '$type', 'Point'],
-        paint: { 'circle-radius': 5, 'circle-color': OH2O.colors.gold, 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
+        paint: { 'circle-radius': 5, 'circle-color': OH2O.colors.frame, 'circle-stroke-width': 1.5, 'circle-stroke-color': OH2O.colors.frameCasing }
       });
 
       map.addSource('finished', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      // A finished outline is a basin or pond: the recharge purple, as every map draws one.
       map.addLayer({
         id: 'finished-fill', type: 'fill', source: 'finished',
-        paint: { 'fill-color': OH2O.colors.blue, 'fill-opacity': 0.25 }
+        paint: { 'fill-color': OH2O.colors.recharge, 'fill-opacity': 0.25 }
       });
       map.addLayer({
         id: 'finished-line', type: 'line', source: 'finished',
-        paint: { 'line-color': OH2O.colors.blueBright, 'line-width': 2 }
+        paint: { 'line-color': OH2O.colors.recharge, 'line-width': 2 }
       });
 
       map.addSource('parcels', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addLayer({
         id: 'parcels-fill', type: 'fill', source: 'parcels',
-        paint: { 'fill-color': OH2O.colors.blueBright, 'fill-opacity': 0.12 },
+        paint: { 'fill-color': OH2O.colors.useArea, 'fill-opacity': 0.2 },
         layout: { 'visibility': 'none' }
       });
       map.addLayer({
         id: 'parcels-line', type: 'line', source: 'parcels',
-        paint: { 'line-color': OH2O.colors.blueBright, 'line-width': 1.5 },
+        paint: { 'line-color': OH2O.colors.useAreaLine, 'line-width': 1.5 },
         layout: { 'visibility': 'none' }
       });
 
       map.addSource('parcel-highlight', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addLayer({
         id: 'parcel-highlight-fill', type: 'fill', source: 'parcel-highlight',
-        paint: { 'fill-color': OH2O.colors.gold, 'fill-opacity': 0.25 }
+        paint: { 'fill-color': OH2O.colors.selection, 'fill-opacity': 0.25 }
       });
       map.addLayer({
         id: 'parcel-highlight-line', type: 'line', source: 'parcel-highlight',
-        paint: { 'line-color': OH2O.colors.gold, 'line-width': 2.5 }
+        paint: { 'line-color': OH2O.colors.selection, 'line-width': 2.5 }
       });
     });
   });
@@ -565,7 +569,9 @@
   // keystroke made the boxes impossible to edit).
   function placePoint(lngLat, fromTyping) {
     if (marker) marker.remove();
-    marker = new maplibregl.Marker({ color: OH2O.colors.gold, draggable: true })
+    // The pin takes the colour of the kind being added (a well gold, a point of
+    // diversion teal, a basin or pond purple), so gold still means a well.
+    marker = new maplibregl.Marker({ color: MARK_COLOR, draggable: true })
       .setLngLat(lngLat)
       .addTo(map);
     marker.on('dragend', function() {

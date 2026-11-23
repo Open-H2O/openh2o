@@ -263,8 +263,8 @@
       card: 'detail-map-card', host: 'detail-map', dataEl: 'detail-geojson-data',
       source: 'zone', labelAt: 'point_on_surface',
       popup: function (p) {
-        return '<strong>' + (p.name || 'Zone') + '</strong><br>' +
-               'Type: ' + (p.zone_type || '—');
+        return OH2O.popupHtml({ title: p.name || 'Zone',
+          lines: ['Type: ' + (p.zone_type_label || p.zone_type || '—')] });
       },
       onMapLoad: function (map) {
         var el = document.getElementById('detail-parcels-geojson-data');
@@ -274,20 +274,15 @@
         if (!fc || !fc.features || !fc.features.length) return;
         map.addSource('zone-parcels', { type: 'geojson', data: fc });
         var beforeId = map.getLayer('zone-fill') ? 'zone-fill' : undefined;
-        map.addLayer({
-          id: 'zone-parcels-fill', type: 'fill', source: 'zone-parcels',
-          paint: { 'fill-color': OH2O.entities.parcel.color, 'fill-opacity': 0.35 }
-        }, beforeId);
-        map.addLayer({
-          id: 'zone-parcels-outline', type: 'line', source: 'zone-parcels',
-          paint: { 'line-color': OH2O.entities.parcel.color, 'line-width': 1.5 }
-        }, beforeId);
+        // The zone's use areas in the use-area blue, beneath the zone's own line.
+        OH2O.addAreaLayers(map, 'zone-parcels', 'zone-parcels', 'parcel',
+          { beforeId: beforeId, linePaint: { 'line-width': 1.5 } });
         OH2O.attachPopup(map, 'zone-parcels-fill', function (p) {
           var acreage = p.area_acres != null
             ? parseFloat(p.area_acres).toFixed(2) + ' ac' : '—';
-          return '<strong>' + (p.parcel_number || 'Use area') + '</strong><br>' +
-                 'Acreage: ' + acreage + '<br>' +
-                 '<a href="' + PARCEL_DETAIL_URL.replace('/0/', '/' + p.pk + '/') + '">View use area &rarr;</a>';
+          return OH2O.popupHtml({ title: p.parcel_number || 'Use area',
+            lines: ['Acreage: ' + acreage],
+            link: { href: PARCEL_DETAIL_URL.replace('/0/', '/' + p.pk + '/'), text: 'View use area →' } });
         });
       }
     });

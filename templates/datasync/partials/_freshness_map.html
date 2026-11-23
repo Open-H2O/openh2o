@@ -20,7 +20,7 @@ The in-map legend box does not exist: the card's HEAD is the key
 saying the three freshness states. The map FOLLOWS THE
 LIST: `stations_freshness_geojson` serves every located station regardless
 of `is_active`, so filtering the list to "Not syncing" still draws those
-stations, and OH2O.followResults filters the glow/dots layers to the
+stations, and OH2O.followResults filters the marks and labels to the
 results partial's own pks, which honour all four of the list's filters
 (search, source, syncing, reporting).
 
@@ -39,8 +39,8 @@ results partial's own pks, which honour all four of the list's filters
   el._mapInit = true;
 
   // Plain-English freshness states + their dot colours, defined ONCE so the
-  // per-station popup and the two map layers can never drift apart. MapLibre
-  // paint takes a colour value and cannot resolve a custom property, so the
+  // per-station popup and the station marks can never drift apart. MapLibre
+  // and a canvas take a colour value and cannot resolve a custom property, so the
   // three values are read off the root element here, from the same tokens the
   // row dots and the card head's key use. The page's stylesheet is loaded
   // before this script runs, so no literal is kept as a fallback.
@@ -52,11 +52,6 @@ results partial's own pks, which honour all four of the list's filters
     stale: { label: 'Slightly behind', color: freshToken('--color-stale') },
     dead:  { label: 'Dormant',         color: freshToken('--color-dormant') }
   };
-
-  var FRESH_MATCH = ['match', ['get', 'freshness'],
-    'fresh', FRESH_META.fresh.color,
-    'stale', FRESH_META.stale.color,
-    FRESH_META.dead.color];
 
   var map = new maplibregl.Map({
     cooperativeGestures: true,  // plain scroll passes to the page; Cmd/Ctrl+scroll zooms
@@ -80,27 +75,13 @@ results partial's own pks, which honour all four of the list's filters
         var SRC = '{{ map_id }}-source';
         map.addSource(SRC, { type: 'geojson', data: data });
 
-        map.addLayer({
-          id: '{{ map_id }}-glow',
-          type: 'circle',
-          source: '{{ map_id }}-source',
-          paint: {
-            'circle-radius': 16,
-            'circle-opacity': 0.15,
-            'circle-blur': 1,
-            'circle-color': FRESH_MATCH
-          }
-        });
-
-        map.addLayer({
-          id: '{{ map_id }}-dots',
-          type: 'circle',
-          source: '{{ map_id }}-source',
-          paint: {
-            'circle-radius': 7,
-            'circle-color': FRESH_MATCH,
-            'circle-stroke-width': 1.5,
-            'circle-stroke-color': 'rgba(255,255,255,0.3)'
+        // The station's own mark, the triangle every map draws, in its
+        // freshness colour: the three states the card head keys.
+        OH2O.addMarkLayer(map, '{{ map_id }}-dots', SRC, 'station', {
+          colorBy: {
+            prop: 'freshness',
+            values: { fresh: FRESH_META.fresh.color, stale: FRESH_META.stale.color },
+            other: FRESH_META.dead.color
           }
         });
 
@@ -122,7 +103,7 @@ results partial's own pks, which honour all four of the list's filters
         // already honour all four filters (q, source, active, reporting),
         // so this is the ONE place that decides what the map draws.
         OH2O.followResults(map, {
-          layers: ['{{ map_id }}-glow', '{{ map_id }}-dots', '{{ map_id }}-label'],
+          layers: ['{{ map_id }}-dots', '{{ map_id }}-label'],
           source: SRC,
           data: data,
           pksEl: 'results-map-pks',
@@ -145,37 +126,37 @@ results partial's own pks, which honour all four of the list's filters
             age = Math.round(p.hours_since_data / 24) + ' days ago';
           }
 
-          // Plain-English freshness + the matching dot colour, from the shared map.
-          var freshMeta = FRESH_META[p.freshness] || { label: p.freshness, color: FRESH_META.dead.color };
+          // Plain-English freshness beside the station's triangle in its colour.
+          var dead = '<span class="swatch-mark swatch-mark-station state-dead"></span>';
+          var stateSwatch = {
+            fresh: '<span class="swatch-mark swatch-mark-station state-fresh"></span>',
+            stale: '<span class="swatch-mark swatch-mark-station state-stale"></span>',
+            dead: dead
+          }[p.freshness] || dead;
+          var stateLabel = FRESH_META[p.freshness] ? FRESH_META[p.freshness].label : p.freshness;
+          var esc = OH2O.escapeHtml;
 
           // The actual latest measurement, when we have one.
-          var readingLine;
+          var reading;
           if (p.latest_value != null) {
             var unit = p.latest_unit ? ' ' + p.latest_unit : '';
-            var param = p.latest_parameter ? ' &middot; ' + p.latest_parameter : '';
-            readingLine =
-              '<div style="font-size:15px;font-weight:600;margin:2px 0 4px;">' +
-              Number(p.latest_value).toLocaleString() + unit +
-              '<span style="color:var(--color-text-secondary,#8FA3AE);font-size:12px;font-weight:400;">' + param + '</span></div>';
+            reading = { html: '<span class="popup-figure">' + esc(Number(p.latest_value).toLocaleString() + unit) + '</span>' +
+                              (p.latest_parameter ? ' · ' + esc(p.latest_parameter) : '') };
           } else {
-            readingLine = '<div style="color:var(--color-text-secondary,#8FA3AE);margin:2px 0 4px;">No published reading</div>';
+            reading = 'No published reading';
           }
 
           new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
             .setLngLat(e.lngLat)
-            .setHTML(
-              '<div style="font-family:var(--font-display,sans-serif);color:var(--color-text-primary,#E7EEF2);background:var(--color-elevated,#1A2633);padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;min-width:180px;">' +
-              '<div style="font-weight:600;font-size:13px;">' + p.station_name + '</div>' +
-              '<div style="color:var(--color-text-secondary,#8FA3AE);font-size:11px;margin-bottom:4px;">' +
-                (p.data_source_code || '').toUpperCase() + ' &middot; ' + p.external_station_id + '</div>' +
-              readingLine +
-              '<div style="display:flex;align-items:center;gap:6px;">' +
-                '<span style="width:8px;height:8px;border-radius:50%;background:' + freshMeta.color + ';display:inline-block;"></span>' +
-                '<span style="color:var(--color-text-secondary,#8FA3AE);">' + freshMeta.label + ' &middot; ' + age + '</span></div>' +
-              '<a href="/datasync/stations/' + p.pk + '/" ' +
-                'style="display:inline-block;margin-top:6px;color:var(--color-blue-bright,#3DB4E0);text-decoration:none;font-size:11px;">View station &rarr;</a>' +
-              '</div>'
-            )
+            .setHTML(OH2O.popupHtml({
+              title: p.label || p.station_name,
+              lines: [
+                { text: (p.data_source_code || '').toUpperCase() + ' · ' + p.external_station_id, muted: true },
+                reading,
+                { html: stateSwatch + esc(stateLabel + ' · ' + age) }
+              ],
+              link: { href: '/datasync/stations/' + p.pk + '/', text: 'View station →' }
+            }))
             .addTo(map);
         });
 

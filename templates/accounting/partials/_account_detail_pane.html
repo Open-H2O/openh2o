@@ -172,7 +172,7 @@
     {% endcomment %}
     {% if on_full_page and 'parcels' in enabled_modules and use_areas_all_count %}
     <div class="card-raised page-grid-account-full page-grid-account-map" style="padding: 0; overflow: hidden;">
-      {% include "partials/_map_card_head.html" with head_id="account-use-areas-map-head" title="Use areas" noun="use area" noun_plural="use areas" key_label="Use area" swatch="fill" swatch_token="blue" all_count=use_areas_all_count located_count=use_areas_located_count %}
+      {% include "partials/_map_card_head.html" with head_id="account-use-areas-map-head" title="Use areas" noun="use area" noun_plural="use areas" key_label="Use area" swatch="fill" swatch_token="use-area" all_count=use_areas_all_count located_count=use_areas_located_count %}
       {% if use_areas_located_count %}
       <div id="account-use-areas-map" style="height: 380px; width: 100%;"></div>
       {% endif %}

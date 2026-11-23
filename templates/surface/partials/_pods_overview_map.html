@@ -41,7 +41,6 @@ Variables:
     if (!el || el._mapInit) return;
     el._mapInit = true;
 
-    var COLOR = OH2O.entities.pod.color;   // the POD symbology on the big map
     var SRC = '{{ map_id }}-source';
 
     var map = new maplibregl.Map({
@@ -69,21 +68,8 @@ Variables:
 
           map.addSource(SRC, { type: 'geojson', data: data });
 
-          map.addLayer({
-            id: '{{ map_id }}-glow',
-            type: 'circle',
-            source: SRC,
-            paint: { 'circle-radius': 14, 'circle-color': COLOR, 'circle-opacity': 0.15, 'circle-blur': 1 }
-          });
-          map.addLayer({
-            id: '{{ map_id }}-dots',
-            type: 'circle',
-            source: SRC,
-            paint: {
-              'circle-radius': 6, 'circle-color': COLOR,
-              'circle-stroke-width': 1.5, 'circle-stroke-color': 'rgba(255,255,255,0.3)'
-            }
-          });
+          // The kind's own mark, as every map draws it (OH2O.addMarkLayer).
+          OH2O.addMarkLayer(map, '{{ map_id }}-dots', SRC, 'pod');
           // The always-on label, after the dots so it draws above them. The
           // label may sit on any side of its dot (variable anchors), so a label
           // that would collide below finds room beside: measured at the fitted
@@ -107,7 +93,7 @@ Variables:
           // edge at 40, and MapLibre still places a label up to 100px outside
           // the canvas, so the room has to be in the frame.
           OH2O.followResults(map, {
-            layers: ['{{ map_id }}-glow', '{{ map_id }}-dots', '{{ map_id }}-label'],
+            layers: ['{{ map_id }}-dots', '{{ map_id }}-label'],
             source: SRC,
             data: data,
             pksEl: 'results-map-pks',
@@ -119,17 +105,13 @@ Variables:
 
           map.on('click', '{{ map_id }}-dots', function(e) {
             var p = e.features[0].properties;
-            var sub = [p.stream_name, p.status].filter(Boolean).join(' &middot; ');
             new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
               .setLngLat(e.features[0].geometry.coordinates)
-              .setHTML(
-                '<div style="font-family:var(--font-display,sans-serif);color:var(--color-text-primary,#E7EEF2);background:var(--color-elevated,#1A2633);padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;min-width:180px;">' +
-                '<div style="font-weight:600;font-size:13px;">' + (p.name || 'Point of diversion') + '</div>' +
-                (sub ? '<div style="color:var(--color-text-secondary,#8FA3AE);font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
-                '<a href="' + detailUrl.replace('/0/', '/' + p.pk + '/') + '" ' +
-                  'style="display:inline-block;margin-top:6px;color:var(--color-blue-bright,#3DB4E0);text-decoration:none;font-size:11px;">View diversion &rarr;</a>' +
-                '</div>'
-              )
+              .setHTML(OH2O.popupHtml({
+                title: p.label || p.name || 'Point of diversion',
+                lines: [[p.stream_name, p.status].filter(Boolean).join(' · ')],
+                link: { href: detailUrl.replace('/0/', '/' + p.pk + '/'), text: 'View diversion →' }
+              }))
               .addTo(map);
           });
 

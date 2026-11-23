@@ -316,9 +316,8 @@
       // Same colour the reader just saw on the overview map and the district
       // map. One entity, one colour, everywhere.
       popup: function (p) {
-        return '<strong>' + (p.name || p.facility_id || 'Facility') + '</strong><br>' +
-               'Type: ' + (p.facility_type || '—') + '<br>' +
-               'System: ' + (p.system_name || '—');
+        return OH2O.popupHtml({ title: p.name || p.facility_id || 'Facility',
+          lines: ['Type: ' + (p.facility_type || '—'), 'System: ' + (p.system_name || '—')] });
       }
     });
   }

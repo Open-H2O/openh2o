@@ -341,8 +341,8 @@
       card: 'detail-map-card', host: 'detail-map', dataEl: 'detail-geojson-data',
       source: 'well',
       popup: function (p) {
-        return '<strong>' + (p.name || 'Unnamed well') + '</strong><br>' +
-               'Local registration ID: ' + (p.well_registration_id || '—');
+        return OH2O.popupHtml({ title: p.name || 'Unnamed well',
+          lines: ['Local registration ID: ' + (p.well_registration_id || '—')] });
       }
     });
   }

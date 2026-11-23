@@ -8,7 +8,7 @@ two ids are NOT interchangeable — tests/test_drinking_map.py asserts
 `drinking-overview-map` present on one page and absent on the other, so reusing
 it here would break that pair in opposite directions. Everything below is
 already parameterised on `map_id` (the host, the source `{{ map_id }}-source`
-and both layers `-glow` / `-dots`), which is why the second page cost no new
+and its layers `-dots` / `-label`), which is why the second page cost no new
 JavaScript.
 
 The Bucket-3 overview map (DESIGN.md "Kinds of page") for the drinking-water
@@ -44,7 +44,6 @@ Variables:
     if (!el || el._mapInit) return;
     el._mapInit = true;
 
-    var COLOR = OH2O.entities.drinking.color;
 
     var map = new maplibregl.Map({
       cooperativeGestures: true,  // plain scroll passes to the page; Cmd/Ctrl+scroll zooms
@@ -64,54 +63,27 @@ Variables:
     var facilityUrl = '{% url "drinking:facility_detail" 0 %}';
     var pointsUrl = '{% url "drinking:sampling_points" %}';
 
-    function escapeHtml(text) {
-      return String(text == null ? '' : text)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-
     function popupFor(p, lngLat) {
-      // MapLibre serialises array properties to a JSON string in the feature it
-      // hands back, so ps_codes arrives as text on click and as an array here
-      // only if it was never round-tripped. Handle both.
       var codes = p.ps_codes;
       if (typeof codes === 'string') {
         try { codes = JSON.parse(codes); } catch (e) { codes = []; }
       }
       codes = codes || [];
 
-      var title = p.name || p.facility_id || 'Facility';
-      // Escape the PARTS, then join with the raw entity. Escaping the joined
-      // string turns the separator's own "&" into "&amp;" and the popup reads
-      // "Well &middot; CITY OF MERCED" literally.
-      var sub = [p.facility_type, p.system_name]
-        .filter(Boolean).map(escapeHtml).join(' &middot; ');
-      var sampled = codes.length
-        ? '<div style="color:var(--color-text-secondary,#8FA3AE);font-size:11px;margin-top:6px;">Sampled at ' +
-          escapeHtml(codes.join(', ')) + '</div>'
-        : '<div style="color:var(--color-text-secondary,#8FA3AE);font-size:11px;margin-top:6px;">No sampling point recorded here</div>';
-
-      // One point at this facility gets a direct link to the inventory filtered
-      // to it; more than one has no single page to go to, so the facility page
-      // (which lists them all) is the honest destination.
-      var pointLink = codes.length === 1
-        ? '<a href="' + pointsUrl + '?q=' + encodeURIComponent(codes[0]) + '" ' +
-          'style="display:block;margin-top:4px;color:var(--color-blue-bright,#3DB4E0);text-decoration:none;font-size:11px;">' +
-          'Find this sampling point &rarr;</a>'
-        : '';
-
+      var links = [{ href: facilityUrl.replace('/0/', '/' + p.pk + '/'), text: 'View facility →' }];
+      if (codes.length === 1) {
+        links.push({ href: pointsUrl + '?q=' + encodeURIComponent(codes[0]), text: 'Find this sampling point →' });
+      }
       new maplibregl.Popup({ closeButton: true, maxWidth: '280px' })
         .setLngLat(lngLat)
-        .setHTML(
-          '<div style="font-family:var(--font-display,sans-serif);color:var(--color-text-primary,#E7EEF2);background:var(--color-elevated,#1A2633);padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;min-width:180px;">' +
-          '<div style="font-weight:600;font-size:13px;">' + escapeHtml(title) + '</div>' +
-          (sub ? '<div style="color:var(--color-text-secondary,#8FA3AE);font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
-          sampled +
-          '<a href="' + facilityUrl.replace('/0/', '/' + p.pk + '/') + '" ' +
-            'style="display:inline-block;margin-top:6px;color:var(--color-blue-bright,#3DB4E0);text-decoration:none;font-size:11px;">View facility &rarr;</a>' +
-          pointLink +
-          '</div>'
-        )
+        .setHTML(OH2O.popupHtml({
+          title: p.label || p.name || p.facility_id || 'Facility',
+          lines: [
+            [p.facility_type, p.system_name].filter(Boolean).join(' · '),
+            codes.length ? 'Sampled at ' + codes.join(', ') : 'No sampling point recorded here'
+          ],
+          links: links
+        }))
         .addTo(map);
     }
 
@@ -124,21 +96,8 @@ Variables:
           var SRC = '{{ map_id }}-source';
           map.addSource(SRC, { type: 'geojson', data: data });
 
-          map.addLayer({
-            id: '{{ map_id }}-glow',
-            type: 'circle',
-            source: SRC,
-            paint: { 'circle-radius': 14, 'circle-color': COLOR, 'circle-opacity': 0.15, 'circle-blur': 1 }
-          });
-          map.addLayer({
-            id: '{{ map_id }}-dots',
-            type: 'circle',
-            source: SRC,
-            paint: {
-              'circle-radius': 6, 'circle-color': COLOR,
-              'circle-stroke-width': 1.5, 'circle-stroke-color': 'rgba(255,255,255,0.3)'
-            }
-          });
+          // The facility's own mark, a light-blue ring, as every map draws it.
+          OH2O.addMarkLayer(map, '{{ map_id }}-dots', SRC, 'drinking');
 
           // The always-on label per facility (the overview map card):
           // its name beside the dot on whichever side has room; a label that
@@ -158,7 +117,7 @@ Variables:
           // partials emit the same results-map-pks id, so the defaults fit
           // either host with no per-page wiring.
           OH2O.followResults(map, {
-            layers: ['{{ map_id }}-glow', '{{ map_id }}-dots', '{{ map_id }}-label'],
+            layers: ['{{ map_id }}-dots', '{{ map_id }}-label'],
             source: SRC,
             data: data,
             pksEl: 'results-map-pks',

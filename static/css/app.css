@@ -5224,7 +5224,7 @@ details[open] > summary .disclosure-mark {
     margin: var(--space-xs) 0 0;
 }
 /* The key is the span that holds the swatch. */
-.map-card-head > p > span:has(.swatch-dot, .swatch-fill) {
+.map-card-head > p > span:has(.swatch-dot, .swatch-fill, .swatch-mark, .swatch-line) {
     display: inline-flex;
     align-items: center;
     gap: var(--space-sm);
@@ -5309,6 +5309,7 @@ details[open] > summary .disclosure-mark {
     gap: var(--space-sm);
     white-space: nowrap;
 }
+.map-card-head-key .swatch-line { width: 16px; }
 .map-card-head-key .swatch-dot {
     background: currentColor;
 }

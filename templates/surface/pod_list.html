@@ -46,7 +46,7 @@
        this is the page's only count line. {% endcomment %}
   {% comment %} No records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
-    {% include "partials/_map_card_head.html" with head_id="pods-overview-map-head" title="Points of diversion" noun="point of diversion" noun_plural="points of diversion" key_label="Point of diversion" swatch="dot" swatch_token="teal" %}
+    {% include "partials/_map_card_head.html" with head_id="pods-overview-map-head" title="Points of diversion" noun="point of diversion" noun_plural="points of diversion" key_label="Point of diversion" swatch="mark" swatch_token="pod" %}
     {% if located_count %}
     <div id="pods-overview-map" style="height: 380px; width: 100%;"></div>
     {% endif %}

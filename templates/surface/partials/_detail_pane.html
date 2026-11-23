@@ -487,11 +487,11 @@
       card: 'detail-map-card', host: 'detail-map', dataEl: 'detail-geojson-data',
       source: 'pod',
       popup: function (p) {
-        return '<strong>' + (p.name || 'Point of diversion') + '</strong><br>' +
-               'Stream: ' + (p.stream_name || '—');
+        return OH2O.popupHtml({ title: p.label || p.name || 'Point of diversion',
+          lines: ['Stream: ' + (p.stream_name || '—')] });
       },
       // Hydrography substrate: the river/canal this diversion sits on. Added once
-      // beneath the POD glow so the diversion point always reads on top.
+      // beneath the diversion point's mark so the diversion point always reads on top.
       onMapLoad: function (map) {
         if (map.getSource('flowlines')) return;
         fetch(FLOWLINES_URL)
@@ -500,7 +500,7 @@
             if (!fc || !fc.features || !fc.features.length) return;
             if (map.getSource('flowlines')) return;
             map.addSource('flowlines', { type: 'geojson', data: fc });
-            var beforeId = map.getLayer('pod-glow') ? 'pod-glow' : undefined;
+            var beforeId = map.getLayer('pod-point') ? 'pod-point' : undefined;
             map.addLayer({
               id: 'flowlines-line', type: 'line', source: 'flowlines',
               paint: { 'line-color': ['case',

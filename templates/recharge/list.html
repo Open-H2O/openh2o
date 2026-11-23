@@ -50,7 +50,7 @@
        the page's only count line. {% endcomment %}
   {% comment %} No records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
-    {% include "partials/_map_card_head.html" with head_id="recharge-overview-map-head" title="Recharge sites" noun="recharge site" noun_plural="recharge sites" key_label="Recharge site" swatch="fill" swatch_token="purple" %}
+    {% include "partials/_map_card_head.html" with head_id="recharge-overview-map-head" title="Recharge sites" noun="recharge site" noun_plural="recharge sites" key_label="Recharge site" swatch="mark" swatch_token="recharge" %}
     {% if located_count %}
     <div id="recharge-overview-map" style="height: 380px; width: 100%;"></div>
     {% endif %}

@@ -1,0 +1,10 @@
+{% comment %}
+One key on the map card's head (partials/_map_card_head.html): the swatch in the
+shape the map draws, then the name. swatch is "mark" (a record's mark: the
+token names the kind, well / pod / recharge / drinking / station, and
+map-engine.css draws its shape in its role colour), "fill" (an area's fill in
+the --color-entity-* token) or "line-dash" (a zone's dashed line in the token).
+A second key (key2_label, swatch2, swatch2_token) follows when the map draws
+two kinds of line, as the Zones map does; the two sit together at the right, as
+the Monitoring page's three freshness keys do (.map-card-head-keys).
+{% endcomment %}{% if key2_label %}<span class="map-card-head-keys"><span class="map-card-head-key">{% if swatch == "mark" %}<span class="swatch-mark swatch-mark-{{ swatch_token }}"></span>{% elif swatch == "line-dash" %}<span class="swatch-line swatch-line-dash" style="color: var(--color-entity-{{ swatch_token }});"></span>{% else %}<span class="swatch-{{ swatch|default:'fill' }}" style="color: var(--color-entity-{{ swatch_token }});"></span>{% endif %}{{ key_label }}</span><span class="map-card-head-key">{% if swatch2 == "mark" %}<span class="swatch-mark swatch-mark-{{ swatch2_token }}"></span>{% else %}<span class="swatch-line swatch-line-dash" style="color: var(--color-entity-{{ swatch2_token }});"></span>{% endif %}{{ key2_label }}</span></span>{% else %}<span>{% if swatch == "mark" %}<span class="swatch-mark swatch-mark-{{ swatch_token }}"></span>{% elif swatch == "line-dash" %}<span class="swatch-line swatch-line-dash" style="color: var(--color-entity-{{ swatch_token }});"></span>{% else %}<span class="swatch-{{ swatch|default:'fill' }}" style="color: var(--color-entity-{{ swatch_token }});"></span>{% endif %}{{ key_label }}</span>{% endif %}

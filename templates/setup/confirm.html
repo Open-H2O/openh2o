@@ -168,13 +168,15 @@
       data: { type: 'Feature', geometry: boundaryGeojson, properties: {} },
     });
 
+    // The boundary is the frame, as every map draws it: a light line over a dark casing.
     map.addLayer({
-      id: 'boundary-fill',
-      type: 'fill',
+      id: 'boundary-casing',
+      type: 'line',
       source: 'boundary',
       paint: {
-        'fill-color': OH2O.colors.blue,
-        'fill-opacity': 0.18,
+        'line-color': OH2O.colors.frameCasing,
+        'line-width': 5,
+        'line-opacity': 0.55,
       },
     });
 
@@ -183,9 +185,9 @@
       type: 'line',
       source: 'boundary',
       paint: {
-        'line-color': OH2O.colors.blueBright,
+        'line-color': OH2O.colors.frame,
         'line-width': 2,
-        'line-opacity': 0.8,
+        'line-opacity': 0.95,
       },
     });
 

@@ -47,7 +47,7 @@
        so this is the page's only count line. {% endcomment %}
   {% comment %} No records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
-    {% include "partials/_map_card_head.html" with head_id="zones-overview-map-head" title="Zones" noun="zone" noun_plural="zones" key_label="Zone boundary" swatch="fill" swatch_token="green" %}
+    {% include "partials/_map_card_head.html" with head_id="zones-overview-map-head" title="Zones" noun="zone" noun_plural="zones" key_label="Management area" swatch="line-dash" swatch_token="management-area" key2_label="Subbasin or other area" swatch2="line-dash" swatch2_token="service-area" %}
     {% if located_count %}
     <div id="zones-overview-map" style="height: 380px; width: 100%;"></div>
     {% endif %}

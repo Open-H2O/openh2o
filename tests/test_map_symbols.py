@@ -424,17 +424,21 @@ class TestOverviewMapsDrawTheSharedMarks:
             f"{template} reads an entity colour rather than its role colour"
         )
 
-    def test_use_areas_are_the_use_area_blue(self):
-        text = _source("parcels/partials/_parcels_overview_map.html")
-        assert "OH2O.colors.useArea" in text and "OH2O.colors.useAreaLine" in text
-
-    def test_recharge_basins_are_the_recharge_purple(self):
-        assert "OH2O.colors.recharge" in _source("recharge/partials/_recharge_overview_map.html")
-
-    def test_management_areas_are_the_sand_dashed_line(self):
-        text = _source("geography/partials/_zones_overview_map.html")
-        assert "OH2O.colors.managementArea" in text
-        assert "line-dasharray" in text
+    @pytest.mark.parametrize("template,key,fill,line,dashed", [
+        ("parcels/partials/_parcels_overview_map.html", "parcel", "useArea", "useAreaLine", False),
+        ("recharge/partials/_recharge_overview_map.html", "recharge", "recharge", "recharge", False),
+        ("geography/partials/_zones_overview_map.html", "zone", "managementArea", "managementArea", True),
+    ])
+    def test_areas_are_drawn_in_their_role_colours(self, template, key, fill, line, dashed):
+        """The overview draws its areas through the shared helper, and the helper's
+        entry for that kind of area names its role colours (a zone a dashed line)."""
+        assert re.search(r"OH2O\.addAreaLayers\(map,[^;]*'%s'" % key, _source(template)), (
+            f"{template} does not draw its areas through OH2O.addAreaLayers('{key}')"
+        )
+        areas = _object_literal(_map_core(), "OH2O.areas")
+        entry = re.search(r"\b%s:\s*\{([^\n]*)" % key, areas).group(1)
+        assert f"fill: '{fill}'" in entry and f"line: '{line}'" in entry, entry
+        assert ("dash:" in entry) is dashed, entry
 
     def test_the_freshness_map_keeps_its_three_colours_on_the_triangle(self):
         text = _source("datasync/partials/_freshness_map.html")

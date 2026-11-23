@@ -10,10 +10,11 @@ list counts, in the same three states on every page:
 
 and, when nothing has a geometry, "No diversion point has a location yet."
 (the page then builds no map at all). The key sits at the right of the same
-line: a .swatch-dot (points) or .swatch-fill (polygons) from map-engine.css in
-the entity's colour, read off its --color-entity-* token so it can never
-disagree with the paint (tests/test_map_palette_single_source.py holds the
-token and OH2O.colors equal), and the mark's name. Copy rule 11: the key names
+line (partials/_map_card_key.html): a record's mark in its own shape
+(.swatch-mark-<kind>), an area's fill or a zone's dashed line, each in its
+--color-entity-* role token so it can never disagree with the paint
+(tests/test_map_palette_single_source.py holds the token and OH2O.colors
+equal), and the mark's name. Copy rule 11: the key names
 the mark ("Diversion point"), never the water. Rule 17: noun phrases.
 
 It is the page's ONLY count line. The results partial includes it again with
@@ -28,8 +29,9 @@ Words, from the including page:
   noun          the thing in the count line, singular ("diversion point")
   noun_plural   its plural ("diversion points")
   key_label     what a mark is ("Diversion point")
-  swatch        "dot" for a point layer, "fill" for a polygon layer
-  swatch_token  the --color-entity-* token the layer paints with ("teal")
+  swatch        "mark" for a point layer, "fill" for an area, "line-dash" for a zone
+  swatch_token  the mark's kind ("pod") or the --color-entity-* role token ("use-area")
+  key2_label, swatch2, swatch2_token   a second key, when the map draws two kinds
   oob           True inside the results partial only
 Counts, from the view (the page and the results partial share one context):
   all_count             every row, unfiltered
@@ -51,7 +53,7 @@ count line (`.map-card-head > p` is the flex row). The words are unchanged.
   {% if line %}
   <p class="text-base text-secondary">
     <span>{{ line }}</span>
-    {% if located_count %}<span><span class="swatch-{{ swatch|default:'dot' }}" style="color: var(--color-entity-{{ swatch_token }});"></span>{{ key_label }}</span>{% endif %}
+    {% if located_count %}{% include "partials/_map_card_key.html" %}{% endif %}
   </p>
   {% elif not located_count %}
   <p class="text-base text-secondary">
@@ -60,17 +62,17 @@ count line (`.map-card-head > p` is the flex row). The words are unchanged.
   {% elif not q and not filter_words %}
   <p class="text-base text-secondary">
     <span>{{ all_count|intcomma }} {% if all_count == 1 %}{{ noun }}{% else %}{{ noun_plural }}{% endif %}, {% if located_count == all_count %}all on the map{% else %}{{ located_count|intcomma }} of them on the map{% endif %}</span>
-    <span><span class="swatch-{{ swatch|default:'dot' }}" style="color: var(--color-entity-{{ swatch_token }});"></span>{{ key_label }}</span>
+    {% include "partials/_map_card_key.html" %}
   </p>
   {% elif not total_count %}
   <p class="text-base text-secondary">
     <span>No {{ noun }}{% if q %} matches &ldquo;{{ q }}&rdquo;{% endif %}{% if filter_words %} {{ filter_words }}{% endif %}; the map shows none</span>
-    <span><span class="swatch-{{ swatch|default:'dot' }}" style="color: var(--color-entity-{{ swatch_token }});"></span>{{ key_label }}</span>
+    {% include "partials/_map_card_key.html" %}
   </p>
   {% else %}
   <p class="text-base text-secondary">
     <span>{{ total_count|intcomma }} of {{ all_count|intcomma }}{% if q %} match{{ total_count|pluralize:"es," }} &ldquo;{{ q }}&rdquo;{% endif %}{% if filter_words %} {{ filter_words }}{% endif %}; {% if not result_located_count %}{% if total_count == 1 %}it has{% else %}they have{% endif %} no recorded location, so the map shows none{% else %}the map shows {% if result_located_count == total_count %}{% if total_count == 1 %}it{% else %}those {{ total_count|intcomma }}{% endif %}{% elif result_located_count == 1 %}the only one with a location{% else %}the {{ result_located_count|intcomma }} with a location{% endif %}{% endif %}</span>
-    <span><span class="swatch-{{ swatch|default:'dot' }}" style="color: var(--color-entity-{{ swatch_token }});"></span>{{ key_label }}</span>
+    {% include "partials/_map_card_key.html" %}
   </p>
   {% endif %}
 </div>

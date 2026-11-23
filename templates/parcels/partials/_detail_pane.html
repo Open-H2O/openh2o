@@ -478,20 +478,14 @@
       map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
       OH2O.mountBasemapToggle(map, 'aerial');
       map.addSource('parcel', { type: 'geojson', data: geojson });
-      map.addLayer({
-        id: 'parcel-fill', type: 'fill', source: 'parcel',
-        paint: { 'fill-color': OH2O.colors.blue, 'fill-opacity': 0.35 }
-      });
-      map.addLayer({
-        id: 'parcel-outline', type: 'line', source: 'parcel',
-        paint: { 'line-color': OH2O.colors.blue, 'line-width': 2 }
-      });
+      // The use-area blue with its brighter outline, as every map draws a use area.
+      OH2O.addAreaLayers(map, 'parcel', 'parcel', 'parcel');
       OH2O.addDetailLabel(map, 'parcel', 'parcel', { id: 'parcel-label', anchor: 'center', offset: [0, 0] });
       // OpenET's fields, off until the person ticks the box.
       OH2O.mountOpenETFieldsToggle(map, openetFields());
       OH2O.attachPopup(map, 'parcel-fill', function (p) {
-        return '<strong>' + (p.parcel_number || 'Parcel') + '</strong><br>' +
-               'Owner: ' + (p.owner_name || '—');
+        return OH2O.popupHtml({ title: p.parcel_number || 'Use area',
+          lines: ['Owner: ' + (p.owner_name || '—')] });
       });
       // Re-read the CURRENT data element — the user may have switched parcels
       // while tiles were loading, so honour the latest selection.

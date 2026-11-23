@@ -41,15 +41,15 @@
 
   {% comment %} The overview map card: the head (the count line and
        the key on one row, partials/_map_card_head.html) above the map. A
-       well is a point: the key is a dot swatch in Gold
-       (--color-entity-gold), never teal or Pacific Blue. Clicking a well
+       well is a point: the key is the well's mark, a gold circle
+       (.swatch-mark-well), as every map draws it. Clicking a well
        opens its detail page; the list below is the type-to-find path to the
        same, and the map follows it (OH2O.followResults, rule 19). With
        nothing located the card is its head alone: no map host, no map
        built. {% endcomment %}
   {% comment %} No records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
-    {% include "partials/_map_card_head.html" with head_id="wells-overview-map-head" title="Wells" noun="well" noun_plural="wells" key_label="Well" swatch="dot" swatch_token="gold" %}
+    {% include "partials/_map_card_head.html" with head_id="wells-overview-map-head" title="Wells" noun="well" noun_plural="wells" key_label="Well" swatch="mark" swatch_token="well" %}
     {% if located_count %}
     <div id="wells-overview-map" style="height: 380px; width: 100%;"></div>
     {% endif %}

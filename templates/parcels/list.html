@@ -36,13 +36,13 @@
   {% comment %} The overview map card: the head (the count line and
        the key on one row, partials/_map_card_head.html) above the map. A use
        area is a polygon: the key is a filled swatch in Pacific Blue
-       (--color-entity-blue), never teal or gold. Clicking a use area opens
+       (--color-entity-use-area), never teal or gold. Clicking a use area opens
        its detail page; the list below is the type-to-find path to the same,
        and the map follows it (OH2O.followResults, rule 19). With nothing
        located the card is its head alone: no map host, no map built. {% endcomment %}
   {% comment %} No records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
-    {% include "partials/_map_card_head.html" with head_id="parcels-overview-map-head" title="Use areas" noun="use area" noun_plural="use areas" key_label="Use area" swatch="fill" swatch_token="blue" %}
+    {% include "partials/_map_card_head.html" with head_id="parcels-overview-map-head" title="Use areas" noun="use area" noun_plural="use areas" key_label="Use area" swatch="fill" swatch_token="use-area" %}
     {% if located_count %}
     <div id="parcels-overview-map" style="height: 380px; width: 100%;"></div>
     {% endif %}

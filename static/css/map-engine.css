@@ -190,6 +190,19 @@
 .swatch-diamond { flex-shrink:0; font-size:15px; line-height:1; }
 .swatch-fill { width:15px; height:15px; border-radius:var(--radius-sm); flex-shrink:0; border:1px solid rgba(255,255,255,0.18); }
 
+/* A key in the shape of a record's mark (OH2O.marks), for the card heads above
+   the overview maps and the popups: the colour is the role token, and the
+   freshness keys on the Monitoring page set it to their own colour. */
+.swatch-mark { display:inline-block; flex:none; box-sizing:border-box; }
+.swatch-mark-well { width:12px; height:12px; border-radius:50%; background:currentColor; border:1.5px solid var(--color-entity-selection); color:var(--color-entity-well); }
+.swatch-mark-pod { width:11px; height:11px; background:currentColor; border:1.5px solid var(--color-entity-selection); color:var(--color-entity-pod); }
+.swatch-mark-recharge { width:10px; height:10px; margin:0 2px; transform:rotate(45deg); background:currentColor; border:1.5px solid var(--color-entity-selection); color:var(--color-entity-recharge); }
+.swatch-mark-drinking { width:12px; height:12px; border-radius:50%; border:2.5px solid currentColor; color:var(--color-entity-drinking); }
+.swatch-mark-station { width:0; height:0; margin:0 1px; border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:11px solid currentColor; color:var(--color-entity-station); }
+.swatch-mark.state-fresh { color:var(--color-fresh); }
+.swatch-mark.state-stale { color:var(--color-stale); }
+.swatch-mark.state-dead { color:var(--color-dormant); }
+
 /* ── Layer section groupings ── */
 .layer-section { margin-bottom: 6px; padding-bottom:6px; border-bottom:1px solid var(--color-border, rgba(100,140,180,0.06)); }
 .layer-section:last-child { border-bottom:none; margin-bottom:0; }
@@ -273,6 +286,15 @@
     color:var(--color-accent, #46B3C4) !important; font-weight:600; text-decoration:none;
     border-top:1px solid var(--color-border, rgba(100,140,180,0.07)); padding:8px 14px 0;
 }
+/* Every map's popup is built by OH2O.popupHtml: the title above, then one
+   .popup-line per fact, then its links. A second link sits under the first
+   without a second rule. */
+.maplibregl-popup-content .popup-line { color: var(--color-text-secondary); }
+.maplibregl-popup-content .popup-line-muted { font-size: 11.5px; color: var(--color-text-tertiary); }
+.maplibregl-popup-content .popup-figure { font-size: 15px; font-weight: 600; color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
+.maplibregl-popup-content a + a { margin-top: 0; border-top: 0; padding-top: 4px; }
+/* A station's freshness beside its age in the popup: the station triangle in the freshness colour. */
+.popup-line .swatch-mark { margin-right: 6px; vertical-align: middle; }
 .maplibregl-popup-content a:hover { color:var(--color-accent-hover, #5FC2D2) !important; }
 .maplibregl-popup-tip { border-top-color:var(--color-card, #1a1e27) !important; }
 .maplibregl-popup-close-button { color:var(--color-text-tertiary, #6b7f94) !important; font-size:18px; padding:4px 8px; }

@@ -8,7 +8,7 @@ Diversions point map. Recharge sites are MIXED geometry: most are polygon
 basins, some are single points. So this map draws both, exactly as the big
 district map does (templates/geography/map.html): one GeoJSON source from
 recharge:sites_geojson (which already carries pk in properties), with a
-fill+outline pair filtered to non-points and a glow+circle pair filtered to
+fill+outline pair filtered to non-points and the recharge mark filtered to
 points. Clicking either opens a popup with the site name and a link to its
 full detail page. Modeled on _zones_overview_map.html.
 
@@ -24,7 +24,7 @@ uses). Three things beyond the marks:
     the basin rather than offset from a dot that is not there.
   * The map FOLLOWS THE LIST. The results partial emits the whole filtered
     queryset's pks as json_script#results-map-pks, and OH2O.followResults
-    filters the fill, outline, glow, dots AND the label layer here to those
+    filters the fill, outline, marks AND the label layer here to those
     pks and re-frames on first paint and after every htmx swap of #results.
     The geojson endpoint takes NO parameter: one fetch per page load, one
     source, filtered client-side.
@@ -50,7 +50,6 @@ Variables:
     if (!el || el._mapInit) return;
     el._mapInit = true;
 
-    var COLOR = OH2O.entities.recharge.color;   // matches the recharge symbology on the big map
     var SRC = '{{ map_id }}-source';
     var LABELS_SRC = '{{ map_id }}-labels';
 
@@ -110,17 +109,13 @@ Variables:
     var detailUrl = '{% url "recharge:detail" 0 %}';
 
     function popupFor(p, lngLat) {
-      var sub = [p.site_type, p.status].filter(Boolean).join(' &middot; ');
       new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
         .setLngLat(lngLat)
-        .setHTML(
-          '<div style="font-family:var(--font-display,sans-serif);color:var(--color-text-primary,#E7EEF2);background:var(--color-elevated,#1A2633);padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;min-width:180px;">' +
-          '<div style="font-weight:600;font-size:13px;">' + (p.name || 'Recharge site') + '</div>' +
-          (sub ? '<div style="color:var(--color-text-secondary,#8FA3AE);font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
-          '<a href="' + detailUrl.replace('/0/', '/' + p.pk + '/') + '" ' +
-            'style="display:inline-block;margin-top:6px;color:var(--color-blue-bright,#3DB4E0);text-decoration:none;font-size:11px;">View recharge site &rarr;</a>' +
-          '</div>'
-        )
+        .setHTML(OH2O.popupHtml({
+          title: p.label || p.name || 'Recharge site',
+          lines: [[p.site_type, p.status].filter(Boolean).join(' · ')],
+          link: { href: detailUrl.replace('/0/', '/' + p.pk + '/'), text: 'View recharge site →' }
+        }))
         .addTo(map);
     }
 
@@ -133,44 +128,18 @@ Variables:
           map.addSource(SRC, { type: 'geojson', data: data });
           map.addSource(LABELS_SRC, { type: 'geojson', data: { type: 'FeatureCollection', features: labelFeatures(data) } });
 
-          // Polygon basins: fill + outline. A fill/line layer ignores point
-          // features, so the $type filter keeps the two geometries from
-          // colliding. Opacity 0.22 -> 0.35 and outline 1.5 -> 2.5px: a small
-          // basin (33 to 263 e-6 deg^2) would read as two faint
-          // smudges at the fitted zoom otherwise.
-          map.addLayer({
-            id: '{{ map_id }}-fill',
-            type: 'fill',
-            source: SRC,
+          // Basins in the recharge purple and single-point sites as the recharge
+          // mark (a purple diamond), as every map draws them. A fill or line
+          // layer ignores point features, so the $type filter keeps the two
+          // geometries apart. The fill and outline are stronger than the Map
+          // page's (fill 0.35, outline 2.5 px): a small basin (33 to 263 e-6
+          // deg^2) reads as two faint smudges at the fitted zoom otherwise.
+          OH2O.addAreaLayers(map, '{{ map_id }}', SRC, 'recharge', {
             filter: ['!=', '$type', 'Point'],
-            paint: { 'fill-color': COLOR, 'fill-opacity': 0.35 }
+            fillPaint: { 'fill-opacity': 0.35 },
+            linePaint: { 'line-width': 2.5 }
           });
-          map.addLayer({
-            id: '{{ map_id }}-outline',
-            type: 'line',
-            source: SRC,
-            filter: ['!=', '$type', 'Point'],
-            paint: { 'line-color': COLOR, 'line-width': 2.5, 'line-opacity': 0.9 }
-          });
-
-          // Single-point sites: glow + marker, filtered to points.
-          map.addLayer({
-            id: '{{ map_id }}-glow',
-            type: 'circle',
-            source: SRC,
-            filter: ['==', '$type', 'Point'],
-            paint: { 'circle-radius': 14, 'circle-color': COLOR, 'circle-opacity': 0.15, 'circle-blur': 1 }
-          });
-          map.addLayer({
-            id: '{{ map_id }}-dots',
-            type: 'circle',
-            source: SRC,
-            filter: ['==', '$type', 'Point'],
-            paint: {
-              'circle-radius': 6, 'circle-color': COLOR,
-              'circle-stroke-width': 1.5, 'circle-stroke-color': 'rgba(255,255,255,0.3)'
-            }
-          });
+          OH2O.addMarkLayer(map, '{{ map_id }}-dots', SRC, 'recharge', { filter: ['==', '$type', 'Point'] });
 
           // The always-on label, one per site regardless of how many polygon
           // rings it has, placed on whichever side of its bbox centre has
@@ -192,7 +161,7 @@ Variables:
           // Filter every layer (marks and label alike) to the list's pks and
           // frame them: now, and after every htmx swap of #results.
           OH2O.followResults(map, {
-            layers: ['{{ map_id }}-fill', '{{ map_id }}-outline', '{{ map_id }}-glow', '{{ map_id }}-dots', '{{ map_id }}-label'],
+            layers: ['{{ map_id }}-fill', '{{ map_id }}-outline', '{{ map_id }}-dots', '{{ map_id }}-label'],
             source: SRC,
             data: data,
             pksEl: 'results-map-pks',

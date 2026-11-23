@@ -397,13 +397,13 @@
       card: 'detail-map-card', host: 'detail-map', dataEl: 'detail-geojson-data',
       source: 'pod',
       popup: function (p) {
-        return '<strong>' + (p.name || 'Point of diversion') + '</strong><br>' +
-               'Stream: ' + (p.stream_name || '—') + '<br>' +
-               'Max rate: ' + (p.max_rate_cfs ? parseFloat(p.max_rate_cfs).toFixed(2) + ' cfs' : '—') + '<br>' +
-               '<a href="' + POD_DETAIL_URL.replace('/0/', '/' + p.pk + '/') + '">View diversion &rarr;</a>';
+        return OH2O.popupHtml({ title: p.label || p.name || 'Point of diversion',
+          lines: ['Stream: ' + (p.stream_name || '—'),
+                  'Max rate: ' + (p.max_rate_cfs ? parseFloat(p.max_rate_cfs).toFixed(2) + ' cfs' : '—')],
+          link: { href: POD_DETAIL_URL.replace('/0/', '/' + p.pk + '/'), text: 'View diversion →' } });
       },
       // Hydrography substrate: the rivers/canals these diversions sit on. Added
-      // once beneath the POD glow so the diversion points always read on top.
+      // once beneath the diversion point's mark so the diversion points always read on top.
       onMapLoad: function (map) {
         if (map.getSource('flowlines')) return;
         fetch(FLOWLINES_URL)
@@ -412,7 +412,7 @@
             if (!fc || !fc.features || !fc.features.length) return;
             if (map.getSource('flowlines')) return;
             map.addSource('flowlines', { type: 'geojson', data: fc });
-            var beforeId = map.getLayer('pod-glow') ? 'pod-glow' : undefined;
+            var beforeId = map.getLayer('pod-point') ? 'pod-point' : undefined;
             map.addLayer({
               id: 'flowlines-line', type: 'line', source: 'flowlines',
               paint: { 'line-color': ['case',
