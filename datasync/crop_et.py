@@ -716,9 +716,6 @@ def in_finalized_year(first):
     ).exists()
 
 
-NO_FIGURE_ENTRIES = "The month's ledger entries are below."
-
-
 def no_figure_context(parcel, period):
     """The page of a month waiting for OpenET; None otherwise.
 
@@ -753,19 +750,16 @@ def no_figure_context(parcel, period):
                 "title": total,
                 "pills": supply_kind_lines([(kind, abs(amount)) for kind, amount in terms]),
             })
-    entries = list(billable.select_related("water_type").order_by("effective_date", "pk"))
-    # A finalized year is never asked for or calculated again (approved wording).
+    # A finalized year is never asked for or calculated again (approved wording). The month's
+    # ledger entries are on the page's second card (calculation_runs._month_ledger).
     finalized = in_finalized_year(first)
-    lines = (_finalized_lines(first) if finalized else _waiting_lines(first)) + (
-        " " + NO_FIGURE_ENTRIES if entries else ""
-    )
+    lines = _finalized_lines(first) if finalized else _waiting_lines(first)
     return {
         "headline": (
             f"No crop ET when finalized: {first:%B %Y}" if finalized else f"Waiting for OpenET: {first:%B %Y}"
         ),
         "lines": lines,
         "supplies": supplies,
-        "entries": entries,
     }
 
 

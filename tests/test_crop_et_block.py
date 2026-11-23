@@ -169,7 +169,7 @@ def test_a_month_openet_sent_no_crop_et_for_has_a_page_that_says_so(operator):
     assert (
         "OpenH2O cannot ask OpenET for crop ET until whoever runs the site sets its OpenET key. "
         "The month is left out of this use area's balance until then. Its meter readings still "
-        "count against the groundwater allocation. The month's ledger entries are below."
+        "count against the groundwater allocation."
     ) in main
     assert re.search(r'<div class="budget-seg-label">Surface water delivered</div>\s*<div class="budget-seg-value"><span[^>]*>4\.80', main)
     assert re.search(r'<span class="kind-pill kind-pill--unknown">Unknown</span>', main)

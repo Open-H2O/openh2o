@@ -30,9 +30,9 @@
   the stored four-decimal value, printed as the Decimal so it adds no figure
   site of its own.
 {% endcomment %}
-{% comment %} A month waiting for OpenET has no calculation, so its page is named by the use area and month alone. {% endcomment %}
-{% block title %}{% if no_figure %}{{ parcel.parcel_number }}, {{ month_label }}{% else %}Groundwater extraction (estimated), {{ parcel.parcel_number }}, {{ month_label }}{% endif %} - Open Water Accounting Platform{% endblock %}
-{% block page_title %}{% if no_figure %}{{ parcel.parcel_number }}, {{ month_label }}{% else %}Groundwater extraction (estimated){% endif %}{% endblock %}
+{% comment %} Only a month with an estimate is named for it; every short page (a metered or no-well month, a month waiting for OpenET) is named by the use area and month alone. {% endcomment %}
+{% block title %}{% if receipt %}Groundwater extraction (estimated), {{ parcel.parcel_number }}, {{ month_label }}{% else %}{{ parcel.parcel_number }}, {{ month_label }}{% endif %} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{% if receipt %}Groundwater extraction (estimated){% else %}{{ parcel.parcel_number }}, {{ month_label }}{% endif %}{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -157,11 +157,13 @@
 
   {% elif no_figure %}
   {% comment %} A month OpenET was asked about and sent no crop ET for: no
-     calculation, so the one card names the month and lists the month's ledger supplies,
-     each with the site's How measured pills. Nothing is estimated in its place. {% endcomment %}
+     calculation, so the short card names the month and lists the month's ledger supplies,
+     each with the site's How measured pills; the month's entries are on the card beside it.
+     Nothing is estimated in its place. {% endcomment %}
   <div class="text-tertiary text-sm receipt-facts">
     {{ parcel.parcel_number }}{% if parcel.owner_name %} &middot; {{ parcel.owner_name }}{% endif %} &middot; {{ parcel.area_acres|floatformat:2 }} acres
   </div>
+  <div class="page-grid-month">
   <div class="card-raised receipt receipt-short">
     <h2 class="receipt-headline">{{ no_figure.headline }}</h2>
     <p class="text-secondary receipt-lead">{{ no_figure.lines }}</p>
@@ -175,27 +177,8 @@
       {% endfor %}
     </div>
     {% endif %}
-    {% if no_figure.entries %}
-    {% comment %} The month's ledger entries the lines name, as the use area page's Recent ledger entries shows them. {% endcomment %}
-    <table class="data-table text-sm" style="margin-top: var(--space-lg);">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th class="th-right">Amount</th>
-          <th>Water</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for entry in no_figure.entries %}
-        <tr>
-          <td class="text-secondary">{{ entry.effective_date|date:"M d, Y" }}</td>
-          <td class="td-num {% if entry.amount_acre_feet >= 0 %}text-supply{% endif %}">{{ entry.amount_acre_feet|floatformat:2 }}</td>
-          <td class="text-tertiary">{{ entry|ledger_row_words }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% endif %}
+  </div>
+  {% include "accounting/partials/_month_ledger_card.html" %}
   </div>
   {% else %}
   {% comment %} The short page: a month with nothing to estimate, reached by
@@ -204,8 +187,9 @@
   <div class="text-tertiary text-sm receipt-facts">
     {{ parcel.parcel_number }}{% if parcel.owner_name %} &middot; {{ parcel.owner_name }}{% endif %} &middot; {{ parcel.area_acres|floatformat:2 }} acres &middot; Methodology: {{ methodology_plan_name|blank }}{% if methodology_settings_code %}, settings {{ methodology_settings_code }}{% endif %}
   </div>
-  {% comment %} One card at the content width (.receipt-short). The month's crop ET
+  {% comment %} The short card beside the month's ledger card (.page-grid-month). The month's crop ET
      sits inside it, the same block as the receipt's Crop ET figure. {% endcomment %}
+  <div class="page-grid-month">
   <div class="card-raised receipt receipt-short">
     <h2 class="receipt-headline">No groundwater extraction estimated for {{ month_label }}</h2>
     <p class="text-secondary receipt-lead">
@@ -216,6 +200,8 @@
       {% endif %}
     </p>
     {% if crop_et %}{% include "accounting/partials/_crop_et_segment.html" with value=crop_et.figure %}{% include "accounting/partials/_crop_et_bands.html" %}{% endif %}
+  </div>
+  {% include "accounting/partials/_month_ledger_card.html" %}
   </div>
   {% endif %}
 

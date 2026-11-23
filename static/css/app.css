@@ -2341,6 +2341,48 @@ html { color-scheme: dark; }
     margin-bottom: 0;
 }
 
+/* A short month page on the house grid, as the account page's row
+   (.page-grid-account): the short card on the left, three fifths of the row, and
+   the month's ledger card beside it, two fifths, both one height. Alone at the
+   content width the short card's sentence, Crop ET and field list ended at about
+   60% of it, the rest of the card and the page below it empty (two page readers).
+   Below 1,100px of window (the sidebar takes about 240) it is one column, as
+   .upload-split is; the page has no query container. Stacked, the short card
+   leads. */
+.page-grid-month {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: var(--space-lg);
+    align-items: stretch;
+}
+.page-grid-month > * {
+    min-width: 0;
+}
+@media (max-width: 1100px) {
+    .page-grid-month {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+.month-ledger-months {
+    margin-top: var(--space-lg);
+}
+/* The month on screen among its year's month chips: named, not a link, so no box. */
+.jump-nav .jump-nav-current,
+.jump-nav .jump-nav-none {
+    padding: 4px 10px;
+    border: 1px solid transparent;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+.jump-nav .jump-nav-current {
+    color: var(--color-text-primary);
+}
+/* A month with no page of its own (not yet ended, or nothing recorded). */
+.jump-nav .jump-nav-none {
+    color: var(--color-text-tertiary);
+    font-weight: 400;
+}
+
 .jump-nav {
     display: flex;
     flex-wrap: wrap;

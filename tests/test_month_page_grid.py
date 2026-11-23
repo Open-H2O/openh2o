@@ -146,9 +146,9 @@ def test_the_month_page_template_carries_no_inline_style():
     assert 'style="' not in TEMPLATE.read_text()
 
 
-def test_the_month_grid_has_two_columns_and_stacks_in_a_narrow_container():
+def test_the_month_grid_has_two_columns_and_stacks_in_a_narrow_window():
     css = APP_CSS.read_text()
     rule = re.search(r"(?m)^\.page-grid-month\s*\{([^}]*)\}", css)
     assert rule, "no .page-grid-month rule in app.css"
     assert "grid-template-columns" in rule.group(1)
-    assert re.search(r"@container[^{]*\{\s*\.page-grid-month\s*\{[^}]*minmax\(0, 1fr\)", css)
+    assert re.search(r"@(container|media)[^{]*\{\s*\.page-grid-month\s*\{[^}]*minmax\(0, 1fr\)", css)

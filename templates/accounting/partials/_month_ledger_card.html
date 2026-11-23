@@ -1,0 +1,44 @@
+{% load accounting_extras %}
+{% comment %}
+  The second card of a short month page (a metered month, a no-well month, a month waiting for
+  OpenET), beside the short card on .page-grid-month: the month's ledger entries, as the use area
+  page's Recent ledger entries shows them, then the water year's months. A month links to its own
+  page when it has one; the month on screen is marked and not a link. `month_ledger` is
+  calculation_runs._month_ledger().
+{% endcomment %}
+<div class="card-raised month-ledger">
+  <div class="mb-md page-grid-account-head">
+    <h2 class="section-header-flush">{{ month_ledger.label }} on the ledger</h2>
+  </div>
+  {% if month_ledger.entries %}
+  <table class="data-table text-sm">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th class="th-right">Amount</th>
+        <th>Water</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in month_ledger.entries %}
+      <tr>
+        <td class="text-secondary">{{ entry.effective_date|date:"M d, Y" }}</td>
+        <td class="td-num {% if entry.amount_acre_feet >= 0 %}text-supply{% endif %}">{{ entry.amount_acre_feet|floatformat:2 }}</td>
+        <td class="text-tertiary">{{ entry|ledger_row_words }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-secondary">No ledger entries for {{ month_ledger.label }}.</p>
+  {% endif %}
+  {% if month_ledger.months %}
+  <div class="month-ledger-months">
+    <div class="text-tertiary text-xs mb-sm">Other months, {{ month_ledger.water_year.name }}</div>
+    <nav class="jump-nav" aria-label="Other months, {{ month_ledger.water_year.name }}">
+      {% for month in month_ledger.months %}{% if month.current %}<span class="jump-nav-current" aria-current="page">{{ month.label }}</span>{% elif month.has_page %}<a href="{% url 'accounting:calculation_run_detail' parcel.pk month.period %}">{{ month.label }}</a>{% else %}<span class="jump-nav-none">{{ month.label }}</span>{% endif %}
+      {% endfor %}
+    </nav>
+  </div>
+  {% endif %}
+</div>

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The "How was this calculated?" page: one parcel's engine run, step by step, with the plain-words sentence for each step."""
+import datetime as dt
 from decimal import Decimal
 
 from django.contrib import messages
@@ -10,9 +11,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from accounting.models import CalculationRun
+from accounting.models import CalculationRun, ReportingPeriod
 from accounting.ledger_words import DELIVERY_SHARE_BY_FIXED, DELIVERY_SHARE_BY_USE
 from accounting.precip_math import METHOD_LABELS
+from core.modules import is_enabled
 from parcels.models import Parcel, ParcelLedger
 
 
@@ -400,7 +402,54 @@ def calculation_run_detail(request, parcel_id, period):
     else:
         printed = None
     context["field_list"] = _field_list(run, printed, context.get("rainfall_af"))
+    if not context["receipt"]:
+        context["month_ledger"] = _month_ledger(parcel, _first_of(period))
     return render(request, "accounting/calculation_run_detail.html", context)
+
+
+def _first_of(period):
+    """The first day of a ``"YYYY-MM"`` month."""
+    return dt.date(int(period[:4]), int(period[5:7]), 1)
+
+
+def _month_ledger(parcel, first):
+    """The second card of a short month page: the month's ledger entries and the water year's months.
+
+    Each month of the water year holding ``first`` is listed in order. A month links to its own
+    page when it has one: a calculation for the use area and month, or a month waiting for
+    OpenET. The month on screen is marked and not linked. With no water year on record the
+    months are left out.
+    """
+    entries = list(
+        ParcelLedger.objects.current()
+        .filter(parcel=parcel, effective_date__year=first.year, effective_date__month=first.month)
+        .select_related("water_type")
+        .order_by("effective_date", "pk")
+    )
+    year = ReportingPeriod.objects.filter(start_date__lte=first, end_date__gte=first).first()
+    months = []
+    if year is not None:
+        firsts = []
+        month = year.start_date.replace(day=1)
+        while month <= year.end_date:
+            firsts.append(month)
+            month = (month + dt.timedelta(days=32)).replace(day=1)
+        periods = [f"{m:%Y-%m}" for m in firsts]
+        calculated = set(
+            CalculationRun.objects.filter(parcel=parcel, period__in=periods).values_list("period", flat=True)
+        )
+        waiting = None
+        if is_enabled("datasync"):
+            from datasync.crop_et import no_figure_context
+
+            waiting = no_figure_context
+        for m, period in zip(firsts, periods):
+            current = m == first
+            has_page = not current and (
+                period in calculated or (waiting is not None and waiting(parcel, period) is not None)
+            )
+            months.append({"label": f"{m:%b}", "period": period, "current": current, "has_page": has_page})
+    return {"label": f"{first:%B %Y}", "entries": entries, "water_year": year, "months": months}
 
 
 def _no_figure_page(request, parcel, period):
@@ -426,6 +475,7 @@ def _no_figure_page(request, parcel, period):
         "receipt": False,
         "no_figure": found,
         "crop_et": None,
+        "month_ledger": _month_ledger(parcel, first),
     }
     return render(request, "accounting/calculation_run_detail.html", context)
 
