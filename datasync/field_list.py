@@ -279,6 +279,24 @@ def lookup_areas(parcels, max_acres=None):
     its status when not given) is cut into equal strips under the limit.
     """
     boxes = [list(p.geometry.extent) for p in parcels if p.geometry is not None]
+    return _cut(_merge(boxes), max_acres)
+
+
+def boundary_areas(max_acres=None):
+    """The rectangles to look up for the site's whole boundary (``--whole-area``), west to east.
+
+    Each boundary part's bounding box, merged and cut as ``lookup_areas`` does for use areas.
+    """
+    from geography.models import Boundary
+
+    boxes = []
+    for geometry in Boundary.objects.filter(geometry__isnull=False).values_list("geometry", flat=True):
+        boxes.extend(list(part.extent) for part in geometry)
+    return _cut(_merge(boxes), max_acres)
+
+
+def _merge(boxes):
+    """Boxes within 250 m of each other merged until nothing merges."""
     merged = True
     while merged:
         merged = False
@@ -291,6 +309,11 @@ def lookup_areas(parcels, max_acres=None):
                     break
             if merged:
                 break
+    return boxes
+
+
+def _cut(boxes, max_acres):
+    """Each box cut into equal strips under ``max_acres`` (the account's limit when not given)."""
     if not boxes:
         return []
     if max_acres is None:

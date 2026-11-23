@@ -2,7 +2,7 @@
 """URL routes for the datasync app."""
 from django.urls import path
 
-from datasync import views
+from datasync import views, views_openet
 
 app_name = "datasync"
 
@@ -23,4 +23,7 @@ urlpatterns = [
     path("stations/geojson/", views.stations_geojson, name="stations_geojson"),
     path("stations/freshness-geojson/", views.stations_freshness_geojson, name="stations_freshness_geojson"),
     path("monitoring/", views.monitoring_dashboard, name="monitoring_dashboard"),
+    path("openet-fields/outlines/", views_openet.openet_area_outlines, name="openet_area_outlines"),
+    path("openet-fields/crop-et/", views_openet.openet_area_depths, name="openet_area_depths"),
+    path("openet-fields/<int:field_id>/", views_openet.openet_field_detail, name="openet_field_detail"),
 ]

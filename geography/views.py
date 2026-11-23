@@ -73,12 +73,41 @@ def map_view(request):
     else:
         bounds = "null"
 
+    crop_et_choices, crop_et_count = _crop_et_layer()
     return render(request, "geography/map.html", {
+        "crop_et_choices": crop_et_choices,
+        "crop_et_count": crop_et_count,
         "center_lng": center_lng,
         "center_lat": center_lat,
         "zoom": zoom,
         "bounds": bounds,
     })
+
+
+def _crop_et_layer():
+    """The crop ET layer's chooser: each water year to date, then each month, newest first.
+    Each choice carries its kind ("wy" or "month"), which picks its fixed class breaks
+    (OH2O.cropET.BREAKS). Empty when the datasync module is off or no OpenET field has a figure."""
+    from core.modules import is_enabled
+
+    if not is_enabled("datasync"):
+        return [], 0
+    from datasync import whole_area
+
+    choices = []
+    for name, start, end, last in whole_area.water_years():
+        choices.append({
+            "group": "Water years",
+            "kind": "wy",
+            # A whole year is its name; a year in progress says its last month with figures.
+            "label": name if (last.year, last.month) == (end.year, end.month) else f"{name} to {last:%b %Y}",
+            "query": f"from={start:%Y-%m}&to={last:%Y-%m}",
+        })
+    for month in whole_area.months_with_figures():
+        choices.append({
+            "group": "Months", "kind": "month", "label": f"{month:%B %Y}", "query": f"month={month:%Y-%m}",
+        })
+    return choices, (whole_area.fields_in_area().count() if choices else 0)
 
 
 # ---------------------------------------------------------------------------

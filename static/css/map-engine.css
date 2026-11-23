@@ -391,3 +391,17 @@
 }
 /* A picked source's popup placed beside its use areas has no tip: it would point at open ground. */
 .maplibregl-popup.popup-beside .maplibregl-popup-tip { display: none; }
+
+/* The crop ET layer's block at the top of the legend: its chooser, classes and source. */
+.legend-select {
+    display: block; width: 100%; max-width: 220px; margin: 0 0 10px; padding: 4px 6px; font-size: 11.5px;
+    background: var(--color-inset); color: var(--color-text-primary);
+    border: 1px solid var(--color-border-interactive, rgba(125,165,205,0.6)); border-radius: var(--radius-sm);
+}
+.legend-note { margin: 6px 0 0; font-size: 11px; color: var(--color-text-tertiary); max-width: 26ch; }
+.legend-note a { color: var(--color-accent); }
+.legend-ramp { display: grid; grid-template-columns: repeat(5, 1fr); height: 10px; max-width: 220px; border-radius: 1px; overflow: hidden; }
+.legend-ramp-ticks { display: flex; justify-content: space-between; max-width: 220px; margin-top: 3px;
+    font-size: 10.5px; color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+/* An OpenET field's lines under a use area's popup, when the crop ET layer is on. */
+.popup-openet-field { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--color-border-hover, rgba(100,140,180,0.13)); }

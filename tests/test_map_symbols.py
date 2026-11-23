@@ -32,6 +32,7 @@ from tests.factories import (
     WellIrrigatedParcelFactory,
 )
 from tests import test_overview_map_card as card_tests  # the card tests' fixtures
+from tests.test_whole_area_layer import area  # noqa: F401  (a made-up boundary with OpenET fields)
 from tests.test_map_legend import (  # the structural readers, one copy
     UserFactory,
     _array,
@@ -298,6 +299,14 @@ class TestTheOpeningSet:
             if re.search(r"(?<![\w-])label:\s*'", element) and "visible: false" in element
         }
         assert off == {"service-areas-outline", "drinking-points", "stations-points"}
+
+    def test_with_crop_et_figures_the_crop_et_layer_starts_off_too(self, client_in, area):
+        layers = _layers_by_id(_rendered(client_in))
+        off = {
+            layer_id for layer_id, element in layers.items()
+            if re.search(r"(?<![\w-])label:\s*'", element) and "visible: false" in element
+        }
+        assert off == {"service-areas-outline", "drinking-points", "stations-points", "openet-area-fill"}
 
     def test_canals_draw_from_zoom_11(self, client_in):
         assert "minzoom: 11" in _layers_by_id(_rendered(client_in))["flowlines-canals"]

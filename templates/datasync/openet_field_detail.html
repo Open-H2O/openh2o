@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% comment %}
+  One OpenET field, reached from the Map page's crop ET layer. The month page's layout
+  (.page-grid-month): the months on the left, by water year with the year's total; the field
+  on the right (its outline, its acres, the use areas it overlaps). Figures are OpenET's, in
+  inches (millimetres / 25.4, two decimals), and OpenET is named as their source.
+{% endcomment %}
+
+{% block title %}OpenET field {{ field.field_id }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}OpenET field {{ field.field_id }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    {% include "partials/_crumb_root.html" %}
+    <a href="{% url 'geography:map' %}">Map</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">OpenET field {{ field.field_id }}</span>
+  </nav>
+  <p class="page-description">Monthly crop ET and rain from OpenET for this field, in inches.</p>
+</div>
+{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  <div>
+    <a href="{% url 'geography:map' %}" class="back-link">&larr; Back to Map</a>
+  </div>
+  <div class="card-raised openet-field-band">
+    <div id="openet-field-map" class="openet-field-map"></div>
+    <div>
+      <div class="mb-md page-grid-account-head">
+        <h2 class="section-header-flush">OpenET field</h2>
+      </div>
+      <dl class="openet-field-facts">
+        <dt class="text-tertiary text-xs">Area</dt>
+        <dd>{% if field.area_acres is not None %}{{ field.area_acres }} acres{% else %}<span class="text-tertiary">Not known</span>{% endif %}</dd>
+        <dt class="text-tertiary text-xs">Use areas it overlaps</dt>
+        <dd>{% for share in shares %}{{ share.overlap_acres }} acres in <a href="{% url 'parcels:detail' share.parcel.pk %}">{{ share.parcel.parcel_number }}</a>{% if not forloop.last %}<br>{% endif %}{% empty %}<span class="text-secondary">None</span>{% endfor %}</dd>
+        {% for name, year in years.items %}
+        <dt class="text-tertiary text-xs">Crop ET, {{ name }}</dt>
+        <dd>{{ year.et }} in <span class="text-tertiary">({{ year.months_with_figures }} month{{ year.months_with_figures|pluralize }} with figures)</span></dd>
+        {% endfor %}
+      </dl>
+      <p class="text-tertiary text-xs openet-field-source">Source: <a href="https://etdata.org" target="_blank" rel="noopener">OpenET</a></p>
+    </div>
+  </div>
+  {% if years %}
+  <div class="openet-field-years">
+    {% for name, year in years.items %}
+    <div class="card-raised">
+      <div class="mb-md page-grid-account-head">
+        <h2 class="section-header-flush">{{ name }}</h2>
+      </div>
+      <table class="data-table text-sm">
+        <thead>
+          <tr><th>Month</th><th class="th-right">Crop ET (in)</th><th class="th-right">Rain (in)</th></tr>
+        </thead>
+        <tbody>
+          {% for row in year.rows %}
+          <tr>
+            <td class="text-secondary">{{ row.month|date:"F Y" }}</td>
+            <td class="td-num">{% if row.et is not None %}{{ row.et }}{% else %}<span class="text-tertiary">No figure</span>{% endif %}</td>
+            <td class="td-num">{% if row.pr is not None %}{{ row.pr }}{% else %}<span class="text-tertiary">No figure</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+          <tr class="font-semibold">
+            <td>Total</td><td class="td-num">{{ year.et }}</td><td class="td-num">{{ year.pr }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card-raised"><p class="text-secondary">No figures from OpenET for this field.</p></div>
+  {% endif %}
+</div>
+{{ outline|json_script:"openet-field-outline" }}
+{% endblock %}
+
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
+<script>
+(function () {
+    var fc = JSON.parse(document.getElementById('openet-field-outline').textContent);
+    var b = OH2O._geojsonBounds(fc);
+    var map = new maplibregl.Map({
+        cooperativeGestures: true, container: 'openet-field-map',
+        style: OH2O.basemapStyle('aerial'), bounds: b, fitBoundsOptions: { padding: 40, maxZoom: 16 }
+    });
+    map.on('load', function () {
+        map.addSource('field', { type: 'geojson', data: fc });
+        map.addLayer({ id: 'field-line', type: 'line', source: 'field',
+            paint: { 'line-color': OH2O.colors.openet, 'line-width': 2, 'line-dasharray': [2, 1.5] } });
+    });
+})();
+</script>
+{% endblock %}

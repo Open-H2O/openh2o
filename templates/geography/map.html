@@ -159,7 +159,8 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
         {% if 'datasync' in enabled_modules %}{ id: 'stations', url: '{% url "datasync:stations_geojson" %}' },{% endif %}
         { id: 'tie-lines', url: '{% url "geography:tie_lines_geojson" %}' }
     ],
-    layers: [
+    {% if crop_et_choices %}inlineSources: { 'openet-area': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } } },
+    {% endif %}layers: [
         // ── By role: where, water, records, other sources (DESIGN.md "Map symbols"; the palette is OH2O.colors) ──
         // Frame: the boundary, a light line over a dark casing (no gold: gold is a well).
         {
@@ -237,7 +238,22 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
             layout: { 'symbol-placement': 'line', 'text-size': 11 }
         }), { panelHidden: true, section: 'Waterways', paint: { 'text-color': OH2O.colors.frame, 'text-halo-color': OH2O.colors.frameCasing, 'text-halo-width': 1.4 } }),
 
-        // Records: use areas, then the point marks, each its own hue and shape.
+        {% if crop_et_choices %}// Crop ET by OpenET field: the only shaded fill, light to dark for less to more. Off until
+        // ticked; the outlines load only then (OH2O.mountCropETLayer below). Drawn under the
+        // records, so the use areas' outlines and the marks sit on top.
+        {
+            id: 'openet-area-fill', type: 'fill', source: 'openet-area', visible: false,
+            label: 'Crop ET, OpenET fields', section: 'Crop ET', group: 'openet-area',
+            paint: OH2O.cropET.fillPaint(),
+            swatch: 'custom', swatchStyle: OH2O.cropET.swatchStyle()
+        },
+        {
+            id: 'openet-area-line', type: 'line', source: 'openet-area', visible: false,
+            section: 'Crop ET', group: 'openet-area', panelHidden: true,
+            paint: { 'line-color': OH2O.colors.frameCasing, 'line-width': 0.6,
+                     'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0, 12, 0.6] }
+        },
+        {% endif %}// Records: use areas, then the point marks, each its own hue and shape.
         {% if 'parcels' in enabled_modules %}{
             id: 'parcels-fill', type: 'fill', source: 'parcels',
             label: 'Use areas', group: 'parcels', section: 'Records',
@@ -401,4 +417,26 @@ OH2O.mountSourceShares(window._mapEngine.map, {
     more: 'and N more, outlined on the map'
 });
 </script>
-{% endblock %}
+{% if crop_et_choices %}{{ crop_et_choices|json_script:"crop-et-choices" }}
+<script>
+OH2O.mountCropETLayer(window._mapEngine.map, {
+    outlines: '{% url "datasync:openet_area_outlines" %}',
+    depths: '{% url "datasync:openet_area_depths" %}',
+    field: '{% url "datasync:openet_field_detail" 0 %}',
+    count: {{ crop_et_count }},
+    choices: JSON.parse(document.getElementById('crop-et-choices').textContent),
+    words: {
+        title: 'Crop ET, inches',
+        chooser: 'Crop ET period',
+        darker: 'Darker: more crop ET',
+        noFigure: 'No figure',
+        empty: 'No field has a figure for {period}.',
+        sourceBefore: 'Source: ',
+        field: 'OpenET field {id}',
+        acres: '{n} acres',
+        depth: 'Crop ET, {period}',
+        view: 'View field'
+    }
+});
+</script>
+{% endif %}{% endblock %}

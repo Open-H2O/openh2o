@@ -68,6 +68,14 @@ class Command(BaseCommand):
             help="Only use areas whose number starts with this (e.g. KAW-).",
         )
         parser.add_argument(
+            "--whole-area",
+            action="store_true",
+            default=False,
+            help="Fields route only: also ask for every OpenET field inside the site's boundary, "
+            "not only those overlapping a use area (the Map page's crop ET layer). The monthly "
+            "scheduled job does not pass it.",
+        )
+        parser.add_argument(
             "--dry-run",
             action="store_true",
             default=False,
@@ -123,6 +131,7 @@ class Command(BaseCommand):
         )
 
         if fields:
+            self.whole_area = options["whole_area"]
             if options["dry_run"]:
                 self._dry_run_fields(parcels, start_date, end_date)
                 return
@@ -238,6 +247,16 @@ class Command(BaseCommand):
                     )
                 answered.add(rectangle)
 
+        if getattr(self, "whole_area", False):
+            for rectangle in field_list.boundary_areas():
+                if rectangle in answered:
+                    continue
+                for number in field_list.lookup(rectangle):
+                    OpenETField.objects.get_or_create(
+                        field_id=number, defaults={"geometry": None, "received_on": today}
+                    )
+                answered.add(rectangle)
+
         waiting = list(
             OpenETField.objects.filter(geometry__isnull=True, shares__isnull=True)
             .order_by("field_id").values_list("field_id", flat=True)
@@ -259,10 +278,7 @@ class Command(BaseCommand):
         ``sent_months`` as each answer is stored."""
         from datasync.models import OpenETField, OpenETFieldMonth
 
-        numbers = list(
-            OpenETField.objects.filter(shares__parcel__in=[p.pk for p in parcels]).distinct()
-            .order_by("field_id").values_list("field_id", flat=True)
-        )
+        numbers = self._figure_numbers(parcels, start_date, end_date)
         ids = dict(OpenETField.objects.filter(field_id__in=numbers).values_list("field_id", "pk"))
         size = self._per_request()
         for n in range(0, len(numbers), size):
@@ -279,6 +295,30 @@ class Command(BaseCommand):
                     # field month holds the newest, with the day it arrived.
                     row.et_mm, row.pr_mm, row.received_on = et_mm, pr_mm, today
                     row.save()
+
+    def _figure_numbers(self, parcels, start_date, end_date):
+        """The fields whose figures a run asks for: those with a share in ``parcels`` (every run,
+        so a revised month is seen), and with ``--whole-area`` each field inside the site's
+        boundary that overlaps no use area and is missing a month of the range. A whole-area run
+        the allowance stops therefore continues on the next run with the fields still missing."""
+        from django.db.models import Count, Q
+
+        from datasync import whole_area
+        from datasync.models import OpenETField
+
+        numbers = set(
+            OpenETField.objects.filter(shares__parcel__in=[p.pk for p in parcels])
+            .values_list("field_id", flat=True)
+        )
+        if getattr(self, "whole_area", False):
+            wanted = len(crop_et.months_between(start_date, end_date))
+            first = date(start_date.year, start_date.month, 1)
+            numbers.update(
+                whole_area.fields_in_area().filter(shares__isnull=True)
+                .annotate(held=Count("months", filter=Q(months__month__gte=first, months__month__lte=end_date)))
+                .filter(held__lt=wanted).values_list("field_id", flat=True)
+            )
+        return sorted(numbers)
 
     def _dry_run_fields(self, parcels, start_date, end_date):
         """Print the requests a run would send. Sends nothing, writes nothing."""
@@ -297,13 +337,21 @@ class Command(BaseCommand):
                 self.stdout.write(f"  lookup of the fields in {west}, {south}, {east}, {north}")
                 count += 1
             open_ended = True
+        if getattr(self, "whole_area", False):
+            for rectangle in field_list.boundary_areas(max_acres=field_list.DEFAULT_MAX_AREA_ACRES):
+                if rectangle in answered:
+                    continue
+                west, south, east, north = rectangle
+                self.stdout.write(f"  lookup of the fields in {west}, {south}, {east}, {north}")
+                count += 1
+                open_ended = True
         size = self._per_request()
         waiting = OpenETField.objects.filter(geometry__isnull=True, shares__isnull=True).count()
         batches = -(-waiting // size)
         if batches:
             self.stdout.write(f"  {batches} request(s) for the outlines of {waiting} fields")
             count += batches
-        with_shares = OpenETField.objects.filter(shares__parcel__in=[p.pk for p in parcels]).distinct().count()
+        with_shares = len(self._figure_numbers(parcels, start_date, end_date))
         batches = -(-with_shares // size)
         if batches:
             self.stdout.write(

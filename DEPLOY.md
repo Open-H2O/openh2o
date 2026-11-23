@@ -936,6 +936,19 @@ Until its key is set, CIMIS or NOAA shows as needing a key on the monitoring pag
 and a sync skips it. OpenET is not a station source. `sync_all` never syncs it, and
 its figures arrive through `sync_openet_parcels`.
 
+The monthly job in `crontab.txt` keeps only fields overlapping a use area current. To show fields
+outside use areas on the Map page's crop ET layer, run `sync_openet_parcels --whole-area` by hand.
+It asks OpenET to list fields touching rectangles drawn around the site's boundary, some outside
+it, then for their outlines and monthly crop ET and rain. It skips lists and outlines the site
+holds, and the figures of a field outside every use area that holds every month asked for. Fields
+overlapping a use area are asked again on every run. It stops at the month's allowance; the next
+run asks for what is still missing. `--dry-run` with it prints the requests and sends none. It
+does not read the account's limits, so its lookups are cut at 50,000 acres. Estimated from DWR's
+2023 count of 8,905 Merced Subbasin fields, an account with 400 fields and 200,000 acres a request
+needs about 50 requests first, then 23 a month; a free account about 190, over a month's
+allowance, then 90. The 400 needs `OPENET_FIELDS_PER_REQUEST=400` set; the setting's default
+is 100. OpenET's own count is known only after the list requests.
+
 USGS also offers an optional key, free from https://api.waterdata.usgs.gov/signup/. USGS
 accepts more requests an hour from a site that sends a key, and asks any site making
 more than a few requests an hour to use one. Set it as `USGS_API_KEY` in `.env`; OpenH2O

@@ -953,3 +953,186 @@ OH2O.detailPaneMap = function (opts) {
 };
 
 })();
+
+/* ── Crop ET across the whole area, on the Map page ──
+   Every OpenET field inside the site's boundary, filled by crop ET depth in inches for the
+   month (or water year to date) chosen in the legend, on the ramp and fixed breaks set
+   above (OH2O.cropET: a month's breaks for a month, a water year's for a water year); a
+   field with no figure is filled the no-figure grey. Off until its Layers-panel box is
+   ticked: the outlines (about 0.9 MB gzip for 9,000 fields) load only then, and a new
+   choice fetches only the depths, joined to the outlines by field number through
+   feature state. */
+Object.assign(OH2O.cropET, {
+    _has: ['==', ['typeof', ['feature-state', 'd']], 'number'],
+    fillPaint: function (breaks) {
+        var b = (breaks || OH2O.cropET.BREAKS.month).slice(1), R = OH2O.cropET.RAMP;
+        return {
+            'fill-color': ['case', OH2O.cropET._has,
+                ['step', ['feature-state', 'd'], R[0], b[0], R[1], b[1], R[2], b[2], R[3], b[3], R[4]],
+                OH2O.cropET.NO_FIGURE],
+            'fill-opacity': ['case', OH2O.cropET._has, 0.9, 0.4]
+        };
+    },
+    swatchStyle: function () {
+        return 'display:inline-block;width:14px;height:14px;border-radius:2px;flex:none;' +
+            'background:linear-gradient(90deg,' + OH2O.cropET.RAMP.join(',') + ')';
+    }
+});
+
+OH2O.mountCropETLayer = function (map, cfg) {
+    var C = OH2O.cropET, W = cfg.words;
+    var box = document.querySelector('#controls input[data-layers*="openet-area-fill"]');
+    var legend = document.getElementById('legend');
+    if (!box || !legend || !cfg.choices.length) return;
+    var badge = box.parentElement.querySelector('.layer-count');
+
+    var block = document.createElement('div');
+    block.className = 'legend-crop-et';
+    block.hidden = true;
+    var h4 = document.createElement('h4');
+    h4.textContent = W.title;
+    var select = document.createElement('select');
+    select.className = 'legend-select';
+    select.setAttribute('aria-label', W.chooser);
+    var groups = {};
+    cfg.choices.forEach(function (c, i) {
+        var g = groups[c.group];
+        if (!g) { g = groups[c.group] = document.createElement('optgroup'); g.label = c.group; select.appendChild(g); }
+        var o = document.createElement('option'); o.value = String(i); o.textContent = c.label; g.appendChild(o);
+    });
+    var rows = document.createElement('div');
+    var empty = document.createElement('p');
+    empty.className = 'legend-note'; empty.hidden = true;
+    // Under the ramp: which way it runs, then the no-figure grey with its own swatch.
+    var direction = document.createElement('p');
+    direction.className = 'legend-note'; direction.textContent = W.darker;
+    var noFigure = document.createElement('div');
+    noFigure.className = 'legend-row legend-no-figure';
+    var grey = document.createElement('span');
+    grey.className = 'swatch-fill'; grey.style.background = C.NO_FIGURE; grey.style.opacity = '0.55';
+    noFigure.appendChild(grey); noFigure.appendChild(document.createTextNode(W.noFigure));
+    var credit = document.createElement('p');
+    credit.className = 'legend-note';
+    credit.appendChild(document.createTextNode(W.sourceBefore));
+    var link = document.createElement('a');
+    link.href = 'https://etdata.org'; link.target = '_blank'; link.rel = 'noopener'; link.textContent = 'OpenET';
+    credit.appendChild(link);
+    [h4, select, rows, direction, noFigure, empty, credit].forEach(function (el) { block.appendChild(el); });
+    legend.insertBefore(block, legend.firstChild);
+    var others = legend.querySelector('h4:not(.legend-crop-et h4)');
+
+    // The ramp and its limits do not change with the choice's figures, only with its kind.
+    function ramp(breaks) {
+        rows.innerHTML = '';
+        var bar = document.createElement('div'); bar.className = 'legend-ramp';
+        C.RAMP.forEach(function (color) {
+            var cell = document.createElement('span'); cell.style.background = color; bar.appendChild(cell);
+        });
+        var ticks = document.createElement('div'); ticks.className = 'legend-ramp-ticks';
+        breaks.forEach(function (v) {
+            var t = document.createElement('span'); t.textContent = String(v); ticks.appendChild(t);
+        });
+        rows.appendChild(bar); rows.appendChild(ticks);
+    }
+
+    var loaded = false, depths = {};
+    function fmt(n) { return (Math.round(n * 100) / 100).toString(); }
+    function draw(choice) {
+        var breaks = C.BREAKS[choice.kind] || C.BREAKS.month;
+        map.setPaintProperty('openet-area-fill', 'fill-color', C.fillPaint(breaks)['fill-color']);
+        ramp(breaks);
+        fetch(cfg.depths + '?' + choice.query).then(function (r) { return r.json(); }).then(function (data) {
+            depths = data.fields || {};
+            map.removeFeatureState({ source: 'openet-area' });
+            var n = 0;
+            Object.keys(depths).forEach(function (k) {
+                map.setFeatureState({ source: 'openet-area', id: Number(k) }, { d: depths[k] });
+                n++;
+            });
+            rows.hidden = n === 0;
+            direction.hidden = n === 0;
+            empty.hidden = n !== 0;
+            empty.textContent = n ? '' : W.empty.replace('{period}', choice.label);
+        });
+    }
+
+    // With crop ET on, the fields carry the colour: the use areas keep only their outline, in
+    // the selection colour; the aerial is greyed and dimmed under them; the wells' names step
+    // back (their marks stay, and a click still names one).
+    var uaBox = document.querySelector('#controls input[data-layers*="parcels-fill"]');
+    var shown = false;
+    function setIf(id, kind, prop, value) {
+        if (!map.getLayer(id)) return;
+        if (kind === 'layout') map.setLayoutProperty(id, prop, value); else map.setPaintProperty(id, prop, value);
+    }
+    function quiet() {
+        var on = shown;
+        setIf('parcels-fill', 'layout', 'visibility', (on || !(uaBox && uaBox.checked)) ? 'none' : 'visible');
+        setIf('parcels-outline', 'paint', 'line-color', on ? OH2O.colors.selection : OH2O.colors.useAreaLine);
+        setIf('aerial-tiles', 'paint', 'raster-saturation', on ? -0.7 : 0);
+        setIf('aerial-tiles', 'paint', 'raster-brightness-max', on ? 0.75 : 1);
+        var wellsBox = document.querySelector('#controls input[data-layers*="wells-points"]');
+        setIf('wells-label', 'layout', 'visibility', (on || (wellsBox && !wellsBox.checked)) ? 'none' : 'visible');
+    }
+    function show(on) {
+        shown = on;
+        block.hidden = !on;
+        if (others) others.style.marginTop = on ? '12px' : '';
+        legend.style.display = (on || others) ? '' : 'none';
+        quiet();
+        if (on && !loaded) {
+            loaded = true;
+            fetch(cfg.outlines).then(function (r) { return r.json(); }).then(function (fc) {
+                map.getSource('openet-area').setData(fc);
+                if (badge) badge.textContent = fc.features.length;
+                draw(cfg.choices[Number(select.value)]);
+            });
+        }
+    }
+    if (badge && cfg.count != null) badge.textContent = cfg.count;
+    box.addEventListener('change', function () { show(box.checked); });
+    // The panel's own boxes turn the use areas and wells back on: keep them quiet while crop ET shows.
+    ['parcels-fill', 'wells-points'].forEach(function (id) {
+        var b = document.querySelector('#controls input[data-layers*="' + id + '"]');
+        if (b) b.addEventListener('change', function () { if (shown) window.setTimeout(quiet, 0); });
+    });
+    // A basemap switch rebuilds the aerial's paint: put the greying back.
+    map.on('styledata', function () { if (shown && map.getLayer('aerial-tiles')) quiet(); });
+    select.addEventListener('change', function () { draw(cfg.choices[Number(select.value)]); });
+
+    var popup = null;
+    map.on('click', 'openet-area-fill', function (e) {
+        var f = e.features[0], id = f.id, d = depths[String(id)];
+        var choice = cfg.choices[Number(select.value)];
+        var html = OH2O.popupHtml({
+            title: W.field.replace('{id}', id),
+            lines: [
+                f.properties.a != null ? W.acres.replace('{n}', fmt(f.properties.a)) : null,
+                W.depth.replace('{period}', choice.label) + ': ' + (d != null ? fmt(d) + ' in' : W.noFigure)
+            ],
+            link: { href: cfg.field.replace('/0/', '/' + id + '/'), text: W.view }
+        });
+        if (popup) { popup.remove(); popup = null; }
+        // A record drawn above the field (a well, a point of diversion) opens its own popup
+        // (map-engine's handler, which runs after this one); the field's lines then go under it
+        // in the same popup, so a field under a record can still be opened.
+        var above = Object.keys((window.MAP_CONFIG && MAP_CONFIG.popups) || {}).filter(function (l) { return map.getLayer(l); });
+        var covered = above.length && map.queryRenderedFeatures(e.point, { layers: above }).length;
+        window.setTimeout(function () {
+            if (covered) {
+                var open = document.querySelectorAll('.maplibregl-popup-content');
+                var host = open[open.length - 1];
+                if (host) {
+                    var part = document.createElement('div');
+                    part.className = 'popup-openet-field';
+                    part.innerHTML = html;
+                    host.appendChild(part);
+                    return;
+                }
+            }
+            popup = new maplibregl.Popup({ maxWidth: '280px' }).setLngLat(e.lngLat).setHTML(html).addTo(map);
+        }, 0);
+    });
+    map.on('mouseenter', 'openet-area-fill', function () { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'openet-area-fill', function () { map.getCanvas().style.cursor = ''; });
+};

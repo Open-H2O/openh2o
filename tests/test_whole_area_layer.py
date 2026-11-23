@@ -155,6 +155,33 @@ def test_the_map_page_offers_the_layer_with_each_month_that_has_figures(area, si
     assert response.context["crop_et_count"] == 2
 
 
+def test_each_choice_names_its_kind_so_the_layer_uses_that_kinds_fixed_breaks(area, signed_in):
+    from django.urls import reverse
+
+    choices = signed_in.get(reverse("geography:map")).context["crop_et_choices"]
+    assert choices
+    assert all(c["kind"] == {"Months": "month", "Water years": "wy"}[c["group"]] for c in choices)
+
+
+def test_the_layer_shades_on_the_shared_ramp_and_fixed_breaks_never_its_own():
+    core = (Path(__file__).resolve().parent.parent / "static/js/map-core.js").read_text()
+    layer = core[core.index("OH2O.mountCropETLayer = function"):]
+    # One crop ET object: the map's symbols set its ramp, breaks and no-figure grey once.
+    assert core.count("OH2O.cropET = {") == 1
+    assert "C.BREAKS[choice.kind]" in layer
+    assert "breaks: function" not in core and "C.breaks(" not in layer
+    assert "OH2O.cropET.NO_FIGURE" in core[core.index("Object.assign(OH2O.cropET"):]
+    assert not re.search(r"#[0-9a-fA-F]{6}\b", layer)
+
+
+def test_the_layer_sits_in_its_own_section_and_starts_off(area, signed_in):
+    from django.urls import reverse
+
+    html = signed_in.get(reverse("geography:map")).content.decode()
+    fill = re.search(r"\{\s*id: 'openet-area-fill'.*?\}", html, re.S).group(0)
+    assert "visible: false" in fill and "section: 'Crop ET'" in fill
+
+
 # ---------------------------------------------------------------- 2. the field page
 
 
