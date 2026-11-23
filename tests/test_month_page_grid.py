@@ -133,6 +133,7 @@ def test_a_short_month_with_no_ledger_entries_says_so(operator):
     assert "<table" not in card
 
 
+# Default wording, approved by the maintainer on 2026-11-22. To change the wording, update this test in the same commit.
 def test_a_metered_months_page_is_named_by_the_use_area_and_the_month(operator):
     field = _field("F11", meter=True)
 
