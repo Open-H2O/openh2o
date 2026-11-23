@@ -2363,6 +2363,11 @@ html { color-scheme: dark; }
         grid-template-columns: minmax(0, 1fr);
     }
 }
+/* The month's ledger card: its head, the entries, then the year's months. */
+.month-ledger {
+    display: flex;
+    flex-direction: column;
+}
 .month-ledger-months {
     margin-top: var(--space-lg);
 }
