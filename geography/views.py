@@ -73,54 +73,11 @@ def map_view(request):
     else:
         bounds = "null"
 
-    # GSA-zone legend + fill colors, DERIVED from the live management-area zones
-    # so the legend can never name a basin that isn't in the database. (A
-    # hardcoded Kaweah legend survived the v1.9 Kaweah→Merced demo migration and
-    # showed retired-basin names on the live map — post-mortem 2026-06-08.)
-    #
-    # Three fills, not five near-identical greens — one from each
-    # of DESIGN.md's OKLCH tonal ramps at its 500 (mid) lightness step, so a
-    # reader tells them apart at a glance on aerial imagery and in an 11px
-    # legend swatch: forest-teal, reservoir-blue, furnace-orange. None is the
-    # parcel blue (--color-blue), the recharge purple, the POD teal or the
-    # drinking blueBright — those identify a different entity everywhere else
-    # on this map. A fourth zone (and beyond) cycles into the same three
-    # ramps' 600 step, a lighter tint of the same hue, never a fourth hue.
-    # Values are the sRGB conversion of tokens.css's own oklch() stops
-    # (forest/reservoir/furnace -400..-800, hue 145/200/50); MapLibre's paint
-    # expressions take a literal color, not a CSS oklch() function.
-    ZONE_FILL_FOREST = "#3a9742"      # oklch(0.60 0.15 145), --forest-500
-    ZONE_FILL_RESERVOIR = "#00969f"   # oklch(0.60 0.13 200), --reservoir-500
-    ZONE_FILL_FURNACE = "#cc5900"     # oklch(0.60 0.17 50),  --furnace-500
-    ZONE_FILL_FOREST_LIGHT = "#6ab76d"      # oklch(0.71 0.13 145), --forest-600
-    ZONE_FILL_RESERVOIR_LIGHT = "#00bac4"   # oklch(0.71 0.14 200), --reservoir-600
-    ZONE_FILL_FURNACE_LIGHT = "#f7791a"     # oklch(0.71 0.18 50),  --furnace-600
-    zone_palette = [
-        ZONE_FILL_FOREST, ZONE_FILL_RESERVOIR, ZONE_FILL_FURNACE,
-        ZONE_FILL_FOREST_LIGHT, ZONE_FILL_RESERVOIR_LIGHT, ZONE_FILL_FURNACE_LIGHT,
-    ]
-    gsa_zones = [
-        {"name": name, "color": zone_palette[i % len(zone_palette)]}
-        for i, name in enumerate(
-            Zone.objects.filter(zone_type="management_area", geometry__isnull=False)
-            .order_by("name")
-            .values_list("name", flat=True)
-        )
-    ]
-    # The flat fill for a deployment with NO management-area zones (a subbasin
-    # deployment) — forest-teal, so the fallback still
-    # reads as "zones" rather than introducing a fourth, undocumented hue.
-    # Kept out of the template as a literal: every zone-fill colour on this
-    # page comes from this derivation, never a value typed into map.html.
-    zone_fallback_color = ZONE_FILL_FOREST
-
     return render(request, "geography/map.html", {
         "center_lng": center_lng,
         "center_lat": center_lat,
         "zoom": zoom,
         "bounds": bounds,
-        "gsa_zones": gsa_zones,
-        "zone_fallback_color": zone_fallback_color,
     })
 
 
@@ -757,7 +714,13 @@ def zone_geojson_single(request, pk):
 
 @public_in_open_demo
 def tie_lines_geojson(request):
-    """Return GeoJSON FeatureCollection of LineString tie lines connecting wells/PODs to parcel centroids."""
+    """GeoJSON lines from each well and point of diversion to the use areas it serves.
+
+    Each line ends at ``point_on_surface``, a point inside the use area, not at
+    its centroid: a U-shaped or scattered use area's centroid can fall on a
+    neighbour, and the Map page prints the share beside the line's end. The Map
+    page draws these only for a picked well or point (``OH2O.mountSourceShares``).
+    """
     features = []
 
     # Groundwater tie lines: well -> parcel centroid
@@ -766,14 +729,14 @@ def tie_lines_geojson(request):
         if not parcel.geometry:
             continue
         well = wip.well
-        centroid = parcel.geometry.centroid
+        end = parcel.geometry.point_on_surface
         features.append({
             "type": "Feature",
             "geometry": {
                 "type": "LineString",
                 "coordinates": [
                     [well.location.x, well.location.y],
-                    [centroid.x, centroid.y],
+                    [end.x, end.y],
                 ],
             },
             "properties": {
@@ -797,14 +760,14 @@ def tie_lines_geojson(request):
             if not parcel.geometry:
                 continue
             pod = podp.point_of_diversion
-            centroid = parcel.geometry.centroid
+            end = parcel.geometry.point_on_surface
             features.append({
                 "type": "Feature",
                 "geometry": {
                     "type": "LineString",
                     "coordinates": [
                         [pod.location.x, pod.location.y],
-                        [centroid.x, centroid.y],
+                        [end.x, end.y],
                     ],
                 },
                 "properties": {
@@ -888,6 +851,30 @@ def boundaries_geojson(request):
             "geojson", qs, geometry_field="geometry",
             fields=["name", "description", "area_sq_miles"],
         ),
+    )
+
+
+@public_in_open_demo
+def boundary_labels_geojson(request):
+    """One label point per boundary, inside it (``point_on_surface``).
+
+    A symbol layer on the boundary polygons repeats the name in every map tile
+    the polygon crosses; the Map page printed "Merced Subbasin" several times on
+    one screen. One interior point per boundary labels it once.
+    """
+    qs = Boundary.objects.filter(geometry__isnull=False).only("pk", "name", "geometry")
+    features = [
+        {
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [pt.x, pt.y]},
+            "properties": {"pk": b.pk, "name": b.name},
+        }
+        for b in qs
+        for pt in [b.geometry.point_on_surface]
+    ]
+    return HttpResponse(
+        json.dumps({"type": "FeatureCollection", "features": features}),
+        content_type="application/json",
     )
 
 

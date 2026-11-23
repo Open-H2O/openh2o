@@ -175,6 +175,7 @@ class TestGoldIsAWellAndAStationIsNotRed:
 
 
 class TestTheFrameIsLinesOnly:
+    # not wording: the strings are source ids and layer types in the map configuration
     def test_no_zone_layer_is_a_fill(self, client_in):
         for layer_id, element in _layers_by_id(_rendered(client_in)).items():
             if "source: 'zones'" in element:
@@ -191,6 +192,7 @@ class TestTheFrameIsLinesOnly:
 
 
 class TestSourcesShowTheirUseAreasOnlyWhenPicked:
+    # not wording: the strings are layer and source ids in the map configuration
     def test_no_layer_draws_the_links_when_the_page_opens(self, client_in):
         for layer_id, element in _layers_by_id(_rendered(client_in)).items():
             assert "source: 'tie-lines'" not in element, (
@@ -201,6 +203,7 @@ class TestSourcesShowTheirUseAreasOnlyWhenPicked:
         assert "OH2O.mountSourceShares(" in _rendered(client_in)
         assert "OH2O.mountSourceShares = function" in _map_core()
 
+    # not wording: the strings are function names in the page's scripts, not words a reader sees
     def test_a_picked_sources_popup_is_placed_beside_its_use_areas(self):
         """The popup goes beside the box holding the source and its use areas, not
         over them. Where it lands is measured in the browser at the checkpoint;
@@ -325,5 +328,6 @@ class TestNamesNotCodes:
         assert ours[0]["geometry"]["type"] == "Point"
         assert boundary.geometry.contains(Point(*ours[0]["geometry"]["coordinates"], srid=4326))
 
+    # not wording: the strings are a layer id and a source id in the map configuration
     def test_the_boundary_label_reads_the_label_points(self, client_in):
         assert "makeLabelLayer('boundary-label', 'boundary-labels'" in _rendered(client_in)

@@ -352,3 +352,18 @@
     color:var(--color-accent, #46B3C4) !important;
 }
 .measure-popup .maplibregl-popup-content strong:first-child { background:none; border:none; padding:0; margin:0; color:var(--color-accent) !important; }
+
+/* A well's or point of diversion's use areas and shares, in its popup (OH2O.shareRows). */
+.popup-shares { margin: 8px 0 6px; padding-top: 6px; border-top: 1px solid var(--color-border-hover, rgba(100,140,180,0.13)); }
+.popup-shares-head { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; }
+.popup-share { display: flex; justify-content: space-between; gap: 16px; font-variant-numeric: tabular-nums; }
+.popup-shares-more { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
+/* The scale is a ruler in the bottom-right corner above the credit: the bar itself
+   drawn as a bracket, no slab behind it (it was a box wider than its bar). */
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl-scale {
+    background: transparent !important; backdrop-filter: none;
+    border: 2px solid var(--color-text-primary) !important; border-top: none !important;
+    color: var(--color-text-primary) !important; text-shadow: 0 0 3px var(--color-base), 0 0 2px var(--color-base);
+    padding: 0 4px 1px !important; margin: 0 10px 4px 0 !important;
+    font-family: inherit; font-size: 10.5px !important; letter-spacing: 0;
+}

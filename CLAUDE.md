@@ -149,7 +149,7 @@ below mirrors it and `DESIGN.md` explains the reasoning:
 painted on live pages a month after the palette moved, because rules that held
 them literally could not follow it. `tests/test_template_hygiene.py` now fails
 the build on the old gold; the rest is on you. The one documented exception is
-`--color-entity-*` in tokens.css, the map layer identity palette.
+`--color-entity-*` in tokens.css, the map layer palette by role (frame, water, the site's records, outside data, crop ET; DESIGN.md "Map symbols").
 
 Tailwind config extends the default theme with these tokens. CSS is compiled by the Tailwind standalone binary during Docker build (no Node.js required).
 

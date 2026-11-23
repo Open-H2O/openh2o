@@ -29,16 +29,81 @@ var OH2O = window.OH2O = window.OH2O || {};
 OH2O.colors = {
     gold: '#E4A317', teal: '#4ECDC4', purple: '#7B68EE', red: '#FF6B6B',
     blue: '#1B7FAF', blueBright: '#3DB4E0', green: '#55B678', boundary: '#E4A317',
-    // Hydrography strokes — the GIS hydrology house style (Pit River ACP / NHD
-    // maps): cyan natural channels, mint-green man-made canals, both solid, width
-    // carrying stream order. Bright solid lines read over the aerial basemap and
-    // against the muted translucent green GSA zone fills.
-    river: '#45d0e8', canal: '#7ee8a0',
+    // Water is one blue: rivers by stream order, canals thinner and greyer.
+    river: '#4FA3E0', canal: '#6F9FC4',
     // Dark casing drawn beneath the mint canal so it lifts off green farm fields.
     hydroCasing: '#06140e',
     // OpenET's field outlines: a dashed line in the primary text colour, so it reads over the
     // aerial and the dark basemap and never as one of the site's own entities.
-    openet: '#E7EEF2'
+    openet: '#E7EEF2',
+    // The Map page's palette by role (tokens.css names each one). The names above
+    // stay while the other maps still read them.
+    frame: '#E7EEF2', frameCasing: '#0B121B', managementArea: '#D8C7A6', serviceArea: '#46B3C4',
+    useArea: '#1B7FAF', useAreaLine: '#3DB4E0',
+    well: '#E0A446', pod: '#46B3C4', drinking: '#A9DCFF', recharge: '#9B87F5', station: '#C3CDD6',
+    selection: '#F4F7F9',
+    cropEt1: '#F3E6B3', cropEt2: '#B9DCA0', cropEt3: '#6FC3B1', cropEt4: '#2F97C1', cropEt5: '#1B5AA6',
+    noFigure: '#8FA3AE'
+};
+
+/* ── Marks: one shape per kind of record ──────────────────────────────────
+   Each kind of point record has its own hue AND its own shape, so a mark reads
+   on the aerial, on the dark map and to a reader who cannot tell the hues apart:
+   a well is a gold circle (as USGS draws a well), a point of diversion a teal
+   square, a monitoring station a grey triangle, a recharge site a purple diamond,
+   a drinking-water facility a light-blue ring (it shares a place with its well,
+   so the ring sits around the well's circle). Every filled mark carries a light
+   ring over a dark casing. Drawn once onto a canvas at twice the size and
+   registered as the map image `mark-<kind>`. */
+OH2O.marks = {
+    well:     { shape: 'circle',   color: OH2O.colors.well,     size: 13 },
+    pod:      { shape: 'square',   color: OH2O.colors.pod,      size: 13 },
+    station:  { shape: 'triangle', color: OH2O.colors.station,  size: 14 },
+    recharge: { shape: 'diamond',  color: OH2O.colors.recharge, size: 15 },
+    drinking: { shape: 'ring',     color: OH2O.colors.drinking, size: 21 }
+};
+OH2O.registerMarks = function (map) {
+    var R = 2;
+    Object.keys(OH2O.marks).forEach(function (k) {
+        if (map.hasImage('mark-' + k)) return;
+        var m = OH2O.marks[k], s = m.size * R, pad = 3 * R, W = s + pad * 2;
+        var c = document.createElement('canvas'); c.width = W; c.height = W;
+        var g = c.getContext('2d'), cx = W / 2, r = s / 2;
+        g.beginPath();
+        if (m.shape === 'circle' || m.shape === 'ring') g.arc(cx, cx, r, 0, Math.PI * 2);
+        else if (m.shape === 'square') g.rect(cx - r * 0.86, cx - r * 0.86, r * 1.72, r * 1.72);
+        else if (m.shape === 'diamond') { g.moveTo(cx, cx - r); g.lineTo(cx + r, cx); g.lineTo(cx, cx + r); g.lineTo(cx - r, cx); g.closePath(); }
+        else if (m.shape === 'triangle') { g.moveTo(cx, cx - r); g.lineTo(cx + r * 0.95, cx + r * 0.75); g.lineTo(cx - r * 0.95, cx + r * 0.75); g.closePath(); }
+        g.lineJoin = 'round';
+        if (m.shape === 'ring') {
+            g.lineWidth = 6 * R; g.strokeStyle = OH2O.colors.frameCasing; g.stroke();
+            g.lineWidth = 3 * R; g.strokeStyle = m.color; g.stroke();
+        } else {
+            g.lineWidth = 4.5 * R; g.strokeStyle = OH2O.colors.frameCasing; g.stroke();
+            g.lineWidth = 2 * R; g.strokeStyle = OH2O.colors.selection; g.stroke();
+            g.fillStyle = m.color; g.fill();
+        }
+        map.addImage('mark-' + k, g.getImageData(0, 0, W, W), { pixelRatio: R });
+    });
+};
+/* A symbol layer's layout for one kind of mark: always drawn, sized by zoom. */
+OH2O.markLayout = function (k, over) {
+    return Object.assign({
+        'icon-image': 'mark-' + k, 'icon-allow-overlap': true, 'icon-ignore-placement': false,
+        'icon-size': ['interpolate', ['linear'], ['zoom'], 9, 0.75, 13, 1, 16, 1.25]
+    }, over || {});
+};
+
+/* ── Crop ET: the one shaded fill ─────────────────────────────────────────
+   Five classes from pale straw (least) to deep blue (most): darker is more water
+   used, as OpenET's own maps draw it. The breaks are fixed so a colour means the
+   same depth every month: inches, 0 to 10 by 2 for a month and 0 to 50 by 10 for
+   a water year. A field with no figure is a neutral grey with its own legend
+   entry, never a ramp stop. */
+OH2O.cropET = {
+    RAMP: [OH2O.colors.cropEt1, OH2O.colors.cropEt2, OH2O.colors.cropEt3, OH2O.colors.cropEt4, OH2O.colors.cropEt5],
+    BREAKS: { month: [0, 2, 4, 6, 8, 10], wy: [0, 10, 20, 30, 40, 50] },
+    NO_FIGURE: OH2O.colors.noFigure
 };
 
 OH2O.FONT = ['Noto Sans Regular'];
@@ -144,6 +209,143 @@ OH2O.makeLabelLayer = function (id, source, key, opts) {
     };
     if (opts.filter) def.filter = opts.filter;
     return def;
+};
+
+/* ── A source's use areas, shown when it is picked ────────────────────────
+   The links from each well and point of diversion to the use areas it serves are
+   not drawn all the time (88 of them crossed the demonstration's map). A click on
+   a well or a point of diversion outlines its use areas, draws a line to each
+   with its share beside the line's end, and its popup lists the shares: all of
+   them up to six, otherwise the first SHARES_SHOWN and a line for the rest. The
+   lines come from geography:tie_lines_geojson, which ends each one at a point
+   inside its use area. A click anywhere else clears the pick. */
+OH2O.SHARES_SHOWN = 5;
+OH2O._shares = { map: null, words: null };
+OH2O._sharesOf = function (type, pk) {
+    var map = OH2O._shares.map, src = map && map.getSource('tie-lines');
+    var d = src && src.serialize && src.serialize().data;
+    return ((d && d.features) || []).filter(function (f) {
+        return pk != null && f.properties.source_type === type && String(f.properties.source_id) === String(pk);
+    }).sort(function (a, b) { return b.properties.fraction - a.properties.fraction; });
+};
+/* The popup's shares block for a well ('gw') or a point of diversion ('sw'). */
+OH2O.shareRows = function (type, pk) {
+    var w = OH2O._shares.words, rows = OH2O._sharesOf(type, pk);
+    if (!w || !rows.length) return '';
+    var cut = rows.length > OH2O.SHARES_SHOWN + 1;
+    var shown = cut ? rows.slice(0, OH2O.SHARES_SHOWN) : rows;
+    var esc = function (t) { var e = document.createElement('span'); e.textContent = t; return e.innerHTML; };
+    return '<div class="popup-shares"><div class="popup-shares-head">' + esc(type === 'gw' ? w.wellHead : w.podHead) + '</div>' +
+        shown.map(function (f) {
+            return '<div class="popup-share"><span>' + esc(f.properties.parcel_number) + '</span><span>' +
+                Math.round(f.properties.fraction * 100) + '%</span></div>';
+        }).join('') +
+        (cut ? '<div class="popup-shares-more">' + esc(w.more.replace('N', String(rows.length - OH2O.SHARES_SHOWN))) + '</div>' : '') +
+        '</div>';
+};
+/* Where a picked source's popup goes: beside the box that holds the well or point of
+   diversion and every use area it serves, never over them. The sides are tried in
+   turn (left, right, below, above); the first where the whole popup fits on the map,
+   clear of the toolbar and the Layers panel, wins, with the popup's tip on that edge
+   of the box. When no side fits (a group that fills the screen), the map jumps to
+   frame the group with the popup's width kept free on the left, the side away from
+   the panel. No animation: the camera only moves when it has to, and then at once. */
+OH2O._groupBox = function (map, type, pk, coords) {
+    var rows = OH2O._sharesOf(type, pk);
+    if (!rows.length) return null;
+    var ids = {}; rows.forEach(function (f) { ids[f.properties.parcel_id] = true; });
+    var src = map.getSource('parcels'), d = src && src.serialize && src.serialize().data;
+    var pts = [coords];
+    ((d && d.features) || []).forEach(function (f) {
+        if (!ids[f.properties.pk] || !f.geometry) return;
+        (function walk(c) { if (typeof c[0] === 'number') pts.push(c); else c.forEach(walk); })(f.geometry.coordinates);
+    });
+    var west = Infinity, south = Infinity, east = -Infinity, north = -Infinity;
+    pts.forEach(function (c) { west = Math.min(west, c[0]); east = Math.max(east, c[0]); south = Math.min(south, c[1]); north = Math.max(north, c[1]); });
+    return [[west, south], [east, north]];
+};
+OH2O._freeArea = function (map) {
+    var c = map.getContainer().getBoundingClientRect();
+    var area = { left: 10, top: 10, right: c.width - 10, bottom: c.height - 10 };
+    var tb = document.getElementById('toolbar'), panel = document.getElementById('controls');
+    if (tb) { var t = tb.getBoundingClientRect(); area.top = Math.max(area.top, t.bottom - c.top + 8); }
+    if (panel && panel.offsetParent) { var p = panel.getBoundingClientRect(); area.right = Math.min(area.right, p.left - c.left - 10); }
+    return area;
+};
+OH2O._placeBeside = function (map, popup, box, w, h) {
+    var a = map.project(box[0]), b = map.project(box[1]);
+    var minX = Math.min(a.x, b.x), maxX = Math.max(a.x, b.x), minY = Math.min(a.y, b.y), maxY = Math.max(a.y, b.y);
+    var f = OH2O._freeArea(map), gap = 12;
+    var clamp = function (v, lo, hi) { return Math.max(lo, Math.min(hi, v)); };
+    var midY = clamp((minY + maxY) / 2, f.top + h / 2, f.bottom - h / 2);
+    var midX = clamp((minX + maxX) / 2, f.left + w / 2, f.right - w / 2);
+    var sides = [
+        { anchor: 'right',  at: [minX - gap, midY], fits: minX - gap - w >= f.left && f.bottom - f.top >= h },
+        { anchor: 'left',   at: [maxX + gap, midY], fits: maxX + gap + w <= f.right && f.bottom - f.top >= h },
+        { anchor: 'top',    at: [midX, maxY + gap], fits: maxY + gap + h <= f.bottom && f.right - f.left >= w },
+        { anchor: 'bottom', at: [midX, minY - gap], fits: minY - gap - h >= f.top && f.right - f.left >= w }
+    ];
+    for (var i = 0; i < sides.length; i++) {
+        if (sides[i].fits) { OH2O._setAnchor(popup, sides[i].anchor); popup.setLngLat(map.unproject(sides[i].at)); return true; }
+    }
+    return false;
+};
+OH2O._setAnchor = function (popup, anchor) {
+    // MapLibre keeps the anchor in its options; setting it and re-placing the popup is the public way round.
+    popup.options.anchor = anchor;
+};
+OH2O.placePopup = function (map, popup, layerId, props, coords) {
+    var type = layerId === 'wells-points' ? 'gw' : layerId === 'pods-points' ? 'sw' : null;
+    if (!type) return;
+    var box = OH2O._groupBox(map, type, props.pk, coords);
+    if (!box) return;
+    var el = popup.getElement(), w = el.offsetWidth, h = el.offsetHeight;
+    if (OH2O._placeBeside(map, popup, box, w, h)) return;
+    var c = map.getContainer().getBoundingClientRect(), f = OH2O._freeArea(map);
+    map.fitBounds(box, { duration: 0, maxZoom: Math.max(map.getZoom(), 13),
+        padding: { left: f.left + w + 40, right: (c.width - f.right) + 30, top: f.top + 20, bottom: 30 } });
+    if (!OH2O._placeBeside(map, popup, box, w, h)) { OH2O._setAnchor(popup, 'right'); popup.setLngLat(map.unproject([map.project(box[0]).x - 12, c.height / 2])); }
+};
+
+/* Mount the pick on the Map page. `words`: { podHead, wellHead, more } (more carries N). */
+OH2O.mountSourceShares = function (map, words) {
+    OH2O._shares = { map: map, words: words };
+    var EMPTY = { type: 'FeatureCollection', features: [] };
+    var C = OH2O.colors;
+    function ready() {
+        if (!map.getSource('tie-lines') || !map.getLayer('parcels-outline')) return window.setTimeout(ready, 100);
+        map.addSource('sel-lines', { type: 'geojson', data: EMPTY });
+        map.addSource('sel-ends', { type: 'geojson', data: EMPTY });
+        var below = map.getLayer('parcels-label') ? 'parcels-label' : undefined;
+        map.addLayer({ id: 'sel-use-areas', type: 'line', source: 'parcels',
+            filter: ['in', ['get', 'pk'], ['literal', []]],
+            paint: { 'line-color': C.selection, 'line-width': 3 } }, below);
+        map.addLayer({ id: 'sel-lines-casing', type: 'line', source: 'sel-lines',
+            paint: { 'line-color': C.frameCasing, 'line-width': 4, 'line-opacity': 0.6 } }, below);
+        map.addLayer({ id: 'sel-lines', type: 'line', source: 'sel-lines',
+            paint: { 'line-color': ['match', ['get', 'source_type'], 'gw', C.well, C.pod], 'line-width': 1.75 } }, below);
+        map.addLayer({ id: 'sel-ends-label', type: 'symbol', source: 'sel-ends',
+            layout: { 'text-field': ['concat', ['to-string', ['round', ['*', ['get', 'fraction'], 100]]], '%'],
+                      'text-font': OH2O.FONT, 'text-size': 13, 'text-allow-overlap': true, 'text-offset': [0, -1.1] },
+            paint: { 'text-color': C.selection, 'text-halo-color': C.frameCasing, 'text-halo-width': 2 } });
+        function select(type, pk) {
+            var feats = OH2O._sharesOf(type, pk);
+            map.getSource('sel-lines').setData({ type: 'FeatureCollection', features: feats });
+            map.getSource('sel-ends').setData({ type: 'FeatureCollection', features: feats.map(function (f) {
+                var c = f.geometry.coordinates;
+                return { type: 'Feature', properties: f.properties, geometry: { type: 'Point', coordinates: c[c.length - 1] } };
+            }) });
+            map.setFilter('sel-use-areas', ['in', ['get', 'pk'], ['literal', feats.map(function (f) { return f.properties.parcel_id; })]]);
+        }
+        OH2O.selectSource = select;
+        map.on('click', function (e) {
+            var layers = ['pods-points', 'wells-points'].filter(function (l) { return map.getLayer(l); });
+            var hit = layers.length ? map.queryRenderedFeatures(e.point, { layers: layers }) : [];
+            if (!hit.length) { select(null, null); return; }
+            select(hit[0].layer.id === 'wells-points' ? 'gw' : 'sw', hit[0].properties.pk);
+        });
+    }
+    ready();
 };
 
 /* ── Detail mini-map decorators ────────────────────────────────────────────

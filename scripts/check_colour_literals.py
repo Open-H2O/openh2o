@@ -36,7 +36,6 @@ BASELINE = {
     "error-pages/503.html": {"#040608": 2, "#080b10": 2, "#4d5e6f": 1, "#8899aa": 1, "#e8edf4": 1},
     "static/css/map-engine.css": {"#040608": 4, "#8899aa": 8, "#e8edf4": 5},
     "static/js/map-core.js": {"#040608": 16, "#080b10": 1, "#8899aa": 6, "#e8edf4": 1},
-    "templates/geography/map.html": {"#040608": 1},
     "templates/geography/partials/_zones_overview_map.html": {"#8899aa": 1, "#e8edf4": 1},
 }
 

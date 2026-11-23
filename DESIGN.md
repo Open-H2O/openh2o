@@ -274,6 +274,23 @@ was measured live and fixed at its shared cause where one existed. The rules, ea
   checkbox ("OpenET fields") a second group beside Dark and Aerial, unticked on every page load, and a
   credit chip at the map's bottom-left names OpenET while the layer shows
   (`OH2O.mountOpenETFieldsToggle`).
+- **Map symbols: every mark says what it is by its role, its hue and its shape** (the Map page;
+  the palette is `--color-entity-*` in `tokens.css` and `OH2O.colors` in `map-core.js`, kept equal by
+  `tests/test_map_palette_single_source.py`; the system is pinned by `tests/test_map_symbols.py`).
+  The frame is lines, never fills: the boundary a light line over a dark casing with one label,
+  management areas a sand dashed line with their names on the map, other zones a dotted teal line.
+  Water is one blue: rivers by stream order, canals thinner and greyer, from zoom 11. The site's own
+  records each take their own hue AND their own shape (`OH2O.marks`, drawn by `OH2O.registerMarks`):
+  wells gold circles (gold is a well and nothing else on the map), points of diversion teal squares,
+  recharge sites purple (a diamond for a point), drinking-water facilities a light-blue ring around
+  the well they share a place with, use areas a blue fill and line. Outside data is a neutral grey:
+  monitoring stations are grey triangles, never alarm red. Crop ET is the only shaded fill: five
+  classes from pale straw (least) to deep blue (most), darker is more, on fixed breaks (a month 0 to
+  10 in by 2, a water year 0 to 50 by 10), a neutral grey for no figure (`OH2O.cropET`). The links
+  from a well or point of diversion to its use areas are drawn only for a picked source
+  (`OH2O.mountSourceShares`): its use areas outlined, a line to each with its share, and its popup
+  placed beside the group, never over it (`OH2O.placePopup`). The map opens without other zones,
+  drinking-water facilities and monitoring stations; each is one tick away.
 - **A sidebar label wraps** rather than clipping at the rail (`.sidebar-link-text`); **a code string
   wraps** (`.text-mono { overflow-wrap: anywhere }`); **the health cards' badges are the pill size**
   and every badge colour is a token (`--color-muted` joined `tokens.css`; the last hard-coded badge

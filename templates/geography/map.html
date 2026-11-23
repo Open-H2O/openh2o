@@ -17,7 +17,7 @@
   gated on its own membership with `any_module_enabled`, the tag made
   for exactly a sentence that would otherwise be left naming nothing. The two
   sentences that survive still describe the map correctly: the agency boundary
-  and its zones are `geography` and are always there.{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "drinking" as map_has_features %}<p class="page-description">{% if map_has_features %}{% module_nouns "parcels:use areas" "wells:wells" "surface:points of diversion" "recharge:recharge sites" "drinking:drinking-water facilities" as map_nouns %}{{ map_nouns|capfirst }} appear as layers in the Layers panel. Click a feature for its record.{% else %}Turn layers on and off in the Layers panel. Click a feature for its details.{% endif %}</p>
+  and its zones are `geography` and are always there.{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "drinking" as map_has_features %}<p class="page-description">{% if map_has_features %}{% module_nouns "parcels:use areas" "wells:wells" "surface:points of diversion" "recharge:recharge sites" "drinking:drinking-water facilities" as map_nouns %}{{ map_nouns|capfirst }} are layers in the Layers panel. Click one on the map for a link to its page.{% else %}Turn layers on and off in the Layers panel. Click the boundary or a river for its name.{% endif %}</p>
 </div>
 {% endblock %}
 
@@ -143,9 +143,11 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
     maxZoom: 18,
     fitToData: false,
     fitBounds: {{ bounds|safe }},
-    fitBoundsPadding: 40,
+    // Frame the area in the space the Layers panel leaves (Reset returns here).
+    fitBoundsPadding: { top: 70, bottom: 40, left: 70, right: 320 },
     geojsonSources: [
         { id: 'boundaries', url: '{% url "geography:boundaries_geojson" %}' },
+        { id: 'boundary-labels', url: '{% url "geography:boundary_labels_geojson" %}' },
         { id: 'flowlines', url: '{% url "geography:flowlines_geojson" %}' },
         { id: 'zones', url: '{% url "geography:zones_geojson" %}' },
         { id: 'zone-labels', url: '{% url "geography:zone_labels_geojson" %}' },
@@ -158,290 +160,149 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
         { id: 'tie-lines', url: '{% url "geography:tie_lines_geojson" %}' }
     ],
     layers: [
-        // ── Administrative ──
+        // ── By role: where, water, records, other sources (DESIGN.md "Map symbols"; the palette is OH2O.colors) ──
+        // Frame: the boundary, a light line over a dark casing (no gold: gold is a well).
+        {
+            id: 'boundary-casing', type: 'line', source: 'boundaries', section: 'Areas', group: 'boundary', groupHidden: false, panelHidden: true,
+            paint: { 'line-color': OH2O.colors.frameCasing, 'line-width': 5, 'line-opacity': 0.55 }
+        },
         {
             id: 'boundary-outline', type: 'line', source: 'boundaries',
-            label: 'Boundary', section: 'Administrative', label_id: 'boundary-label',
-            paint: { 'line-color': OH2O.colors.boundary, 'line-width': 2.5, 'line-opacity': 0.85, 'line-blur': 0.3 },
-            swatch: 'line', swatchColor: OH2O.colors.boundary
+            label: 'Boundary', section: 'Areas', group: 'boundary', label_id: 'boundary-label',
+            paint: { 'line-color': OH2O.colors.frame, 'line-width': 2, 'line-opacity': 0.95 },
+            swatch: 'line', swatchColor: OH2O.colors.frame
         },
-        Object.assign(OH2O.makeLabelLayer('boundary-label', 'boundaries', 'boundary', {
+        Object.assign(OH2O.makeLabelLayer('boundary-label', 'boundary-labels', 'boundary', {
             anchor: 'center', offset: [0, 0],
+            // One point inside the boundary; the name steps to whichever side is clear of the marks.
             layout: { 'text-transform': 'uppercase', 'text-letter-spacing': 0.18,
+                      'text-variable-anchor': ['top', 'bottom', 'left', 'right', 'top-left', 'bottom-left', 'top-right', 'bottom-right'],
+                      'text-radial-offset': 2,
                       'text-size': ['interpolate', ['linear'], ['zoom'], 8, 11, 12, 15] }
-        }), { panelHidden: true, section: 'Administrative', paint: { 'text-color': OH2O.colors.gold, 'text-halo-color': '#040608', 'text-halo-width': 1.6, 'text-opacity': 0.85 } }),
-        // The 'zones' source carries TWO kinds of feature:
-        // management-area GSA zones (the per-zone-name legend breakdown below)
-        // and everything else (surface service areas in the demonstration,
-        // a real deployment's own custom or subbasin zones). One fill layer
-        // drawing both meant the legend named three GSA greens against a
-        // layer of eight zones, and the Layers panel's "GSA Zones" count
-        // included the five service areas it never named. Both layers below
-        // read the SAME source and MUST filter it the way their MapLibre
-        // `filter` does (`countFilter` mirrors `filter`).
-        {
-            id: 'zones-fill', type: 'fill', source: 'zones',
-            label: 'Management Areas', group: 'zones', section: 'Administrative',
-            filter: ['==', ['get', 'zone_type'], 'management_area'],
-            countFilter: { prop: 'zone_type', val: 'management_area' },
-            // Fill colors are rendered from the live GSA zones (geography views
-            // map_view) so symbology can never diverge from the data again.
-            paint: { 'fill-color': {% if gsa_zones %}['match', ['get', 'name'],
-{% for z in gsa_zones %}                '{{ z.name|escapejs }}', '{{ z.color }}',
-{% endfor %}                '{{ zone_fallback_color }}'
-            ]{% else %}'{{ zone_fallback_color }}'{% endif %}, 'fill-opacity': 0.16 },
-            // The swatch follows the PAINT above, both branches. On a real-basin
-            // deployment the zones are `zone_type='subbasin'`, `gsa_zones` comes
-            // back empty and the fill is the flat fallback — a swatch fixed at
-            // the match-expression colour showed the panel and legend a colour
-            // the map never painted.
-            swatch: 'fill', swatchColor: {% if gsa_zones %}'{{ gsa_zones.0.color }}'{% else %}'{{ zone_fallback_color }}'{% endif %}
-        },
+        }), { panelHidden: true, section: 'Areas', group: 'boundary', paint: { 'text-color': OH2O.colors.frame, 'text-halo-color': OH2O.colors.frameCasing, 'text-halo-width': 1.6, 'text-opacity': 0.8 } }),
+        // Management areas: a sand line with the name on the map; no fill, so the fills below read.
         {
             id: 'zones-outline', type: 'line', source: 'zones',
-            group: 'zones', groupHidden: true, section: 'Administrative',
+            label: 'Management areas', group: 'zones', section: 'Areas',
             filter: ['==', ['get', 'zone_type'], 'management_area'],
-            paint: { 'line-color': '#74c69d', 'line-width': 1.5, 'line-dasharray': [4, 3], 'line-opacity': 0.85 }
+            countFilter: { prop: 'zone_type', val: 'management_area' },
+            paint: { 'line-color': OH2O.colors.managementArea, 'line-width': ['interpolate', ['linear'], ['zoom'], 9, 1.4, 13, 1.9], 'line-dasharray': [4, 3], 'line-opacity': 0.85 },
+            swatch: 'line-dash', swatchColor: OH2O.colors.managementArea
         },
-        // One label per zone, placed at a single interior point (zone-labels
-        // source). Labeling the MultiPolygon directly stamped the name once per
-        // disjoint part — many times over for a multi-part GSA. `labelMin` 9
-        // (OH2O.entities.zone) — GSA labels appear first, at a lower zoom than
-        // the service-area labels below.
         Object.assign(OH2O.makeLabelLayer('zones-label', 'zone-labels', 'zone', {
             anchor: 'center', offset: [0, 0],
             filter: ['==', ['get', 'zone_type'], 'management_area'],
-            sortKey: 1
-        }), { panelHidden: true, group: 'zones', section: 'Administrative' }),
-
-        // Surface service areas: everything in 'zones' that is NOT a
-        // management-area GSA. Drawn OUTLINE ONLY (no fill, dashed) so the
-        // layer reads as a boundary laid over the GSA zones, never as more
-        // zones competing for the same three fills. The label sits at
-        // minzoom 11 (the layer and its popups don't exist below that),
-        // wraps at 10 characters, reads `short_label` (the part of the name
-        // after the em dash — `zone_labels_geojson`) so "MER Surface Service
-        // Area — Halvern Irrigation District" labels as "Halvern Irrigation
-        // District", and sorts AFTER the GSA labels (a higher sort-key loses
-        // a collision to a lower one) so a GSA name never yields to a service
-        // area's.
+            sortKey: 1,
+        layout: { 'text-size': ['interpolate', ['linear'], ['zoom'], 9, 12, 13, 15], 'text-max-width': 9 } }), { panelHidden: true, group: 'zones', section: 'Areas', paint: { 'text-color': OH2O.colors.managementArea, 'text-halo-color': OH2O.colors.frameCasing, 'text-halo-width': 1.8 } }),
         {
             id: 'service-areas-outline', type: 'line', source: 'zones',
-            label: 'Surface service areas', group: 'service-areas', section: 'Administrative',
+            label: 'Subbasins and other areas', group: 'service-areas', section: 'Areas', visible: false,
             filter: ['!=', ['get', 'zone_type'], 'management_area'],
             countFilter: { prop: 'zone_type', notVal: 'management_area' },
-            paint: { 'line-color': OH2O.colors.boundary, 'line-width': 1.5, 'line-dasharray': [3, 2], 'line-opacity': 0.75 },
-            swatch: 'line-dash', swatchColor: OH2O.colors.boundary
+            paint: { 'line-color': OH2O.colors.serviceArea, 'line-width': 1.5, 'line-dasharray': [1, 2], 'line-opacity': 0.9 },
+            swatch: 'line-dash', swatchColor: OH2O.colors.serviceArea
         },
         Object.assign(OH2O.makeLabelLayer('service-areas-label', 'zone-labels', 'zone', {
             anchor: 'center', offset: [0, 0], minzoom: 11, sortKey: 5,
             field: ['coalesce', ['get', 'short_label'], ['get', 'label'], ['get', 'name']],
             filter: ['!=', ['get', 'zone_type'], 'management_area'],
-            layout: { 'text-max-width': 10 }
-        }), { panelHidden: true, group: 'service-areas', section: 'Administrative' }),
+            layout: { 'text-max-width': 10, visibility: 'none' }
+        }), { panelHidden: true, group: 'service-areas', section: 'Areas', visible: false }),
 
-        // ── Surface Water (hydrography) ──
-        // Placed early in the array so the river/canal lines DRAW beneath parcels
-        // and points (MapLibre renders in array order). Tagged section 'Surface
-        // Water' so they group in the panel with the PODs/allocation links below.
-        // Symbology follows the GIS hydrology house style: natural channels in
-        // cyan with width by stream order, man-made canals in mint green — color,
-        // not dash, tells the district's canal network from the Merced River itself.
+        // Water: one blue, rivers by stream order; canals thinner and lighter, drawn from zoom 11.
         {
             id: 'flowlines-rivers', type: 'line', source: 'flowlines',
-            label: 'Rivers & Streams', section: 'Surface Water',
-            // A canal is any feature_type containing "Canal" — matches the real
-            // USGS 3DHP label "Canal" AND the legacy/synthetic "Canal/Ditch".
-            // Natural 3DHP types ("Channel Line", "Waterbody Connector", …) do
-            // not contain "Canal", so they fall through to rivers here.
+            label: 'Rivers and streams', section: 'Waterways',
             filter: ['!', ['in', 'Canal', ['coalesce', ['get', 'feature_type'], '']]],
-            // Mirrors the filter directly above. Without it the count badge and
-            // the legend read the whole 'flowlines' source, so rivers and canals
-            // reported the SAME number (4,672 for both).
             countFilter: { prop: 'feature_type', notContains: 'Canal' },
             paint: { 'line-color': OH2O.colors.river,
                      'line-width': ['interpolate', ['linear'], ['zoom'],
-                         9,  ['interpolate', ['linear'], ['coalesce', ['get', 'stream_order'], 1], 1, 0.6, 6, 2.0],
-                         16, ['interpolate', ['linear'], ['coalesce', ['get', 'stream_order'], 1], 1, 1.6, 6, 4.5]],
-                     'line-opacity': 0.85 },
+                         9,  ['interpolate', ['linear'], ['coalesce', ['get', 'stream_order'], 1], 1, 0.5, 6, 2.2],
+                         16, ['interpolate', ['linear'], ['coalesce', ['get', 'stream_order'], 1], 1, 1.5, 6, 5]],
+                     'line-opacity': ['interpolate', ['linear'], ['coalesce', ['get', 'stream_order'], 1], 1, 0.55, 4, 0.95] },
             swatch: 'line', swatchColor: OH2O.colors.river
         },
-        // Dark casing drawn first (underneath) so the mint canal lifts off green
-        // fields. Shares the 'flowlines-canals' group → one panel toggle hides both.
         {
-            id: 'flowlines-canals-casing', type: 'line', source: 'flowlines',
-            section: 'Surface Water', group: 'flowlines-canals', panelHidden: true,
-            filter: ['in', 'Canal', ['coalesce', ['get', 'feature_type'], '']],
-            layout: { 'line-cap': 'round', 'line-join': 'round' },
-            paint: { 'line-color': OH2O.colors.hydroCasing,
-                     'line-width': ['interpolate', ['linear'], ['zoom'], 9, 2.2, 13, 3.4, 16, 4.5],
-                     'line-opacity': 0.8 }
-        },
-        {
-            id: 'flowlines-canals', type: 'line', source: 'flowlines',
-            label: 'Canals & Ditches', section: 'Surface Water', group: 'flowlines-canals',
+            id: 'flowlines-canals', type: 'line', source: 'flowlines', minzoom: 11,
+            label: 'Canals and ditches', section: 'Waterways', group: 'flowlines-canals',
             filter: ['in', 'Canal', ['coalesce', ['get', 'feature_type'], '']],
             countFilter: { prop: 'feature_type', contains: 'Canal' },
             layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: { 'line-color': OH2O.colors.canal,
-                     'line-width': ['interpolate', ['linear'], ['zoom'], 9, 1.0, 13, 1.8, 16, 2.5],
-                     'line-opacity': 0.95 },
+                     'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.7, 13, 1.1, 16, 1.8],
+                     'line-opacity': 0.75 },
             swatch: 'line', swatchColor: OH2O.colors.canal
         },
         Object.assign(OH2O.makeLabelLayer('flowlines-label', 'flowlines', 'hydrography', {
             layout: { 'symbol-placement': 'line', 'text-size': 11 }
-        }), { panelHidden: true, section: 'Surface Water' }),
+        }), { panelHidden: true, section: 'Waterways', paint: { 'text-color': OH2O.colors.frame, 'text-halo-color': OH2O.colors.frameCasing, 'text-halo-width': 1.4 } }),
 
-        // ── Land Use ──
-        {% comment %}Guarded with their source above, same reasoning
-          as the Wells, Surface Water and Recharge blocks — a layer left behind
-          after its source is gone is a MapLibre console error, not a clean
-          absence. With `wells` in the same drop closure, guarding these three
-          empties the Land Use section entirely, which is what removes the
-          heading.{% endcomment %}{% if 'parcels' in enabled_modules %}{
+        // Records: use areas, then the point marks, each its own hue and shape.
+        {% if 'parcels' in enabled_modules %}{
             id: 'parcels-fill', type: 'fill', source: 'parcels',
-            label: 'Use Areas', group: 'parcels', section: 'Land Use',
-            paint: { 'fill-color': OH2O.colors.blue, 'fill-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0.10, 15, 0.22] },
-            swatch: 'fill', swatchColor: OH2O.colors.blue
+            label: 'Use areas', group: 'parcels', section: 'Records',
+            paint: { 'fill-color': OH2O.colors.useAreaLine, 'fill-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0.5, 12, 0.24, 15, 0.2] },
+            swatch: 'fill', swatchColor: OH2O.colors.useArea
         },
         {
             id: 'parcels-outline', type: 'line', source: 'parcels',
-            group: 'parcels', groupHidden: true, section: 'Land Use',
-            paint: { 'line-color': OH2O.colors.blueBright, 'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.5, 15, 1.4], 'line-opacity': 0.7 }
+            group: 'parcels', panelHidden: true, section: 'Records',
+            paint: { 'line-color': OH2O.colors.useAreaLine, 'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.8, 15, 1.6], 'line-opacity': 0.9 }
         },
         Object.assign(OH2O.makeLabelLayer('parcels-label', 'parcels', 'parcel', { anchor: 'center', offset: [0, 0],
-            layout: { 'text-size': ['interpolate', ['linear'], ['zoom'], 14, 10, 17, 12.5] } }),
-            { panelHidden: true, group: 'parcels', section: 'Land Use' }),{% endif %}
-
-        // ── Drinking Water ──
-        {% comment %}
-          Guarded with its source above, exactly like the five other optional
-          layers. Placed BEFORE the wells pair on purpose, and drawn at a LARGER
-          radius than wells uses.
-
-          Every located drinking-water facility in the demonstration also has a
-          Well, and `_seed_wells` built those Well rows from the SAME GAMA
-          coordinate — so on a full deployment these two layers put dots on 21
-          identical positions. MapLibre draws in array order, so whichever came
-          second would simply hide the other. Drawing drinking first and wider
-          makes a co-located pair read as a blue ring around a gold dot ("this
-          well is also a drinking-water source") instead of as a dot that
-          vanished. Nothing is offset, jittered or nudged: two features at one
-          coordinate is the truth, and the layers panel is what separates them.
-        {% endcomment %}{% if 'drinking' in enabled_modules %}{
-            id: 'drinking-points', type: 'circle', source: 'drinking',
-            label: 'Drinking Water Facilities', section: 'Drinking Water', label_id: 'drinking-label',
-            paint: OH2O.pointPaint('drinking', {
-                'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, 6, 13, 9.5, 16, 13]
-            }),
-            glow: { paint: OH2O.glowPaint('drinking') },
-            swatch: 'dot', swatchColor: OH2O.colors.blueBright
-        },
-        Object.assign(OH2O.makeLabelLayer('drinking-label', 'drinking', 'drinking', {}), { panelHidden: true, section: 'Drinking Water' }),{% endif %}
-        {% comment %}
-          Guarded with their source above, same reasoning as Surface Water and
-          Recharge below: a layer left behind after its source is gone is a
-          MapLibre console error, not a clean absence. The guard shares a line
-          with the markup because a tag alone on a line still emits that line's
-          newline, and this plan's deliverable is a byte-identical full render.
-        {% endcomment %}{% if 'wells' in enabled_modules %}{
-            id: 'wells-points', type: 'circle', source: 'wells',
-            label: 'Wells', section: 'Land Use', label_id: 'wells-label',
-            paint: OH2O.pointPaint('well'),
-            glow: { paint: OH2O.glowPaint('well') },
-            swatch: 'dot', swatchColor: OH2O.colors.gold
-        },
-        Object.assign(OH2O.makeLabelLayer('wells-label', 'wells', 'well', {}), { panelHidden: true, section: 'Land Use' }),{% endif %}
-
-        // ── Surface Water ──
-        {% comment %}
-          The whole Surface Water section is guarded with its source above. The
-          POD layers would reference a removed source (a MapLibre console error,
-          not a clean absence), and the SW tie lines are drawn from
-          PointOfDiversionParcel — without the module the section would be an
-          empty panel heading with two permanently blank toggles.
-        {% endcomment %}
-        {% if 'surface' in enabled_modules %}
-        {
-            id: 'pods-points', type: 'circle', source: 'pods',
-            label: 'Points of Diversion', section: 'Surface Water', label_id: 'pods-label',
-            paint: OH2O.pointPaint('pod'),
-            glow: { paint: OH2O.glowPaint('pod') },
-            swatch: 'dot', swatchColor: OH2O.colors.teal
-        },
-        Object.assign(OH2O.makeLabelLayer('pods-label', 'pods', 'pod', {}), { panelHidden: true, section: 'Surface Water' }),
-        {
-            id: 'sw-tie-lines', type: 'line', source: 'tie-lines',
-            label: 'SW Allocation Links', group: 'sw-tie-lines', section: 'Surface Water',
-            filter: ['==', ['get', 'source_type'], 'sw'],
-            // The sw and gw links share the 'tie-lines' source; without these
-            // two the panel reports every link twice over.
-            countFilter: { prop: 'source_type', val: 'sw' },
-            paint: { 'line-color': OH2O.colors.teal, 'line-width': 1.5, 'line-opacity': 0.55, 'line-dasharray': [6, 3] },
-            swatch: 'line-dash', swatchColor: OH2O.colors.teal
-        },
-        Object.assign(OH2O.makeLabelLayer('sw-tie-labels', 'tie-lines', 'pod', {
-            minzoom: 12, field: ['concat', ['to-string', ['round', ['*', ['get', 'fraction'], 100]]], '% SW'],
-            layout: { 'symbol-placement': 'line-center', 'text-size': 11 }, offset: [0, -0.8]
-        }), { panelHidden: true, group: 'sw-tie-lines', section: 'Surface Water', filter: ['==', ['get', 'source_type'], 'sw'] }),
-        {% endif %}
-
-        // ── Infrastructure ──
-        {% comment %}
-          The GW tie lines are drawn from wells.WellIrrigatedParcel, so without
-          the module they are a permanently empty toggle labelled "GW" -- the
-          same shape the SW pair is guarded for.
-        {% endcomment %}{% if 'wells' in enabled_modules %}{
-            id: 'gw-tie-lines', type: 'line', source: 'tie-lines',
-            label: 'GW Allocation Links', group: 'gw-tie-lines', section: 'Infrastructure',
-            filter: ['==', ['get', 'source_type'], 'gw'],
-            countFilter: { prop: 'source_type', val: 'gw' },
-            paint: { 'line-color': OH2O.colors.gold, 'line-width': 1.5, 'line-opacity': 0.55, 'line-dasharray': [6, 3] },
-            swatch: 'line-dash', swatchColor: OH2O.colors.gold
-        },
-        Object.assign(OH2O.makeLabelLayer('gw-tie-labels', 'tie-lines', 'well', {
-            minzoom: 12, field: ['concat', ['to-string', ['round', ['*', ['get', 'fraction'], 100]]], '% GW'],
-            layout: { 'symbol-placement': 'line-center', 'text-size': 11 }, offset: [0, -0.8]
-        }), { panelHidden: true, group: 'gw-tie-lines', section: 'Infrastructure', filter: ['==', ['get', 'source_type'], 'gw'] }),{% endif %}
-        {% comment %}
-          All four recharge layers are guarded together with their source above. A
-          source removed with its layers left behind produces a MapLibre console
-          error ("source 'recharge' not found"), not a clean absence.
-        {% endcomment %}
-        {% if 'recharge' in enabled_modules %}
-        {
+            layout: { 'text-size': ['interpolate', ['linear'], ['zoom'], 14, 10, 17, 12.5], 'text-variable-anchor': ['center', 'top', 'bottom'], 'text-radial-offset': 0.8 } }),
+            { panelHidden: true, group: 'parcels', section: 'Records' }),{% endif %}
+        {% if 'recharge' in enabled_modules %}{
             id: 'recharge-fill', type: 'fill', source: 'recharge',
-            label: 'Recharge Sites', group: 'recharge', section: 'Infrastructure',
+            label: 'Recharge sites', group: 'recharge', section: 'Records',
             filter: ['!=', '$type', 'Point'],
-            paint: { 'fill-color': OH2O.colors.purple, 'fill-opacity': 0.25 },
-            swatch: 'fill', swatchColor: OH2O.colors.purple
+            paint: { 'fill-color': OH2O.colors.recharge, 'fill-opacity': 0.3 },
+            swatch: 'custom', swatchStyle: 'display:inline-block;width:11px;height:11px;transform:rotate(45deg);background:' + OH2O.colors.recharge + ';border:1.5px solid ' + OH2O.colors.selection + ';flex:none;margin:0 2px'
         },
         {
             id: 'recharge-outline', type: 'line', source: 'recharge',
-            group: 'recharge', groupHidden: true, section: 'Infrastructure',
+            group: 'recharge', panelHidden: true, section: 'Records',
             filter: ['!=', '$type', 'Point'],
-            paint: { 'line-color': OH2O.colors.purple, 'line-width': 1.5, 'line-opacity': 0.85 }
+            paint: { 'line-color': OH2O.colors.recharge, 'line-width': 1.75, 'line-opacity': 0.95 }
         },
         {
-            id: 'recharge-points', type: 'circle', source: 'recharge',
-            group: 'recharge', groupHidden: true, section: 'Infrastructure',
+            id: 'recharge-points', type: 'symbol', source: 'recharge',
+            group: 'recharge', panelHidden: true, section: 'Records',
             filter: ['==', '$type', 'Point'],
-            paint: OH2O.pointPaint('recharge'),
-            glow: { paint: OH2O.glowPaint('recharge') }
+            layout: OH2O.markLayout('recharge')
         },
         Object.assign(OH2O.makeLabelLayer('recharge-label', 'recharge', 'recharge', { anchor: 'center', offset: [0, 0] }),
-            { panelHidden: true, group: 'recharge', section: 'Infrastructure' }),
-        {% endif %}
-
-        // ── Monitoring ──
-        {% if 'datasync' in enabled_modules %}{
-            id: 'stations-points', type: 'circle', source: 'stations',
-            label: 'Monitoring Stations', section: 'Monitoring', label_id: 'stations-label',
-            paint: OH2O.pointPaint('station'),
-            glow: { paint: OH2O.glowPaint('station') },
-            swatch: 'dot', swatchColor: OH2O.colors.red
+            { panelHidden: true, group: 'recharge', section: 'Records' }),{% endif %}
+        {% if 'drinking' in enabled_modules %}{
+            id: 'drinking-points', type: 'symbol', source: 'drinking', visible: false,
+            label: 'Drinking-water facilities', section: 'Records', label_id: 'drinking-label',
+            layout: OH2O.markLayout('drinking'),
+            swatch: 'custom', swatchStyle: 'display:inline-block;width:12px;height:12px;border-radius:50%;border:2.5px solid ' + OH2O.colors.drinking + ';box-sizing:border-box;flex:none'
         },
-        Object.assign(OH2O.makeLabelLayer('stations-label', 'stations', 'station', {}), { panelHidden: true, section: 'Monitoring' }){% endif %}
+        Object.assign(OH2O.makeLabelLayer('drinking-label', 'drinking', 'drinking', { offset: [0, 1.4] }), { panelHidden: true, section: 'Records', visible: false, layout: Object.assign(OH2O.makeLabelLayer('x','x','drinking',{offset:[0,1.4]}).layout, { visibility: 'none' }) }),{% endif %}
+        {% if 'wells' in enabled_modules %}{
+            id: 'wells-points', type: 'symbol', source: 'wells',
+            label: 'Wells', section: 'Records', label_id: 'wells-label',
+            layout: OH2O.markLayout('well'),
+            swatch: 'custom', swatchStyle: 'display:inline-block;width:12px;height:12px;border-radius:50%;background:' + OH2O.colors.well + ';border:1.5px solid ' + OH2O.colors.selection + ';box-sizing:border-box;flex:none'
+        },
+        Object.assign(OH2O.makeLabelLayer('wells-label', 'wells', 'well', { layout: { 'text-variable-anchor': ['top', 'bottom', 'right', 'left'], 'text-radial-offset': 1.1, 'text-justify': 'auto' } }), { panelHidden: true, section: 'Records' }),{% endif %}
+        {% if 'surface' in enabled_modules %}{
+            id: 'pods-points', type: 'symbol', source: 'pods',
+            label: 'Points of diversion', section: 'Records', label_id: 'pods-label',
+            layout: OH2O.markLayout('pod'),
+            swatch: 'custom', swatchStyle: 'display:inline-block;width:11px;height:11px;background:' + OH2O.colors.pod + ';border:1.5px solid ' + OH2O.colors.selection + ';box-sizing:border-box;flex:none'
+        },
+        Object.assign(OH2O.makeLabelLayer('pods-label', 'pods', 'pod', { layout: { 'text-variable-anchor': ['top', 'bottom', 'right', 'left'], 'text-radial-offset': 1.1, 'text-justify': 'auto' } }), { panelHidden: true, section: 'Records' }),{% endif %}
+
+        // Outside data: monitoring stations, a neutral triangle. Off when the page opens.
+        {% if 'datasync' in enabled_modules %}{
+            id: 'stations-points', type: 'symbol', source: 'stations', visible: false,
+            label: 'Monitoring stations', section: 'Monitoring stations', label_id: 'stations-label',
+            layout: OH2O.markLayout('station'),
+            swatch: 'custom', swatchStyle: 'display:inline-block;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:11px solid ' + OH2O.colors.station + ';flex:none;margin:0 1px'
+        },
+        Object.assign(OH2O.makeLabelLayer('stations-label', 'stations', 'station', {}), { panelHidden: true, section: 'Monitoring stations', visible: false, layout: Object.assign(OH2O.makeLabelLayer('y','y','station',{}).layout, { visibility: 'none' }) }){% endif %}
     ],
     popups: {
         'flowlines-rivers': function(p) {
@@ -454,16 +315,6 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
                    'Type: ' + (p.feature_type || '—') + '<br>' +
                    'Stream order: ' + (p.stream_order != null ? p.stream_order : '—');
         },
-        {% if 'wells' in enabled_modules %}'gw-tie-lines': function(p) {
-            var pct = Math.round((p.fraction || 0) * 100);
-            return '<strong>Well ' + (p.source_name || '—') + ' → Use area ' + (p.parcel_number || '—') + '</strong><br>' +
-                   'Fraction: ' + pct + '%';
-        },{% endif %}
-        'sw-tie-lines': function(p) {
-            var pct = Math.round((p.fraction || 0) * 100);
-            return '<strong>Point of diversion ' + (p.source_name || '—') + ' → Use area ' + (p.parcel_number || '—') + '</strong><br>' +
-                   'Fraction: ' + pct + '%';
-        },
         'boundary-outline': function(p) {
             return '<strong>' + (p.name || 'Boundary') + '</strong><br>' +
                    (p.area_sq_miles ? parseFloat(p.area_sq_miles).toFixed(1) + ' sq mi' : '');
@@ -473,28 +324,28 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
                    'Owner: ' + (p.owner_name || '—') + '<br>' +
                    'Area: ' + (p.area_acres ? parseFloat(p.area_acres).toFixed(2) + ' ac' : '—') + '<br>' +
                    'Status: ' + (p.status || '—') + '<br>' +
-                   '<a href="/parcels/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
+                   '<a href="/parcels/' + p.pk + '/">View details →</a>';
         },{% endif %}
         {% if 'recharge' in enabled_modules %}
         'recharge-fill': function(p) {
-            return '<strong>' + (p.name || 'Unknown site') + '</strong><br>' +
+            return '<strong>' + (p.label || p.name || 'Recharge site') + '</strong><br>' +
                    'Type: ' + (p.site_type || '—') + '<br>' +
                    'Capacity: ' + (p.capacity_acre_feet ? parseFloat(p.capacity_acre_feet).toFixed(2) + ' AF' : '—') + '<br>' +
-                   '<a href="/recharge/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
+                   '<a href="/recharge/' + p.pk + '/">View details →</a>';
         },
         'recharge-points': function(p) {
-            return '<strong>' + (p.name || 'Unknown site') + '</strong><br>' +
+            return '<strong>' + (p.label || p.name || 'Recharge site') + '</strong><br>' +
                    'Type: ' + (p.site_type || '—') + '<br>' +
                    'Capacity: ' + (p.capacity_acre_feet ? parseFloat(p.capacity_acre_feet).toFixed(2) + ' AF' : '—') + '<br>' +
-                   '<a href="/recharge/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
+                   '<a href="/recharge/' + p.pk + '/">View details →</a>';
         },
         {% endif %}
         {% if 'wells' in enabled_modules %}'wells-points': function(p) {
             return '<strong>' + (p.name || 'Unnamed well') + '</strong><br>' +
                    'Local registration ID: ' + (p.well_registration_id || '—') + '<br>' +
                    'Depth: ' + (p.depth_ft ? parseFloat(p.depth_ft).toFixed(0) + ' ft' : '—') + '<br>' +
-                   'Status: ' + (p.status || '—') + '<br>' +
-                   '<a href="/wells/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
+                   'Status: ' + (p.status || '—') + '<br>' + OH2O.shareRows('gw', p.pk) +
+                   '<a href="/wells/' + p.pk + '/">View details →</a>';
         },{% endif %}
         {% if 'drinking' in enabled_modules %}'drinking-points': function(p) {
             // MapLibre serialises an array property to a JSON STRING in the
@@ -506,27 +357,27 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
             codes = codes || [];
             // Identity and position only — no result, no limit, no compliance
             // status. A popup is a view; "prepare, never determine" binds it.
-            return '<strong>' + (p.name || p.facility_id || 'Facility') + '</strong><br>' +
+            return '<strong>' + (p.label || p.name || p.facility_id || 'Facility') + '</strong><br>' +
                    'Facility ID: ' + (p.facility_id || '—') + '<br>' +
                    'Type: ' + (p.facility_type || '—') + '<br>' +
                    'System: ' + (p.system_name || '—') + '<br>' +
                    'Sampled at: ' + (codes.length ? codes.join(', ') : 'no sampling point recorded') + '<br>' +
-                   '<a href="' + DRINKING_FACILITY_URL.replace('/0/', '/' + p.pk + '/') + '" style="color:'+OH2O.colors.gold+'">View details →</a>';
+                   '<a href="' + DRINKING_FACILITY_URL.replace('/0/', '/' + p.pk + '/') + '">View details →</a>';
         },{% endif %}
         {% if 'surface' in enabled_modules %}
         'pods-points': function(p) {
-            return '<strong>' + (p.name || 'Unknown point of diversion') + '</strong><br>' +
+            return '<strong>' + (p.label || p.name || 'Point of diversion') + '</strong><br>' +
                    'Stream: ' + (p.stream_name || '—') + '<br>' +
-                   'Max rate: ' + (p.max_rate_cfs ? parseFloat(p.max_rate_cfs).toFixed(2) + ' cfs' : '—') + '<br>' +
-                   '<a href="/surface/diversion/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
+                   'Max rate: ' + (p.max_rate_cfs ? parseFloat(p.max_rate_cfs).toFixed(2) + ' cfs' : '—') + '<br>' + OH2O.shareRows('sw', p.pk) +
+                   '<a href="/surface/diversion/' + p.pk + '/">View details →</a>';
         },
         {% endif %}
         {% if 'datasync' in enabled_modules %}'stations-points': function(p) {
-            return '<strong>' + (p.station_name || 'Unknown station') + '</strong><br>' +
+            return '<strong>' + (p.label || p.station_name || 'Monitoring station') + '</strong><br>' +
                    'Source: ' + (p.data_source_code || '—') + '<br>' +
                    'ID: ' + (p.external_station_id || '—') + '<br>' +
                    'Last data: ' + (p.last_data_at ? p.last_data_at.slice(0,10) : '—') + '<br>' +
-                   '<a href="/datasync/stations/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
+                   '<a href="/datasync/stations/' + p.pk + '/">View details →</a>';
         }{% endif %}
     },
     // The legend box carries ONE thing: the per-zone-name colour breakdown, a
@@ -539,12 +390,15 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
     // with no features while leaving a populated one unnamed. The legend
     // therefore holds only the management areas below; do not add per-layer
     // rows here.
-    legend: [
-{% if gsa_zones %}        { title: 'Management Areas', items: [
-{% for z in gsa_zones %}            { label: '{{ z.name|escapejs }}', swatch: 'fill', color: '{{ z.color }}' }{% if not forloop.last %},{% endif %}
-{% endfor %}        ]}
-{% endif %}    ]
+    legend: []
 };
 </script>
 <script src="{% static 'js/map-engine.js' %}"></script>
+<script>
+OH2O.mountSourceShares(window._mapEngine.map, {
+    podHead: 'Linked use areas',
+    wellHead: 'Irrigated use areas',
+    more: 'and N more, outlined on the map'
+});
+</script>
 {% endblock %}

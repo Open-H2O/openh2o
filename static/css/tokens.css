@@ -172,8 +172,8 @@
     --duration-base: 250ms;
 
     /* -- Entity colors (map layer identity) -------------------------------
-       These eleven ARE the map palette. `OH2O.colors` in static/js/map-core.js
-       holds the same eleven names and the same eleven values, and that is not a
+       These ARE the map palette. `OH2O.colors` in static/js/map-core.js
+       holds the same names and the same values, and that is not a
        convention anyone has to remember: tests/test_map_palette_single_source.py
        fails the build if the two files disagree on a name or a value.
 
@@ -195,11 +195,37 @@
        map reads as the app's supply figures do. Keep the two values equal. */
     --color-entity-green: #55B678;
     /* Hydrography strokes — GIS hydrology house style, not the app palette. */
-    --color-entity-river: #45d0e8;     /* Natural channels */
-    --color-entity-canal: #7ee8a0;     /* Man-made canals */
+    --color-entity-river: #4FA3E0;     /* Rivers and streams: the one water blue */
+    --color-entity-canal: #6F9FC4;     /* Canals and ditches: thinner and greyer than a river */
     --color-entity-hydro-casing: #06140e;  /* Dark casing under the canal */
     /* OpenET's field outlines (a dashed line), the primary text colour. */
     --color-entity-openet: #E7EEF2;
+    /* The Map page's palette by role. Each mark says what it is by its role, its
+       hue and its shape: the frame is lines, water is one blue, the site's own
+       records each take their own hue AND shape, outside data is a neutral grey,
+       and crop ET is the only shaded fill. DESIGN.md "Map symbols" explains it.
+       The names above (gold, teal, purple, red, blue, blue-bright, green,
+       boundary, hydro-casing) stay while the other maps still read them; they go
+       when those maps move to these. */
+    --color-entity-frame: #E7EEF2;            /* The boundary line */
+    --color-entity-frame-casing: #0B121B;     /* Dark casing under lines and marks, label halos */
+    --color-entity-management-area: #D8C7A6;  /* Management areas: a sand dashed line */
+    --color-entity-service-area: #46B3C4;     /* Other zones: a dotted teal line */
+    --color-entity-use-area: #1B7FAF;         /* Use area fill */
+    --color-entity-use-area-line: #3DB4E0;    /* Use area outline */
+    --color-entity-well: #E0A446;             /* Wells: gold circles (gold is a well, nothing else) */
+    --color-entity-pod: #46B3C4;              /* Points of diversion: teal squares */
+    --color-entity-drinking: #A9DCFF;         /* Drinking-water facilities: a light-blue ring */
+    --color-entity-recharge: #9B87F5;         /* Recharge sites: purple, a diamond for a point */
+    --color-entity-station: #C3CDD6;          /* Monitoring stations: grey triangles, never red */
+    --color-entity-selection: #F4F7F9;        /* A picked source's use areas; the light ring on every mark */
+    /* Crop ET, least to most: pale straw to deep blue, darker is more water used. */
+    --color-entity-crop-et-1: #F3E6B3;
+    --color-entity-crop-et-2: #B9DCA0;
+    --color-entity-crop-et-3: #6FC3B1;
+    --color-entity-crop-et-4: #2F97C1;
+    --color-entity-crop-et-5: #1B5AA6;
+    --color-entity-no-figure: #8FA3AE;        /* A field with no crop ET figure: neutral grey */
 
     /* -- Border radius --------------------------------------------------- */
     /* Squared, chosen after comparing three scales

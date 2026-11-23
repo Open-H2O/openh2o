@@ -20,6 +20,7 @@ in a way you cannot see by looking at a working map:
   that looks like data.
 """
 import json
+import re
 
 import factory
 import pytest
@@ -410,7 +411,9 @@ class TestTheDistrictMapCarriesTheDrinkingLayer:
         )
         assert "id: 'drinking-points'" in html, "the drinking layer is missing"
         assert "'drinking-points': function" in html, "the layer has no popup builder"
-        assert "Drinking Water Facilities" in html, "no legend or panel entry"
+        assert re.search(r"id: 'drinking-points'[^}]*?(?<![\w-])label:\s*'[^']+'", html), (
+            "the drinking layer has no name in the Layers panel"
+        )
 
     def test_it_is_declared_before_wells_so_it_draws_underneath(
         self, client_in, mapped_system

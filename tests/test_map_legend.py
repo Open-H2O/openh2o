@@ -433,6 +433,7 @@ class TestTheDistrictSplitsIntoTwoZoneKinds:
         )
         assert "minzoom: 11" in element
 
+    # not wording: the string is the label layer's MapLibre filter, not words a reader sees
     def test_the_map_names_exactly_the_management_area_zones(self, client_in):
         """The names sit on the areas: the label layer reads the management areas only."""
         element = _element_containing(

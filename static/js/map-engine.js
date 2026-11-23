@@ -320,7 +320,8 @@ if (MAP_CONFIG.fitBounds) {
 // coords) so the entire RIGHT edge belongs to the LAYERS panel and the two can
 // never collide. CSS (.maplibregl-ctrl-top-left) drops this group below #coords.
 map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-left');
-map.addControl(new maplibregl.ScaleControl({ maxWidth: 160, unit: 'imperial' }), 'bottom-left');
+// The scale is a ruler in the bottom-right corner, above the credit (map-engine.css).
+map.addControl(new maplibregl.ScaleControl({ maxWidth: 120, unit: 'imperial' }), 'bottom-right');
 
 // ── Basemap switching (delegates to the shared toolkit) ──
 window.switchBase = function(mode) {
@@ -330,7 +331,13 @@ window.switchBase = function(mode) {
     if (btn) btn.classList.add('active');
 };
 
+// Reset returns to the frame the page opened on: the area fitted into the space
+// the Layers panel leaves, not a centre and a zoom that ignore the panel.
 window.resetView = function() {
+    if (MAP_CONFIG.fitBounds) {
+        map.fitBounds(MAP_CONFIG.fitBounds, { padding: MAP_CONFIG.fitBoundsPadding || 60, maxZoom: 14, pitch: 0, bearing: 0, duration: 1200 });
+        return;
+    }
     map.flyTo({ center: MAP_CONFIG.center, zoom: MAP_CONFIG.zoom, pitch: 0, bearing: 0, duration: 1200 });
 };
 window.planimetricView = function() { map.easeTo({ pitch: 0, bearing: 0, duration: 800 }); };
@@ -404,6 +411,8 @@ map.on('load', function() {
     });
 
     Promise.all(fetches).then(function(results) {
+        // The record marks are images (OH2O.marks); register them before any layer names one.
+        if (OH2O.registerMarks) OH2O.registerMarks(map);
         var sourceCounts = {};
         results.forEach(function(result) {
             map.addSource(result.id, { type: 'geojson', data: result.data });
@@ -468,6 +477,8 @@ map.on('load', function() {
                     ? e.features[0].geometry.coordinates.slice() : [e.lngLat.lng, e.lngLat.lat];
                 _activePopup = new maplibregl.Popup({ maxWidth: '280px' })
                     .setLngLat(coords).setHTML(MAP_CONFIG.popups[layerId](props, coords)).addTo(map);
+                // A picked well's or point of diversion's popup moves beside its use areas (map-core.js).
+                if (OH2O.placePopup) OH2O.placePopup(map, _activePopup, layerId, props, coords);
             });
             map.on('mouseenter', layerId, function() { if (!_measureActive) map.getCanvas().style.cursor = 'pointer'; });
             map.on('mouseleave', layerId, function() { if (!_measureActive) map.getCanvas().style.cursor = ''; });
