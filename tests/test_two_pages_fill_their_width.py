@@ -6,8 +6,9 @@ takes the content width like every other full card, so its right edge lines up w
 banner around it instead of stopping halfway across an empty page. Its sentence keeps its reading
 measure (.receipt-lead).
 
-On a finalized water year the Status cell's date and time sit together on their own line under
-the Finalized badge, so the time never wraps onto a line by itself.
+On a finalized water year the Status cell's date and time sit on their own line under the
+Finalized badge, where from about 1,440 px they fit together, so the time no longer wraps onto a line
+by itself beside the badge.
 """
 
 import re
@@ -62,12 +63,13 @@ def test_a_finalized_years_date_and_time_sit_together_under_the_badge():
 
     status = page[page.index('<div class="field-label">Status</div>'):]
     status = status[: status.index('<div class="field-label">Start date</div>')]
-    # The badge, then a line of its own: the date and the time, each one unbreakable piece, so a
-    # narrow card moves the time under the whole date instead of past its edge.
+    # The badge, then a block line of its own beginning with the date and the time (the time
+    # one unbreakable piece); a narrow card wraps them at their spaces instead of past its edge.
     assert re.search(
-        r'Finalized</span>\s*<div class="[^"]*\bfinalized-when\b[^"]*">\s*'
-        r'<span class="nowrap-item">\w{3} \d{2}, \d{4}</span> <span class="nowrap-item">\d{2}:\d{2}</span>',
+        r'Finalized</span>\s*<div class="[^"]*\bfinalized-when\b[^"]*">'
+        r'\w{3} \d{2}, \d{4} <span class="nowrap-item">\d{2}:\d{2}</span>',
         status,
     ), status
+    assert "overflow-wrap: anywhere" not in status
     # Who finalized it follows on the same line and may wrap; the date and time may not.
     assert " by " in re.sub(r"<[^>]+>", "", status)
