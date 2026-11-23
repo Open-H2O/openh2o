@@ -197,10 +197,12 @@ upgrade: ## Back up, update the code, rebuild and check; stops if the backup fai
 	@bash scripts/upgrade.sh
 
 # `make deploy` checks before it ships and nothing after. `make release` (and deploy.sh, which
-# runs the same script from origin/main) runs it, then asks the live home page for its title and
-# the new version, and when that fails puts the previous code, web image and demonstration
-# database back in the same run. Exit codes are in the header of scripts/release.sh.
-release: guard-demo-host ## make deploy, then a smoke test of the live home page; a failure puts the previous release back (scripts/release.sh); REF=<sha>
+# runs the same script from origin/main) first asks GitHub for a green deploy-checks run of REF
+# against the live commit and refuses without one, then runs make deploy, then asks the live home
+# page for its title and the new version, and when that fails puts the previous code, web image
+# and demonstration database back in the same run. Exit codes are in the header of
+# scripts/release.sh.
+release: guard-demo-host ## Refuse without a green deploy-checks run for REF against the live commit, then make deploy and a smoke test of the live home page; a failure puts the previous release back (scripts/release.sh); REF=<sha>
 	bash scripts/release.sh REF="$(REF)"
 
 logs: ## Tail web container logs

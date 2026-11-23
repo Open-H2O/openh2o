@@ -9,6 +9,19 @@
 # from origin/main; `make release REF=<commit>` runs it from the checkout. `make deploy` alone
 # still works, and checks nothing after it ships.
 #
+# Before anything changes it asks GitHub for the deploy checks (.github/workflows/deploy-checks.yml:
+# the live commit's tests against the candidate, each fix's test against the commit before it, and
+# the candidate's release tests), and goes on only when the newest run titled `deploy checks
+# <candidate> from <live commit>` finished green. When the live commit is not on the candidate's
+# line, the base is their common ancestor, as deploy.sh asks it; a candidate that is the live commit
+# or older has nothing new to check. A missing, red or running run, or GitHub not answering, refuses
+# with nothing changed. The question goes to GitHub's public API without a login, through
+# ci_gate.py (CI_REPO names the repository, default Open-H2O/openh2o), because the server has no
+# GitHub login; for the same reason this script cannot start a missing run. deploy.sh, run from a
+# checkout with `gh` logged in, starts it and then releases. When deploy.sh started this run, its
+# own gate already passed, and the lookup finds that same green run. make deploy then gets the
+# commit that was checked, never a name that could move in between.
+#
 # Before anything changes it records the checkout's commit and `git describe`, the web
 # container's image (read from `docker compose images web`), the sha256 of golden.dump and
 # golden.meta, and the snapshot folder's backups. It checks that the live page shows the
@@ -34,9 +47,10 @@
 # Exit codes:
 #   0  released: the live page shows the new version
 #   1  refused, nothing changed: RELEASE_SITE not set, not the demonstration host, no web
-#      container, the live page does not show the checkout's version, or make deploy stopped
-#      before its reset
-#   2  bad arguments, or no smoke.sh beside this script
+#      container, the live page does not show the checkout's version, REF is not a commit here,
+#      no green deploy-checks run for the pair (or GitHub could not be asked), or make deploy
+#      stopped before its reset
+#   2  bad arguments, or no smoke.sh or ci_gate.py beside this script
 #   5  the new release failed and the previous one is back, its smoke test passing
 #   6  the rollback did not finish, or its smoke test failed: read the release log
 #
@@ -45,7 +59,7 @@
 # promote-golden.sh reads it), RELEASE_LOG_DIR (default $HOME), RELEASE_SMOKE_TRIES and
 # RELEASE_SMOKE_WAIT (smoke.sh's --tries and --wait, default 20 and 3).
 #
-# The script copies itself and smoke.sh to a temporary folder and runs from there, because
+# The script copies itself, smoke.sh and ci_gate.py to a temporary folder and runs from there, because
 # `git reset --hard` rewrites the checkout under it, and the previous commit may carry neither.
 #
 # Runs on bash 3.2 and bash 5.
@@ -72,11 +86,13 @@ fi
 
 here=$(cd "$(dirname "$0")" && pwd)
 [ -f "$here/smoke.sh" ] || usage "no smoke.sh beside $0"
+[ -f "$here/ci_gate.py" ] || usage "no ci_gate.py beside $0"
 
 if [ -z "${RELEASE_SH_RUNNING:-}" ]; then
   {
     RELEASE_SH_RUNNING=$(mktemp -d "${TMPDIR:-/tmp}/release.XXXXXX") || exit 2
-    cp "$0" "$RELEASE_SH_RUNNING/release.sh" && cp "$here/smoke.sh" "$RELEASE_SH_RUNNING/smoke.sh" || exit 2
+    cp "$0" "$RELEASE_SH_RUNNING/release.sh" && cp "$here/smoke.sh" "$RELEASE_SH_RUNNING/smoke.sh" \
+      && cp "$here/ci_gate.py" "$RELEASE_SH_RUNNING/ci_gate.py" || exit 2
     export RELEASE_SH_RUNNING
     "${BASH:-bash}" "$RELEASE_SH_RUNNING/release.sh" "$@"
     rc=$?
@@ -173,6 +189,28 @@ if ! smoke "$home" "$title" "$home" "$prev_desc"; then
   say "REFUSING: the live page does not show the checkout's version $prev_desc, so this run could not recognise the release it would put back. Nothing changed."
   finish 1
 fi
+# The deploy checks, read from GitHub (see the header). The live commit is prev_head: the page
+# was just seen showing its version.
+git fetch -q origin </dev/null >/dev/null 2>&1 || say "git fetch origin failed; going by the commits this checkout already has"
+cand=$(git rev-parse --verify --quiet "$ref^{commit}") \
+  || { say "REFUSING: '$ref' is not a commit in $checkout. Nothing changed."; finish 1; }
+if [ "$cand" = "$prev_head" ] || git merge-base --is-ancestor "$cand" "$prev_head"; then
+  say "deploy checks: $cand is live or older than live $prev_head, so there are no new tests or fixes to check"
+else
+  base=$(git merge-base "$prev_head" "$cand") \
+    || { say "REFUSING: $cand and live $prev_head share no commit. Nothing changed."; finish 1; }
+  [ "$base" = "$prev_head" ] || say "deploy checks: live $prev_head is not on the candidate's line; asking from the common ancestor $base"
+  checks="deploy checks $cand from $base"
+  say "deploy checks: asking GitHub for the newest run titled '$checks'"
+  python3 "$here/ci_gate.py" --fetch --repo "${CI_REPO:-Open-H2O/openh2o}" --workflow deploy-checks.yml \
+    --title "$checks" 2>&1 | tee -a "$log"
+  gate=${PIPESTATUS[0]}
+  if [ "$gate" != 0 ]; then
+    say "REFUSING: no green deploy-checks run for $cand from $base (ci_gate exit $gate). This server cannot start one. Run deploy.sh $cand from a checkout with gh logged in: it starts the deploy checks when they have not run, waits for them, and then releases. Nothing changed."
+    finish 1
+  fi
+fi
+
 docker tag "$img_id" "$img_repo:previous" || { say "REFUSING: could not tag $img_id as $img_repo:previous. Nothing changed."; finish 1; }
 say "kept the running image as $img_repo:previous"
 
@@ -220,8 +258,8 @@ rollback() {
   finish 6
 }
 
-say "make deploy REF=$ref"
-make deploy REF="$ref" </dev/null 2>&1 | tee "$mkout"
+say "make deploy REF=$cand"
+make deploy REF="$cand" </dev/null 2>&1 | tee "$mkout"
 mk=${PIPESTATUS[0]}
 cat "$mkout" >> "$log"
 if [ "$mk" != 0 ]; then

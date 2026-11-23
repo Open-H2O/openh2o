@@ -4,8 +4,12 @@
 # openh2o is NOT a static site and NOT on Cloudflare — it runs as Docker
 # containers on the host named by OPENH2O_DEPLOY_HOST, an SSH host set in the
 # maintainer's own shell environment (prod checkout: ~/openh2o). This wrapper
-# runs scripts/release.sh there over SSH, read from origin/main (so the newest
-# release script runs even when the checkout is older), which:
+# runs scripts/release.sh there over SSH, read from origin/main with smoke.sh and
+# ci_gate.py (so the newest release script runs even when the checkout is older),
+# which:
+#   - asks GitHub again for the deploy-checks run this script waited on below and
+#     finds it green (typed on the server, `make release` asks the same and refuses
+#     without one, because the server cannot start a run)
 #   - runs `make deploy REF=<commit>`: it refuses first unless that commit's
 #     `tests` run on GitHub passed, and refuses when GitHub cannot be asked
 #     (`make ci-gate`; nothing is changed); then git reset --hard to the commit
@@ -114,6 +118,7 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 git show origin/main:scripts/release.sh > "$tmp/release.sh" </dev/null
 git show origin/main:scripts/smoke.sh > "$tmp/smoke.sh" </dev/null
+git show origin/main:scripts/ci_gate.py > "$tmp/ci_gate.py" </dev/null
 # The release script asks the site it released; it has no default address.
 export RELEASE_SITE=https://openh2o.com
 if [ "$2" = --drill-smoke-missing-page ]; then

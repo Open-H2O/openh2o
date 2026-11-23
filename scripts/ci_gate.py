@@ -6,6 +6,18 @@
 and refuses to deploy unless the answer is green. It judges only the runs for
 the exact 40-character SHA, and the newest of those decides.
 
+With --title in place of --sha it judges the runs whose title is exactly that
+text instead. scripts/release.sh asks this way for the deploy checks, whose runs
+are started by hand for a pair of commits and so carry the commit the workflow
+ran from rather than the candidate; the title, `deploy checks <head> from
+<base>`, names the pair:
+
+    python3 scripts/ci_gate.py --fetch --repo Open-H2O/openh2o \\
+        --workflow deploy-checks.yml --title "deploy checks <head> from <base>"
+
+It reads the workflow's newest 100 runs; a run for the pair older than those is
+not found, and the answer is a refusal.
+
 Three ways to give it the runs:
 
     # Ask GitHub itself (what `make ci-gate` does: anonymous, the repository is public)
@@ -21,9 +33,10 @@ Three ways to give it the runs:
       | python3 scripts/ci_gate.py --sha <sha> --workflow tests.yml
 
 Exit codes:
-    0  the newest run for this SHA completed with success
+    0  the newest run for this SHA (or title) completed with success
     2  refused: no run, still running, or any other conclusion
-    3  bad input: malformed JSON, a SHA that is not 40 hex characters, or a
+    3  bad input: malformed JSON, a SHA that is not 40 hex characters, a title
+       with a control character, both --sha and --title or neither, or a
        repository or workflow name that is not a plain name
     4  refused: GitHub could not be asked (network error, HTTP error, rate limit)
 
@@ -46,12 +59,14 @@ import urllib.request
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 WORKFLOW_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
+TITLE_RE = re.compile(r"^[ -~]{1,200}$")  # printable ASCII, one line
 RUNNING = {"queued", "in_progress", "waiting", "requested", "pending"}
 
 API = (
     "https://api.github.com/repos/{repo}/actions/workflows/{workflow}/runs"
     "?head_sha={sha}&per_page=50"
 )
+API_ALL = "https://api.github.com/repos/{repo}/actions/workflows/{workflow}/runs?per_page=100"
 TIMEOUT_SECONDS = 15
 
 # The REST API names the same fields differently from `gh run list --json`.
@@ -64,6 +79,7 @@ REST_TO_GH = {
     "created_at": "createdAt",
     "html_url": "url",
     "event": "event",
+    "display_title": "displayTitle",
 }
 
 
@@ -89,11 +105,16 @@ def load_runs(text):
     return [_from_rest(r) for r in data] if rest else data
 
 
-def verdict(runs, sha):
-    """Return (exit_code, reason, run_or_None) for the newest run on this SHA."""
-    mine = [r for r in runs if r.get("headSha") == sha]
-    if not mine:
-        return 2, "no CI run for this commit", None
+def verdict(runs, sha=None, title=None):
+    """Return (exit_code, reason, run_or_None) for the newest run on this SHA, or with this title."""
+    if title is not None:
+        mine = [r for r in runs if r.get("displayTitle") == title]
+        if not mine:
+            return 2, f"no run titled '{title}'", None
+    else:
+        mine = [r for r in runs if r.get("headSha") == sha]
+        if not mine:
+            return 2, "no CI run for this commit", None
     run = max(mine, key=lambda r: r.get("createdAt") or "")
     status = run.get("status")
     conclusion = run.get("conclusion")
@@ -109,10 +130,11 @@ def verdict(runs, sha):
     return 0, "green", run
 
 
-def fetch(repo, workflow, sha, timeout=TIMEOUT_SECONDS):
-    """Return the REST API's answer for this SHA's runs, or raise FetchError."""
+def fetch(repo, workflow, sha=None, timeout=TIMEOUT_SECONDS):
+    """Return the REST API's answer for this SHA's runs (the newest 100 runs without one), or raise FetchError."""
+    url = API.format(repo=repo, workflow=workflow, sha=sha) if sha else API_ALL.format(repo=repo, workflow=workflow)
     request = urllib.request.Request(
-        API.format(repo=repo, workflow=workflow, sha=sha),
+        url,
         headers={
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
@@ -142,16 +164,27 @@ def fetch(repo, workflow, sha, timeout=TIMEOUT_SECONDS):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--sha", required=True, help="full 40-character commit SHA")
+    parser.add_argument("--sha", help="full 40-character commit SHA")
+    parser.add_argument("--title", help="the run's exact title, in place of --sha")
     parser.add_argument("--workflow", required=True, help="workflow file name, e.g. tests.yml")
     parser.add_argument("--fetch", action="store_true", help="ask GitHub instead of reading stdin")
     parser.add_argument("--repo", help="owner/name on GitHub; required with --fetch")
     args = parser.parse_args(argv)
 
-    sha = args.sha.strip().lower()
-    if not SHA_RE.match(sha):
-        print(f"ci_gate: BAD INPUT: {args.sha!r} is not a 40-character hex SHA")
+    if (args.sha is None) == (args.title is None):
+        print("ci_gate: BAD INPUT: give --sha or --title, not both and not neither")
         return 3
+    title = args.title
+    sha = None
+    if title is not None:
+        if not TITLE_RE.match(title):
+            print(f"ci_gate: BAD INPUT: {title!r} is not a one-line printable title")
+            return 3
+    else:
+        sha = args.sha.strip().lower()
+        if not SHA_RE.match(sha):
+            print(f"ci_gate: BAD INPUT: {args.sha!r} is not a 40-character hex SHA")
+            return 3
     if not WORKFLOW_RE.match(args.workflow):
         print(f"ci_gate: BAD INPUT: {args.workflow!r} is not a workflow file name")
         return 3
@@ -176,11 +209,11 @@ def main(argv=None):
             print(f"ci_gate: BAD INPUT: runs JSON could not be read ({exc})")
             return 3
 
-    code, reason, run = verdict(runs, sha)
+    code, reason, run = verdict(runs, sha=sha, title=title)
     url = (run or {}).get("url") or "no run"
     attempt = (run or {}).get("attempt") or "-"
     word = "PASS" if code == 0 else "REFUSE"
-    print(f"ci_gate: {word} {sha} {args.workflow} run={url} attempt={attempt}: {reason}")
+    print(f"ci_gate: {word} {sha or repr(title)} {args.workflow} run={url} attempt={attempt}: {reason}")
     return code
 
 

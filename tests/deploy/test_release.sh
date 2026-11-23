@@ -169,7 +169,7 @@ printf '#!/usr/bin/env bash\nREAL=%s\n' "$REAL_PY" > "$T/bin/python3"
 cat >> "$T/bin/python3" <<'EOF'
 echo "python3 $*" >> "$S/calls.log"
 case " $* " in
-  *"/ci_gate.py "*" --fetch "*)
+  *"/ci_gate.py "*"--fetch "*)
     if [ -f "$S/github_down" ]; then
       echo "ci_gate: REFUSED: could not ask GitHub (network error: no route to host)"
       exit 4
