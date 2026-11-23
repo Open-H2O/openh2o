@@ -159,7 +159,7 @@ appears beside the real published records.
 
 ![The OpenH2O dashboard for water year 2025-2026, showing supplies of 15,846.63 acre-feet by source, uses of 17,515.96 acre-feet (crop ET of 16,209.28 plus pumped water not consumed of 1,306.68) and a balance of -1,669.32 acre-feet](docs/screenshots/dashboard.png)
 
-**The map** shows the boundary, management areas, surface service areas, rivers
+**The map** shows the boundary, management areas, subbasins and other areas, rivers
 and canals, points of diversion, use areas, wells, recharge sites and
 drinking-water facilities, each as its own layer. On the demo, anyone can open the map without signing in.
 

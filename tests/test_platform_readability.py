@@ -468,6 +468,7 @@ EXPECTED_UNREACHABLE = {
     "/health/live/": "not a page (text/plain)",
     "/infrastructure/geojson/": "not a page (application/json)",
     "/map/boundaries/geojson/": "not a page (application/json)",
+    "/map/boundaries/labels/geojson/": "not a page (application/json)",
     "/map/flowlines/geojson/": "not a page (application/json)",
     "/map/tie-lines/geojson/": "not a page (application/json)",
     "/map/zones/geojson/": "not a page (application/json)",

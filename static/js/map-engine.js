@@ -24,7 +24,7 @@ var OH2O = window.OH2O || { switchBasemap: function(){}, basemapStyle: function(
 //   { prop, val }         strict equality (the original form)
 //   { prop, notVal }      strict INequality (e.g. two zone-type layers on
 //                         'zones' — 'GSA Zones' is `val: 'management_area'`,
-//                         'Surface service areas' is everything else)
+//                         'Subbasins and other areas' is everything else)
 //   { prop, contains }    substring of the property's string value
 //   { prop, notContains } NOT a substring of it
 //
