@@ -1,0 +1,15 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Installed by `make hooks`. Runs the hook this one replaced first (kept beside it as
+# commit-msg.before-openh2o, or the shared hooks folder's commit-msg), so a personal hook keeps
+# working, then refuses a message that names a person or cites a number from outside the
+# repository (scripts/check_commit_message.py; CONTRIBUTING.md, Ground rules).
+here=$(dirname "$0")
+for previous in "$here/commit-msg.before-openh2o" "$(git config --global core.hooksPath 2>/dev/null)/commit-msg"; do
+  if [ -x "$previous" ] && [ "$previous" != "$0" ]; then
+    "$previous" "$@" || exit $?
+    break
+  fi
+done
+top=$(git rev-parse --show-toplevel) || exit 1
+exec python3 -I "$top/scripts/check_commit_message.py" "$1"

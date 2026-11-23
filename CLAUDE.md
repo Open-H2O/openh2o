@@ -24,7 +24,8 @@ on the next run.
 `tests/test_wording_tests_need_approval.py` fails the suite when a new test
 asserts nothing but exact sentences. Instead, check the fact the page must show,
 such as a number, a name or a status. If the maintainer approved a sentence word
-for word, keep the test and add `# wording approved: ruling N` above it.
+for word, keep the test and add `# Default wording, approved by the maintainer on <date>. To change
+the wording, update this test in the same commit.` above it, with the date of the approval.
 
 The core goal is to lower the cost and access barrier for under-resourced agencies. A poorly-funded agency can point a frontier AI subscription at this repo and have the AI stand the platform up, and an engineering firm or consultant can run it just as well. Self-deployment is meant to be a real option, not a vendor contract by default.
 
@@ -186,6 +187,10 @@ it: do not eyeball a new look.
    drops the secure cookies and **login fails with a CSRF 403**: pages you can
    reach without logging in still render, which makes the plain-HTTP URL look
    like it works right up until it doesn't.
+
+## Commit messages
+
+Commit messages carry a type prefix (`fix:`), what changed and why, and no person's name or outside issue, plan, phase or decision number; `#123`, `Test-Change:` and `Fix-Test:` lines with plain reasons are fine. If a hook refuses, rewrite the message or commit the `Test-Change:` lines the pre-push hook prints. See CONTRIBUTING.md, Ground rules.
 
 ## Staging & production access
 

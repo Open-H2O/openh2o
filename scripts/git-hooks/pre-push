@@ -1,0 +1,23 @@
+#!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Installed by `make hooks`. Runs the hook this one replaced first, then refuses a push while a
+# Test-Change: line the release check will ask for is missing (scripts/test_reasons.py check):
+# the lines to add are printed, and they go in a new commit. A Fix-Test: line the check may need
+# is printed as a notice and does not stop the push. When the live site's commit cannot be read
+# (exit 3) the push goes on with a notice, since nothing can be said about the lines.
+here=$(dirname "$0")
+stdin=$(cat)
+for previous in "$here/pre-push.before-openh2o" "$(git config --global core.hooksPath 2>/dev/null)/pre-push"; do
+  if [ -x "$previous" ] && [ "$previous" != "$0" ]; then
+    printf '%s\n' "$stdin" | "$previous" "$@" || exit $?
+    break
+  fi
+done
+top=$(git rev-parse --show-toplevel) || exit 1
+python3 -I "$top/scripts/test_reasons.py" check --repo "$top"
+status=$?
+case $status in
+  0) exit 0 ;;
+  3) echo "pre-push: the live site's commit could not be read, so the Test-Change: lines were not checked." >&2; exit 0 ;;
+  *) echo "pre-push: add the Test-Change: lines above, each with its reason, in a new commit, then push again." >&2; exit 1 ;;
+esac

@@ -39,6 +39,16 @@ before they are built. `--since BASE` lists them, `--drawing FILES` lists a mock
 line that is not in the Proposed, Fixed or Draft column of an approved table. It needs git and the standard library, so
 it runs on the host; the script's header has the rest.
 
+## Checking commit messages
+
+`scripts/check_commit_message.py <message file>` refuses a commit message that names a person or cites an issue, plan,
+phase or decision number from outside the repository, and prints each refused line with its reason (exit 1). The shapes
+are imported from `tests/test_no_planning_references.py`, and a clone may list more words in `.git/info/commit-words`,
+which is never committed. `--range <base>..<head>` checks the commits in a range; the test workflow runs it on each push.
+`make hooks` (`scripts/install-hooks.sh`) installs `scripts/git-hooks/commit-msg`, which runs the check, and
+`scripts/git-hooks/pre-push`, which runs `scripts/test_reasons.py check` and refuses a push while a `Test-Change:` line is
+missing. A hook already in either place is kept as `<name>.before-openh2o` and still runs first.
+
 ## Listing the reasons a release will ask for
 
 `scripts/test_reasons.py check` lists the `Test-Change:` lines the release check will ask for, from git alone and without

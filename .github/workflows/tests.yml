@@ -56,6 +56,18 @@ jobs:
         run: |
           pip install pytest==9.1.1
           python -m pytest tests/test_test_reasons.py -q -p no:cacheprovider -p no:django --noconftest
+      # The commit-message rule (CONTRIBUTING.md, Ground rules). A pushed commit is never rewritten,
+      # so a red step here only means a clone committed without `make hooks`. Commits from before the
+      # rule began (RULE_START, the commit that added its test, and its ancestors) are not read.
+      - name: Commit messages
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          RULE_START: 21ccaf792fdc7b81b1f833b2636c30a839b9c198
+        run: |
+          git fetch -q --unshallow origin 2>/dev/null || git fetch -q origin
+          python scripts/check_commit_message.py --range "$BEFORE..$AFTER" --after "$RULE_START"
 
   # The suite runs as five jobs at once, and each job runs its tests in parallel
   # (pytest-xdist, one worker per CPU of the runner). As one serial job it took 37
@@ -174,7 +186,7 @@ jobs:
   # Starts the deploy checks (deploy-checks.yml) for this commit against the live one as soon as this
   # push's tests are green, so a later release of the same commit (deploy.sh, through
   # scripts/regress-gate.sh, which takes an existing run with the same title) waits on nothing
-  # instead of about 27 minutes (run 44386327795: 26.6). Brent 2026-11-18 16:30, "yes". Only for
+  # instead of about 27 minutes (run 44386327795: 26.6). Only for
   # pushes to main, never a pull request. A site or GitHub outage here is a warning, never red:
   # this workflow's colour means the code's tests.
   release-check-ahead:

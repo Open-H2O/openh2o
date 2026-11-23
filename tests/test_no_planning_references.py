@@ -18,9 +18,9 @@ and the README files under data/) for five shapes:
   not followed by a digit or hyphen, so dates (``2026-10-24``) and version
   ranges do not match.
 - the name of a planning file: ``ISSUES.md``, ``STATE.md``, ``RESUME.md``, or
-  a name with ``-PLAN``, ``-SUMMARY``, ``-DISCOVERY``, ``-RESEARCH`` or
-  ``-EVIDENCE`` in it. These files are the maintainer's private record, not
-  part of the repository;
+  a name with ``-PLAN``, ``-SUMMARY``, ``-DISCOVERY``, ``-RESEARCH``,
+  ``-EVIDENCE``, ``-ROWS``, ``-WORK`` or ``-READS`` in it. These files are the
+  maintainer's private record, not part of the repository;
 - a review row: ``R-`` and three digits, or ``F-<word>-<digits>``, the row
   numbers of review registers that are not in the repository;
 - a version tag standing for a past release: ``v2.4`` or ``v1.10`` beside
@@ -31,12 +31,19 @@ and the README files under data/) for five shapes:
 - the name of a planning document: "the memo's" and "figure ledger";
 - a first name in a comment: "Brent" (the author lines in ``NOTICE``,
   ``pyproject.toml`` and ``templates/about.html`` stay, and the first two are
-  not scanned).
+  not scanned);
+- a decision number: the word "ruling" and a number, which points into the
+  maintainer's decision record.
 
 ``Phase 2`` and other single-digit phases are the AI operator guide's own
-steps (docs/AI-OPERATOR-GUIDE.md) and do not match. ``tests/`` and the
-migrations are not scanned: a migration is a record of what was, and the tests
-carry their own references.
+steps (docs/AI-OPERATOR-GUIDE.md) and do not match.
+
+The tests, the migrations and the GitHub workflow files are scanned for the
+last two shapes only, a first name and a decision number: a migration is a
+record of what was, and the tests still carry issue, plan and phase numbers in
+their own comments, which a later pass may remove. Two files hold those two
+shapes as their subject and are not scanned for them: this file and
+``tests/test_commit_message_check.py`` (the messages it refuses).
 
 A hit that is not a planning reference is fixed in the patterns above, never
 added to ALLOWED.
@@ -52,7 +59,7 @@ PATTERNS = {
     "phase number": re.compile(r"Phase \d{2,}(\.\d+)?"),
     "plan number": re.compile(r"(?<![\d.\-/])[1-9]\d{1,2}(\.\d)?-[01]\d(?![\d\-])"),
     "planning file": re.compile(
-        r"\bISSUES\.md\b|\bSTATE\.md\b|\bRESUME\.md\b|-(PLAN|SUMMARY|DISCOVERY|RESEARCH|EVIDENCE)\b"
+        r"\bISSUES\.md\b|\bSTATE\.md\b|\bRESUME\.md\b|-(PLAN|SUMMARY|DISCOVERY|RESEARCH|EVIDENCE|ROWS|WORK|READS)\b"
     ),
     "review row": re.compile(r"\bR-\d{3}\b|\bF-[a-z]+-\d+\b"),
     "version tag": re.compile(
@@ -64,7 +71,13 @@ PATTERNS = {
     "plan label": re.compile(r"\(E\d\)"),
     "planning document": re.compile(r"\bthe memo\b|\bmemo's\b|\bfigure ledger\b", re.IGNORECASE),
     "first name": re.compile(r"\bBrent\b"),
+    "decision number": re.compile(r"\b[Rr]uling \d+"),
 }
+
+#: The shapes the tests, migrations and workflow files are scanned for.
+WIDE_SHAPES = ("first name", "decision number")
+#: Files whose subject is those shapes.
+WIDE_SKIP = {"tests/test_no_planning_references.py", "tests/test_commit_message_check.py"}
 
 # Files whose author line is meant to stay.
 AUTHOR_LINE_FILES = {"templates/about.html"}
@@ -122,6 +135,46 @@ def planning_references():
             if any(p.search(line) for p in PATTERNS.values()) and not _allowed(name, line):
                 hits.append(f"{name}:{number}: {line.strip()}")
     return hits
+
+
+def _wide_files():
+    for path in sorted(REPO_ROOT.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(REPO_ROOT)
+        name = rel.as_posix()
+        if name in WIDE_SKIP or any(part in {".git", ".planning", "__pycache__", "node_modules"} for part in rel.parts):
+            continue
+        if (
+            (rel.parts[0] == "tests" and path.suffix == ".py")
+            or ("migrations" in rel.parts[:-1] and path.suffix == ".py")
+            or (rel.parts[:2] == (".github", "workflows") and path.suffix in {".yml", ".yaml"})
+        ):
+            yield rel
+
+
+def names_and_decision_numbers():
+    """Every line in the tests, migrations and workflow files naming the maintainer or a decision number."""
+    shapes = [PATTERNS[k] for k in WIDE_SHAPES]
+    hits = []
+    for rel in _wide_files():
+        try:
+            text = (REPO_ROOT / rel).read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        for number, line in enumerate(text.splitlines(), start=1):
+            if any(p.search(line) for p in shapes):
+                hits.append(f"{rel.as_posix()}:{number}: {line.strip()}")
+    return hits
+
+
+def test_no_name_or_decision_number_in_tests_migrations_or_workflows():
+    hits = names_and_decision_numbers()
+    assert hits == [], (
+        f"{len(hits)} lines in the tests, migrations or workflow files name the maintainer or cite a "
+        "decision number. Write the reason in place; for approved wording use the note in CLAUDE.md:\n"
+        + "\n".join(hits)
+    )
 
 
 def test_no_planning_references_in_code():

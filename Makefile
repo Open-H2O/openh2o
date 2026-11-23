@@ -11,7 +11,7 @@ EXEC    = $(COMPOSE) exec web python manage.py
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 export APP_VERSION = $(VERSION)
 
-.PHONY: help up down build logs shell dbshell migrate makemigrations health prune \
+.PHONY: help up down build logs shell dbshell migrate makemigrations health prune hooks \
         createsuperuser collectstatic seed seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo remove-demo \
@@ -330,6 +330,9 @@ prune: ## Prune old staging data and sync logs
 
 install-cron: ## Install crontab.txt in the schedule: this checkout's path and a log folder (OPENH2O_LOG_DIR=/path to choose it) are written for you; run again to refresh
 	@bash scripts/install-cron.sh
+
+hooks: ## Install the commit-message and pre-push checks in this clone (CONTRIBUTING.md, Ground rules); run once after cloning
+	@sh scripts/install-hooks.sh
 
 show-cron: ## Display current crontab entries
 	crontab -l
