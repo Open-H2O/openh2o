@@ -62,10 +62,11 @@ def test_a_finalized_years_date_and_time_sit_together_under_the_badge():
 
     status = page[page.index('<div class="field-label">Status</div>'):]
     status = status[: status.index('<div class="field-label">Start date</div>')]
-    # The badge, then a line of its own holding the date and time in one unbreakable span.
+    # The badge, then a line of its own: the date and the time, each one unbreakable piece, so a
+    # narrow card moves the time under the whole date instead of past its edge.
     assert re.search(
         r'Finalized</span>\s*<div class="[^"]*\bfinalized-when\b[^"]*">\s*'
-        r'<span class="nowrap-item">\w{3} \d{2}, \d{4} \d{2}:\d{2}</span>',
+        r'<span class="nowrap-item">\w{3} \d{2}, \d{4}</span> <span class="nowrap-item">\d{2}:\d{2}</span>',
         status,
     ), status
     # Who finalized it follows on the same line and may wrap; the date and time may not.

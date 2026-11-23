@@ -58,10 +58,12 @@
           <div class="field-label">Status</div>
           <div class="field-value">
             {% if period.is_finalized %}
-              {% comment %} The date and time on their own line under the badge, never broken
-                 apart; who finalized it follows and may wrap (an address can be long). {% endcomment %}
+              {% comment %} The date and time on their own line under the badge. Each is one
+                 unbreakable piece: from about 1,440 px they share the line; in a narrower card
+                 the time moves under the whole date rather than run past the card's edge. Who
+                 finalized it follows and may wrap (an address can be long). {% endcomment %}
               <span class="badge badge-pill badge-green">Finalized</span>
-              <div class="text-tertiary text-sm finalized-when"><span class="nowrap-item">{{ period.finalized_at|date:"M d, Y H:i" }}</span>{% if period.finalized_by %} by <span class="finalized-by">{{ period.finalized_by }}</span>{% endif %}</div>
+              <div class="text-tertiary text-sm finalized-when"><span class="nowrap-item">{{ period.finalized_at|date:"M d, Y" }}</span> <span class="nowrap-item">{{ period.finalized_at|date:"H:i" }}</span>{% if period.finalized_by %} by <span class="finalized-by">{{ period.finalized_by }}</span>{% endif %}</div>
             {% else %}
               <span class="badge badge-pill badge-amber">Open</span>
             {% endif %}
