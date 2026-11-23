@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Imports, commands and seeds: one green, plain lock errors, import honesty, clean seed text."""
+"""Imports, commands and seeds: one zone colour, plain lock errors, import honesty, clean seed text."""
 import ast
 import datetime as dt
 import json
@@ -22,19 +22,20 @@ MAP_CORE_JS = ROOT / "static/js/map-core.js"
 COMMANDS = ROOT / "core/management/commands"
 
 
-# ── Zone fill uses the supply green ──────────────────────────────────────────
-def _supply_green():
-    return re.search(r"--color-supply\s*:\s*(#[0-9a-fA-F]{6})", TOKENS_CSS.read_text()).group(1)
+# ── A zone is the management-area sand on every map ─────────────────────────
+def _management_area_sand():
+    return re.search(
+        r"--color-entity-management-area\s*:\s*(#[0-9a-fA-F]{6})", TOKENS_CSS.read_text()
+    ).group(1)
 
 
-def test_zone_fill_token_is_the_supply_green():
-    match = re.search(r"--color-entity-green\s*:\s*(#[0-9a-fA-F]{6})", TOKENS_CSS.read_text())
-    assert match.group(1).lower() == _supply_green().lower()
+def test_the_zone_entity_reads_the_management_area_colour():
+    assert re.search(r"\bzone:\s*\{\s*color:\s*OH2O\.colors\.managementArea\b", MAP_CORE_JS.read_text())
 
 
-def test_zone_fill_in_the_map_toolkit_is_the_supply_green():
-    match = re.search(r"\bgreen:\s*'(#[0-9a-fA-F]{6})'", MAP_CORE_JS.read_text())
-    assert match.group(1).lower() == _supply_green().lower()
+def test_the_management_area_colour_is_the_same_in_the_map_toolkit():
+    match = re.search(r"\bmanagementArea:\s*'(#[0-9a-fA-F]{6})'", MAP_CORE_JS.read_text())
+    assert match.group(1).lower() == _management_area_sand().lower()
 
 
 # ── A finalized year is a plain one-line error on every command ──────────────

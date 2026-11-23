@@ -24,7 +24,7 @@ from tests.factories import (
 pytestmark = pytest.mark.django_db
 
 MAP_HOST = 'id="account-use-areas-map"'
-SWATCH = '<span class="swatch-fill" style="color: var(--color-entity-blue);"></span>Use area'
+SWATCH = '<span class="swatch-fill" style="color: var(--color-entity-use-area);"></span>Use area'
 
 
 def _login():

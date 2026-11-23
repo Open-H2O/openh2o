@@ -111,10 +111,9 @@ class TestNoPreDeepWaterGold:
     live pages months later, and one of them was a status pill inline-styled
     over a green badge class.
 
-    ``--color-entity-gold`` in tokens.css keeps ``#E4A317`` deliberately: map
-    layer identity is a cartographic decision, exempt from the app palette and
-    documented as such. This guard is therefore scoped to the templates and to
-    app.css, which is where the leaks were.
+    The map palette (``--color-entity-*`` in tokens.css) is by role and no
+    longer holds the old gold at all. This guard is scoped to the templates and
+    to app.css, which is where the leaks were.
     """
 
     def test_no_template_hardcodes_the_old_gold(self):

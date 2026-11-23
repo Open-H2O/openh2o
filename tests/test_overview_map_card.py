@@ -325,7 +325,7 @@ class TestSurfaceDiversionsCard:
 
         body = auth_client.get(reverse("surface:pod_list")).content.decode()
         assert "3 points of diversion, all on the map" in body
-        assert 'class="swatch-dot"' in body
+        assert "swatch-mark-pod" in body
         assert "Point of diversion" in body
 
     def test_the_map_partial_declares_an_always_on_label_layer(self, auth_client):
@@ -447,7 +447,7 @@ class TestWellsCard:
         # table above.
         body = auth_client.get(reverse("wells:list")).content.decode()
         assert _wells_full_line() in body
-        assert 'class="swatch-dot"' in body
+        assert "swatch-mark-well" in body
         assert "Well" in body
 
     def test_the_map_partial_declares_an_always_on_label_layer(self, auth_client):
