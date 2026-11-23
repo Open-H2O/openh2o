@@ -145,9 +145,10 @@ has both a USGS code and a UCUM unit.
 
 A feature that writes figures in California's reporting format is under
 development and switched off by default. It writes OpenH2O's figures in the file
-layouts of GEARS and CalWATRS, two reporting systems run by state agencies. OpenH2O
-does not submit reports to the state, and neither system can currently accept a
-file that OpenH2O produces.
+layouts of GEARS (Groundwater Extraction Annual Reporting System) and CalWATRS
+(California Water Accounting, Tracking, and Reporting System), two reporting
+systems run by the State Water Board. OpenH2O does not submit reports to the
+state, and neither system can currently accept a file that OpenH2O produces.
 
 - **GEARS.** OpenH2O writes two GEARS files: monthly metered extraction for each
   well, and monthly use from OpenET for each field-month the well file does not

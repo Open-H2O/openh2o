@@ -426,9 +426,13 @@ For a new page in the accounting app, as an example:
 
 ## Where decisions are written
 
-In the product code, the reason for a piece of code is in the comment beside it; comments under
-`tests/` can still cite the maintainer's private planning record. The design rules and the reasons
-for them are in `DESIGN.md`; the user-facing guides are in `docs/` and the help pages in
-`templates/help/`. `CLAUDE.md` is the file AI coding tools read: the stack, the design tokens, the
-module composition rule and the commands. The maintainer keeps a private planning record outside
-the repository; nothing in the code reads it.
+In the product code, the reason for a piece of code is in the comment beside it. CONTRIBUTING.md
+names three of the tests that guard the wording on screens and says what each one's failure means.
+Where the maintainer approved wording word for word, the record is in the test that checks it:
+"Default wording, approved by the maintainer on <date>. To change the wording, update this test in
+the same commit." The design rules and the reasons for them are in `DESIGN.md`; the user-facing
+guides are in `docs/` and the help pages in `templates/help/`. `CLAUDE.md` is the file AI coding
+tools read: the stack, the design tokens, the module composition rule and the commands. The
+maintainer keeps a private planning record outside the repository, and nothing in the code reads it.
+Comments under `tests/` still carry issue, plan and phase numbers from that record. A contributor
+can ignore those numbers.

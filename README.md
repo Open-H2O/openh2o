@@ -14,7 +14,7 @@ OpenH2O keeps an organization's own water records: measurements, deliveries, wel
 
 ## Who this is for
 
-OpenH2O is for anyone who keeps water records, anywhere in the United States: engineers and managers at water agencies and districts, growers, ditch tenders and drinking-water system operators.
+OpenH2O is for anyone who keeps water records, anywhere in the United States: engineers and managers at water agencies and districts, growers, ditch tenders and drinking-water system operators. Some parts cover California only. They include the basin and parcel downloads in setup, the CIMIS and CDEC station sources, DWR's Water Data Library and SGMA Portal sources, the California DDW lab exports and sampling schedule, and the GEARS and CalWATRS file layouts. For land outside California, a site loads its own boundary as described in docs/DATA-IMPORT.md section 2 (the Setup Wizard or `import_boundary`), and its own use areas as described in section 3 (the Import use areas screen or `import_parcels`).
 
 In California, the **Sustainable Groundwater Management Act (SGMA)** requires hundreds of local **Groundwater Sustainability Agencies (GSAs)** and water districts to account for the water their basins use. Many of them are small and have no software staff. The water-accounting software available today is excellent but expensive, and a vendor runs nearly every installation. OpenH2O is meant to make water-accounting software affordable for those organizations.
 
@@ -26,6 +26,7 @@ Each OpenH2O site keeps the water records of one organization: a district, an ag
 ### A note on terms
 - **GSA**: Groundwater Sustainability Agency, the local body responsible for a basin under SGMA.
 - **OpenET**: a service that publishes satellite estimates of evapotranspiration. OpenH2O uses them to estimate consumptive use.
+- **Use area**: OpenH2O's record of the land under one Assessor Parcel Number (APN), with its owner, area in acres and outline on the map. Outlines that share a parcel number become one use area, so a use area can be several pieces of land. The parcel download in setup adds one use area for each APN.
 
 ---
 
@@ -79,7 +80,9 @@ cp .env.example .env
 # organization's real records. DEBUG=True prints the site's internals on any
 # error page, and it defaults ALLOWED_HOSTS to "*" if you set none. To run
 # OpenH2O with real records on one computer, use production settings with the
-# three plain-HTTP flips - see docs/AI-OPERATOR-GUIDE.md Phase 2.
+# three plain-HTTP settings (SECURE_SSL_REDIRECT, SESSION_COOKIE_SECURE,
+# CSRF_COOKIE_SECURE) turned off and OPENH2O_FORWARDED_PROTO=http in .env, or
+# every sign-in fails with a 403 error - see docs/AI-OPERATOR-GUIDE.md Phase 2.
 docker compose up -d --build         # start db + web + caddy
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py seed_data      # reference data
@@ -256,7 +259,7 @@ openh2o/
   templates/     Django templates (HTMX partials)
   static/        Design tokens, compiled CSS, map toolkit
   tests/         pytest suite (factory_boy fixtures)
-  docs/          Deployment, AI operator, data standards, and tier guides
+  docs/          Deployment, AI operator, and data standards guides, and the Earth Engine tier guide (an optional way of reading OpenET's crop ET and gridMET rainfall through Google Earth Engine)
 ```
 
 ## Cost to run
@@ -273,7 +276,9 @@ resets, through an outside mail provider.
 |------|--------------|
 | Virtual server (2–4 GB RAM) | $15–30 a month |
 | Domain name | About $12 a year |
-| OpenET (satellite ET) | An OpenET key is free. In November 2026, OpenET's first tier allowed 100 requests a month and 100 OpenET fields in each request. A monthly run sends one request for every 100 OpenET fields over the organization's use areas. Earth Engine's costs are in docs/earth-engine-tier-setup.md. |
+| AI coding agent (one way to install) | Installing with an AI agent means pointing a frontier AI subscription, such as Claude Code, at the repository. An engineering firm, a consultant or the organization's own staff can install OpenH2O instead, following DEPLOY.md. |
+| OpenET (satellite ET) | An OpenET key is free, and the default reads OpenET's own service with it. In November 2026, OpenET's first tier allowed 100 requests a month and 100 OpenET fields in each request. A monthly run sends one request for every 100 OpenET fields over the organization's use areas. |
+| Google Earth Engine (optional) | Not needed by default. A water agency or district running OpenH2O needs Earth Engine's paid version. Google's Limited plan is one of the paid version's plans. It has no plan fee and charges for computing time only. Google offers it to self-serve customers whose work is occasional and not business-critical. The other plans start at $500 a month. At the measured rate, the computing time costs cents a year: about 26 cents for a year of monthly ET on 50,000 parcels. Allow a few dollars a year for recalculating past months. A public agency should ask Google which plan applies before it registers. Setup is in docs/earth-engine-tier-setup.md. |
 | Transactional email (password resets) | A free tier covers most organizations |
 | CIMIS / NOAA / CDEC / USGS / DWR data | Free (public APIs) |
 
