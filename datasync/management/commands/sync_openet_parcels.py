@@ -35,6 +35,10 @@ logger = logging.getLogger(__name__)
 STOPPED_WORDS = (
     "This month's OpenET allowance is used. The next run continues from where this one stopped."
 )
+WHOLE_AREA_STOPPED_WORDS = (
+    "This month's OpenET allowance is used. Run sync_openet_parcels --whole-area again to continue "
+    "the whole area; a run without --whole-area continues only the use areas."
+)
 
 
 class Command(BaseCommand):
@@ -79,7 +83,7 @@ class Command(BaseCommand):
             "--dry-run",
             action="store_true",
             default=False,
-            help="Report what WOULD be asked of OpenET (no requests, no writes).",
+            help="Report what WOULD be asked of OpenET (no paid requests, no writes).",
         )
 
     def handle(self, *args, **options):
@@ -236,7 +240,8 @@ class Command(BaseCommand):
             )
         self.stdout.write(f"  Allowance used: {used} of {limit}")
         if stopped:
-            self.stdout.write(self.style.WARNING(STOPPED_WORDS))
+            words = WHOLE_AREA_STOPPED_WORDS if getattr(self, "whole_area", False) else STOPPED_WORDS
+            self.stdout.write(self.style.WARNING(words))
         return stopped
 
     def _setup(self, parcels, today):
@@ -254,11 +259,9 @@ class Command(BaseCommand):
 
         if getattr(self, "whole_area", False):
             boundary = field_list.answered_rectangles(whole_area=True)
-            for rectangle in field_list.boundary_areas():
-                if rectangle in boundary:
-                    continue
-                field_list.store_listed(field_list.lookup(rectangle, whole_area=True), today, whole_area=True)
-                boundary.add(rectangle)
+            for rectangle, outline in field_list.boundary_lookups(answered=boundary):
+                listed = field_list.lookup(rectangle, whole_area=True, outline=outline)
+                field_list.store_listed(listed, today, whole_area=True)
 
         waiting = self._waiting_outlines()
         size = self._per_request()
@@ -342,27 +345,30 @@ class Command(BaseCommand):
         return sorted(numbers)
 
     def _dry_run_fields(self, parcels, start_date, end_date):
-        """Print the requests a run would send. Sends nothing, writes nothing."""
+        """Print the requests a run would send. Sends no paid request and writes nothing; it reads
+        the account's area limit from its status (free), as a run does, so it cuts the same strips."""
         self.stdout.write(self.style.WARNING("[DRY RUN] No requests to OpenET, no writes."))
         answered = field_list.answered_rectangles(whole_area=False)
         needing = self._needing_setup(parcels, answered)
+        whole = getattr(self, "whole_area", False)
+        limit = field_list.account_max_area_acres() if (needing or whole) else None
         count, open_ended = 0, False
         if needing:
-            # The account's own limit is read from its status; a dry run sends nothing, so it assumes the default.
-            for rectangle in field_list.lookup_areas(needing, max_acres=field_list.DEFAULT_MAX_AREA_ACRES):
+            for rectangle in field_list.lookup_areas(needing, max_acres=limit):
                 if rectangle in answered:
                     continue
                 west, south, east, north = rectangle
                 self.stdout.write(f"  lookup of the fields in {west}, {south}, {east}, {north}")
                 count += 1
             open_ended = True
-        if getattr(self, "whole_area", False):
+        if whole:
             boundary = field_list.answered_rectangles(whole_area=True)
-            for rectangle in field_list.boundary_areas(max_acres=field_list.DEFAULT_MAX_AREA_ACRES):
-                if rectangle in boundary:
-                    continue
+            for rectangle, outline in field_list.boundary_lookups(max_acres=limit, answered=boundary):
                 west, south, east, north = rectangle
-                self.stdout.write(f"  lookup of the fields in {west}, {south}, {east}, {north}")
+                self.stdout.write(
+                    f"  lookup of the fields in the boundary's part of {west}, {south}, {east}, {north} "
+                    f"({len(outline) // 2} corners)"
+                )
                 count += 1
                 open_ended = True
         size = self._per_request()
@@ -371,6 +377,19 @@ class Command(BaseCommand):
         if batches:
             self.stdout.write(f"  {batches} request(s) for the outlines of {waiting} fields")
             count += batches
+        # The fields waiting on their outlines get figures once outlined (those inside a use area or
+        # the boundary): at most one request a batch of them. With lookups still to send the total
+        # is already open-ended, so they are shown but not added.
+        waiting_figures = -(-waiting // size)
+        up_to = False
+        if waiting_figures:
+            self.stdout.write(
+                f"  up to {waiting_figures} request(s) for the figures of the {waiting} fields waiting on "
+                f"their outlines, once they are outlined"
+            )
+            if not open_ended:
+                count += waiting_figures
+                up_to = True
         # A run sends figures in two steps, the use areas' fields and then the rest, each in its
         # own batches.
         first = set(self._shared_numbers(parcels))
@@ -390,7 +409,10 @@ class Command(BaseCommand):
             )
         self.stdout.write("")
         self.stdout.write(
-            self.style.WARNING(f"[DRY RUN] Would send {count}{' or more' if open_ended else ''} request(s) to OpenET.")
+            self.style.WARNING(
+                f"[DRY RUN] Would send {'up to ' if up_to else ''}{count}{' or more' if open_ended else ''} "
+                "request(s) to OpenET."
+            )
         )
 
     # -- the other routes ----------------------------------------------------------------------

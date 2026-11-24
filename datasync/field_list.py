@@ -33,7 +33,7 @@ from decimal import ROUND_HALF_UP, Decimal, InvalidOperation, localcontext
 
 import requests
 from django.conf import settings
-from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.geos import GEOSGeometry, Polygon
 from django.db import connection, transaction
 
 logger = logging.getLogger(__name__)
@@ -53,6 +53,9 @@ CENT = Decimal("0.01")
 MERGE_GAP_M = 250
 #: The largest rectangle a lookup may cover when the account does not say.
 DEFAULT_MAX_AREA_ACRES = 50000
+#: How far, in degrees of longitude and latitude (about 90 m), a whole-area lookup's outline may
+#: reach past the boundary's part of its strip, so that it holds that part with few corners.
+LOOKUP_OUTLINE_MARGIN = 0.001
 #: Read and send timeouts for one request, in seconds.
 TIMEOUT = 120
 
@@ -179,10 +182,18 @@ def rectangle_note(rectangle, whole_area=False):
     return json.dumps(rounded, separators=(",", ":"))
 
 
-def lookup(rectangle, whole_area=False):
-    """The OpenET field numbers inside ``rectangle`` ``(west, south, east, north)``, in OpenET's order."""
+def lookup(rectangle, whole_area=False, outline=None):
+    """The OpenET field numbers inside ``rectangle`` ``(west, south, east, north)``, in OpenET's order.
+
+    With ``outline`` (``[longitude, latitude, ...]``, from :func:`boundary_lookups`) the lookup
+    asks for the fields inside that outline instead of the whole rectangle; the request's note
+    still names the rectangle, which is what a later run reads to see what was answered.
+    """
     west, south, east, north = round_rectangle(rectangle)
-    body = {"geometry": [west, south, west, north, east, north, east, south]}
+    if outline is not None:
+        body = {"geometry": [float(v) for v in outline]}
+    else:
+        body = {"geometry": [west, south, west, north, east, north, east, south]}
     answer = _post("lookup", LOOKUP_PATH, body, 0, note=rectangle_note(rectangle, whole_area))
     return [int(i) for i in json.loads(answer)]
 
@@ -322,6 +333,73 @@ def boundary_areas(max_acres=None):
     for geometry in Boundary.objects.filter(geometry__isnull=False).values_list("geometry", flat=True):
         boxes.extend(list(part.extent) for part in geometry)
     return _cut(_merge(boxes), max_acres)
+
+
+def site_boundary():
+    """The site's boundary as one geometry in 4326 (every boundary record joined), or None."""
+    from geography.models import Boundary
+
+    joined = None
+    for geometry in Boundary.objects.filter(geometry__isnull=False).values_list("geometry", flat=True):
+        if geometry.srid not in (None, 4326):
+            geometry.transform(4326)
+        joined = geometry if joined is None else joined.union(geometry)
+    return joined
+
+
+def _rectangle_polygon(rectangle):
+    polygon = Polygon.from_bbox(tuple(rectangle))
+    polygon.srid = 4326
+    return polygon
+
+
+def lookup_outline(part, strip):
+    """A convex outline holding ``part`` (the boundary's part of ``strip``), with few corners.
+
+    The part's convex hull, grown by :data:`LOOKUP_OUTLINE_MARGIN` and simplified by the same
+    distance (so the simplified outline still holds every point of the hull), then trimmed to the
+    strip, so it never covers more than the strip's acres. Returned clockwise from the west, as
+    ``[longitude, latitude, ...]`` with no repeated closing corner, the form a rectangle is sent in.
+    """
+    shape = part.convex_hull.buffer(LOOKUP_OUTLINE_MARGIN).simplify(LOOKUP_OUTLINE_MARGIN).intersection(strip)
+    ring = shape[0]
+    corners = list(ring.coords)[:-1]
+    if ring.is_counterclockwise:
+        corners.reverse()
+    start = min(range(len(corners)), key=lambda i: corners[i])
+    corners = corners[start:] + corners[:start]
+    return [round(float(v), 6) for corner in corners for v in corner]
+
+
+def boundary_lookups(max_acres=None, answered=()):
+    """The whole-area lookups a run still sends: ``[(rectangle, outline)]``, west to east.
+
+    One for each strip of :func:`boundary_areas` that holds some of the boundary, asking for the
+    boundary's part of the strip (:func:`lookup_outline`), never the whole rectangle. A strip
+    whose part of the boundary lies inside the rectangles already ``answered`` is not looked up
+    again, however the strips were cut then, so a changed area limit (or a status read that fell
+    back to the default) does not send the boundary's lookups again.
+    """
+    boundary = site_boundary()
+    if boundary is None:
+        return []
+    done = None
+    for rectangle in answered:
+        polygon = _rectangle_polygon(rectangle)
+        done = polygon if done is None else done.union(polygon)
+    if done is not None:
+        # The rectangles are rounded to 6 decimals.
+        done = done.buffer(2e-6)
+    found = []
+    for rectangle in boundary_areas(max_acres):
+        strip = _rectangle_polygon(rectangle)
+        part = boundary.intersection(strip)
+        if part.empty or part.area == 0:
+            continue
+        if done is not None and done.covers(part):
+            continue
+        found.append((rectangle, lookup_outline(part, strip)))
+    return found
 
 
 def _merge(boxes):
