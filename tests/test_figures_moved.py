@@ -59,7 +59,8 @@ def test_figure_rows_are_matched_by_their_key_not_their_place(tmp_path):
 
     moved = {"WY 2024-2025": year([b, row("MER-APN-001", "2025-06", "surface", "D:1.25")])}
     text, _ = run(before, moved, tmp_path)
-    lines = [line for line in text.splitlines() if "MER-APN-001" in line]
+    rows = text.split("\n# ", 1)[0]
+    lines = [line for line in rows.splitlines() if "MER-APN-001" in line]
     assert len(lines) == 1 and lines[0].endswith("\tD:1.00\tD:1.25\t0.25")
 
 

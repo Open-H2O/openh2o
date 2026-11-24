@@ -39,6 +39,13 @@ pytestmark = pytest.mark.django_db
 FILE = Path(__file__).parent / "data" / "year_figures_before.json"
 WRITE = os.environ.get("YEAR_FIGURES_WRITE") == "1"
 
+
+def figures_out_path(stored):
+    """Where write mode writes: YEAR_FIGURES_OUT when set (scripts/figures_moved.py compares that file
+    with the stored one, which stays untouched), else the stored file itself."""
+    out = os.environ.get("YEAR_FIGURES_OUT")
+    return Path(out) if out else stored
+
 #: The dashboard's figures and counts, beside its rows (its dates are not figures).
 DASHBOARD_KEYS = (
     "grand_consumptive_use", "grand_supply_total", "grand_supply_surface", "grand_supply_groundwater",

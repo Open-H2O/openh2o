@@ -15,7 +15,7 @@ export APP_VERSION = $(VERSION)
         createsuperuser collectstatic seed seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo remove-demo \
-        check test test-release test-droppable golden-update dev-up dev-css guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod guard-demo-host deploy rebuild-golden \
+        check test test-release figures-moved test-droppable golden-update dev-up dev-css guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod guard-demo-host deploy rebuild-golden \
         verify-candidate promote-golden ci-gate release upgrade guard-demo-target
 
 help: ## Show this help message
@@ -276,6 +276,16 @@ test: ## Run the tests in T (a path or node id; all of tests/ when T is not give
 
 test-release: ## Run only the tests marked release (many minutes each; deploy-checks.yml runs them before a release)
 	@$(MAKE) --no-print-directory test MARK=release
+
+# The release test that compares every figure the demonstration prints, in write mode into a file
+# of its own; then scripts/figures_moved.py lists every value that differs from the stored file
+# (as it is in the working tree, or at BASE=<commit>). Loads the demonstration: about two minutes.
+FIGURES_TEST = tests/test_year_reading_demonstration.py
+figures-moved: ## List every printed demonstration figure that differs from the stored figures file (BASE=<commit> to read that file as it was at a commit); loads the demonstration, about two minutes
+	python3 scripts/with_test_lock.py $(COMPOSE) exec -e OPENH2O_MODULES=all -e YEAR_FIGURES_OUT=/tmp/figures-now.json web \
+		python -m pytest $(FIGURES_TEST) --ds=config.settings.local -m release -p no:cacheprovider -q -rs
+	$(COMPOSE) cp web:/tmp/figures-now.json figures-now.json
+	python3 -I scripts/figures_moved.py $(if $(BASE),--base-commit $(BASE)) figures-now.json $(if $(TSV),--tsv $(TSV))
 
 golden-update: ## Rewrite the golden files for the tests in T (required), then copy tests/golden out of the container unless docker-compose.dev.yml is in use
 	@test -n "$(T)" -a "$(T)" != "tests/" || { echo "Usage: make golden-update T=tests/test_nav_golden.py"; exit 1; }

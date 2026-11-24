@@ -76,3 +76,6 @@ backups/*
 
 # Written by scripts/restore.sh while a restore runs; the scheduled sync and backup skip while it exists.
 .restore-in-progress
+
+# make figures-moved writes the demonstration's printed figures here
+/figures-now.json
