@@ -1497,40 +1497,38 @@ html { color-scheme: dark; }
 .data-table--grouped td.col-sep {
     border-left: 2px solid var(--color-border-hover);
 }
-/* -- Number columns around a column rule ---------------------------------- */
+/* -- Columns around a column rule ------------------------------------------ */
 /* The rule is the left border of a right-aligned column, so the figure on its
    left stood one cell padding from it and the figure on its right stood at
    the far side of whatever width the browser gave that column. One sizing
-   model for every table that carries a rule, so the two sides match at every
-   width:
+   model for every table that carries a rule, so the table reads as one even
+   grid at every width:
 
-   1. A number column is as wide as its widest figure or header and no wider
-      (`width: 1px` in auto layout means "the content, no spare"). Its header
-      stays on one line unless it is a `.th-stack`, and a "?" sits under its
-      word, so a header is the same shape at every width.
-   2. Spare width is shared by the columns as GUTTERS: `--col-gutter`, the
-      same on both sides of every number column, 6px when the table has
-      nothing to spare. A text column takes its share as width.
-   3. At the rule the nearest figure on each side stands the same distance
-      from it. `--rule-trail` is the padding right of the rule and
-      `--rule-lead` the padding left of it; the lead is longer by however far
-      the header right of the rule overhangs its own figures, because that
-      header pushes its figures away from the rule and nothing pushes the
-      figures on the other side.
-   4. A bracket's underline spans exactly the figures it brackets and its
+   1. A column is as wide as its content and no wider. A number column is
+      held to it here (`width: 1px` in auto layout means "the content, no
+      spare"); its header stays on one line unless it is a `.th-stack`, and a
+      "?" sits under its word.
+   2. Spare width becomes the gaps BETWEEN columns, and every gap is the same:
+      the distance from one column's text to the next column's text, read
+      along the body rows, is equal across the row. A header wider than its
+      own figures uses part of the gap beside it; where it needs more than
+      the gap, that one gap is wider.
+   3. The rule stands in the middle of its gap: the nearest figure on each
+      side is the same distance from it, never under 12px.
+   4. A `.th-stack` header opens onto one line (`.is-open`) when its gap has
+      room for it.
+   5. A bracket's underline spans exactly the figures it brackets and its
       label is centred on that underline (`--bracket-l`, `--bracket-r`).
 
-   CSS cannot know the spare width or a header's overhang, so
-   `static/js/table-rule.js` measures them, and where each bracket's figures start and end, sets the
-   five properties, and
-   marks the cells that end at the rule (`.col-sep-lead`) and at the table's
-   right edge (`.col-edge`). Without the script every value falls back to the
-   6px cell padding: the columns still take no spare width and the sides
-   differ only by the header's overhang. `scripts/table_balance.js` measures
-   the result. */
+   CSS cannot know the spare width, how far a header overhangs its figures or
+   where a bracket's figures start and end, so `static/js/table-rule.js`
+   measures them and writes each cell's left and right padding and the two
+   bracket properties. Without the script every cell keeps the 6px padding:
+   the number columns still take no spare width, the text columns take it
+   all, and the sides of a rule differ by the header's overhang.
+   `scripts/table_balance.js` measures the result. */
 .data-table--grouped:has(.col-sep) :is(th.th-right, td.td-num, td.td-num-bold, td.th-right) {
     width: 1px;
-    padding-inline: var(--col-gutter, 6px);
 }
 .data-table--grouped:has(.col-sep) th.th-right {
     white-space: nowrap;
@@ -1539,14 +1537,9 @@ html { color-scheme: dark; }
     display: flex;
     justify-content: flex-end;
 }
-.data-table--grouped:has(.col-sep) :is(th, td).col-edge {
-    padding-right: 6px;
-}
-.data-table--grouped:has(.col-sep) :is(th, td).col-sep {
-    padding-left: var(--rule-trail, 6px);
-}
-.data-table--grouped:has(.col-sep) :is(th, td).col-sep-lead {
-    padding-right: var(--rule-lead, 6px);
+.data-table--grouped:has(.col-sep) .th-stack.is-open {
+    width: auto;
+    white-space: nowrap;
 }
 /* The bracket's underline spans exactly the figures it brackets, from the
    left edge of the leftmost to the right edge of the rightmost, and the label

@@ -1,31 +1,31 @@
-// table-rule.js: a table that carries a column rule (`.col-sep`) keeps the
-// nearest figure on each side of the rule the same distance from it, at every
-// width. app.css sizes the table ("Number columns around a column rule"): a
-// number column is as wide as its figures or header and takes no spare width.
-// Two things CSS cannot know are measured here and handed back as custom
-// properties on the table:
-//   --col-gutter   the padding on both sides of every number column: 6px, plus
-//                  an equal share of the width the table has to spare once
-//                  every text column fits on one line
-//   --rule-trail   the padding right of the rule
-//   --rule-lead    the padding left of the rule: the trail, plus however far
-//                  the header right of the rule overhangs its own figures
-// and on each bracket header (`th[colspan]`):
-//   --bracket-l, --bracket-r   the distance from the cell's edges to the figures
-//                  it brackets: the underline spans exactly those figures and
-//                  the label is centred on it
-// The cells that end at the rule are marked `.col-sep-lead` and the cells at
-// the table's right edge `.col-edge`. It runs for every such table on load,
-// when the box that holds the table changes width, when the fonts arrive and
-// after every HTMX swap. Without this script the stylesheet's 6px fallbacks
-// hold: the two sides of a rule differ by the header's overhang and no more.
-// `scripts/table_balance.js` measures what a reader sees.
+// table-rule.js: a table that carries a column rule (`.col-sep`) reads as one
+// even grid at every width. app.css states the model ("Columns around a column
+// rule"): a column is as wide as its content, the width left over becomes the
+// gaps between columns, every gap is the same from one column's text to the
+// next, and the rule stands in the middle of its gap. Three things CSS cannot
+// know are measured here:
+//   - the width the table has to spare once every column has its content;
+//   - how far a header overhangs its own figures (a right-aligned header wider
+//     than its figures pushes them away from the column to their left), and
+//     how far a text column's widest line falls short of its header;
+//   - where the figures under a bracket header start and end.
+// From them it writes each cell's left and right padding, opens a `.th-stack`
+// header onto one line (`.is-open`) when its gap has room for it, and sets on
+// each bracket header (`th[colspan]`) `--bracket-l` and `--bracket-r`, the
+// distances from the cell's edges to its figures: the underline spans exactly
+// those figures and the label is centred on it.
+// It runs for every such table on load, when the box that holds the table
+// changes width, when the fonts arrive and after every HTMX swap. Without this
+// script every cell keeps the stylesheet's 6px padding: the two sides of a
+// rule differ by the header's overhang and the text columns take the spare
+// width. `scripts/table_balance.js` measures what a reader sees.
 (function () {
     'use strict';
     var BASE = 6;    // the grouped table's own cell padding, px
-    var CLEAR = 12;  // the least space between the rule and a figure, and between the rule and the header right of it once there is room
+    var CLEAR = 12;  // the least space between the rule and a figure
 
     function px(n) { return n.toFixed(2) + 'px'; }
+    function list(nodes) { return Array.prototype.slice.call(nodes); }
 
     // The left and right edge of what a cell prints.
     function ink(cell) {
@@ -43,81 +43,167 @@
     function balance(table) {
         var first = table.querySelector('tbody td.col-sep, tfoot td.col-sep');
         if (!first || !table.getClientRects().length) { return; }
+        var row = first.parentElement;
+        if (list(row.cells).some(function (c) { return c.colSpan > 1; })) { return; }
         // Boxes come back in viewport pixels and padding is set in the page's
         // own, which `.app-content { zoom }` makes larger.
         var zoom = table.currentCSSZoom || 1;
-        var cells = Array.prototype.slice.call(table.querySelectorAll('th, td'));
-        var bodyCell = function (c) { return c.tagName === 'TD' && c.colSpan === 1; };
+        var n = row.cells.length;
+        var rule = first.cellIndex;  // the column right of the rule
+        var leaves = list(table.querySelectorAll('th, td')).filter(function (c) { return c.colSpan === 1; });
+        var brackets = list(table.querySelectorAll('thead th')).filter(function (c) { return c.colSpan > 1; });
+        var stacks = list(table.querySelectorAll('thead .th-stack'));
 
-        function set(gutter, trail, lead) {
-            table.style.setProperty('--col-gutter', px(gutter));
-            table.style.setProperty('--rule-trail', px(trail));
-            table.style.setProperty('--rule-lead', px(lead));
-        }
-        // The space from the rule to the nearest figure on each side, and the
-        // cells that end at the rule.
-        function gaps() {
-            var x = first.getBoundingClientRect().left;
-            var half = parseFloat(getComputedStyle(first).borderLeftWidth) * zoom / 2;
-            var left = Infinity, right = Infinity, lead = [];
-            cells.forEach(function (c) {
-                var b = c.getBoundingClientRect();
-                if (!b.width) { return; }
-                var k;
-                if (Math.abs(b.right - x) < 1) {
-                    lead.push(c);
-                    if (bodyCell(c) && (k = ink(c))) { left = Math.min(left, x - half - k.r); }
-                } else if (Math.abs(b.left - x) < 1 && bodyCell(c) && (k = ink(c))) {
-                    right = Math.min(right, k.l - x - half);
-                }
-            });
-            return { left: left / zoom, right: right / zoom, lead: lead };
-        }
-
-        // 1. From the bare table: which cells end at the rule and at the right
-        //    edge, and how far the header right of the rule overhangs its figures.
-        cells.forEach(function (c) {
-            c.classList.remove('col-sep-lead', 'col-edge');
-            c.style.removeProperty('--bracket-l');
-            c.style.removeProperty('--bracket-r');
-        });
-        set(BASE, BASE, BASE);
-        var m = gaps();
-        if (!isFinite(m.left) || !isFinite(m.right)) { return; }
-        m.lead.forEach(function (c) { c.classList.add('col-sep-lead'); });
-        var edge = table.getBoundingClientRect().right;
-        cells.forEach(function (c) {
-            if (Math.abs(c.getBoundingClientRect().right - edge) < 1) { c.classList.add('col-edge'); }
-        });
-        var overhang = Math.max(0, m.right - BASE);
-        set(BASE, BASE, BASE + overhang);
-
-        // 2. The width to spare once every text column fits on one line, shared
-        //    equally by the columns; a number column takes its share half on
-        //    each side.
-        var full = table.getBoundingClientRect().width;
+        // 1. The bare table at the width its content asks for.
+        leaves.forEach(function (c) { c.style.paddingLeft = ''; c.style.paddingRight = ''; });
+        brackets.forEach(function (c) { c.style.removeProperty('--bracket-l'); c.style.removeProperty('--bracket-r'); });
+        stacks.forEach(function (s) { s.classList.remove('is-open'); });
+        var full = table.getBoundingClientRect().width / zoom;
         table.style.width = 'max-content';
-        var needed = table.getBoundingClientRect().width;
-        table.style.width = '';
-        var gutter = BASE;
-        if (full - needed > 1) { gutter += (full - needed) / zoom / first.parentElement.cells.length / 2; }
-        // The header right of the rule may use the gutter's room, down to
-        // CLEAR, and the figures never stand closer to the rule than CLEAR.
-        var trail = Math.max(Math.min(gutter, CLEAR), CLEAR - overhang, gutter - overhang);
-        set(gutter, trail, trail + overhang);
 
-        // 3. Settle the lead on what is drawn.
-        for (var i = 0; i < 2; i++) {
-            m = gaps();
-            if (Math.abs(m.right - m.left) < 0.25) { break; }
-            var now = parseFloat(getComputedStyle(m.lead.filter(bodyCell)[0]).paddingRight);
-            set(gutter, trail, Math.max(0, now + m.right - m.left));
+        // Which column each cell stands in, by its left edge.
+        var edges = list(row.cells).map(function (c) { return c.getBoundingClientRect().left; });
+        var cols = edges.map(function () { return { cells: [], body: [] }; });
+        var where = ('Map' in window) ? new Map() : null;
+        if (!where) { table.style.width = ''; return; }
+        leaves.forEach(function (c) {
+            var x = c.getBoundingClientRect().left;
+            for (var j = 0; j < n; j++) {
+                if (Math.abs(x - edges[j]) < 1) {
+                    cols[j].cells.push(c);
+                    if (c.tagName === 'TD') { cols[j].body.push(c); }
+                    where.set(c, j);
+                    return;
+                }
+            }
+        });
+
+        // Per column: the content's width, and how far the body's text stands
+        // in from each side of it (`inL` under a right-aligned header wider
+        // than its figures, `inR` beside a text column's shorter lines).
+        function read() {
+            var out = cols.map(function (col, j) {
+                var b = row.cells[j].getBoundingClientRect(), cs = getComputedStyle(row.cells[j]);
+                var pl = parseFloat(cs.paddingLeft), pr = parseFloat(cs.paddingRight);
+                var l = Infinity, r = -Infinity;
+                col.body.forEach(function (c) {
+                    var k = ink(c);
+                    if (k) { l = Math.min(l, k.l); r = Math.max(r, k.r); }
+                });
+                var has = l !== Infinity;
+                return {
+                    pl: pl, pr: pr,
+                    width: b.width / zoom,
+                    inL: has ? Math.max(0, (l - b.left) / zoom - pl) : 0,
+                    inR: has ? Math.max(0, (b.right - r) / zoom - pr) : 0
+                };
+            });
+            out.table = table.getBoundingClientRect().width / zoom;
+            return out;
+        }
+        var closed = read(), opened = closed;
+        if (stacks.length) {
+            stacks.forEach(function (s) { s.classList.add('is-open'); });
+            opened = read();
+            stacks.forEach(function (s) { s.classList.remove('is-open'); });
+        }
+
+        // 2. The paddings for a gap G between every pair of columns, and the G
+        //    that uses up the spare width. `open[j]` says column j's stacked
+        //    header is on one line.
+        function plan(open) {
+            var v = cols.map(function (_, j) { return open[j] ? opened[j] : closed[j]; });
+            var need = closed.table, bare = 0;
+            for (var j = 0; j < n; j++) {
+                if (open[j]) { need += opened[j].width - closed[j].width; }
+                if (j < n - 1) { bare += closed[j].pr + closed[j + 1].pl; }
+            }
+            function pads(G) {
+                var out = [], sum = 0;
+                for (var b = 0; b < n - 1; b++) {
+                    var oL = v[b].inR, oR = v[b + 1].inL, l, r;
+                    if (b + 1 === rule) {
+                        // The rule in the middle of its gap, the header right
+                        // of it never closer to it than the cell padding.
+                        var D = Math.max(G / 2, CLEAR, BASE + oL, BASE + oR);
+                        l = D - oL; r = D - oR;
+                    } else {
+                        var T = Math.max(2 * BASE, G - oL - oR);
+                        l = Math.min(Math.max(G / 2 - oL, BASE), T - BASE);
+                        r = T - l;
+                    }
+                    out.push([l, r]); sum += l + r;
+                }
+                return { list: out, sum: sum };
+            }
+            var G = 2 * BASE, p = pads(G);
+            // One pixel short, so rounding never makes the table wider than its holder.
+            var spare = full - (need - bare + p.sum) - 1;
+            if (spare > 0) {
+                var lo = G, hi = G + spare + 100, base = p.sum;
+                v.forEach(function (c) { hi += c.inL + c.inR; });
+                for (var i = 0; i < 40; i++) {
+                    var mid = (lo + hi) / 2;
+                    if (pads(mid).sum - base < spare) { lo = mid; } else { hi = mid; }
+                }
+                G = lo; p = pads(G);
+            }
+            // Does column j's header fit the gaps beside it at this G?
+            function fits(j) {
+                return [j - 1, j].every(function (b) {
+                    if (b < 0 || b >= n - 1) { return true; }
+                    var oL = v[b].inR, oR = v[b + 1].inL;
+                    if (b + 1 === rule) { return Math.max(BASE + oL, BASE + oR) <= Math.max(G / 2, CLEAR) + 0.5; }
+                    return G - oL - oR >= 2 * BASE - 0.5;
+                });
+            }
+            return { list: p.list, spare: spare, fits: fits };
+        }
+        // A stacked header opens when the even gap has room for it; the
+        // narrowest first, and none may squeeze out one already open.
+        var open = cols.map(function () { return false; });
+        var best = plan(open);
+        var stackCols = [];
+        stacks.forEach(function (s) {
+            var th = s.closest('th'), j = th ? where.get(th) : undefined;
+            if (j !== undefined && stackCols.indexOf(j) < 0) { stackCols.push(j); }
+        });
+        stackCols.sort(function (a, b) { return (opened[a].width - closed[a].width) - (opened[b].width - closed[b].width); });
+        stackCols.forEach(function (j) {
+            open[j] = true;
+            var t = plan(open);
+            var ok = t.spare > 0 && stackCols.every(function (k) { return !open[k] || t.fits(k); });
+            if (ok) { best = t; } else { open[j] = false; }
+        });
+        stacks.forEach(function (s) {
+            var th = s.closest('th'), j = th ? where.get(th) : undefined;
+            if (j !== undefined && open[j]) { s.classList.add('is-open'); }
+        });
+        cols.forEach(function (col, j) {
+            var l = j > 0 ? px(best.list[j - 1][1]) : '', r = j < n - 1 ? px(best.list[j][0]) : '';
+            col.cells.forEach(function (c) { c.style.paddingLeft = l; c.style.paddingRight = r; });
+        });
+        table.style.width = '';
+
+        // 3. Settle the rule on what is drawn (a text column that wraps, a
+        //    border, a rounding): the left side follows the right.
+        if (rule > 0) {
+            for (var i = 0; i < 2; i++) {
+                var x = first.getBoundingClientRect().left;
+                var half = parseFloat(getComputedStyle(first).borderLeftWidth) * zoom / 2;
+                var left = Infinity, right = Infinity;
+                cols[rule - 1].body.forEach(function (c) { var k = ink(c); if (k) { left = Math.min(left, x - half - k.r); } });
+                cols[rule].body.forEach(function (c) { var k = ink(c); if (k) { right = Math.min(right, k.l - x - half); } });
+                if (!isFinite(left) || !isFinite(right) || Math.abs(right - left) < 0.25) { break; }
+                var now = parseFloat(getComputedStyle(row.cells[rule - 1]).paddingRight);
+                var want = px(Math.max(0, now + (right - left) / zoom));
+                cols[rule - 1].cells.forEach(function (c) { c.style.paddingRight = want; });
+            }
         }
 
         // 4. Each bracket, underline and label, over the figures it brackets.
-        var rows = Array.prototype.slice.call(table.querySelectorAll('tbody tr, tfoot tr'));
-        Array.prototype.forEach.call(table.querySelectorAll('thead th'), function (th) {
-            if (th.colSpan < 2) { return; }
+        var rows = list(table.querySelectorAll('tbody tr, tfoot tr'));
+        brackets.forEach(function (th) {
             var b = th.getBoundingClientRect(), l = Infinity, r = -Infinity;
             rows.forEach(function (tr) {
                 Array.prototype.forEach.call(tr.cells, function (td) {
