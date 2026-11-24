@@ -183,7 +183,9 @@ class Command(BaseCommand):
 
     @staticmethod
     def _needing_setup(parcels, answered):
-        """Use areas with no share rows and no answered lookup holding their bounding box."""
+        """Use areas with no share rows and none of their own answered lookups holding their
+        bounding box (``answered`` holds the use areas' lookups only: a lookup over the boundary
+        may have listed their fields, but leaves their outlines to a whole-area run)."""
         return [
             p for p in parcels
             if not field_list.has_shares(p) and not field_list.rectangle_covers(answered, p)
@@ -241,7 +243,7 @@ class Command(BaseCommand):
         """Lookups, outlines and shares, only for what the stored records say is not done."""
         from datasync.models import OpenETField
 
-        answered = field_list.answered_rectangles()
+        answered = field_list.answered_rectangles(whole_area=False)
         needing = self._needing_setup(parcels, answered)
         if needing:
             for rectangle in field_list.lookup_areas(needing):
@@ -251,11 +253,12 @@ class Command(BaseCommand):
                 answered.add(rectangle)
 
         if getattr(self, "whole_area", False):
+            boundary = field_list.answered_rectangles(whole_area=True)
             for rectangle in field_list.boundary_areas():
-                if rectangle in answered:
+                if rectangle in boundary:
                     continue
-                field_list.store_listed(field_list.lookup(rectangle), today, whole_area=True)
-                answered.add(rectangle)
+                field_list.store_listed(field_list.lookup(rectangle, whole_area=True), today, whole_area=True)
+                boundary.add(rectangle)
 
         waiting = self._waiting_outlines()
         size = self._per_request()
@@ -341,7 +344,7 @@ class Command(BaseCommand):
     def _dry_run_fields(self, parcels, start_date, end_date):
         """Print the requests a run would send. Sends nothing, writes nothing."""
         self.stdout.write(self.style.WARNING("[DRY RUN] No requests to OpenET, no writes."))
-        answered = field_list.answered_rectangles()
+        answered = field_list.answered_rectangles(whole_area=False)
         needing = self._needing_setup(parcels, answered)
         count, open_ended = 0, False
         if needing:
@@ -354,8 +357,9 @@ class Command(BaseCommand):
                 count += 1
             open_ended = True
         if getattr(self, "whole_area", False):
+            boundary = field_list.answered_rectangles(whole_area=True)
             for rectangle in field_list.boundary_areas(max_acres=field_list.DEFAULT_MAX_AREA_ACRES):
-                if rectangle in answered:
+                if rectangle in boundary:
                     continue
                 west, south, east, north = rectangle
                 self.stdout.write(f"  lookup of the fields in {west}, {south}, {east}, {north}")

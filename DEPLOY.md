@@ -943,11 +943,13 @@ and for monthly crop ET and rain of every field inside or crossing the boundary.
 rectangles already listed, outlines already held, and figures of a field outside every use area
 that has every month asked for; fields overlapping a use area are always asked, so a revised month
 is seen. A run whose use areas already share fields first asks for those fields' figures, before any
-lookup or outline. A first run has none and starts with its lookups. A field listed only by a lookup
-over the site's boundary is marked as such, and a run without `--whole-area` never asks for its
-outline or its figures. A whole-area run stopped by the month's allowance continues its boundary
-lookups, the outlines of the fields only those lookups listed, and its extra figures only when it is
-run again with `--whole-area`. Lookups and outlines for the use areas continue on any run.
+lookup or outline. A field listed only by a lookup over the site's boundary is marked as such until
+a use area's own lookup lists it or it takes a share in a use area. A run without `--whole-area`
+never asks for a marked field's outline or figures. A whole-area run stopped by the month's
+allowance continues its boundary lookups, the outlines of the fields only those lookups listed, and
+its extra figures only when it is run again with `--whole-area`. Each use area gets its own lookup,
+even inside a rectangle a boundary lookup answered. Lookups and outlines for the use areas continue
+on any run.
 <!-- defines: dry_run -->A dry run (`--dry-run` with `--whole-area`) shows what a run would ask for and sends nothing. On
 a first run it prints the lookups and a request count ending "or more", because the outlines and
 figures depend on the lookups' answers; it does not read the account's limits, so it cuts rectangles at 50,000 acres. `OPENET_FIELDS_PER_REQUEST` is 100 by default. Some accounts take 400 or more. Set it from

@@ -170,15 +170,20 @@ def round_rectangle(rectangle):
     return tuple(round(float(v), 6) for v in rectangle)
 
 
-def rectangle_note(rectangle):
-    return json.dumps(list(round_rectangle(rectangle)), separators=(",", ":"))
+def rectangle_note(rectangle, whole_area=False):
+    """The request's note: the rounded rectangle, and for a lookup over the site's boundary
+    (``--whole-area``) a mark saying so, so a use area's own lookup is told apart from it."""
+    rounded = list(round_rectangle(rectangle))
+    if whole_area:
+        return json.dumps({"rectangle": rounded, "whole_area": True}, separators=(",", ":"))
+    return json.dumps(rounded, separators=(",", ":"))
 
 
-def lookup(rectangle):
+def lookup(rectangle, whole_area=False):
     """The OpenET field numbers inside ``rectangle`` ``(west, south, east, north)``, in OpenET's order."""
     west, south, east, north = round_rectangle(rectangle)
     body = {"geometry": [west, south, west, north, east, north, east, south]}
-    answer = _post("lookup", LOOKUP_PATH, body, 0, note=rectangle_note(rectangle))
+    answer = _post("lookup", LOOKUP_PATH, body, 0, note=rectangle_note(rectangle, whole_area))
     return [int(i) for i in json.loads(answer)]
 
 
@@ -200,8 +205,9 @@ def store_listed(numbers, today, whole_area):
     ])
 
 
-def answered_rectangles():
-    """The rounded rectangles OpenET has answered a lookup for."""
+def answered_rectangles(whole_area=None):
+    """The rounded rectangles OpenET has answered a lookup for: the use areas' own lookups with
+    ``whole_area=False``, the lookups over the site's boundary with ``True``, both with ``None``."""
     from datasync.models import OpenETRequest
 
     found = set()
@@ -210,6 +216,11 @@ def answered_rectangles():
         try:
             values = json.loads(note)
         except ValueError:
+            continue
+        boundary = isinstance(values, dict) and values.get("whole_area") is True
+        if boundary:
+            values = values.get("rectangle")
+        if whole_area is not None and boundary != whole_area:
             continue
         if isinstance(values, list) and len(values) == 4:
             found.add(tuple(round(float(v), 6) for v in values))
@@ -402,6 +413,9 @@ def compute_shares(parcel):
         OpenETFieldShare.objects.filter(parcel=parcel, field__geometry__isnull=False).delete()
         for field, acres in made:
             OpenETFieldShare.objects.create(parcel=parcel, field=field, overlap_acres=acres)
+        # A field inside a use area is that use area's, whichever lookup listed it first.
+        OpenETField.objects.filter(pk__in=[f.pk for f, _ in made], whole_area_only=True).update(
+            whole_area_only=False)
     return made
 
 
