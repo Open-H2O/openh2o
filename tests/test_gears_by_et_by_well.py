@@ -170,3 +170,24 @@ def test_the_rows_carry_the_by_well_files_well_columns():
     (row,) = by_et[1:]
     assert row[:5] == ["REG-COL", str(well), str(well.location.y), str(well.location.x), "2024-01"]
     assert row[6] == "Unmetered/Estimated"
+
+
+def test_the_checks_count_use_areas_with_no_well_and_name_the_months_left_out():
+    from datasync.models import CropETFigure
+    from reporting.validators import validate_report
+
+    period = ReportingPeriodFactory()
+    unlinked, uncalculated, calculated = ParcelFactory(), ParcelFactory(), ParcelFactory()
+    well = WellFactory(well_registration_id="REG-CHK")
+    for field in (uncalculated, calculated):
+        WellIrrigatedParcelFactory(well=well, parcel=field)
+    for field in (unlinked, uncalculated):
+        CropETFigure.objects.create(
+            parcel=field, month=JAN, variable="ET", model_name="Ensemble",
+            depth_mm=D("9") * D("304.8") / field.area_acres,
+        )
+    _estimate(calculated, 2)
+
+    warnings = [m["message"] for m in validate_report(period, "gears_by_et") if m["level"] == "warning"]
+    assert any(m.startswith("1 use area") for m in warnings)  # the one not linked to a well
+    assert any("January 2024" in m and "1 use area." in m for m in warnings)  # the uncalculated month

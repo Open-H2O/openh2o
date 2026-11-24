@@ -448,16 +448,19 @@ def test_in_a_finalized_year_an_administrators_accept_goes_through_the_recorded_
 # ---------------------------------------------------------------- 10. the by-ET file reads the record
 
 
-def test_the_by_et_file_reads_the_record_not_the_newer_cache():
-    from reporting.generators import _gears_by_et_rows
+def test_the_reports_read_the_record_not_the_newer_cache():
+    from datasync.crop_et import recorded_acre_feet
 
     field = _corn_field()
     _fetch(field, FIRST, AUG_6)
     _fetch(field, NEWER, SEP_28)
 
     year = ReportingPeriod.objects.get(name="WY 2024-2025")
-    july = [r for r in _gears_by_et_rows(year) if r["parcel_number"] == field.parcel_number and r["month"] == JULY]
-    assert [r["volume"] for r in july] == [D("30.0000")]  # 91.44 mm over 100 acres, not 121.92
+    july = [
+        r for r in recorded_acre_feet(year.start_date, year.end_date)
+        if r.parcel_id == field.pk and r.month.strftime("%Y-%m") == JULY
+    ]
+    assert [r.acre_feet for r in july] == [D("30.0000")]  # 91.44 mm over 100 acres, not 121.92
 
 
 # ---------------------------------------------------------------- 11. two overlapping cache windows

@@ -60,6 +60,13 @@ GEARS_METHOD = {
 }
 
 
+#: The GEARS files' columns: the by-well file and the by-ET file both write one line per well.
+GEARS_WELL_HEADER = [
+    "Well Registration ID", "Well Name", "Latitude", "Longitude",
+    "Month", "Extraction Volume (AF)", "Measurement Method",
+]
+
+
 def gears_method(source_type):
     """Crosswalk an internal source_type to the GEARS measurement-method label.
 
@@ -596,10 +603,7 @@ def _gears_by_well_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any
 
 def _write_gears_by_well(writer: Any, reporting_period: ReportingPeriod) -> None:
     """Write the GEARS by-well header and one line per well-month."""
-    writer.writerow([
-        "Well Registration ID", "Well Name", "Latitude", "Longitude",
-        "Month", "Extraction Volume (AF)", "Measurement Method",
-    ])
+    writer.writerow(GEARS_WELL_HEADER)
     for row in _gears_by_well_rows(reporting_period):
         writer.writerow(safe_row([
             row["reg_id"], row["name"], row["lat"], row["lon"],
@@ -607,82 +611,133 @@ def _write_gears_by_well(writer: Any, reporting_period: ReportingPeriod) -> None
         ]))
 
 
-def _gears_by_et_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any]]:
-    """ET volume per (parcel, month), sorted for the file.
+class ByETLeftOut:
+    """What the by-ET file leaves out, for the checks that name it.
 
-    A month the calculation ran for reads its netted ``calculated`` rows. Any other
-    month with recorded crop ET reads the record (``datasync.crop_et``), the figure
-    the calculation and the month's page read. A use area-month the by-well file holds is metered and is left out.
+    ``no_well``: the use areas with crop ET in the water year and no linked well.
+    ``waiting``: ``{first of month: use area ids}`` OpenET has not sent crop ET for.
+    ``not_calculated``: ``{first of month: use area ids}`` with crop ET and no calculation.
+    Only use areas linked to a well count as waiting or not calculated, and a month the
+    by-well file holds counts as neither.
     """
-    from datasync.crop_et import recorded_acre_feet
 
-    calculated = (
+    def __init__(self):
+        self.no_well: set[int] = set()
+        self.waiting: dict[Any, set[int]] = {}
+        self.not_calculated: dict[Any, set[int]] = {}
+
+
+def _split_by_shares(acre_feet: Decimal, links: list[WellIrrigatedParcel]) -> list[tuple[Any, Decimal]]:
+    """``[(well, part)]``: a use area's month divided among its wells by the links' shares.
+
+    Each well takes its link's share over the sum of the use area's shares (equal parts when
+    every share is 0), at four places, and the last well the remainder, so the parts add up
+    to the month's figure exactly.
+    """
+    total_share = sum((link.fraction for link in links), Decimal("0"))
+    parts = []
+    assigned = Decimal("0")
+    for i, link in enumerate(links):
+        if i == len(links) - 1:
+            part = acre_feet - assigned
+        elif total_share > 0:
+            part = (acre_feet * link.fraction / total_share).quantize(Decimal("0.0001"))
+        else:
+            part = (acre_feet / len(links)).quantize(Decimal("0.0001"))
+        assigned += part
+        parts.append((link.well, part))
+    return parts
+
+
+def _gears_by_et_build(reporting_period: ReportingPeriod) -> tuple[list[dict[str, Any]], ByETLeftOut]:
+    """The by-ET rows, one per (well, month), and what the file leaves out.
+
+    A use area-month's figure is its ``calculated`` rows counted the way the account
+    pages count them (``accounting.services.with_charged_extraction``: the run's
+    groundwater extraction estimate). Each figure goes to the wells linked to the use
+    area, divided by the links' shares. A use area with no linked well, a use area-month
+    the by-well file holds (metered), a month waiting for OpenET and a month with crop
+    ET and no calculation put no figure in the file.
+    """
+    from accounting.services import with_charged_extraction
+    from datasync.crop_et import recorded_acre_feet, waiting_months
+
+    left_out = ByETLeftOut()
+    metered = _gears_by_well_build(reporting_period)[1]
+
+    links_by_parcel: dict[int, list[WellIrrigatedParcel]] = {}
+    for link in WellIrrigatedParcel.objects.select_related("well").order_by("pk"):
+        links_by_parcel.setdefault(link.parcel_id, []).append(link)
+
+    calculated = with_charged_extraction(
         ParcelLedger.objects.current().filter(
             source_type="calculated",
+            # A calculated month's figure is stored negative (water used) or 0 (none
+            # pumped); the account pages count nothing for anything above 0, and
+            # neither does the file.
+            amount_acre_feet__lte=0,
             effective_date__gte=reporting_period.start_date,
             effective_date__lte=reporting_period.end_date,
         )
-        .select_related("parcel")
-    )
+    ).values_list("parcel_id", "effective_date", "charged_af")
 
-    # A field-month the by-well file holds is metered: its water is written
-    # there, so the by-ET file leaves it out.
-    metered = _gears_by_well_build(reporting_period)[1]
-
-    rows = {}
-    for entry in calculated:
-        month_str = entry.effective_date.strftime("%Y-%m")
-        key = (entry.parcel_id, month_str)
-        if key in metered:
+    figures: dict[tuple[int, str], Decimal] = {}
+    ran: set[tuple[int, Any]] = set()
+    for parcel_id, effective_date, charged in calculated:
+        ran.add((parcel_id, effective_date))
+        key = (parcel_id, effective_date.strftime("%Y-%m"))
+        if key in metered or parcel_id not in links_by_parcel:
             continue
-        if key not in rows:
-            rows[key] = {
-                "parcel_number": entry.parcel.parcel_number,
-                # A null acreage becomes a blank cell, never a literal
-                # 0 — reporting 0 acres beside a real ET volume is self-
-                # inconsistent to a state reviewer. validate_report flags it.
-                "area": (
-                    entry.parcel.area_acres
-                    if entry.parcel.area_acres is not None
-                    else ""
-                ),
-                "month": month_str,
-                "volume": Decimal("0"),
-                "method": entry.source_type,
-            }
-        rows[key]["volume"] += abs(entry.amount_acre_feet)
+        figures[key] = figures.get(key, Decimal("0")) + abs(charged)
 
-    # The calculated rows above are keyed on the first of their month, as the
-    # calculation writes them; a record stands in only where none exists.
-    ran = {(entry.parcel_id, entry.effective_date) for entry in calculated}
     for figure in recorded_acre_feet(reporting_period.start_date, reporting_period.end_date):
         month_str = figure.month.strftime("%Y-%m")
-        key = (figure.parcel_id, month_str)
-        if key in metered or (figure.parcel_id, figure.month) in ran:
+        if (figure.parcel_id, month_str) in metered or (figure.parcel_id, figure.month) in ran:
             continue
-        if key not in rows:
-            rows[key] = {
-                "parcel_number": figure.parcel_number,
-                "area": figure.area_acres,
-                "month": month_str,
-                "volume": Decimal("0"),
-                "method": "et_estimate",
-            }
-        rows[key]["volume"] += figure.acre_feet
+        if figure.parcel_id not in links_by_parcel:
+            left_out.no_well.add(figure.parcel_id)
+        else:
+            left_out.not_calculated.setdefault(figure.month, set()).add(figure.parcel_id)
 
-    return sorted(rows.values(), key=lambda r: (r["parcel_number"], r["month"]))
+    waiting = waiting_months(list(links_by_parcel), reporting_period.start_date, reporting_period.end_date)
+    for parcel_id, months in waiting.items():
+        for first in months:
+            if (parcel_id, first.strftime("%Y-%m")) not in metered:
+                left_out.waiting.setdefault(first, set()).add(parcel_id)
+
+    rows: dict[tuple[int, str], dict[str, Any]] = {}
+    for (parcel_id, month_str), acre_feet in figures.items():
+        for well, part in _split_by_shares(acre_feet, links_by_parcel[parcel_id]):
+            key = (well.pk, month_str)
+            if key not in rows:
+                rows[key] = {
+                    "reg_id": well.well_registration_id or "",
+                    "name": str(well),
+                    "lat": well.location.y,
+                    "lon": well.location.x,
+                    "month": month_str,
+                    "volume": Decimal("0"),
+                    "method": "calculated",
+                    "well_id": well.pk,
+                }
+            rows[key]["volume"] += part
+
+    ordered = sorted(rows.values(), key=lambda r: (r["reg_id"], r["name"], r["month"]))
+    return ordered, left_out
+
+
+def _gears_by_et_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any]]:
+    """The by-ET rows: each well's month, from the use areas linked to it."""
+    return _gears_by_et_build(reporting_period)[0]
 
 
 def _write_gears_by_et(writer: Any, reporting_period: ReportingPeriod) -> None:
-    """Write the GEARS by-ET header and one line per parcel-month."""
-    writer.writerow([
-        "Parcel Number", "Area (acres)", "Month",
-        "ET Volume (AF)", "Measurement Method",
-    ])
+    """Write the by-ET file: the by-well file's header, one line per well-month."""
+    writer.writerow(GEARS_WELL_HEADER)
     for row in _gears_by_et_rows(reporting_period):
         writer.writerow(safe_row([
-            row["parcel_number"], row["area"], row["month"],
-            row["volume"], gears_method(row["method"]),
+            row["reg_id"], row["name"], row["lat"], row["lon"],
+            row["month"], row["volume"], gears_method(row["method"]),
         ]))
 
 

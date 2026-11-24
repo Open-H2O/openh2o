@@ -233,7 +233,7 @@ def report_generate(request):
 
             rel_path = os.path.join("reports", filename)
 
-            submission = ReportSubmission.objects.create(
+            submission = ReportSubmission(
                 report_template=template,
                 reporting_period=period,
                 status="draft",
@@ -241,6 +241,8 @@ def report_generate(request):
                 generated_at=timezone.now(),
                 validation_warnings=warnings,
             )
+            submission.record_method()
+            submission.save()
 
             return redirect("reporting:report_detail", pk=submission.pk)
     else:

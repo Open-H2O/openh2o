@@ -920,9 +920,23 @@ def charged_groundwater(queryset: QuerySet[ParcelLedger]) -> Decimal:
     """
     other_usage = _recorded_usage(queryset.exclude(source_type="calculated"))
 
-    calculated = queryset.filter(
-        amount_acre_feet__lt=0, source_type="calculated"
-    ).annotate(
+    calculated = with_charged_extraction(
+        queryset.filter(amount_acre_feet__lt=0, source_type="calculated")
+    )
+    calculated_charged = calculated.aggregate(total=Sum("charged_af"))["total"] or Decimal("0")
+
+    return (other_usage + calculated_charged).quantize(_Q4)
+
+
+def with_charged_extraction(queryset: QuerySet[ParcelLedger]) -> QuerySet[ParcelLedger]:
+    """Annotate each ``calculated`` row with ``charged_af``: the figure the budget counts it at.
+
+    The rule ``charged_groundwater`` states: the row's latest ``CalculationRun``
+    extraction estimate (``gw_extracted_af``) where the run stamped one, else the
+    row's own magnitude. One subquery, no loop. The GEARS by-ET file reads its
+    rows through this too, so the file and the account pages count a month alike.
+    """
+    return queryset.annotate(
         run_gw_extracted_af=Subquery(
             CalculationRun.objects.filter(
                 parcel_id=OuterRef("parcel_id"),
@@ -930,19 +944,13 @@ def charged_groundwater(queryset: QuerySet[ParcelLedger]) -> Decimal:
             )
             .order_by("-created_at")
             .values("gw_extracted_af")[:1]
-        )
+        ),
+        charged_af=Case(
+            When(run_gw_extracted_af__isnull=False, then=F("run_gw_extracted_af")),
+            default=F("amount_acre_feet") * -1,
+            output_field=DecimalField(max_digits=12, decimal_places=4),
+        ),
     )
-    calculated_charged = calculated.aggregate(
-        total=Sum(
-            Case(
-                When(run_gw_extracted_af__isnull=False, then=F("run_gw_extracted_af")),
-                default=F("amount_acre_feet") * -1,
-                output_field=DecimalField(max_digits=12, decimal_places=4),
-            )
-        )
-    )["total"] or Decimal("0")
-
-    return (other_usage + calculated_charged).quantize(_Q4)
 
 
 def _balance_dict(queryset: QuerySet[ParcelLedger]) -> dict[str, Decimal]:

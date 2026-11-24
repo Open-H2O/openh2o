@@ -122,27 +122,30 @@ def test_a_metered_field_month_is_in_by_well_and_not_in_by_et():
             parcel=f, month=JAN, variable="ET", model_name="Ensemble",
             depth_mm=D("9") * D("304.8") / f.area_acres,
         )
-    ParcelLedgerFactory(
-        parcel=metered, source_type="calculated", amount_acre_feet=-D("7"),
-        effective_date=JAN, transaction_date=JAN,
-    )
+    for f, af in ((metered, "7"), (unmetered, "4")):
+        ParcelLedgerFactory(
+            parcel=f, source_type="calculated", amount_acre_feet=-D(af),
+            effective_date=JAN, transaction_date=JAN,
+        )
     assert [D(r[5]) for r in _by_well(period)] == [D("15")]
-    et_rows = _by_et(period)
-    assert [r[0] for r in et_rows] == [unmetered.parcel_number]
+    # Only the unmetered field's month reaches the by-ET file, on the well's line.
+    assert [(r[0], D(r[5])) for r in _by_et(period)] == [("REG-RP", D("4"))]
 
 
 def test_by_et_pre_flight_names_the_rows_the_file_holds():
     period = ReportingPeriodFactory()
     for _ in range(3):
+        field = ParcelFactory()
+        WellIrrigatedParcelFactory(well=WellFactory(), parcel=field)
         ParcelLedgerFactory(
-            parcel=ParcelFactory(), source_type="calculated", amount_acre_feet=-D("5"),
+            parcel=field, source_type="calculated", amount_acre_feet=-D("5"),
             effective_date=JAN, transaction_date=JAN,
         )
     assert len(_by_et(period)) == 3
     messages = validate_report(period, "gears_by_et")
-    text = " ".join(m["message"] for m in messages)
-    assert "No ET estimates" not in text
-    assert "3 rows" in text
+    (info,) = [m["message"] for m in messages if m["level"] == "info"]
+    assert ": 3." in info  # the line count
+    assert "15.00" in info  # the acre-feet in the file
     assert not [m for m in messages if m["level"] == "error"]
 
 

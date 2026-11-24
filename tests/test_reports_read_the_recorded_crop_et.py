@@ -72,19 +72,22 @@ def period():
     return ReportingPeriodFactory()
 
 
-def test_a_site_that_never_ran_the_copy_gets_every_use_area_month_in_the_by_et_file(period):
+def test_a_recorded_month_with_no_calculation_is_left_out_of_the_by_et_file_and_counted(period):
+    """The by-ET file writes each well's extraction estimate, which only a calculation makes."""
+    from reporting.generators import _gears_by_et_build
+
     a = ParcelFactory(parcel_number="MADEUP-A")
     b = ParcelFactory(parcel_number="MADEUP-B")
+    WellIrrigatedParcelFactory(well=WellFactory(well_registration_id="MADEUP-REG"), parcel=a)
     _record(a, JAN, "10")
     _record(a, FEB, "2.5")
     _record(b, JAN, "7.25")
     assert not ParcelLedger.objects.exists()
 
-    assert _by_et(period) == [
-        ("MADEUP-A", "80.00", "2024-01", "10.0000", "Unmetered/Estimated"),
-        ("MADEUP-A", "80.00", "2024-02", "2.5000", "Unmetered/Estimated"),
-        ("MADEUP-B", "80.00", "2024-01", "7.2500", "Unmetered/Estimated"),
-    ]
+    rows, left_out = _gears_by_et_build(period)
+    assert rows == []
+    assert left_out.not_calculated == {JAN: {a.pk}, FEB: {a.pk}}
+    assert left_out.no_well == {b.pk}
 
 
 def test_the_three_pre_fill_builders_read_the_record(period):
@@ -103,8 +106,10 @@ def test_the_three_pre_fill_builders_read_the_record(period):
     assert [[mv["value_af"] for mv in e["months"]] for e in calwatrs] == [[D("10"), D("2.5")]]
 
 
-def test_a_calculated_month_and_a_metered_month_read_as_before(period):
+def test_a_calculated_month_is_written_and_a_metered_month_left_to_the_by_well_file(period):
     a = ParcelFactory(parcel_number="MADEUP-A")
+    well = WellFactory(well_registration_id="MADEUP-REG", name="MADEUP-WELL")
+    WellIrrigatedParcelFactory(well=well, parcel=a)
     _record(a, JAN, "10")
     _record(a, FEB, "2.5")
     _record(a, MAR, "4")
@@ -117,20 +122,24 @@ def test_a_calculated_month_and_a_metered_month_read_as_before(period):
         effective_date=date(2024, 2, 14), transaction_date=date(2024, 2, 14), reporting_period=period,
     )
 
-    assert _by_et(period) == [
-        ("MADEUP-A", "80.00", "2024-01", "6.1234", "Unmetered/Estimated"),
-        ("MADEUP-A", "80.00", "2024-03", "4.0000", "Unmetered/Estimated"),
-    ]
+    # January has no run with an extraction estimate, so it counts at the row's own
+    # figure, as the account pages count it; March has no calculation and is left out.
+    assert [(line[0], line[4], line[5]) for line in _by_et(period)] == [("MADEUP-REG", "2024-01", "6.1234")]
 
 
 def test_a_finalized_years_file_is_full(period):
     a = ParcelFactory(parcel_number="MADEUP-A")
+    WellIrrigatedParcelFactory(well=WellFactory(well_registration_id="MADEUP-REG"), parcel=a)
     for month in (JAN, FEB, MAR):
         _record(a, month, "1")
+        ParcelLedgerFactory(
+            parcel=a, source_type="calculated", amount_acre_feet=D("-1"),
+            effective_date=month, transaction_date=month, reporting_period=period,
+        )
     ReportingPeriod.objects.filter(pk=period.pk).update(is_finalized=True)
     period.refresh_from_db()
 
-    assert [line[2] for line in _by_et(period)] == ["2024-01", "2024-02", "2024-03"]
+    assert [line[4] for line in _by_et(period)] == ["2024-01", "2024-02", "2024-03"]
 
 
 def test_the_ledger_copy_is_not_a_command():

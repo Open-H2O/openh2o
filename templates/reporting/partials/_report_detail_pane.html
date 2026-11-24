@@ -71,6 +71,27 @@
     {% endif %}
   </div>
 
+  {% if report_type == "gears_by_et" %}
+  {% comment %} What the by-ET file holds: one line per well and month (reporting/generators.py
+       _gears_by_et_build). The months and use areas it leaves out are named in the checks below. {% endcomment %}
+  <div class="card-raised">
+    <h3 class="section-header-sm">What the by-ET file holds</h3>
+    <div class="page-stack text-secondary text-sm" style="gap: var(--space-sm); max-width: 72ch;">
+      <p class="m-0">This is the GEARS file OpenH2O makes from crop ET, beside the by-well file of meter readings. Each line is one well's groundwater extraction for one month, in the same columns as the by-well file, with Measurement Method "Unmetered/Estimated". GEARS takes extraction per well. So a well's figure adds up its part of each linked use area's groundwater extraction estimate for that month: the month's ETAW met by groundwater divided by the use area's irrigation efficiency. The file and the account pages count a month alike.</p>
+      <p class="m-0">A use area linked to more than one well is divided among those wells by the shares on the wells' pages. Each well takes its share divided by the sum of the use area's shares, and the last well takes what remains. The parts therefore add up to the use area's month even when the shares do not add up to 1.</p>
+      <div>
+        <p class="m-0">The file leaves out:</p>
+        <ul class="m-0" style="padding-left: 1.25rem; list-style: disc;">
+          <li>use areas not linked to a well</li>
+          <li>months a meter reading covers, which the by-well file holds, so each use area's month is in only one of the two files</li>
+          <li>months OpenET has not sent crop ET for</li>
+          <li>months with crop ET that OpenH2O has not yet calculated</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   {% comment %}
     Metadata: Report type and Period are in the head, which says both once;
     Download is in the no-filing box above,
@@ -89,6 +110,15 @@
         <div class="field-label">File</div>
         <div class="field-value-sm">
           {% if submission.generated_file %}<span class="field-value-mono">{{ generated_filename }}</span>{% else %}<span class="value-empty">No file yet</span>{% endif %}
+        </div>
+      </div>
+      {% comment %} The methodology behind the water year's calculated months when the file was
+           made (ReportSubmission.record_method); the one-methodology form is the month
+           calculation page's own, "Methodology: <name>, settings <code>". {% endcomment %}
+      <div class="field-group mb-0">
+        <div class="field-label">Methodology</div>
+        <div class="field-value-sm">
+          {% if submission.method_count is None %}<span class="value-empty">Not recorded</span>{% elif submission.method_count == 1 %}{{ submission.method_name }}{% if submission.settings_code %}, settings {{ submission.settings_code }}{% endif %}{% elif submission.method_count > 1 %}More than one methodology{% else %}No month calculated{% endif %}
         </div>
       </div>
     </div>
@@ -114,10 +144,11 @@
        Quiet, inset block: a convenience, not a step in filing. {% endcomment %}
   <div class="card-raised card-inset">
     {% url 'methods' as methods_help_url %}
+    {% if report_type == "gears_by_et" %}{% firstof "Each figure starts as the crop ET OpenH2O records from OpenET for that month. OpenH2O saves your changes only on the Prepare with OpenET page." as prefill_explainer %}{% else %}{% firstof "Each figure starts as the crop ET OpenH2O records from OpenET for that month. OpenH2O saves your changes only on the Prepare with OpenET page. The report's download file keeps the crop ET OpenH2O records." as prefill_explainer %}{% endif %}
     {% with rt=submission.report_template.report_type %}
     <div class="row-between" style="gap: var(--space-md); flex-wrap: wrap;">
       <div style="flex: 1; min-width: 16rem;">
-        <p style="margin: 0; font-weight: 600; color: var(--color-text-secondary); display: flex; align-items: center; gap: var(--space-xs);">Start from OpenET's figures{% include "partials/_explainer_popout.html" with title="Where these numbers come from" text="Each figure starts as the crop ET OpenH2O records from OpenET for that month. OpenH2O saves your changes only on the Prepare with OpenET page. The report's download file keeps the crop ET OpenH2O records." link=methods_help_url link_label="Methods behind the numbers" %}</p>
+        <p style="margin: 0; font-weight: 600; color: var(--color-text-secondary); display: flex; align-items: center; gap: var(--space-xs);">Start from OpenET's figures{% include "partials/_explainer_popout.html" with title="Where these numbers come from" text=prefill_explainer link=methods_help_url link_label="Methods behind the numbers" %}</p>
         <p class="text-tertiary text-xs" style="margin: var(--space-xs) 0 0;">
           On the Prepare with OpenET page, OpenH2O fills in {% if rt == "gears_by_well" %}each well's share of OpenET's monthly crop ET{% elif rt == "calwatrs_a1" or rt == "calwatrs_a2" %}each point of diversion's share of OpenET's monthly crop ET{% else %}OpenET's monthly crop ET for each use area{% endif %}. You can change any figure to match your own records before you file.
         </p>

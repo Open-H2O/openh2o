@@ -154,6 +154,26 @@ class ReportSubmission(models.Model):
         "data entry. Only the Prepare with OpenET page shows them.",
     )
     validation_warnings = models.JSONField(default=list, blank=True)
+    method_name = models.CharField(
+        "methodology",
+        max_length=200,
+        blank=True,
+        help_text="The methodology the water year's calculated months came from when the "
+        "file was made. Blank when there were none or more than one.",
+    )
+    settings_code = models.CharField(
+        "settings code",
+        max_length=12,
+        blank=True,
+        help_text="The 12-character settings code of that methodology.",
+    )
+    method_count = models.PositiveSmallIntegerField(
+        "number of methodologies",
+        null=True,
+        blank=True,
+        help_text="How many methodologies the water year's calculated months came from. "
+        "Blank on a report made before OpenH2O recorded it.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -162,6 +182,23 @@ class ReportSubmission(models.Model):
 
     def __str__(self):
         return f"{self.report_template.report_type} - {self.reporting_period}"
+
+    def record_method(self):
+        """Set the methodology behind the water year's calculated months, as they stand now.
+
+        The rule a filed figure's method uses (``accounting.statements.method_pairs``):
+        one methodology names it; none or more than one leaves the name and code blank,
+        and ``method_count`` says which. Called once, when the file is made, so the
+        record names the methodology behind the file's own figures and keeps it after
+        an open year is calculated again under another. Marking the report filed
+        leaves it as it is: the file was not made again.
+        """
+        from accounting.models import CalculationRun
+        from accounting.statements import method_pairs
+
+        pairs = method_pairs(CalculationRun.objects.all(), self.reporting_period)
+        self.method_count = len(pairs)
+        self.method_name, self.settings_code = next(iter(pairs)) if len(pairs) == 1 else ("", "")
 
 
 class ReportingCrosswalk(models.Model):

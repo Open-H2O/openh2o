@@ -53,15 +53,17 @@ class TestGearsByEtReconcile:
         header = next(reader)
         return header, [r for r in reader if r]
 
-    def test_by_et_uses_calculated_and_falls_back(self):
-        """Calculated parcel reports its NET volume; fallback parcel reports
-        gross; no duplicate row. (Both carry the state method label
-        'Unmetered/Estimated' since ISS-047a — the net-vs-gross distinction is
-        proven by the volume column, not the method string.)"""
+    def test_by_et_uses_calculated_and_leaves_out_the_uncalculated_month(self):
+        """A calculated use area reports its calculated figure, never its gross crop ET;
+        a use area with crop ET and no calculation puts no line in the file."""
+        from tests.factories import WellFactory, WellIrrigatedParcelFactory
+
         period = self._period()
         p_calc = ParcelFactory()
         p_fallback = ParcelFactory()
-        # gross 11, net 9 — distinct so we can prove the netted number is used
+        WellIrrigatedParcelFactory(well=WellFactory(well_registration_id="REG-CALC"), parcel=p_calc)
+        WellIrrigatedParcelFactory(well=WellFactory(well_registration_id="REG-FALLBACK"), parcel=p_fallback)
+        # gross 11, net 9: distinct so we can prove the netted number is used
         _recorded(p_calc, "-11")
         _calc(p_calc, "-9")
         _recorded(p_fallback, "-14")
@@ -69,27 +71,23 @@ class TestGearsByEtReconcile:
         content = generate_gears_csv(period, method="by_et").read()
         _, rows = self._rows(content)
 
-        # Columns: Parcel Number, Area, Month, ET Volume (AF), Measurement Method
-        by_parcel = {r[0]: r for r in rows}
-        assert len(rows) == 2  # exactly one row per parcel — no duplicate
-
-        calc_row = by_parcel[p_calc.parcel_number]
-        assert calc_row[4] == "Unmetered/Estimated"
-        assert Decimal(calc_row[3]) == Decimal("9")  # net, not gross 11
-
-        fb_row = by_parcel[p_fallback.parcel_number]
-        assert fb_row[4] == "Unmetered/Estimated"
-        assert Decimal(fb_row[3]) == Decimal("14")
+        # The by-well columns: Well Registration ID, ..., Extraction Volume (AF), Measurement Method
+        assert [(r[0], Decimal(r[5]), r[6]) for r in rows] == [
+            ("REG-CALC", Decimal("9"), "Unmetered/Estimated"),
+        ]
 
     def test_by_et_calculated_gross_not_duplicated(self):
         """The calculated parcel's gross recorded crop ET must not appear."""
+        from tests.factories import WellFactory, WellIrrigatedParcelFactory
+
         period = self._period()
         p_calc = ParcelFactory()
+        WellIrrigatedParcelFactory(well=WellFactory(well_registration_id="REG-CALC"), parcel=p_calc)
         _recorded(p_calc, "-11")
         _calc(p_calc, "-9")
 
         content = generate_gears_csv(period, method="by_et").read()
         _, rows = self._rows(content)
         assert len(rows) == 1
-        assert rows[0][4] == "Unmetered/Estimated"
-        assert Decimal(rows[0][3]) == Decimal("9")
+        assert rows[0][6] == "Unmetered/Estimated"
+        assert Decimal(rows[0][5]) == Decimal("9")

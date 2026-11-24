@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING
 from django.db.models import Count
 
 from parcels.models import ParcelLedger
-from reporting.generators import _gears_by_et_rows, _gears_by_well_rows
+from reporting.generators import _gears_by_et_build, _gears_by_well_rows
 from reporting.models import ReportingProfile
 from wells.models import Well, WellIrrigatedParcel
 
@@ -240,18 +240,31 @@ def _unlinked_parcel_warnings(reporting_period: ReportingPeriod) -> list[Preflig
     return []
 
 
+def _months_by_count(by_month: dict) -> list[tuple[str, int]]:
+    """``[(month list, use area count)]``: the months left out, grouped by how many use areas each is left out for.
+
+    Oldest first; months sharing a count are named together ("August 2026 and September 2026").
+    """
+    from datasync.crop_et import month_list
+
+    groups: dict[int, list] = {}
+    for first in sorted(by_month):
+        groups.setdefault(len(by_month[first]), []).append(first)
+    return [(month_list(firsts), count) for count, firsts in sorted(groups.items(), key=lambda g: g[1][0])]
+
+
 def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMessage]:
-    """Checks for the GEARS by-ET filing: ET estimates present, acreage recorded."""
+    """Checks for the GEARS by-ET filing: its size, what it leaves out, acreage recorded."""
     warnings: list[PreflightMessage] = []
 
-    rows = _gears_by_et_rows(reporting_period)
+    rows, left_out = _gears_by_et_build(reporting_period)
     if not rows:
         warnings.append({
             "level": "error",
             "message": (
-                "The by-ET file would be empty for this water year. OpenH2O has not "
-                "recorded crop ET for any unmetered use area with a known acreage. "
-                "Metered use areas are in the by-well file."
+                "The by-ET file for this water year would have 0 lines below its header: "
+                "no use area linked to a well has a calculated month outside the months "
+                "a meter reading covers."
             ),
         })
     else:
@@ -259,9 +272,37 @@ def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMe
         warnings.append({
             "level": "info",
             "message": (
-                f"The by-ET file will hold {len(rows)} "
-                f"{'row' if len(rows) == 1 else 'rows'}, {total:.2f} AF in all. "
-                "Metered use area months are in the by-well file and are left out here."
+                f"Lines below the header: {len(rows)}. "
+                f"Total groundwater extraction in the file: {total:.2f} acre-feet."
+            ),
+        })
+
+    if left_out.no_well:
+        count = len(left_out.no_well)
+        warnings.append({
+            "level": "warning",
+            "message": (
+                "1 use area with crop ET in acre-feet this water year is not linked to a well, "
+                "so the by-ET file leaves it out."
+                if count == 1 else
+                f"{count} use areas with crop ET in acre-feet this water year are not linked "
+                "to a well, so the by-ET file leaves them out."
+            ),
+        })
+    for months, count in _months_by_count(left_out.waiting):
+        warnings.append({
+            "level": "warning",
+            "message": (
+                f"Waiting for crop ET from OpenET: {months}, left out of the by-ET file for "
+                + ("1 use area." if count == 1 else f"{count} use areas.")
+            ),
+        })
+    for months, count in _months_by_count(left_out.not_calculated):
+        warnings.append({
+            "level": "warning",
+            "message": (
+                f"Crop ET recorded, waiting for OpenH2O to calculate: {months}, left out of "
+                "the by-ET file for " + ("1 use area." if count == 1 else f"{count} use areas.")
             ),
         })
 

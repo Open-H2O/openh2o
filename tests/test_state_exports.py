@@ -380,26 +380,6 @@ class TestCalwatrsReturnFlowValidatorInformational:
 
 @pytest.mark.django_db
 class TestGearsByEtNullArea:
-    def test_null_area_is_blank_not_zero_beside_et(self):
-        """A parcel with null area_acres and a nonzero ET volume must NOT emit a
-        literal 0 in the Area column — a blank cell, not a fabricated acreage."""
-        period = _period()
-        parcel = ParcelFactory(area_acres=None, geometry=None)
-        ParcelLedgerFactory(
-            parcel=parcel,
-            source_type="calculated",
-            effective_date=date(2024, 6, 1),
-            amount_acre_feet=Decimal("-12.0000"),
-        )
-
-        rows = _data_rows(generate_gears_csv(period, method="by_et").read())
-        assert len(rows) == 1
-        row = rows[0]
-        # Columns: Parcel Number, Area, Month, ET Volume (AF), Measurement Method
-        assert Decimal(row[3]) == Decimal("12"), "ET volume must be real and nonzero"
-        assert row[1] != "0", "must not fabricate 0 acres beside a real ET volume"
-        assert row[1] == "", "null area is reported as a blank Area cell"
-
     def test_validate_report_warns_on_null_area_parcel_with_et(self):
         period = _period()
         parcel = ParcelFactory(area_acres=None, geometry=None)
@@ -445,29 +425,22 @@ class TestGearsMeasurementMethodVocab:
         assert rows[0][6] == "Metered"
         assert "meter_reading" not in rows[0][6]
 
-    def test_by_et_estimate_emits_unmetered_label(self):
-        period = _period()
-        _recorded(ParcelFactory(area_acres=Decimal("10.0")), date(2024, 6, 1), Decimal("50"))
-
-        rows = _data_rows(generate_gears_csv(period, method="by_et").read())
-        assert len(rows) == 1
-        # Columns: Parcel Number, Area, Month, ET Volume (AF), Measurement Method
-        assert rows[0][4] == "Unmetered/Estimated"
-        assert rows[0][4] not in ("et_estimate", "calculated")
-
     def test_by_et_calculated_emits_unmetered_label(self):
         period = _period()
+        parcel = ParcelFactory(area_acres=Decimal("10.0"))
+        WellIrrigatedParcelFactory(well=WellFactory(), parcel=parcel, fraction=Decimal("1.0000"))
         ParcelLedgerFactory(
-            parcel=ParcelFactory(area_acres=Decimal("10.0")),
+            parcel=parcel,
             source_type="calculated",
-            effective_date=date(2024, 6, 15),
+            effective_date=date(2024, 6, 1),
             amount_acre_feet=Decimal("-12.0000"),
         )
 
         rows = _data_rows(generate_gears_csv(period, method="by_et").read())
         assert len(rows) == 1
-        assert rows[0][4] == "Unmetered/Estimated"
-        assert rows[0][4] not in ("et_estimate", "calculated")
+        # The by-well columns: reg_id, name, lat, lon, month, volume, method
+        assert rows[0][6] == "Unmetered/Estimated"
+        assert rows[0][6] not in ("et_estimate", "calculated")
 
 
 # ---------------------------------------------------------------------------
@@ -500,9 +473,15 @@ def _gears_template():
 
 
 def _et_period_with_activity():
-    """A period plus one month of recorded crop ET so the generated CSV is non-empty."""
+    """A period plus one calculated month on a use area with a well, so the generated CSV is non-empty."""
     period = _period()
-    _recorded(ParcelFactory(area_acres=Decimal("10.0")), date(2024, 6, 1), Decimal("50"))
+    parcel = ParcelFactory(area_acres=Decimal("10.0"))
+    WellIrrigatedParcelFactory(well=WellFactory(), parcel=parcel, fraction=Decimal("1.0000"))
+    _recorded(parcel, date(2024, 6, 1), Decimal("50"))
+    ParcelLedgerFactory(
+        parcel=parcel, source_type="calculated", effective_date=date(2024, 6, 1),
+        amount_acre_feet=Decimal("-12.0000"),
+    )
     return period
 
 

@@ -128,16 +128,14 @@ class TestSyncParcelEt:
             {"date": "2024-06", "et": 142.23, "unit": "mm", "fetched": timezone.localdate().isoformat()}
         ]
 
-        # The month is recorded from that row as-is, and the by-ET file carries it.
-        from reporting.generators import _gears_by_et_rows
-        from tests.factories import ReportingPeriodFactory
+        # The month is recorded from that row as-is, the record every report reads.
+        from datasync.crop_et import recorded_acre_feet
 
-        period = ReportingPeriodFactory(start_date=date(2023, 10, 1), end_date=date(2024, 9, 30))
-        (line,) = _gears_by_et_rows(period)
+        (line,) = recorded_acre_feet(date(2023, 10, 1), date(2024, 9, 30))
         # (142.23 / 304.8) * 10 acres = 4.6664... AF
         expected = (Decimal("142.23") / Decimal("304.8")) * Decimal("10.00")
-        assert line["volume"] == expected.quantize(Decimal("0.0001"))
-        assert line["month"] == "2024-06"
+        assert line.acre_feet == expected.quantize(Decimal("0.0001"))
+        assert line.month == date(2024, 6, 1)
 
     def test_full_cache_hit_skips_earth_engine(self, parcel, sample_geometry):
         # June 2024 cached AND finalized as of today -> nothing to fetch.

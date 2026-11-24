@@ -144,6 +144,20 @@ class Figure:
 # -- Collecting what the pages print -------------------------------------------------------
 
 
+def method_pairs(runs, period):
+    """The distinct (methodology name, settings code) pairs of ``runs`` in ``period``.
+
+    One pair means one method; none or more than one leaves a figure's method blank
+    (``_method``). A report records the pairs of its water year's runs the same way.
+    """
+    return set(
+        runs_in_period(runs, period)
+        .order_by()
+        .values_list("methodology_plan_name", "config_hash")
+        .distinct()
+    )
+
+
 def _method(parcel_ids, period, reading=None):
     """The calculation method and settings code every run behind a place came from, or "".
 
@@ -151,12 +165,7 @@ def _method(parcel_ids, period, reading=None):
     """
     if reading is not None:
         return reading.method(parcel_ids)
-    pairs = set(
-        runs_in_period(CalculationRun.objects.filter(parcel_id__in=list(parcel_ids)), period)
-        .order_by()
-        .values_list("methodology_plan_name", "config_hash")
-        .distinct()
-    )
+    pairs = method_pairs(CalculationRun.objects.filter(parcel_id__in=list(parcel_ids)), period)
     if len(pairs) != 1:
         return ""
     name, code = next(iter(pairs))

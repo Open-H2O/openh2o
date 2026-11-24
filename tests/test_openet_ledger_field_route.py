@@ -40,9 +40,8 @@ def test_a_use_area_with_field_shares_and_no_cache_row_gets_its_by_et_line():
     crop_et.record_fetched_months(parcel, ["2025-07"])
     assert not OpenETCache.objects.exists()
 
-    from reporting.generators import _gears_by_et_rows
-    from tests.factories import ReportingPeriodFactory
-
-    period = ReportingPeriodFactory(start_date=dt.date(2024, 10, 1), end_date=dt.date(2025, 9, 30))
-    rows = [r for r in _gears_by_et_rows(period) if r["parcel_number"] == "MADEUP-LEDGER-1"]
-    assert [(r["month"], r["volume"]) for r in rows] == [("2025-07", D("100.0000"))]
+    rows = [
+        r for r in crop_et.recorded_acre_feet(dt.date(2024, 10, 1), dt.date(2025, 9, 30))
+        if r.parcel_number == "MADEUP-LEDGER-1"
+    ]
+    assert [(r.month.strftime("%Y-%m"), r.acre_feet) for r in rows] == [("2025-07", D("100.0000"))]

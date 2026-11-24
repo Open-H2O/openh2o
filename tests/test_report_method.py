@@ -4,7 +4,7 @@
 A report marked filed on an open water year can have its figures recalculated
 under a new method later. So the report keeps the method name and the
 12-character settings code of the runs of its water year, taken when the file is
-made and again when it is marked filed, and the report page shows them. Runs of
+made and kept when it is marked filed, and the report page shows them. Runs of
 more than one method leave both blank and count the methods, the rule the filed
 figures use (``accounting.statements._method``).
 """
@@ -79,7 +79,7 @@ def test_runs_of_more_than_one_method_leave_the_method_blank_and_count_them(clie
     assert (submission.method_name, submission.settings_code, submission.method_count) == ("", "", 2)
 
 
-def test_marking_a_report_filed_records_the_method_in_force_then(client):
+def test_a_filed_report_keeps_the_method_its_file_was_made_under(client):
     period = _year_with_runs(("District plan", "a582bd80c59b"))
     submission = _generate(client, period)
     CalculationRun.objects.update(methodology_plan_name="New plan", config_hash="fedcba987654")
@@ -91,7 +91,7 @@ def test_marking_a_report_filed_records_the_method_in_force_then(client):
     )
     submission.refresh_from_db()
     assert submission.status == "filed"
-    assert (submission.method_name, submission.settings_code) == ("New plan", "fedcba987654")
+    assert (submission.method_name, submission.settings_code) == ("District plan", "a582bd80c59b")
 
 
 def test_the_report_page_shows_the_method_and_settings_code(client):

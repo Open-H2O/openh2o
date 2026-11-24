@@ -329,11 +329,11 @@ class TestSyncOpenetIntraRunDedup:
         record_fetched_months(parcel, {"2024-06"})
         record_fetched_months(solo, {"2024-06"})
 
-        from reporting.generators import _gears_by_et_rows
-        from tests.factories import ReportingPeriodFactory
+        from datasync.crop_et import recorded_acre_feet
 
-        rows = {r["parcel_number"]: r for r in _gears_by_et_rows(ReportingPeriodFactory())}
-        assert [rows[parcel.parcel_number]["month"]] == ["2024-06"]  # one line despite two overlapping cache rows
+        recorded = recorded_acre_feet(date(2023, 10, 1), date(2024, 9, 30))
+        assert [r.month for r in recorded if r.parcel_id == parcel.pk] == [date(2024, 6, 1)]  # one record despite two overlapping cache rows
+        rows = {r.parcel_number: {"volume": r.acre_feet} for r in recorded}
 
         # F-math-08: and that line must carry the ONE-row VALUE. A count alone
         # never caught the doubling — the duplicate coverage was summed into a

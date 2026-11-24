@@ -77,7 +77,7 @@ class Command(BaseCommand):
             template = None
 
         if template:
-            ReportSubmission.objects.create(
+            submission = ReportSubmission(
                 report_template=template,
                 reporting_period=period,
                 status="draft",
@@ -85,4 +85,6 @@ class Command(BaseCommand):
                 generated_at=timezone.now(),
                 validation_warnings=warnings,
             )
+            submission.record_method()
+            submission.save()
             self.stdout.write(self.style.SUCCESS("ReportSubmission record created (status: draft)"))
