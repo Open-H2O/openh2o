@@ -7,7 +7,7 @@ from collections import OrderedDict
 from datetime import date
 
 from django.core.cache import cache
-from django.db.models import Count, Max, Sum
+from django.db.models import Count, Max
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, render
 
