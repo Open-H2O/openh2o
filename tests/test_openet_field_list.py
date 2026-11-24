@@ -970,6 +970,30 @@ def test_a_stopped_whole_area_run_says_to_run_it_again_with_whole_area(openet_ke
     assert stop and "--whole-area" in stop[0]
 
 
+def test_a_use_area_across_two_strips_of_its_lookup_gets_its_shares_in_one_run(openet_key, no_wait, settings):
+    """A use area wider than the account's area limit is looked up in two strips, and it crosses
+    the line between them. Both strips answered hold it between them, so it takes its share of
+    each field in the same run, and the next run sends no lookup for it."""
+    from datasync.models import OpenETFieldShare
+
+    settings.OPENET_MODE = "fields"
+    settings.OPENET_MONTHLY_BUDGET = 50
+    wide = MultiPolygon(Polygon(((-120.300, 37.310), (-120.240, 37.310), (-120.240, 37.311),
+                                 (-120.300, 37.311), (-120.300, 37.310))), srid=4326)
+    parcel = _use_area(number="MADEUP-ACROSS-STRIPS", geometry=wide)
+    service = MadeUpOpenET(
+        fields={MADE_UP_A: (-120.2995, 37.3100), MADE_UP_B: (-120.2600, 37.3100)},
+        lookups={-120.30: [MADE_UP_A], -120.27: [MADE_UP_B]},
+        max_area=100,
+    )
+    _run(service)
+    assert len(service.paid("/geodatabase/metadata/ids")) == 2
+    assert set(OpenETFieldShare.objects.filter(parcel=parcel).values_list("field__field_id", flat=True)) == {
+        MADE_UP_A, MADE_UP_B}
+    _run(service)
+    assert len(service.paid("/geodatabase/metadata/ids")) == 2
+
+
 # ---------------------------------------------------------------- the fields file's outlines
 
 
