@@ -158,11 +158,11 @@ class ReportSubmission(models.Model):
         "methodology",
         max_length=200,
         blank=True,
-        help_text="The methodology the water year's calculated months came from when the "
-        "file was made. Blank when there were none or more than one.",
+        help_text="Recorded when the file was made: the methodology behind the report's "
+        "calculated months. Blank when there were none or more than one.",
     )
     settings_code = models.CharField(
-        "settings code",
+        "methodology settings code",
         max_length=12,
         blank=True,
         help_text="The 12-character settings code of that methodology.",

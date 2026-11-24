@@ -36,12 +36,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='reportsubmission',
             name='method_name',
-            field=models.CharField(blank=True, help_text="The methodology the water year's calculated months came from when the file was made. Blank when there were none or more than one.", max_length=200, verbose_name='methodology'),
+            field=models.CharField(blank=True, help_text="Recorded when the file was made: the methodology behind the report's calculated months. Blank when there were none or more than one.", max_length=200, verbose_name='methodology'),
         ),
         migrations.AddField(
             model_name='reportsubmission',
             name='settings_code',
-            field=models.CharField(blank=True, help_text='The 12-character settings code of that methodology.', max_length=12, verbose_name='settings code'),
+            field=models.CharField(blank=True, help_text='The 12-character settings code of that methodology.', max_length=12, verbose_name='methodology settings code'),
         ),
         migrations.AddField(
             model_name='reportsubmissionevent',
@@ -51,12 +51,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='reportsubmissionevent',
             name='method_name',
-            field=models.CharField(blank=True, help_text="The methodology the water year's calculated months came from when the file was made. Blank when there were none or more than one.", max_length=200, verbose_name='methodology'),
+            field=models.CharField(blank=True, help_text="Recorded when the file was made: the methodology behind the report's calculated months. Blank when there were none or more than one.", max_length=200, verbose_name='methodology'),
         ),
         migrations.AddField(
             model_name='reportsubmissionevent',
             name='settings_code',
-            field=models.CharField(blank=True, help_text='The 12-character settings code of that methodology.', max_length=12, verbose_name='settings code'),
+            field=models.CharField(blank=True, help_text='The 12-character settings code of that methodology.', max_length=12, verbose_name='methodology settings code'),
         ),
         pgtrigger.migrations.AddTrigger(
             model_name='reportsubmission',
