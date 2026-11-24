@@ -404,10 +404,12 @@ class MadeUpOpenET:
     ``refuse`` names paths answered with OpenET's refusal.
     """
 
-    def __init__(self, fields=None, lookups=None, refuse=()):
+    def __init__(self, fields=None, lookups=None, refuse=(), max_area=200000):
         self.fields = fields or {}
         self.lookups = lookups or {}
         self.refuse = set(refuse)
+        #: The account's "Max Area Acres"; None makes the status read fail to give one.
+        self.max_area = max_area
         self.calls = []
         self.used = 0
 
@@ -422,7 +424,7 @@ class MadeUpOpenET:
         self.calls.append({"method": method, "path": path, "body": body})
         if path == "/account/status":
             return _response(200, {"Tier": 1, "Monthly Requests": f"{self.used} used of 100",
-                                   "Max Area Acres": 200000, "Max Field IDS": 400})
+                                   "Max Area Acres": self.max_area, "Max Field IDS": 400})
         if path in self.refuse:
             return _response(404, {"detail": "No conforming data found in geodatabase."})
         self.used += 1
@@ -823,6 +825,149 @@ def test_a_whole_area_run_asks_the_use_areas_figures_before_any_outline(openet_k
     assert paths[0] == "/geodatabase/timeseries"
     asked_outlines = [i for c in service.paid("/geodatabase/metadata/boundaries")[1:] for i in c["body"]["field_ids"]]
     assert sorted(asked_outlines) == MADE_UP_LEFTOVERS
+
+
+# ---------------------------------------------------------------- 9. whole-area lookups follow the boundary
+
+#: A made-up triangular basin: its bounding box is about 217,000 acres, so at the made-up
+#: account's 200,000 acres a lookup it takes two strips, and at 50,000 five.
+TRIANGLE = ((-120.60, 37.00), (-120.30, 37.00), (-120.60, 37.30))
+#: The corner of the triangle's bounding box farthest from the triangle.
+FAR_CORNER = (-120.30, 37.30)
+
+
+def _triangle_basin():
+    from geography.models import Boundary
+
+    Boundary.objects.create(name="Made-up basin", geometry=MultiPolygon(
+        Polygon(TRIANGLE + (TRIANGLE[0],)), srid=4326))
+    # A run needs a use area; this one lies east of the basin, on no OpenET field.
+    bare = MultiPolygon(Polygon(((-120.240, 37.310), (-120.239, 37.310), (-120.239, 37.311),
+                                 (-120.240, 37.311), (-120.240, 37.310))), srid=4326)
+    _use_area(number="MADEUP-ON-NO-FIELD", geometry=bare)
+    return MadeUpOpenET(
+        fields={MADE_UP_A: (-120.58, 37.01), MADE_UP_B: (-120.55, 37.10), MADE_UP_C: (-120.59, 37.25)},
+        lookups={-120.60: [MADE_UP_A, MADE_UP_B, MADE_UP_C]},
+    )
+
+
+def _boundary_lookups(service):
+    """The lookups a run sent over the basin (the use area's own lookup lies east of it)."""
+    return [c for c in service.paid("/geodatabase/metadata/ids") if min(c["body"]["geometry"][0::2]) < -120.5]
+
+
+def _ring(call):
+    points = list(zip(call["body"]["geometry"][0::2], call["body"]["geometry"][1::2]))
+    return Polygon(points + [points[0]], srid=4326)
+
+
+def test_a_whole_area_lookup_sends_the_boundarys_part_of_its_strip_not_its_four_corners(
+        openet_key, no_wait, settings):
+    from django.contrib.gis.geos import Point
+
+    from datasync import field_list
+
+    settings.OPENET_MODE = "fields"
+    settings.OPENET_MONTHLY_BUDGET = 50
+    service = _triangle_basin()
+    _run(service, whole_area=True)
+    sent = _boundary_lookups(service)
+    assert len(sent) == len(field_list.boundary_areas(max_acres=200000)) == 2
+    rings = [_ring(c) for c in sent]
+    assert not any(ring.covers(Point(*FAR_CORNER, srid=4326)) for ring in rings)
+    triangle = Polygon(TRIANGLE + (TRIANGLE[0],), srid=4326)
+    union = rings[0].union(rings[1])
+    assert union.covers(triangle)
+    # Each request's note still names its strip, so a later run can tell what was answered.
+    assert field_list.answered_rectangles(whole_area=True) == set(field_list.boundary_areas(max_acres=200000))
+
+
+def test_a_strip_that_holds_none_of_the_boundary_sends_no_lookup(openet_key, no_wait, settings):
+    from datasync import field_list
+
+    settings.OPENET_MODE = "fields"
+    settings.OPENET_MONTHLY_BUDGET = 50
+    service = _triangle_basin()
+    strips = field_list.boundary_areas(max_acres=200000)
+    beside = (-121.20, 37.00, -121.10, 37.30)  # west of the basin
+    with mock.patch.object(field_list, "boundary_areas", return_value=[beside] + strips):
+        _run(service, whole_area=True)
+    assert len(_boundary_lookups(service)) == 2
+    assert not [c for c in service.paid("/geodatabase/metadata/ids") if min(c["body"]["geometry"][0::2]) < -121]
+
+
+def test_a_stopped_whole_area_run_does_not_ask_an_answered_strip_again(openet_key, no_wait, settings):
+    settings.OPENET_MODE = "fields"
+    service = _triangle_basin()
+    # Room for the use area's lookup and one strip.
+    settings.OPENET_MONTHLY_BUDGET = 2
+    _run(service, whole_area=True)
+    assert len(_boundary_lookups(service)) == 1
+    settings.OPENET_MONTHLY_BUDGET = 50
+    _run(service, whole_area=True)
+    sent = _boundary_lookups(service)
+    assert len(sent) == 2
+    assert sent[0]["body"] != sent[1]["body"]
+
+
+@pytest.mark.parametrize("later_limit", [50000, None], ids=["smaller-limit", "status-read-fails"])
+def test_answered_strips_are_not_asked_again_when_the_area_limit_cuts_them_differently(
+        openet_key, no_wait, settings, later_limit):
+    settings.OPENET_MODE = "fields"
+    settings.OPENET_MONTHLY_BUDGET = 50
+    service = _triangle_basin()
+    _run(service, whole_area=True)
+    assert len(_boundary_lookups(service)) == 2
+    service.max_area = later_limit
+    _run(service, whole_area=True)
+    assert len(_boundary_lookups(service)) == 2
+
+
+def _dry_run_text(service, *args):
+    out = io.StringIO()
+    with mock.patch("requests.request", side_effect=service):
+        call_command("sync_openet_parcels", "--dry-run", *args, start_date="2025-07-01",
+                     end_date="2025-07-31", stdout=out)
+    return out.getvalue()
+
+
+def test_the_dry_run_cuts_the_strips_at_the_accounts_own_limit_and_sends_no_paid_request(
+        openet_key, no_wait, settings):
+    from datasync import field_list
+
+    settings.OPENET_MODE = "fields"
+    service = _triangle_basin()
+    text = _dry_run_text(service, "--whole-area")
+    assert service.paid() == []
+    for west, south, east, north in field_list.boundary_areas(max_acres=200000):
+        assert f"{west}, {south}, {east}, {north}" in text
+    assert len(re.findall(r"^  lookup ", text, re.M)) == 3  # the use area's own and two strips
+
+
+def test_the_dry_run_counts_the_figures_of_fields_waiting_on_their_outlines(openet_key, no_wait, settings):
+    """A whole-area run stopped after its lookups: three fields wait on their outlines. At two
+    fields a request, a run sends 2 outline requests and up to 2 figures requests for them."""
+    settings.OPENET_MODE = "fields"
+    settings.OPENET_FIELDS_PER_REQUEST = 2
+    service = _triangle_basin()
+    settings.OPENET_MONTHLY_BUDGET = 3  # the use area's lookup and both strips
+    _run(service, whole_area=True)
+    assert len(_boundary_lookups(service)) == 2
+    text = _dry_run_text(service, "--whole-area")
+    total = re.search(r"Would send (up to )?(\d+)", text)
+    assert total and total.group(2) == "4" and total.group(1)
+
+
+def test_a_stopped_whole_area_run_says_to_run_it_again_with_whole_area(openet_key, no_wait, settings):
+    settings.OPENET_MODE = "fields"
+    settings.OPENET_MONTHLY_BUDGET = 2
+    service = _triangle_basin()
+    out = io.StringIO()
+    with mock.patch("requests.request", side_effect=service):
+        call_command("sync_openet_parcels", "--whole-area", start_date="2025-07-01",
+                     end_date="2025-07-31", stdout=out)
+    stop = [line for line in out.getvalue().splitlines() if "allowance is used" in line]
+    assert stop and "--whole-area" in stop[0]
 
 
 # ---------------------------------------------------------------- the fields file's outlines
