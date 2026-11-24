@@ -83,6 +83,9 @@ shapes = _load()
 #: keep the word, each with its reason. A ceiling may fall and never rise; an
 #: entry above the file's count fails.
 FIELD_WORD_KEPT: dict = {
+    # A month that counted no rain: "OpenET fields" and "any field" are OpenET's own fields
+    # inside the use area, whose rain the record holds or lacks; not a use area. 2026-11-24.
+    "templates/accounting/calculation_run_detail.html": 2,
     # The public records the demonstration was built from: the crop map's field
     # outlines, the basin's canals and fields, and the ET and rainfall estimated
     # on each of them. Land outside the record, measured 2026-10-31; 6 from 153.2-03,

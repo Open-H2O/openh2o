@@ -864,13 +864,17 @@ The OpenET job works only on the default setting, `OPENET_MODE=fields`. On the o
 settings in section 12 the job stops with an error each month. Run `sync_openet_parcels`
 and `sync_precip_parcels` by hand on those settings, with `--start-date` and
 `--end-date` (Phase 4 of the AI operator guide). The OpenET job writes its errors to
-`openet.log` and does not send an alert. On those settings OpenET sends no rain, and a
-use area not matched to OpenET's fields gets its rain only from `sync_precip_parcels`,
-which reads it through Google Earth Engine and stops with an error until Earth Engine is
-set up with `docs/earth-engine-tier-setup.md`. A month with no rain on record is still
-calculated with no rain counted, so its ETAW equals its crop ET, and on a use area with
-a well and no meter reading the month's calculation page and the water year's page say
-so.
+`openet.log` and does not send an alert. On those two settings OpenET does not send
+rain. A use area not matched to OpenET's fields gets a month's rainfall only from
+`sync_precip_parcels`. <!-- defines: google_earth_engine -->Google Earth Engine is
+Google's service for analysing satellite imagery. `sync_precip_parcels` reads gridMET
+rainfall through Earth Engine. It stops with an error when Earth Engine is not set up in
+`GEE_PROJECT`, `GEE_SERVICE_ACCOUNT_EMAIL` and `GEE_SERVICE_ACCOUNT_KEY_FILE`.
+`docs/earth-engine-tier-setup.md` explains that setup. OpenH2O still calculates a month
+without rain on record. That month's effective precipitation is 0. Its ETAW equals its
+crop ET. On a use area with a well and no meter reading, the month's calculation page
+says that rain was not counted. The water year's page lists these months for every use
+area. It also lists months with rain for only some fields.
 
 You can also run the calculation by hand, for one water year or one month:
 `docker compose exec web python manage.py run_accounting --period "WY 2025-2026"` or

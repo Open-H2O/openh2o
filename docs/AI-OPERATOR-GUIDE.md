@@ -583,11 +583,12 @@ of use areas for a small first test.
 
 The first run to receive a month's figures records each use area's crop ET for that
 month. A later run leaves the recorded figure as it is and lists any month where OpenET
-now reports a different one. Rainfall is kept the same way: the calculation uses the
-rain first on record for a month, and rain sent later at a different figure is neither
-used nor listed. The one exception is a use area matched to OpenET's fields, where
-accepting a newer crop ET figure for a month replaces the recorded rain with the rain
-sent with that figure.
+now reports a different one. Rainfall is kept the same way. Each calculation takes a
+month's rainfall from the rainfall on record for that month. Rain sent again for a month
+that already has its rain on record does not change it. OpenH2O does not list rain sent
+later at a different figure. It compares only crop ET. The one exception is a use area
+matched to OpenET's fields. There the rainfall sent with a newer crop ET figure replaces
+the recorded rainfall once a person accepts that figure.
 
 ### Keys and the schedule
 
@@ -645,17 +646,21 @@ same zone. Until its key is set, the schedule skips CIMIS or NOAA with one line 
 log. The OpenET job works only on the default setting, `OPENET_MODE=fields`. On the
 other two settings in section 12 of DEPLOY.md the job stops with an error each month.
 Run `sync_openet_parcels` and `sync_precip_parcels` by hand on those settings, with
-`--start-date` and `--end-date`. On those settings OpenET sends no rain, and a use area
-not matched to OpenET's fields gets its rain only from `sync_precip_parcels`, which
-reads it through Google Earth Engine and stops with an error until Earth Engine is set
-up with `docs/earth-engine-tier-setup.md`. A month with no rain on record is still
-calculated with no rain counted, so its ETAW equals its crop ET, and on a use area with
-a well and no meter reading the month's calculation page and the water year's page say
-so. The OpenET job writes its errors to `openet.log` and does not send an alert. The
-ntfy service sends notifications to a phone or a browser.
-For an alert when a sync fails, put `OPENH2O_NTFY_URL=` in `.env`, followed by the
-address of an ntfy topic, then run `make install-cron` again to copy the address into
-the schedule.
+`--start-date` and `--end-date`. On those two settings OpenET does not send rain. A use
+area not matched to OpenET's fields gets a month's rainfall only from
+`sync_precip_parcels`. <!-- defines: google_earth_engine -->Google Earth Engine is
+Google's service for analysing satellite imagery. `sync_precip_parcels` reads gridMET
+rainfall through Earth Engine. It stops with an error when Earth Engine is not set up in
+`GEE_PROJECT`, `GEE_SERVICE_ACCOUNT_EMAIL` and `GEE_SERVICE_ACCOUNT_KEY_FILE`.
+`docs/earth-engine-tier-setup.md` explains that setup. OpenH2O still calculates a month
+without rain on record. That month's effective precipitation is 0. Its ETAW equals its
+crop ET. On a use area with a well and no meter reading, the month's calculation page
+says that rain was not counted. The water year's page lists these months for every use
+area. It also lists months with rain for only some fields. The OpenET job writes its
+errors to `openet.log` and does not send an alert. The ntfy service sends notifications
+to a phone or a browser. For an alert when a sync fails, put `OPENH2O_NTFY_URL=` in
+`.env`, followed by the address of an ntfy topic, then run `make install-cron` again to
+copy the address into the schedule.
 
 On Windows, Task Scheduler runs the schedule. The jobs run in Git
 Bash, which comes with Git for Windows (https://git-scm.com/download/win), so install

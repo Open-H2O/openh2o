@@ -78,7 +78,7 @@
           <div class="budget-seg-caption">not in the calculation plan</div>
           {% elif rain_on_record == "none" or rain_on_record == "some" %}
           {% comment %}A month calculated with no rain on record (accounting.steps.subtract_effective_precip records it): the caption says no rain was counted, and no Rainfall row prints a zero as if rain had been measured.{% endcomment %}
-          <div class="budget-seg-caption" data-rain-on-record="{{ rain_on_record }}">{% if rain_on_record == "some" %}One or more OpenET fields have no rain figure, so no field&rsquo;s rain was counted. ETAW = crop ET.{% else %}No rain figure in the record, so OpenH2O counted no effective precipitation. ETAW = crop ET.{% endif %}</div>
+          <div class="budget-seg-caption" data-rain-on-record="{{ rain_on_record }}">{% if rain_on_record == "some" %}Some of this use area&rsquo;s OpenET fields lack a rain figure. OpenH2O did not count rain on any field. ETAW equals crop ET.{% else %}This month has no rain on record. OpenH2O did not count rain. ETAW equals crop ET.{% endif %}</div>
           <div class="budget-breakdown-group">
             {% if precip_method_label %}<div class="budget-breakdown-row"><span>Method<span class="budget-breakdown-note">Methodology Settings</span></span><b>{{ precip_method_label }}</b></div>{% endif %}
           </div>
