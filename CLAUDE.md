@@ -218,6 +218,8 @@ it out. `deploy-checks.yml` runs it before a release and every week. Prove the s
 fact on a few records in the every-change suite, as
 `tests/test_engine_writes_only_changes.py` does for the demonstration test.
 
+A change to the accounting can move a figure the demonstration prints, and the release test `tests/test_year_reading_demonstration.py` then fails until the stored file `tests/data/demonstration_figures_before.json` matches. The stored file is the before, so run `make figures-moved` once, after your change. In a few minutes it lists every value where the figures the test just wrote (`figures-now.json`) differ from the stored file, or from it at `BASE=<commit>`. You made the change, so you say whether the move is intended. `figures-now.json` in the working folder now holds the new figures. If the move is intended, rewrite the stored file with `cp figures-now.json tests/data/demonstration_figures_before.json` in a commit that says which figures moved. Then add, in a new commit, the missing `Test-Change:` lines that the pre-push hook prints. Any other move is a fault to find, not a file to rewrite.
+
 `make test-droppable` boots a Django process per optional module with that
 module left out of `OPENH2O_MODULES` and asserts the kept pages still render,
 the dropped routes 404 and the sidebar carries no dead links. It is part of

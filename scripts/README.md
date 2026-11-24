@@ -57,3 +57,7 @@ running a test: one line per old test file the range changed or deleted, plus th
 the commit on openh2o.com as `deploy.sh` does and keeps it for an hour; `--base COMMIT` needs no network; `--json` prints
 everything, asked-for files included. Exit 0 nothing missing, 1 lines missing, 3 the live commit cannot be read. It needs
 git and the standard library, so it runs on the host.
+
+## Listing the printed figures a change moved
+
+`scripts/figures_moved.py [--before FILE | --base-commit COMMIT [--repo DIR]] NOW [--tsv OUT]` compares `NOW`, the figures file the demonstration release test wrote, with one of three files: `FILE`, `tests/data/demonstration_figures_before.json` at `COMMIT`, or by default that file in the working tree. It prints one tab-separated line per moved value: path (water year, section, then keys), before, now and change (now minus before for two decimals, else empty). A summary then gives how many moved, per water year and section, and the ten largest moves by absolute change, or says "No printed figure moved." `--tsv` writes the per-value lines to `OUT` under a header, and the summary still prints. It exits 0 whether or not figures moved, so it is not a gate; the release test is. Whether a move is intended is for the person who made the change to say. It runs on the host with `python3`, standard library only; `--base-commit` needs git. `make figures-moved` runs it, taking `BASE=<commit>` and `TSV=<file>`.
