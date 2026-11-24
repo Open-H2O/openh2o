@@ -686,7 +686,11 @@ def _gears_by_et_build(reporting_period: ReportingPeriod) -> tuple[list[dict[str
     for parcel_id, effective_date, charged in calculated:
         ran.add((parcel_id, effective_date))
         key = (parcel_id, effective_date.strftime("%Y-%m"))
-        if key in metered or parcel_id not in links_by_parcel:
+        if key in metered:
+            continue
+        if parcel_id not in links_by_parcel:
+            # Calculated while it was linked; its link is gone, so the check names it.
+            left_out.no_well.add(parcel_id)
             continue
         figures[key] = figures.get(key, Decimal("0")) + abs(charged)
 

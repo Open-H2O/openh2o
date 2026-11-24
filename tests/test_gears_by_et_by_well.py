@@ -191,3 +191,16 @@ def test_the_checks_count_use_areas_with_no_well_and_name_the_months_left_out():
     warnings = [m["message"] for m in validate_report(period, "gears_by_et") if m["level"] == "warning"]
     assert any(m.startswith("1 use area") for m in warnings)  # the one not linked to a well
     assert any("January 2024" in m and "1 use area." in m for m in warnings)  # the uncalculated month
+
+
+def test_a_use_area_unlinked_after_its_months_were_calculated_is_counted_as_left_out():
+    """Its calculated months put nothing in the file, so the check still counts it."""
+    from reporting.validators import validate_report
+
+    period = ReportingPeriodFactory()
+    field = ParcelFactory()
+    _estimate(field, 5)  # calculated while linked; the link is gone now
+
+    assert _by_et(period) == []
+    warnings = [m["message"] for m in validate_report(period, "gears_by_et") if m["level"] == "warning"]
+    assert any(m.startswith("1 use area") for m in warnings)
