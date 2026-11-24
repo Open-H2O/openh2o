@@ -99,8 +99,11 @@ def _crop_et_layer():
         choices.append({
             "group": "Water years",
             "kind": "wy",
-            # A whole year is its name; a year in progress says its last month with figures.
-            "label": name if (last.year, last.month) == (end.year, end.month) else f"{name} to {last:%b %Y}",
+            # A whole year is its name; a year in progress says its months with figures so far.
+            "label": name if (last.year, last.month) == (end.year, end.month) else (
+                f"{name}, {start:%b}" if (last.year, last.month) == (start.year, start.month)
+                else f"{name}, {start:%b} to {last:%b}"
+            ),
             "query": f"from={start:%Y-%m}&to={last:%Y-%m}",
         })
     for month in whole_area.months_with_figures():

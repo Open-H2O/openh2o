@@ -155,6 +155,14 @@ def test_the_map_page_offers_the_layer_with_each_month_that_has_figures(area, si
     assert response.context["crop_et_count"] == 2
 
 
+def test_a_month_only_a_field_outside_the_boundary_has_is_not_offered(area, signed_in):
+    from django.urls import reverse
+
+    _month(area["c"], dt.date(2025, 8, 1), "200")
+    queries = [c["query"] for c in signed_in.get(reverse("geography:map")).context["crop_et_choices"]]
+    assert "month=2025-08" not in queries
+
+
 def test_each_choice_names_its_kind_so_the_layer_uses_that_kinds_fixed_breaks(area, signed_in):
     from django.urls import reverse
 

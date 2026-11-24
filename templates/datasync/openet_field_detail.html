@@ -43,7 +43,7 @@
         <dt class="text-tertiary text-xs">Area</dt>
         <dd>{% if field.area_acres is not None %}{{ field.area_acres }} acres{% else %}<span class="text-tertiary">Not known</span>{% endif %}</dd>
         <dt class="text-tertiary text-xs">Use areas it overlaps</dt>
-        <dd>{% for share in shares %}{{ share.overlap_acres }} acres in <a href="{% url 'parcels:detail' share.parcel.pk %}">{{ share.parcel.parcel_number }}</a>{% if not forloop.last %}<br>{% endif %}{% empty %}<span class="text-secondary">None</span>{% endfor %}</dd>
+        <dd>{% for share in shares %}{{ share.overlap_acres }} acres in {% if 'parcels' in enabled_modules %}<a href="{% url 'parcels:detail' share.parcel.pk %}">{{ share.parcel.parcel_number }}</a>{% else %}{{ share.parcel.parcel_number }}{% endif %}{% if not forloop.last %}<br>{% endif %}{% empty %}<span class="text-secondary">None</span>{% endfor %}</dd>
         {% for name, year in years.items %}
         <dt class="text-tertiary text-xs">Crop ET, {{ name }}</dt>
         <dd>{{ year.et }} in <span class="text-tertiary">({{ year.months_with_figures }} month{{ year.months_with_figures|pluralize }} with figures)</span></dd>

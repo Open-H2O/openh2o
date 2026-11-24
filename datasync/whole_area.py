@@ -40,8 +40,8 @@ def _boundary_union():
 
 
 def fields_in_area():
-    """Stored OpenET fields with an outline inside the site's boundary (every field when the
-    site has no boundary)."""
+    """Stored OpenET fields with an outline inside or crossing the site's boundary (every field
+    when the site has no boundary)."""
     qs = OpenETField.objects.filter(geometry__isnull=False)
     union = _boundary_union()
     if union is not None:
@@ -83,7 +83,8 @@ def water_years():
         from accounting.models import ReportingPeriod
     except ImportError:  # pragma: no cover - accounting is optional
         return []
-    months = OpenETFieldMonth.objects.filter(et_mm__isnull=False)
+    # Only the layer's own fields, so a year is offered only when the layer can shade it.
+    months = OpenETFieldMonth.objects.filter(field__in=fields_in_area(), et_mm__isnull=False)
     out = []
     for period in ReportingPeriod.objects.order_by("-start_date"):
         last = (
@@ -96,9 +97,9 @@ def water_years():
 
 
 def months_with_figures():
-    """Every month any field has a crop ET figure for, newest first."""
+    """Every month a field of the layer has a crop ET figure for, newest first."""
     return list(
-        OpenETFieldMonth.objects.filter(et_mm__isnull=False)
+        OpenETFieldMonth.objects.filter(field__in=fields_in_area(), et_mm__isnull=False)
         .order_by("-month").values_list("month", flat=True).distinct()
     )
 

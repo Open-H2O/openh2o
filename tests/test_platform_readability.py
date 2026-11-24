@@ -460,6 +460,10 @@ EXPECTED_UNREACHABLE = {
     # GeoJSON feature collection has no prose for a spelling rule to read.
     "/accounting/ledger/export/": "not a page (text/csv)",
     "/accounting/ledger/template/": "not a page (text/csv)",
+    # The Map page's crop ET layer: the fields' outlines, and their depths for a month or
+    # span asked in the query string (without one it answers 400).
+    "/datasync/openet-fields/crop-et/": "HTTP 400",
+    "/datasync/openet-fields/outlines/": "not a page (application/json)",
     "/datasync/stations/freshness-geojson/": "not a page (application/json)",
     "/datasync/stations/geojson/": "not a page (application/json)",
     "/drinking/facilities/geojson/": "not a page (application/json)",

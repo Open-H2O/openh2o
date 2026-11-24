@@ -488,6 +488,15 @@ def walk():
         methodology_plan_name="Lighting walk",
     )
     rows.station = MonitoredStationFactory()
+    from django.contrib.gis.geos import MultiPolygon, Polygon
+    from datasync.models import OpenETField
+
+    # A made-up OpenET field (not OpenET's numbering) for its own page.
+    rows.openet_field = OpenETField.objects.create(
+        field_id=99100000901, area_acres=Decimal("40.00"), received_on=date(2024, 8, 6),
+        geometry=MultiPolygon(Polygon(((-120.3, 37.3), (-120.296, 37.3), (-120.296, 37.304),
+                                       (-120.3, 37.304), (-120.3, 37.3))), srid=4326),
+    )
     rows.right = WaterRightFactory()
     rows.right_parcel = WaterRightParcelFactory(water_right=rows.right, parcel=rows.parcel)
     rows.pod = PointOfDiversionFactory(water_right=rows.right)
@@ -570,6 +579,7 @@ def concrete(pattern, rows):
         "wrp_pk": rows.right_parcel.pk,
         "wip_pk": rows.well_parcel.pk,
         "event_pk": rows.recharge_event.pk,
+        "field_id": rows.openet_field.field_id,
     }
     pk_rows = [attr for prefix, attr in PK_ROW_BY_PREFIX if pattern.startswith(prefix)]
     if pk_rows:

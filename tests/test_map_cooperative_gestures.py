@@ -29,7 +29,9 @@ INIT = re.compile(r"new\s+maplibregl\.Map\s*\(")
 # since 143-13 (2026-09-16), which gave Use Areas and Wells their own overview
 # map cards (_parcels_overview_map.html, _wells_overview_map.html), both built
 # with cooperativeGestures: true from the start, copying the 143-07 pattern.
-EXPECTED_SITES = 13
+# Fourteen since an OpenET field's own page (openet_field_detail.html), built
+# with cooperativeGestures: true.
+EXPECTED_SITES = 14
 
 # A map allowed to keep swallowing scroll, with the reason. Empty on purpose:
 # no map has earned an exemption. An entry here is a design decision.

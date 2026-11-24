@@ -400,7 +400,7 @@
 }
 .legend-note { margin: 6px 0 0; font-size: 11px; color: var(--color-text-tertiary); max-width: 26ch; }
 .legend-note a { color: var(--color-accent); }
-.legend-ramp { display: grid; grid-template-columns: repeat(5, 1fr); height: 10px; max-width: 220px; border-radius: 1px; overflow: hidden; }
+.legend-ramp { display: grid; grid-template-columns: repeat(5, 1fr); height: 10px; max-width: 220px; border-radius: var(--radius-sm); overflow: hidden; }
 .legend-ramp-ticks { display: flex; justify-content: space-between; max-width: 220px; margin-top: 3px;
     font-size: 10.5px; color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
 /* An OpenET field's lines under a use area's popup, when the crop ET layer is on. */

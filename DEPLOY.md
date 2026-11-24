@@ -936,18 +936,27 @@ Until its key is set, CIMIS or NOAA shows as needing a key on the monitoring pag
 and a sync skips it. OpenET is not a station source. `sync_all` never syncs it, and
 its figures arrive through `sync_openet_parcels`.
 
-The monthly job in `crontab.txt` keeps only fields overlapping a use area current. To show fields
-outside use areas on the Map page's crop ET layer, run `sync_openet_parcels --whole-area` by hand.
-It asks OpenET to list fields touching rectangles drawn around the site's boundary, some outside
-it, then for their outlines and monthly crop ET and rain. It skips lists and outlines the site
-holds, and the figures of a field outside every use area that holds every month asked for. Fields
-overlapping a use area are asked again on every run. It stops at the month's allowance; the next
-run asks for what is still missing. `--dry-run` with it prints the requests and sends none. It
-does not read the account's limits, so its lookups are cut at 50,000 acres. Estimated from DWR's
-2023 count of 8,905 Merced Subbasin fields, an account with 400 fields and 200,000 acres a request
-needs about 50 requests first, then 23 a month; a free account about 190, over a month's
-allowance, then 90. The 400 needs `OPENET_FIELDS_PER_REQUEST=400` set; the setting's default
-is 100. OpenET's own count is known only after the list requests.
+To fill the crop ET layer, run `sync_openet_parcels --whole-area` by hand; the monthly job in
+`crontab.txt` does not. The hand run asks OpenET to list fields in rectangles around the site's
+boundary, sized to the account's area limit. It then asks for the outlines of the fields listed
+and for monthly crop ET and rain of every field inside or crossing the boundary. Runs skip
+rectangles already listed, outlines already held, and figures of a field outside every use area
+that has every month asked for; fields overlapping a use area are always asked, so a revised month
+is seen. A whole-area run stopped by the month's allowance continues its lookups and extra figures
+only when it is run again with `--whole-area`. Any later run, the monthly job included, asks for
+the outlines of fields a lookup already listed, and asks for them before the use areas' figures.
+<!-- defines: dry_run -->A dry run (`--dry-run` with `--whole-area`) shows what a run would ask for and sends nothing. On
+a first run it prints the lookups and a request count ending "or more", because the outlines and
+figures depend on the lookups' answers; reading no account limits, it cuts rectangles at 50,000
+acres. `OPENET_FIELDS_PER_REQUEST` is 100 by default. Some accounts take 400 or more. Set it from
+the account's own limit. For a subbasin-sized area like the Merced Subbasin (8,905 fields on DWR's
+2023 crop map), an account set to 400 needs about 23 figures requests and 23 or more outline
+requests, plus the lookups. Outlines are asked for every listed field, and some of those fields
+lie outside the boundary. A field is asked again while it is missing a month, so each later
+`--whole-area` run needs about 23 while any field lacks a month. The monthly job never asks for
+these fields. The number of lookups depends on the account's area limit. A free account, allowed
+100 a month, needs about 200 requests or more the first time, about two months' allowance or more,
+then about 90 for each later `--whole-area` run while any field lacks a month.
 
 USGS also offers an optional key, free from https://api.waterdata.usgs.gov/signup/. USGS
 accepts more requests an hour from a site that sends a key, and asks any site making
