@@ -860,6 +860,11 @@ def remove(stdout=None):
             # The finalized-year lock is switched off for the removal: the
             # demonstration's first water year is finalized.
             with override("The demonstration data was removed."):
+                # A correction's new row points at the row it replaces, and that link
+                # protects the old row from deletion; clear every link first.
+                for model in ordered:
+                    if any(f.name == "replaces" for f in model._meta.concrete_fields):
+                        model.objects.filter(replaces__isnull=False).update(replaces=None)
                 for model in ordered:
                     model.objects.all().delete()
             _restore_reference_lists()
