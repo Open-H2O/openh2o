@@ -32,12 +32,14 @@
 //            left for left, centres for centred.
 //   groups:  for each header that spans several columns (the bracket labels),
 //            the distance from its text's centre to the centre of the figures
-//            it spans.
+//            it spans (`offset`), and to the centre of its own underline
+//            (`underline`), the bracket DESIGN.md table rule 18 centres it on.
 //   overflow: whether the table is wider than the box that holds it.
 // Every distance is in CSS pixels of the viewport, as getBoundingClientRect
 // reports them, so the page's own zoom is already applied.
 (opts = {}) => {
   const tol = Object.assign({ rule: 4, header: 2, group: 12 }, opts.tolerance || {});
+  // `header` also bounds a bracket label's distance from its underline's centre.
   const round = (n) => Math.round(n * 10) / 10;
   // Text a reader does not see in place: screen-reader text and the help
   // text a "?" opens (its button, the "?", is ink and counts).
@@ -273,9 +275,19 @@
       if (!exts.length || !hk) continue;
       const fl = Math.min(...exts.map((e) => e.l)), fr = Math.max(...exts.map((e) => e.r));
       const off = (hk.l + hk.r) / 2 - (fl + fr) / 2;
-      const ok = Math.abs(off) <= tol.group;
-      groups.push({ cols: idx, header: headerText(th), offset: round(off), pass: ok });
-      if (!ok) mark((hk.l + hk.r) / 2, hk.b, (fl + fr) / 2, hk.b + 3, `${Math.round(off)}`, true);
+      // The bracket under the label (DESIGN.md table rule 18: the label is
+      // centred over its bracket). A label centred on its figures but off its
+      // own underline reads as misplaced, so both are held.
+      let underline = null;
+      const after = getComputedStyle(th, "::after");
+      if (after.content && after.content !== "none" && after.position === "absolute") {
+        const cb = th.getBoundingClientRect();
+        const ul = cb.left + parseFloat(after.left), ur = cb.right - parseFloat(after.right);
+        if (ur > ul) underline = round((hk.l + hk.r) / 2 - (ul + ur) / 2);
+      }
+      const ok = Math.abs(off) <= tol.group && (underline === null || Math.abs(underline) <= tol.header);
+      groups.push({ cols: idx, header: headerText(th), offset: round(off), underline, pass: ok });
+      if (!ok) mark((hk.l + hk.r) / 2, hk.b, (fl + fr) / 2, hk.b + 3, `${Math.round(off)}${underline === null ? "" : ` / ${Math.round(underline)}`}`, true);
     }
 
     // How the table sizes its columns.
