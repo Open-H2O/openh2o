@@ -77,17 +77,11 @@
   <div class="card-raised">
     <h3 class="section-header-sm">What the by-ET file holds</h3>
     <div class="page-stack text-secondary text-sm" style="gap: var(--space-sm);">
-      <p class="m-0">This is the GEARS file OpenH2O makes from crop ET, beside the by-well file of meter readings. Each line is one well's groundwater extraction for one month, in the same columns as the by-well file, with Measurement Method "Unmetered/Estimated". GEARS takes extraction per well. So a well's figure adds up its part of each linked use area's groundwater extraction estimate for that month: the month's ETAW met by groundwater divided by the use area's irrigation efficiency. The file and the account pages count a month alike.</p>
-      <p class="m-0">A use area linked to more than one well is divided among those wells by the shares on the wells' pages. Each well takes its share divided by the sum of the use area's shares, and the last well takes what remains. The parts therefore add up to the use area's month even when the shares do not add up to 1.</p>
-      <div>
-        <p class="m-0">The file leaves out:</p>
-        <ul class="m-0" style="padding-left: 1.25rem; list-style: disc;">
-          <li>use areas not linked to a well</li>
-          <li>months a meter reading covers, which the by-well file holds, so each use area's month is in only one of the two files</li>
-          <li>months OpenET has not sent crop ET for</li>
-          <li>months with crop ET that OpenH2O has not yet calculated</li>
-        </ul>
-      </div>
+      <p class="m-0">The by-ET file is OpenH2O's GEARS file of groundwater extraction estimated from crop ET. The by-well file is OpenH2O's other GEARS file, of meter readings.</p>
+      <p class="m-0">Each line of the by-ET file is one well and one month. The Measurement Method column reads "Unmetered/Estimated". For a use area linked to a well, in a month a meter reading does not cover, the estimate is the month's ETAW met by groundwater divided by the use area's irrigation efficiency. A month calculated before OpenH2O began keeping the estimate does not have one. The file counts that month at its ETAW met by groundwater, without dividing by irrigation efficiency. A use area linked to one well puts its whole estimate on that well. A use area linked to more than one well has its estimate divided among those wells by the shares on the wells' pages, so the use area is counted once.</p>
+      <p class="m-0">OpenH2O records a month's crop ET when OpenET sends it. OpenH2O's monthly calculation then makes the estimate. A month recorded and not yet calculated does not have an estimate yet.</p>
+      <p class="m-0">The by-ET file leaves out use areas not linked to a well. For each use area, the by-ET file leaves out the months a meter reading covers, which the by-well file reports, so a use area's month is in one of the two files at most. The by-ET file also leaves out months OpenET has not yet sent crop ET for, and months OpenH2O has recorded and not yet calculated.</p>
+      <p class="m-0">The card headed Validation warnings on this page gives the number of use areas left out because they are not linked to a well. The checks do not name those use areas.</p>
     </div>
   </div>
   {% endif %}
@@ -112,7 +106,7 @@
       <div class="field-group mb-0">
         <div class="field-label">Methodology</div>
         <div class="field-value-sm">
-          {% if submission.method_count is None %}<span class="value-empty">Not recorded</span>{% elif submission.method_count == 1 %}{{ submission.method_name }}{% if submission.settings_code %}, settings {{ submission.settings_code }}{% endif %}{% elif submission.method_count > 1 %}More than one methodology{% else %}No month calculated{% endif %}
+          {% if submission.method_count is None %}<span class="value-empty">Not recorded</span>{% elif submission.method_count == 1 %}{{ submission.method_name }}{% if submission.settings_code %}, settings {{ submission.settings_code }}{% endif %}{% elif submission.method_count > 1 %}More than one methodology{% else %}No month of the water year calculated{% endif %}
         </div>
       </div>
       <div class="field-group mb-0" style="grid-column: 1 / -1;">

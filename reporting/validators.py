@@ -263,9 +263,9 @@ def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMe
         warnings.append({
             "level": "error",
             "message": (
-                "The by-ET file for this water year would have 0 lines below its header: "
-                "no use area linked to a well has a calculated month outside the months "
-                "a meter reading covers."
+                "The by-ET file for this water year would hold only its header. For this "
+                "water year, no use area linked to a well has a calculated month that the "
+                "by-well file does not report."
             ),
         })
     else:
@@ -273,8 +273,8 @@ def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMe
         warnings.append({
             "level": "info",
             "message": (
-                f"Lines below the header: {len(rows)}. "
-                f"Total groundwater extraction in the file: {total:.2f} acre-feet."
+                f"Lines below the by-ET file's header: {len(rows)}. "
+                f"Total in the file: {total:.2f} acre-feet."
             ),
         })
 
@@ -283,27 +283,35 @@ def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMe
         warnings.append({
             "level": "warning",
             "message": (
-                "1 use area with crop ET in acre-feet this water year is not linked to a well, "
-                "so the by-ET file leaves it out."
+                "1 use area not linked to a well has crop ET in acre-feet for a month without "
+                "a meter reading typed on the use area. The by-well file reports a reading "
+                "typed on such a use area. The by-ET file leaves the use area out."
                 if count == 1 else
-                f"{count} use areas with crop ET in acre-feet this water year are not linked "
-                "to a well, so the by-ET file leaves them out."
+                f"{count} use areas not linked to a well have crop ET in acre-feet for months "
+                "without a meter reading typed on the use area. The by-well file reports a "
+                "reading typed on such a use area. The by-ET file leaves these use areas out."
             ),
         })
     for months, count in _months_by_count(left_out.waiting):
         warnings.append({
             "level": "warning",
             "message": (
-                f"Waiting for crop ET from OpenET: {months}, left out of the by-ET file for "
-                + ("1 use area." if count == 1 else f"{count} use areas.")
+                f"The by-ET file leaves out {months} for 1 use area, because OpenET has not "
+                "yet sent its crop ET."
+                if count == 1 else
+                f"The by-ET file leaves out {months} for {count} use areas, because OpenET "
+                "has not yet sent their crop ET."
             ),
         })
     for months, count in _months_by_count(left_out.not_calculated):
         warnings.append({
             "level": "warning",
             "message": (
-                f"Crop ET recorded, waiting for OpenH2O to calculate: {months}, left out of "
-                "the by-ET file for " + ("1 use area." if count == 1 else f"{count} use areas.")
+                f"The by-ET file leaves out {months} for 1 use area, because OpenH2O has "
+                "recorded each month's crop ET from OpenET and has not yet calculated the month."
+                if count == 1 else
+                f"The by-ET file leaves out {months} for {count} use areas, because OpenH2O "
+                "has recorded each month's crop ET from OpenET and has not yet calculated the month."
             ),
         })
 
