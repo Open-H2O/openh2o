@@ -583,8 +583,11 @@ of use areas for a small first test.
 
 The first run to receive a month's figures records each use area's crop ET for that
 month. A later run leaves the recorded figure as it is and lists any month where OpenET
-now reports a different one. Rainfall is not fixed this way: each calculation uses the
-latest rainfall OpenH2O holds.
+now reports a different one. Rainfall is kept the same way: the calculation uses the
+rain first on record for a month, and rain sent later at a different figure is neither
+used nor listed. The one exception is a use area matched to OpenET's fields, where
+accepting a newer crop ET figure for a month replaces the recorded rain with the rain
+sent with that figure.
 
 ### Keys and the schedule
 
@@ -642,8 +645,14 @@ same zone. Until its key is set, the schedule skips CIMIS or NOAA with one line 
 log. The OpenET job works only on the default setting, `OPENET_MODE=fields`. On the
 other two settings in section 12 of DEPLOY.md the job stops with an error each month.
 Run `sync_openet_parcels` and `sync_precip_parcels` by hand on those settings, with
-`--start-date` and `--end-date`. The OpenET job writes its errors to `openet.log` and
-does not send an alert. The ntfy service sends notifications to a phone or a browser.
+`--start-date` and `--end-date`. On those settings OpenET sends no rain, and a use area
+not matched to OpenET's fields gets its rain only from `sync_precip_parcels`, which
+reads it through Google Earth Engine and stops with an error until Earth Engine is set
+up with `docs/earth-engine-tier-setup.md`. A month with no rain on record is still
+calculated with no rain counted, so its ETAW equals its crop ET, and on a use area with
+a well and no meter reading the month's calculation page and the water year's page say
+so. The OpenET job writes its errors to `openet.log` and does not send an alert. The
+ntfy service sends notifications to a phone or a browser.
 For an alert when a sync fails, put `OPENH2O_NTFY_URL=` in `.env`, followed by the
 address of an ntfy topic, then run `make install-cron` again to copy the address into
 the schedule.
