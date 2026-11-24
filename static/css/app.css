@@ -1451,7 +1451,9 @@ html { color-scheme: dark; }
 .data-table--canal-water td {
     white-space: nowrap;
 }
-.data-table--grouped.data-table--canal-water th[rowspan].th-right {
+.data-table--grouped:has(.col-sep).data-table--canal-water th[rowspan].th-right {
+    /* The measure is the words' own: the gutters go outside it. */
+    box-sizing: content-box;
     width: 9rem;
     white-space: normal;
 }

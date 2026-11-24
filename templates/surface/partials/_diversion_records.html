@@ -50,7 +50,7 @@
       <th>Month</th>
       <th class="th-right">Diverted</th>
       <th class="th-right"><span class="th-stack">Return flow</span></th>
-      <th class="th-right col-sep">Net diversion</th>
+      <th class="th-right col-sep"><span class="th-stack">Net diversion</span></th>
       <th>Type</th>
       <th>How known</th>
       <th class="th-right">Actions</th>
@@ -63,7 +63,7 @@
     </tr>
     {% for record in group.rows %}
     <tr id="{{ record|record_anchor }}"{% if edit_record.pk == record.pk or record.void_open or record.correct_open or record.is_struck %} class="{% if edit_record.pk == record.pk or record.void_open or record.correct_open %}row-editing{% endif %}{% if record.is_struck %}record-void{% endif %}"{% endif %}{% if 'reporting' in enabled_modules %} title="{{ record.rule_version }}"{% endif %}>
-      <td class="text-secondary">{{ record.month|date:"M Y" }}</td>
+      <td class="text-secondary" style="white-space: nowrap;">{{ record.month|date:"M Y" }}</td>
       <td class="td-num">{{ record.volume_acre_feet|floatformat:2|intcomma }}</td>
       <td class="td-num text-secondary">{{ record.returned_af|floatformat:2|intcomma }}</td>
       <td class="td-num col-sep">{{ record.consumed_acre_feet|floatformat:2|intcomma }}</td>
