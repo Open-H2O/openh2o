@@ -936,30 +936,31 @@ Until its key is set, CIMIS or NOAA shows as needing a key on the monitoring pag
 and a sync skips it. OpenET is not a station source. `sync_all` never syncs it, and
 its figures arrive through `sync_openet_parcels`.
 
-To fill the crop ET layer, run `sync_openet_parcels --whole-area` by hand; the monthly job in
-`crontab.txt` does not. The hand run asks OpenET to list fields in rectangles around the site's
-boundary, sized to the account's area limit. It then asks for the outlines of the fields listed
-and for monthly crop ET and rain of every field inside or crossing the boundary. Runs skip
-rectangles already listed, outlines already held, and figures of a field outside every use area
-that has every month asked for; fields overlapping a use area are always asked, so a revised month
-is seen. A run whose use areas already share fields first asks for those fields' figures, before any
-lookup or outline. A field listed only by a lookup over the site's boundary is marked as such until
-a use area's own lookup lists it or it takes a share in a use area. A run without `--whole-area`
-never asks for a marked field's outline or figures. A whole-area run stopped by the month's
-allowance continues its boundary lookups, the outlines of the fields only those lookups listed, and
-its extra figures only when it is run again with `--whole-area`. Lookups and outlines for the use
-areas continue on any run.
-<!-- defines: dry_run -->A dry run (`--dry-run` with `--whole-area`) shows what a run would ask for and sends nothing. On
-a first run it prints the lookups and a request count ending "or more", because the outlines and
-figures depend on the lookups' answers; it does not read the account's limits, so it cuts rectangles at 50,000 acres. `OPENET_FIELDS_PER_REQUEST` is 100 by default. Some accounts take 400 or more. Set it from
-the account's own limit. For a subbasin-sized area like the Merced Subbasin (8,905 fields on DWR's
-2023 crop map), an account set to 400 needs about 23 figures requests and 23 or more outline
-requests, plus the lookups. Outlines are asked for every listed field, and some of those fields
-lie outside the boundary. A field is asked again while it is missing a month, so each later
-`--whole-area` run needs about 23 while any field lacks a month. The monthly job never asks for
-these fields. The number of lookups depends on the account's area limit. A free account, allowed
-100 a month, needs about 200 requests or more the first time, about two months' allowance or more,
-then about 90 for each later `--whole-area` run while any field lacks a month.
+`sync_openet_parcels --whole-area` fills the Map page's crop ET layer, which shades every OpenET
+field inside or crossing the site's boundary. The monthly job in `crontab.txt` runs
+`sync_openet_parcels` without this option, so you run it by hand. First, in `.env`, set
+`OPENET_FIELDS_PER_REQUEST` to the "Max Field IDS" figure in your account's status, and set
+<!-- defines: openet_budget -->`OPENET_MONTHLY_BUDGET` to the account's allowance. Both default
+to 100, the free plan's figures. The site reads the area a lookup may cover from that status,
+and reading it does not cost a request.
+
+A run sends lookups, which give OpenET an area and return the numbers of its fields. It also
+sends requests for a batch of fields' outlines or monthly crop ET and rain. For the Merced
+Subbasin, an account at 400 fields a request and 200,000 acres spends about 54 requests on the
+first run: 6 lookups, 24 outline requests and 24 figures requests. In later months a run spends
+about 24, all figures. On the free plan a run takes about 200. So the first fill, run after each
+month's monthly job, stops at 100 twice and finishes in the third month, about 290 in all. Later
+months take about 90. These counts are estimates: DWR's 2023 crop map stands in for OpenET's own
+fields, which have not been counted, and the counts assume the use areas are set up.
+
+The site counts a request when it sends it and takes it off the count if OpenET refuses it or
+cannot be reached. Its month starts at 00:00 UTC on the 1st, as OpenET's does. When the count
+reaches `OPENET_MONTHLY_BUDGET`, the run stops. Only another `--whole-area` run continues the
+boundary lookups and those fields' outlines and figures. Any run, the monthly job included,
+continues the use areas' own requests.
+<!-- defines: dry_run -->A dry run shows what a command would send and does not send a lookup,
+outline or figures request. `--dry-run` with `--whole-area` lists your site's requests and a total,
+which ends "or more" until the lookups are answered.
 
 USGS also offers an optional key, free from https://api.waterdata.usgs.gov/signup/. USGS
 accepts more requests an hour from a site that sends a key, and asks any site making
