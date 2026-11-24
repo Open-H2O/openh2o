@@ -92,6 +92,7 @@ EXPECTED_LIT = {
     "/accounting/reporting-periods/create/": "Water Years",
     "/datasync/monitoring/": "Monitoring Stations",
     "/datasync/stations/": "Monitoring Stations",
+    "/datasync/openet-fields/<int:field_id>/": "Map",
     "/datasync/stations/<int:pk>/": "Monitoring Stations",
     "/datasync/stations/<int:pk>/revised/": "Monitoring Stations",
     "/datasync/stations/add/": "Monitoring Stations",

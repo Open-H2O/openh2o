@@ -432,6 +432,8 @@ MODULE_REGISTRY: dict = {
                 section=SECTION_OVERVIEW,
                 order=30,
                 active_match="/map/",
+                # An OpenET field's own page is reached from the Map page's crop ET layer.
+                also_matches=("/datasync/openet-fields/",),
             ),
             NavEntry(
                 url_name="geography:zone_list",
