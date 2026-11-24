@@ -282,7 +282,10 @@
       const after = getComputedStyle(th, "::after");
       if (after.content && after.content !== "none" && after.position === "absolute") {
         const cb = th.getBoundingClientRect();
-        const ul = cb.left + parseFloat(after.left), ur = cb.right - parseFloat(after.right);
+        // getBoundingClientRect is in zoomed viewport px; the pseudo-element's
+        // computed left/right are unzoomed and measured from the padding edge.
+        const z = th.currentCSSZoom || 1;
+        const ul = cb.left + (th.clientLeft + parseFloat(after.left)) * z, ur = cb.right - parseFloat(after.right) * z;
         if (ur > ul) underline = round((hk.l + hk.r) / 2 - (ul + ur) / 2);
       }
       const ok = Math.abs(off) <= tol.group && (underline === null || Math.abs(underline) <= tol.header);
