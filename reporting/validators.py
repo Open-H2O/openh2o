@@ -284,12 +284,12 @@ def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMe
             "level": "warning",
             "message": (
                 "1 use area not linked to a well has crop ET in acre-feet for a month without "
-                "a meter reading typed on the use area. The by-well file reports a reading "
-                "typed on such a use area. The by-ET file leaves the use area out."
+                "a meter reading entered on the use area. The by-well file reports a reading "
+                "entered on such a use area. The by-ET file leaves the use area out."
                 if count == 1 else
                 f"{count} use areas not linked to a well have crop ET in acre-feet for months "
-                "without a meter reading typed on the use area. The by-well file reports a "
-                "reading typed on such a use area. The by-ET file leaves these use areas out."
+                "without a meter reading entered on the use area. The by-well file reports a "
+                "reading entered on such a use area. The by-ET file leaves these use areas out."
             ),
         })
     for months, count in _months_by_count(left_out.waiting):
