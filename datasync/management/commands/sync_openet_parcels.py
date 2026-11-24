@@ -319,6 +319,14 @@ class Command(BaseCommand):
                     # field month holds the newest, with the day it arrived.
                     row.et_mm, row.pr_mm, row.received_on = et_mm, pr_mm, today
                     row.save()
+                elif crop_et.is_provisional(row.received_on, row.month) and not crop_et.is_provisional(
+                    today, row.month
+                ):
+                    # The same figure sent again after the month's 120 days: OpenET has
+                    # confirmed it, so the field month takes today and the month's mark
+                    # turns Final (crop_et.mark). Written once in a field month's life.
+                    row.received_on = today
+                    row.save(update_fields=["received_on"])
 
     def _figure_numbers(self, parcels, start_date, end_date):
         """The fields whose figures a run asks for: those with a share in ``parcels`` (every run,
