@@ -243,31 +243,21 @@ class Command(BaseCommand):
 
         answered = field_list.answered_rectangles()
         needing = self._needing_setup(parcels, answered)
-        listed = set()
         if needing:
             for rectangle in field_list.lookup_areas(needing):
                 if rectangle in answered:
                     continue
-                for number in field_list.lookup(rectangle):
-                    listed.add(number)
-                    OpenETField.objects.get_or_create(
-                        field_id=number, defaults={"geometry": None, "received_on": today}
-                    )
+                field_list.store_listed(field_list.lookup(rectangle), today, whole_area=False)
                 answered.add(rectangle)
 
         if getattr(self, "whole_area", False):
             for rectangle in field_list.boundary_areas():
                 if rectangle in answered:
                     continue
-                for number in field_list.lookup(rectangle):
-                    OpenETField.objects.get_or_create(
-                        field_id=number, defaults={"geometry": None, "received_on": today}
-                    )
+                field_list.store_listed(field_list.lookup(rectangle), today, whole_area=True)
                 answered.add(rectangle)
 
-        waiting = self._waiting_outlines(parcels, answered)
-        # The fields this run's own lookups listed for its use areas first.
-        waiting.sort(key=lambda number: (number not in listed, number))
+        waiting = self._waiting_outlines()
         size = self._per_request()
         for n in range(0, len(waiting), size):
             for number, outline in field_list.outlines(waiting[n:n + size]):
@@ -280,21 +270,17 @@ class Command(BaseCommand):
             if not field_list.has_shares(parcel) and field_list.rectangle_covers(answered, parcel):
                 field_list.compute_shares(parcel)
 
-    def _waiting_outlines(self, parcels, answered):
-        """The listed fields with no outline and no share whose outlines a run asks for: all of
-        them on a ``--whole-area`` run; otherwise only while a use area waits for its shares (its
-        rectangle listed, its fields not yet outlined), so a whole-area run the allowance stopped
-        continues its outlines only when it is run again with ``--whole-area``."""
+    def _waiting_outlines(self):
+        """The listed fields with no outline and no share whose outlines this run asks for, the use
+        areas' first: on a ``--whole-area`` run every one; otherwise only those a use area's lookup
+        listed, so a whole-area run the allowance stopped continues its outlines only when it is
+        run again with ``--whole-area``."""
         from datasync.models import OpenETField
 
-        if not getattr(self, "whole_area", False) and not any(
-            not field_list.has_shares(p) and field_list.rectangle_covers(answered, p) for p in parcels
-        ):
-            return []
-        return list(
-            OpenETField.objects.filter(geometry__isnull=True, shares__isnull=True)
-            .order_by("field_id").values_list("field_id", flat=True)
-        )
+        waiting = OpenETField.objects.filter(geometry__isnull=True, shares__isnull=True)
+        if not getattr(self, "whole_area", False):
+            waiting = waiting.filter(whole_area_only=False)
+        return list(waiting.order_by("whole_area_only", "field_id").values_list("field_id", flat=True))
 
     @staticmethod
     def _shared_numbers(parcels):
@@ -376,13 +362,18 @@ class Command(BaseCommand):
                 count += 1
                 open_ended = True
         size = self._per_request()
-        waiting = len(self._waiting_outlines(parcels, answered))
+        waiting = len(self._waiting_outlines())
         batches = -(-waiting // size)
         if batches:
             self.stdout.write(f"  {batches} request(s) for the outlines of {waiting} fields")
             count += batches
-        with_shares = len(self._figure_numbers(parcels, start_date, end_date))
-        batches = -(-with_shares // size)
+        # A run sends figures in two steps, the use areas' fields and then the rest, each in its
+        # own batches.
+        first = set(self._shared_numbers(parcels))
+        numbers = self._figure_numbers(parcels, start_date, end_date)
+        with_shares = len(numbers)
+        rest = len([n for n in numbers if n not in first])
+        batches = -(-len(first) // size) + -(-rest // size)
         if batches:
             self.stdout.write(
                 f"  {batches} request(s) for the figures of {with_shares} fields, "

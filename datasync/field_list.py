@@ -182,6 +182,24 @@ def lookup(rectangle):
     return [int(i) for i in json.loads(answer)]
 
 
+def store_listed(numbers, today, whole_area):
+    """Store the fields a lookup listed that the site does not hold yet, with no outline.
+
+    A field a whole-area lookup listed is marked ``whole_area_only``; a use area's lookup that
+    lists it clears the mark, so its outline is asked by every run, not only by a whole-area run.
+    """
+    from datasync.models import OpenETField
+
+    numbers = [int(n) for n in numbers]
+    if not whole_area:
+        OpenETField.objects.filter(field_id__in=numbers, whole_area_only=True).update(whole_area_only=False)
+    held = set(OpenETField.objects.filter(field_id__in=numbers).values_list("field_id", flat=True))
+    OpenETField.objects.bulk_create([
+        OpenETField(field_id=n, geometry=None, received_on=today, whole_area_only=whole_area)
+        for n in dict.fromkeys(numbers) if n not in held
+    ])
+
+
 def answered_rectangles():
     """The rounded rectangles OpenET has answered a lookup for."""
     from datasync.models import OpenETRequest

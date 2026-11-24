@@ -431,6 +431,10 @@ class OpenETField(models.Model):
     area_acres = models.DecimalField("area (acres)", max_digits=12, decimal_places=2,
                                      null=True, blank=True)
     received_on = models.DateField("date received")
+    whole_area_only = models.BooleanField(
+        "listed only by a whole-area lookup", default=False,
+        help_text="Set when only a lookup over the site's boundary (--whole-area) listed the field; "
+                  "a run without --whole-area does not ask for its outline.")
     created_at = models.DateTimeField("recorded", auto_now_add=True)
 
     class Meta:
