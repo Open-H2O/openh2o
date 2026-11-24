@@ -942,9 +942,10 @@ boundary, sized to the account's area limit. It then asks for the outlines of th
 and for monthly crop ET and rain of every field inside or crossing the boundary. Runs skip
 rectangles already listed, outlines already held, and figures of a field outside every use area
 that has every month asked for; fields overlapping a use area are always asked, so a revised month
-is seen. A whole-area run stopped by the month's allowance continues its lookups and extra figures
-only when it is run again with `--whole-area`. Any later run, the monthly job included, asks for
-the outlines of fields a lookup already listed, and asks for them before the use areas' figures.
+is seen. Every run first asks for the figures of the fields its use areas already share, before any
+lookup or outline. A whole-area run stopped by the month's allowance continues its lookups, its
+outlines and its extra figures only when it is run again with `--whole-area`. A run without it asks
+for the outlines of listed fields only while a use area is still waiting for its fields' outlines.
 <!-- defines: dry_run -->A dry run (`--dry-run` with `--whole-area`) shows what a run would ask for and sends nothing. On
 a first run it prints the lookups and a request count ending "or more", because the outlines and
 figures depend on the lookups' answers; it does not read the account's limits, so it cuts rectangles at 50,000 acres. `OPENET_FIELDS_PER_REQUEST` is 100 by default. Some accounts take 400 or more. Set it from

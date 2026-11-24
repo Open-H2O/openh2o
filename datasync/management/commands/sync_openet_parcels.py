@@ -202,10 +202,16 @@ class Command(BaseCommand):
         stopped = False
         sent_fields, sent_months = set(), set()
         try:
+            # The figures of the fields the use areas already share go first, so no lookup or
+            # outline (a stopped whole-area run's included) can spend the allowance before them.
+            # sent_fields and sent_months fill as each answer is stored, so a run the allowance
+            # stops still records the months it received.
+            first = self._shared_numbers(parcels)
+            self._figures(first, today, start_date, end_date, sent_fields, sent_months)
             self._setup(parcels, today)
-            # Filled as each request's answer is stored, so a run the allowance stops still
-            # records the months it received.
-            self._figures(parcels, start_date, end_date, today, sent_fields, sent_months)
+            asked = set(first)
+            rest = [n for n in self._figure_numbers(parcels, start_date, end_date) if n not in asked]
+            self._figures(rest, today, start_date, end_date, sent_fields, sent_months)
         except field_list.AllowanceUsed:
             stopped = True
         except field_list.OpenETRefused as exc:
@@ -237,11 +243,13 @@ class Command(BaseCommand):
 
         answered = field_list.answered_rectangles()
         needing = self._needing_setup(parcels, answered)
+        listed = set()
         if needing:
             for rectangle in field_list.lookup_areas(needing):
                 if rectangle in answered:
                     continue
                 for number in field_list.lookup(rectangle):
+                    listed.add(number)
                     OpenETField.objects.get_or_create(
                         field_id=number, defaults={"geometry": None, "received_on": today}
                     )
@@ -257,10 +265,9 @@ class Command(BaseCommand):
                     )
                 answered.add(rectangle)
 
-        waiting = list(
-            OpenETField.objects.filter(geometry__isnull=True, shares__isnull=True)
-            .order_by("field_id").values_list("field_id", flat=True)
-        )
+        waiting = self._waiting_outlines(parcels, answered)
+        # The fields this run's own lookups listed for its use areas first.
+        waiting.sort(key=lambda number: (number not in listed, number))
         size = self._per_request()
         for n in range(0, len(waiting), size):
             for number, outline in field_list.outlines(waiting[n:n + size]):
@@ -273,12 +280,37 @@ class Command(BaseCommand):
             if not field_list.has_shares(parcel) and field_list.rectangle_covers(answered, parcel):
                 field_list.compute_shares(parcel)
 
-    def _figures(self, parcels, start_date, end_date, today, sent_fields, sent_months):
-        """Ask for the monthly figures of every field with a share, adding to ``sent_fields`` and
+    def _waiting_outlines(self, parcels, answered):
+        """The listed fields with no outline and no share whose outlines a run asks for: all of
+        them on a ``--whole-area`` run; otherwise only while a use area waits for its shares (its
+        rectangle listed, its fields not yet outlined), so a whole-area run the allowance stopped
+        continues its outlines only when it is run again with ``--whole-area``."""
+        from datasync.models import OpenETField
+
+        if not getattr(self, "whole_area", False) and not any(
+            not field_list.has_shares(p) and field_list.rectangle_covers(answered, p) for p in parcels
+        ):
+            return []
+        return list(
+            OpenETField.objects.filter(geometry__isnull=True, shares__isnull=True)
+            .order_by("field_id").values_list("field_id", flat=True)
+        )
+
+    @staticmethod
+    def _shared_numbers(parcels):
+        """The fields that ``parcels`` already share, in field number order."""
+        from datasync.models import OpenETField
+
+        return sorted(set(
+            OpenETField.objects.filter(shares__parcel__in=[p.pk for p in parcels])
+            .values_list("field_id", flat=True)
+        ))
+
+    def _figures(self, numbers, today, start_date, end_date, sent_fields, sent_months):
+        """Ask for the monthly figures of ``numbers``, adding to ``sent_fields`` and
         ``sent_months`` as each answer is stored."""
         from datasync.models import OpenETField, OpenETFieldMonth
 
-        numbers = self._figure_numbers(parcels, start_date, end_date)
         ids = dict(OpenETField.objects.filter(field_id__in=numbers).values_list("field_id", "pk"))
         size = self._per_request()
         for n in range(0, len(numbers), size):
@@ -322,8 +354,6 @@ class Command(BaseCommand):
 
     def _dry_run_fields(self, parcels, start_date, end_date):
         """Print the requests a run would send. Sends nothing, writes nothing."""
-        from datasync.models import OpenETField
-
         self.stdout.write(self.style.WARNING("[DRY RUN] No requests to OpenET, no writes."))
         answered = field_list.answered_rectangles()
         needing = self._needing_setup(parcels, answered)
@@ -346,7 +376,7 @@ class Command(BaseCommand):
                 count += 1
                 open_ended = True
         size = self._per_request()
-        waiting = OpenETField.objects.filter(geometry__isnull=True, shares__isnull=True).count()
+        waiting = len(self._waiting_outlines(parcels, answered))
         batches = -(-waiting // size)
         if batches:
             self.stdout.write(f"  {batches} request(s) for the outlines of {waiting} fields")
