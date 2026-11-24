@@ -34,6 +34,7 @@ import gzip
 import io
 import json
 import math
+import re
 from decimal import Decimal as D
 from unittest import mock
 
@@ -763,7 +764,8 @@ def test_the_dry_run_counts_the_figures_requests_a_run_sends_in_its_two_steps(op
     with mock.patch("requests.request", side_effect=AssertionError("a dry run sent a request")):
         call_command("sync_openet_parcels", "--whole-area", "--dry-run", start_date="2025-07-01",
                      end_date="2025-08-31", stdout=out)
-    assert "2 request(s) for the figures of 3 fields" in out.getvalue()
+    figures = re.search(r"(\d+) request\(s\) for the figures of (\d+) fields", out.getvalue())
+    assert figures and (figures.group(1), figures.group(2)) == ("2", "3")
 
 
 def test_a_use_area_added_after_a_stopped_whole_area_lookup_gets_its_own_lookup_and_every_fields_share(

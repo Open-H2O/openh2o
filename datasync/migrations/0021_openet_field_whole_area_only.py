@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='openetfield',
             name='whole_area_only',
-            field=models.BooleanField(default=False, help_text="Set when only a lookup over the site's boundary (--whole-area) listed the field; a run without --whole-area does not ask for its outline.", verbose_name='listed only by a whole-area lookup'),
+            field=models.BooleanField(default=False, help_text="Set when only a lookup over the site's boundary (--whole-area) listed it; a run without --whole-area does not ask for its outline.", verbose_name='listed only by a whole-area lookup'),
         ),
     ]
