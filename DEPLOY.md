@@ -947,8 +947,7 @@ only when it is run again with `--whole-area`. Any later run, the monthly job in
 the outlines of fields a lookup already listed, and asks for them before the use areas' figures.
 <!-- defines: dry_run -->A dry run (`--dry-run` with `--whole-area`) shows what a run would ask for and sends nothing. On
 a first run it prints the lookups and a request count ending "or more", because the outlines and
-figures depend on the lookups' answers; reading no account limits, it cuts rectangles at 50,000
-acres. `OPENET_FIELDS_PER_REQUEST` is 100 by default. Some accounts take 400 or more. Set it from
+figures depend on the lookups' answers; it does not read the account's limits, so it cuts rectangles at 50,000 acres. `OPENET_FIELDS_PER_REQUEST` is 100 by default. Some accounts take 400 or more. Set it from
 the account's own limit. For a subbasin-sized area like the Merced Subbasin (8,905 fields on DWR's
 2023 crop map), an account set to 400 needs about 23 figures requests and 23 or more outline
 requests, plus the lookups. Outlines are asked for every listed field, and some of those fields
