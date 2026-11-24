@@ -22,7 +22,7 @@
 (function () {
     'use strict';
     var BASE = 6;    // the grouped table's own cell padding, px
-    var CLEAR = 12;  // the least space between the rule and the header right of it, once there is room
+    var CLEAR = 12;  // the least space between the rule and a figure, and between the rule and the header right of it once there is room
 
     function px(n) { return n.toFixed(2) + 'px'; }
 
@@ -100,8 +100,9 @@
         table.style.width = '';
         var gutter = BASE;
         if (full - needed > 1) { gutter += (full - needed) / zoom / first.parentElement.cells.length / 2; }
-        // The header right of the rule may use the gutter's room, down to CLEAR.
-        var trail = Math.max(Math.min(gutter, CLEAR), gutter - overhang);
+        // The header right of the rule may use the gutter's room, down to
+        // CLEAR, and the figures never stand closer to the rule than CLEAR.
+        var trail = Math.max(Math.min(gutter, CLEAR), CLEAR - overhang, gutter - overhang);
         set(gutter, trail, trail + overhang);
 
         // 3. Settle the lead on what is drawn.
