@@ -18,8 +18,9 @@ What a correct site does:
   integers, sends no more numbers in a request than the account allows, and stops when a
   request is refused.
 * A setup stopped by the monthly allowance picks up where it stopped.
-* Every run asks for the figures of the fields its use areas already share before it asks for
-  anything else, and a run without ``--whole-area`` asks for no outline that no use area needs.
+* A run asks for the figures of the fields its use areas already share before anything else. A
+  run without ``--whole-area`` never asks for the outline of a field only a whole-area lookup
+  listed, and its dry run counts the requests the run sends.
 
 **Every field number, outline and figure in this file is made up.** Field numbers start at
 99000000001 (OpenET's own are 11-digit numbers starting 211 in Merced); outlines are plain
@@ -684,7 +685,8 @@ def _leftovers_after_a_finished_setup(settings):
     service = _two_groups()
     _run(service)
     for number in MADE_UP_LEFTOVERS:
-        OpenETField.objects.create(field_id=number, geometry=None, received_on=RECEIVED)
+        OpenETField.objects.create(field_id=number, geometry=None, received_on=RECEIVED,
+                                   whole_area_only=True)
     return service, len(service.paid())
 
 
@@ -706,6 +708,62 @@ def test_the_monthly_run_leaves_a_whole_area_runs_outlines_to_the_next_whole_are
         call_command("sync_openet_parcels", "--dry-run", start_date="2025-07-01",
                      end_date="2025-07-31", stdout=out)
     assert "outlines" not in out.getvalue()
+
+
+def _whole_area_leftovers_beside_a_use_area_on_no_field(settings):
+    """The finished setup of ``_two_groups``, a third made-up use area whose lookup OpenET
+    answered with no field (so it never gets a share), and three fields only a whole-area lookup
+    listed, left with no outline by a run the allowance stopped."""
+    from datasync.models import OpenETField
+
+    settings.OPENET_MODE = "fields"
+    settings.OPENET_MONTHLY_BUDGET = 50
+    service = _two_groups()
+    bare = MultiPolygon(Polygon(((-120.240, 37.310), (-120.239, 37.310), (-120.239, 37.311),
+                                 (-120.240, 37.311), (-120.240, 37.310))), srid=4326)
+    _use_area(number="MADEUP-ON-NO-FIELD", geometry=bare)
+    _run(service)
+    for number in MADE_UP_LEFTOVERS:
+        OpenETField.objects.create(field_id=number, geometry=None, received_on=RECEIVED,
+                                   whole_area_only=True)
+    return service, len(service.paid())
+
+
+def test_a_use_area_on_no_openet_field_does_not_send_the_monthly_run_after_whole_area_outlines(
+        openet_key, no_wait, settings):
+    service, sent = _whole_area_leftovers_beside_a_use_area_on_no_field(settings)
+    _run(service)
+    assert "/geodatabase/metadata/boundaries" not in [c["path"] for c in service.paid()[sent:]]
+
+
+def test_a_use_area_lookup_that_lists_a_whole_area_field_makes_it_the_use_areas_again():
+    from datasync import field_list
+    from datasync.models import OpenETField
+
+    OpenETField.objects.create(field_id=MADE_UP_A, geometry=None, received_on=RECEIVED, whole_area_only=True)
+    field_list.store_listed([MADE_UP_A, MADE_UP_B], RECEIVED, whole_area=False)
+    field_list.store_listed([MADE_UP_B, MADE_UP_C], RECEIVED, whole_area=True)
+    held = dict(OpenETField.objects.values_list("field_id", "whole_area_only"))
+    assert held == {MADE_UP_A: False, MADE_UP_B: False, MADE_UP_C: True}
+
+
+def test_the_dry_run_counts_the_figures_requests_a_run_sends_in_its_two_steps(openet_key, no_wait, settings):
+    """Figures go in two steps (the use areas' fields, then the rest), so the dry run counts each
+    step's batches: 2 shared fields and 1 more at 3 a request is 2 requests, not 1."""
+    from datasync.models import OpenETField, OpenETFieldShare
+
+    _leftovers_after_a_finished_setup(settings)
+    settings.OPENET_FIELDS_PER_REQUEST = 3
+    OpenETFieldShare.objects.filter(field__field_id=MADE_UP_C).delete()
+    OpenETField.objects.filter(field_id__in=MADE_UP_LEFTOVERS).delete()
+    from geography.models import Boundary
+    Boundary.objects.create(name="Made-up basin", geometry=MultiPolygon(
+        Polygon.from_bbox((-120.31, 37.30, -120.26, 37.32)), srid=4326))
+    out = io.StringIO()
+    with mock.patch("requests.request", side_effect=AssertionError("a dry run sent a request")):
+        call_command("sync_openet_parcels", "--whole-area", "--dry-run", start_date="2025-07-01",
+                     end_date="2025-08-31", stdout=out)
+    assert "2 request(s) for the figures of 3 fields" in out.getvalue()
 
 
 def test_a_whole_area_run_asks_the_use_areas_figures_before_any_outline(openet_key, no_wait, settings):
