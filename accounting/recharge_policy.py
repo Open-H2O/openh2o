@@ -14,7 +14,7 @@ three archetypes:
   its recharge is a personal credit it recovers itself.
 * ``FLOOD_MAR`` — no well, but has a crop (typically with surface delivery).
   Contributes to the basin-wide pool; recovers nothing itself.
-* ``BASIN`` — no well, no crop (a fallow recharge basin). Dedicated infiltration
+* ``BASIN`` — no well, no crop on file (a recharge basin). Dedicated infiltration
   straight to the basin pool.
 
 The bug this prevents: a surface-only parcel (e.g. MER-APN-031 — a
@@ -41,7 +41,10 @@ def parcel_recharge_archetype(parcel):
 
     * a well link (``WellIrrigatedParcel``) -> ``CONJUNCTIVE``
     * else a crop (``UsageLocation``)        -> ``FLOOD_MAR``
-    * else (fallow)                          -> ``BASIN``
+    * else (no crop on file)                 -> ``BASIN``
+
+    "No crop on file" means no ``UsageLocation`` row; it is not the dated fallow mark
+    (``parcels.FallowPeriod``), which this classification does not read.
 
     Surface (``parcel.pod_parcels``) is informational only and does not affect
     the split — a crop with or without surface is FLOOD_MAR all the same.
