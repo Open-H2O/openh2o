@@ -947,9 +947,8 @@ lookup or outline. A field listed only by a lookup over the site's boundary is m
 a use area's own lookup lists it or it takes a share in a use area. A run without `--whole-area`
 never asks for a marked field's outline or figures. A whole-area run stopped by the month's
 allowance continues its boundary lookups, the outlines of the fields only those lookups listed, and
-its extra figures only when it is run again with `--whole-area`. A use area with no shares is
-covered by a use-area lookup, even inside a rectangle a boundary lookup answered. Use areas within
-250 m of each other share one rectangle. Lookups and outlines for the use areas continue on any run.
+its extra figures only when it is run again with `--whole-area`. Lookups and outlines for the use
+areas continue on any run.
 <!-- defines: dry_run -->A dry run (`--dry-run` with `--whole-area`) shows what a run would ask for and sends nothing. On
 a first run it prints the lookups and a request count ending "or more", because the outlines and
 figures depend on the lookups' answers; it does not read the account's limits, so it cuts rectangles at 50,000 acres. `OPENET_FIELDS_PER_REQUEST` is 100 by default. Some accounts take 400 or more. Set it from
