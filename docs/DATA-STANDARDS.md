@@ -150,10 +150,53 @@ layouts of GEARS (Groundwater Extraction Annual Reporting System) and CalWATRS
 systems run by the State Water Board. OpenH2O does not submit reports to the
 state, and neither system can currently accept a file that OpenH2O produces.
 
-- **GEARS.** OpenH2O writes two GEARS files: monthly metered extraction for each
-  well, and monthly use from OpenET for each field-month the well file does not
-  cover. The well file lists each well's meter readings once. Figures are in
-  acre-feet.
+- **GEARS.** OpenH2O writes two GEARS files. The by-well file holds monthly metered
+  extraction for each well. The by-ET file holds monthly extraction estimated from
+  OpenET for each well. Figures in both files are in acre-feet. The State Water
+  Board's GEARS User Guide (October 2026) says "Extraction volumes must be reported
+  on a per well basis and can no longer be reported by parcel."
+
+  The by-ET file has one line for each well and month, with the same columns as the
+  by-well file: Well Registration ID, Well Name, Latitude, Longitude, Month,
+  Extraction Volume (AF) and Measurement Method. Measurement Method reads
+  "Unmetered/Estimated".
+
+  For a use area with a well and no meter reading, the groundwater extraction
+  estimate is the month's ETAW met by groundwater divided by the use area's
+  irrigation efficiency. The account pages count a calculated month at this
+  estimate. A month calculated before OpenH2O kept the estimate counts at its ETAW
+  met by groundwater. A well's figure for a month adds up its part of each linked
+  use area's figure for that month, the same figure the account pages count.
+
+  A use area linked to one well puts its whole figure on that well. Each well's page
+  lists the use areas linked to it, each with a share, a number such as 0.2500
+  giving the part of the well's water that the use area receives. A use area linked
+  to several wells is divided by those shares:
+
+  - each well takes its share divided by the sum of the use area's shares, rounded
+    to four places;
+  - the last well takes what remains, so the parts add up to the use area's month
+    even when the shares do not add up to 1;
+  - when every share is 0, the wells take equal parts.
+
+  **What the by-ET file leaves out:**
+
+  - a use area with no linked well;
+  - a use area's month that the by-well file holds. That is a month with a reading
+    typed on the use area, or a month in which a linked well has a meter reading
+    stating a volume and no use area on that well has a typed reading;
+  - a month OpenET has not sent crop ET for;
+  - a month with crop ET that has no calculated groundwater figure on the Use
+    Ledger.
+
+  A calculated month of 0 is written as 0.
+
+  The methodology is the calculation steps and choices on Methodology Settings.
+  Neither file carries a line naming it. When a report's file is made, the report
+  records the methodology behind the water year's calculated months, every use
+  area's included. The report's page shows the methodology and settings code the
+  report recorded. Marking the report filed later leaves that record unchanged.
+
 - **CalWATRS.** OpenH2O writes the Direct Use and To Storage layouts for each point
   of diversion, in acre-feet and cubic feet per second. A parcel with both
   groundwater and surface water is marked as combined use. A diversion with no water
