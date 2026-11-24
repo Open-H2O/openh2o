@@ -241,16 +241,17 @@ def _unlinked_parcel_warnings(reporting_period: ReportingPeriod) -> list[Preflig
 
 
 def _months_by_count(by_month: dict) -> list[tuple[str, int]]:
-    """``[(month list, use area count)]``: the months left out, grouped by how many use areas each is left out for.
+    """``[(month list, use area count)]``: the months left out, grouped by the use areas each is left out for.
 
-    Oldest first; months sharing a count are named together ("August 2026 and September 2026").
+    Oldest first; months left out for the same use areas are named together ("August 2026
+    and September 2026"), so a line's count is true of every month it names.
     """
     from datasync.crop_et import month_list
 
-    groups: dict[int, list] = {}
+    groups: dict[frozenset, list] = {}
     for first in sorted(by_month):
-        groups.setdefault(len(by_month[first]), []).append(first)
-    return [(month_list(firsts), count) for count, firsts in sorted(groups.items(), key=lambda g: g[1][0])]
+        groups.setdefault(frozenset(by_month[first]), []).append(first)
+    return [(month_list(firsts), len(ids)) for ids, firsts in sorted(groups.items(), key=lambda g: g[1][0])]
 
 
 def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMessage]:

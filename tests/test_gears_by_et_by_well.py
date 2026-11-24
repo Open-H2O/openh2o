@@ -204,3 +204,12 @@ def test_a_use_area_unlinked_after_its_months_were_calculated_is_counted_as_left
     assert _by_et(period) == []
     warnings = [m["message"] for m in validate_report(period, "gears_by_et") if m["level"] == "warning"]
     assert any(m.startswith("1 use area") for m in warnings)
+
+
+def test_months_are_named_together_only_when_the_same_use_areas_wait_for_them():
+    """August left out for one use area and September for another are two lines, not one."""
+    from reporting.validators import _months_by_count
+
+    aug, sep = date(2026, 8, 1), date(2026, 9, 1)
+    assert len(_months_by_count({aug: {1}, sep: {2}})) == 2
+    assert len(_months_by_count({aug: {1, 2}, sep: {1, 2}})) == 1
