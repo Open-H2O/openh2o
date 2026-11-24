@@ -18,6 +18,8 @@ What a correct site does:
   integers, sends no more numbers in a request than the account allows, and stops when a
   request is refused.
 * A setup stopped by the monthly allowance picks up where it stopped.
+* Every run asks for the figures of the fields its use areas already share before it asks for
+  anything else, and a run without ``--whole-area`` asks for no outline that no use area needs.
 
 **Every field number, outline and figure in this file is made up.** Field numbers start at
 99000000001 (OpenET's own are 11-digit numbers starting 211 in Merced); outlines are plain
@@ -662,6 +664,61 @@ def test_the_route_records_each_use_areas_month_from_its_fields(openet_key, no_w
     for number in ("MADEUP-GROUP-NEAR", "MADEUP-GROUP-FAR"):
         parcel = Parcel.objects.get(parcel_number=number)
         assert crop_et.current_record(parcel, JULY) is not None
+
+
+# ---------------------------------------------------------------- 8. the use areas' figures first
+
+
+#: Made-up fields a stopped whole-area run listed and never outlined: no outline, no share.
+MADE_UP_LEFTOVERS = [99000000101, 99000000102, 99000000103]
+
+
+def _leftovers_after_a_finished_setup(settings):
+    """Both made-up use areas set up and figured, then three listed fields left with no outline,
+    as a whole-area run the allowance stopped leaves them. Returns the service and the count of
+    requests sent so far."""
+    from datasync.models import OpenETField
+
+    settings.OPENET_MODE = "fields"
+    settings.OPENET_MONTHLY_BUDGET = 50
+    service = _two_groups()
+    _run(service)
+    for number in MADE_UP_LEFTOVERS:
+        OpenETField.objects.create(field_id=number, geometry=None, received_on=RECEIVED)
+    return service, len(service.paid())
+
+
+def test_with_one_request_left_the_monthly_run_asks_the_use_areas_figures_not_leftover_outlines(
+        openet_key, no_wait, settings):
+    service, sent = _leftovers_after_a_finished_setup(settings)
+    settings.OPENET_MONTHLY_BUDGET = sent + 1
+    _run(service)
+    assert [c["path"] for c in service.paid()[sent:]] == ["/geodatabase/timeseries"]
+
+
+def test_the_monthly_run_leaves_a_whole_area_runs_outlines_to_the_next_whole_area_run(
+        openet_key, no_wait, settings):
+    service, sent = _leftovers_after_a_finished_setup(settings)
+    _run(service)
+    assert [c["path"] for c in service.paid()[sent:]] == ["/geodatabase/timeseries"]
+    out = io.StringIO()
+    with mock.patch("requests.request", side_effect=AssertionError("a dry run sent a request")):
+        call_command("sync_openet_parcels", "--dry-run", start_date="2025-07-01",
+                     end_date="2025-07-31", stdout=out)
+    assert "outlines" not in out.getvalue()
+
+
+def test_a_whole_area_run_asks_the_use_areas_figures_before_any_outline(openet_key, no_wait, settings):
+    from geography.models import Boundary
+
+    service, sent = _leftovers_after_a_finished_setup(settings)
+    Boundary.objects.create(name="Made-up basin", geometry=MultiPolygon(
+        Polygon.from_bbox((-120.31, 37.30, -120.26, 37.32)), srid=4326))
+    _run(service, whole_area=True)
+    paths = [c["path"] for c in service.paid()[sent:]]
+    assert paths[0] == "/geodatabase/timeseries"
+    asked_outlines = [i for c in service.paid("/geodatabase/metadata/boundaries")[1:] for i in c["body"]["field_ids"]]
+    assert sorted(asked_outlines) == MADE_UP_LEFTOVERS
 
 
 # ---------------------------------------------------------------- the fields file's outlines
