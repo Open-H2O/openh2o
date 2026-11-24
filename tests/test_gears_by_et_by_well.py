@@ -5,6 +5,10 @@ The Board's GEARS guide takes extraction per well, even when crop ET is the meth
 and splits a parcel's figure across the wells that serve it. So the by-ET file:
 
   * leaves out a use area with no linked well;
+  * writes each use area's month at its groundwater extraction estimate, the
+    figure the account pages count (the calculation's ETAW met by groundwater
+    divided by the use area's irrigation efficiency);
+  * leaves out a month with crop ET recorded and no calculation;
   * puts each linked well's part of a use area's month on that well's row, divided
     by the links' shares;
   * adds the parts of every use area a well serves on that well's row;
@@ -46,10 +50,22 @@ def _by_et(period):
 
 
 def _estimate(parcel, af, day=JAN):
-    """The calculation's groundwater estimate for an unmetered use area-month."""
-    return ParcelLedgerFactory(
-        parcel=parcel, source_type="calculated", amount_acre_feet=-D(str(af)),
+    """A calculated unmetered use area-month whose extraction estimate is ``af``.
+
+    The ledger row holds ETAW met by groundwater (0.8 of the extraction, as at an
+    irrigation efficiency of 0.8); the month's run holds the extraction.
+    """
+    from accounting.models import CalculationRun
+
+    ParcelLedgerFactory(
+        parcel=parcel, source_type="calculated", amount_acre_feet=-(D(str(af)) * D("0.8")),
         effective_date=day, transaction_date=day,
+    )
+    CalculationRun.objects.create(
+        parcel=parcel, period=day.strftime("%Y-%m"), gross_et_af=D(str(af)),
+        net_consumptive_use_af=D(str(af)), effective_precip_af=D("0"), surface_water_af=D("0"),
+        final_af=D(str(af)) * D("0.8"), residual_disposition="groundwater",
+        gw_extracted_af=D(str(af)), groundwater_application_efficiency=D("0.800"),
     )
 
 
@@ -125,6 +141,21 @@ def test_a_month_the_wells_meter_covers_stays_in_the_by_well_file_only():
 
     assert ("REG-MET", "2024-01") in {(r[0], r[4]) for r in _lines("by_well", period)[1:]}
     assert _volumes(_by_et(period)) == {("REG-MET", "2024-02"): D("4")}
+
+
+def test_a_month_with_crop_et_and_no_calculation_puts_no_line_in_the_file():
+    period = ReportingPeriodFactory()
+    field = ParcelFactory()
+    WellIrrigatedParcelFactory(well=WellFactory(well_registration_id="REG-NOCALC"), parcel=field)
+    from datasync.models import CropETFigure
+
+    CropETFigure.objects.create(
+        parcel=field, month=JAN, variable="ET", model_name="Ensemble",
+        depth_mm=D("9") * D("304.8") / field.area_acres,
+    )
+    _estimate(field, 3, day=date(2024, 2, 1))
+
+    assert _volumes(_by_et(period)) == {("REG-NOCALC", "2024-02"): D("3")}
 
 
 def test_the_rows_carry_the_by_well_files_well_columns():
