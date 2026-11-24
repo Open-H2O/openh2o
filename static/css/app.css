@@ -1517,11 +1517,12 @@ html { color-scheme: dark; }
       the header right of the rule overhangs its own figures, because that
       header pushes its figures away from the rule and nothing pushes the
       figures on the other side.
-   4. A bracket label is centred over the figures it brackets
-      (`--bracket-l`, `--bracket-r`), as far as its cell has room.
+   4. A bracket's underline spans exactly the figures it brackets and its
+      label is centred on that underline (`--bracket-l`, `--bracket-r`).
 
    CSS cannot know the spare width or a header's overhang, so
-   `static/js/table-rule.js` measures them and sets the five properties, and
+   `static/js/table-rule.js` measures them, and where each bracket's figures start and end, sets the
+   five properties, and
    marks the cells that end at the rule (`.col-sep-lead`) and at the table's
    right edge (`.col-edge`). Without the script every value falls back to the
    6px cell padding: the columns still take no spare width and the sides
@@ -1547,24 +1548,17 @@ html { color-scheme: dark; }
 .data-table--grouped:has(.col-sep) :is(th, td).col-sep-lead {
     padding-right: var(--rule-lead, 6px);
 }
-/* The bracket's underline runs from the first header it brackets to the last,
-   2px inside them as it always was; its label sits over the figures. */
+/* The bracket's underline spans exactly the figures it brackets, from the
+   left edge of the leftmost to the right edge of the rightmost, and the label
+   is centred on it: the cell's padding and the underline's ends are the same
+   two distances. A label wider than its figures wraps onto a second line. */
 .data-table--grouped:has(.col-sep) th.th-group-label {
     padding-left: var(--bracket-l, 6px);
     padding-right: var(--bracket-r, 6px);
 }
 .data-table--grouped:has(.col-sep) th.th-group-label::after {
-    left: calc(var(--col-gutter, 6px) + 2px);
-    right: calc(var(--col-gutter, 6px) + 2px);
-}
-.data-table--grouped:has(.col-sep) th.th-group-label.col-edge::after {
-    right: var(--space-sm);
-}
-.data-table--grouped:has(.col-sep) th.th-group-label.col-sep::after {
-    left: calc(var(--rule-trail, 6px) + 2px);
-}
-.data-table--grouped:has(.col-sep) th.th-group-label.col-sep-lead::after {
-    right: calc(var(--rule-lead, 6px) + 2px);
+    left: var(--bracket-l, var(--space-sm));
+    right: var(--bracket-r, var(--space-sm));
 }
 /* A figure never breaks across two lines; fit is the wrapper's problem. */
 .td-num,

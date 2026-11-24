@@ -11,8 +11,9 @@
 //   --rule-lead    the padding left of the rule: the trail, plus however far
 //                  the header right of the rule overhangs its own figures
 // and on each bracket header (`th[colspan]`):
-//   --bracket-l, --bracket-r   padding that centres the label over the figures
-//                  it brackets, as far as the cell has room
+//   --bracket-l, --bracket-r   the distance from the cell's edges to the figures
+//                  it brackets: the underline spans exactly those figures and
+//                  the label is centred on it
 // The cells that end at the rule are marked `.col-sep-lead` and the cells at
 // the table's right edge `.col-edge`. It runs for every such table on load,
 // when the box that holds the table changes width, when the fonts arrive and
@@ -113,7 +114,7 @@
             set(gutter, trail, Math.max(0, now + m.right - m.left));
         }
 
-        // 4. Each bracket label over the figures it brackets.
+        // 4. Each bracket, underline and label, over the figures it brackets.
         var rows = Array.prototype.slice.call(table.querySelectorAll('tbody tr, tfoot tr'));
         Array.prototype.forEach.call(table.querySelectorAll('thead th'), function (th) {
             if (th.colSpan < 2) { return; }
@@ -127,13 +128,17 @@
                     if (k) { l = Math.min(l, k.l); r = Math.max(r, k.r); }
                 });
             });
-            var label = ink(th);
-            if (l === Infinity || !label) { return; }
-            // Padding on one side moves the label's centre by half of it.
-            var room = Math.max(0, (b.width - (label.r - label.l)) / zoom - 2 * BASE - 1);
-            var shift = Math.max(-room, Math.min(room, ((l + r) - (b.left + b.right)) / zoom));
-            th.style.setProperty('--bracket-l', px(BASE + Math.max(0, shift)));
-            th.style.setProperty('--bracket-r', px(BASE + Math.max(0, -shift)));
+            if (l === Infinity) { return; }
+            // The cell's padding runs to the figures, so the label is centred
+            // on them, and the underline spans them. A label wider than its
+            // figures wraps. If the padding would widen the columns, the
+            // stylesheet's own padding stays.
+            th.style.setProperty('--bracket-l', px(Math.max(0, (l - b.left) / zoom)));
+            th.style.setProperty('--bracket-r', px(Math.max(0, (b.right - r) / zoom)));
+            if (Math.abs(th.getBoundingClientRect().width - b.width) > 0.5) {
+                th.style.removeProperty('--bracket-l');
+                th.style.removeProperty('--bracket-r');
+            }
         });
     }
 
