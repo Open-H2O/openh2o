@@ -294,7 +294,7 @@ def test_the_step_records_the_area_weighted_rain_depth():
     # (100 x 60 + 10 x 30) / 100 = 63 mm over the use area's 100 acres.
     assert D(record["detail"]["precip_mm"]) == D("63")
     assert set(record["detail"]) == {
-        "method", "precip_mm", "et_mm", "effective_precip_mm", "effective_precip_af",
+        "method", "precip_mm", "et_mm", "effective_precip_mm", "effective_precip_af", "rain_on_record",
     }
 
 

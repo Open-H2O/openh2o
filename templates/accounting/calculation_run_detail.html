@@ -76,6 +76,12 @@
           <div class="budget-seg-value" title="{{ run.effective_precip_af }} acre-feet">{{ run.effective_precip_af|default_if_none:0|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
           {% if run.effective_precip_af is None %}
           <div class="budget-seg-caption">not in the calculation plan</div>
+          {% elif rain_on_record == "none" or rain_on_record == "some" %}
+          {% comment %}A month calculated with no rain on record (accounting.steps.subtract_effective_precip records it): the caption says no rain was counted, and no Rainfall row prints a zero as if rain had been measured.{% endcomment %}
+          <div class="budget-seg-caption" data-rain-on-record="{{ rain_on_record }}">{% if rain_on_record == "some" %}One or more OpenET fields have no rain figure, so no field&rsquo;s rain was counted. ETAW = crop ET.{% else %}No rain figure in the record, so OpenH2O counted no effective precipitation. ETAW = crop ET.{% endif %}</div>
+          <div class="budget-breakdown-group">
+            {% if precip_method_label %}<div class="budget-breakdown-row"><span>Method<span class="budget-breakdown-note">Methodology Settings</span></span><b>{{ precip_method_label }}</b></div>{% endif %}
+          </div>
           {% else %}
           <div class="budget-seg-caption">estimated from gridMET rainfall</div>
           <div class="budget-breakdown-group">

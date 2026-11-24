@@ -238,7 +238,11 @@ def test_the_received_day_is_labelled_date_received():
 
 
 def test_the_effective_precipitation_caption_says_it_is_estimated_from_gridmet_rainfall(operator):
+    """On a month with rain on record; a month with none says no rain was counted instead."""
+    from tests.test_precip_step import _precip_cache
+
     field = _corn_field()
+    _precip_cache(field, period=JULY, precip_mm=20.0)
     _fetched_twice(field)
 
     main = _main(_page(operator, field))

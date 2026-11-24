@@ -153,6 +153,7 @@ def _breakdown_facts(run: CalculationRun) -> dict[str, object]:
     irrigation_efficiency_source = None
     precip_method = None
     rainfall_mm = None
+    rain_on_record = None
     area_acres = None
     floor = None
     for step in run.breakdown:
@@ -163,6 +164,8 @@ def _breakdown_facts(run: CalculationRun) -> dict[str, object]:
         elif step_type == "subtract_effective_precip":
             precip_method = detail.get("method", "usda_scs")
             rainfall_mm = detail.get("precip_mm")
+            # "all", "some" or "none"; absent on a run from before it was recorded.
+            rain_on_record = detail.get("rain_on_record")
         elif step_type == "clamp_floor":
             floor = detail.get("floor")
         elif step_type == "et_gross":
@@ -171,6 +174,7 @@ def _breakdown_facts(run: CalculationRun) -> dict[str, object]:
         "irrigation_efficiency_source": irrigation_efficiency_source,
         "precip_method": precip_method,
         "rainfall_mm": rainfall_mm,
+        "rain_on_record": rain_on_record,
         "area_acres": area_acres,
         "floor": floor,
     }
@@ -335,6 +339,9 @@ def _receipt_context(parcel, run, period):
             else None
         ),
         "rainfall_af": rainfall_af,
+        # "none" or "some" when the month counted no rain; the page says so in place
+        # of where the rain came from.
+        "rain_on_record": facts["rain_on_record"],
         "gw_efficiency_pct": (
             gw_efficiency * 100 if gw_efficiency is not None else None
         ),

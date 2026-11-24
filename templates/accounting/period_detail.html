@@ -170,6 +170,15 @@
         </div>
         {% include "accounting/partials/_calculation_status.html" %}
       </div>{% include "accounting/partials/_calculation_notes_table.html" %}
+      {% if months_without_rain %}
+      {% comment %}The months whose latest calculation counted no rain (accounting.views.periods.months_without_rain), oldest first, in the finalize card's one-line-a-month form; each use area links to its month's calculation page.{% endcomment %}
+      <div id="months-without-rain" style="margin-top: var(--space-md);">
+        <p class="text-secondary text-base m-0" style="margin-bottom: var(--space-sm);">For the use areas in each month below, the record held no rain figure, or one or more of their OpenET fields had none, so OpenH2O counted no rain.</p>
+        {% for m in months_without_rain %}
+        <p class="text-base m-0">{{ m.month|date:"F Y" }}: {% for a in m.use_areas %}<a href="{% url 'accounting:calculation_run_detail' a.pk m.period %}" class="data-table-link">{{ a.number }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 and not m.more %} and {% else %}, {% endif %}{% endif %}{% endfor %}{% if m.more %} and {{ m.more }} more use area{{ m.more|pluralize }}{% endif %}.</p>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
 
     {% if user_is_admin %}

@@ -474,9 +474,10 @@ def subtract_effective_precip(running_af, parcel, period, ctx, config):
     mm_per_in = Decimal("25.4")
     area = parcel.area_acres or Decimal("0")
 
-    by_field = _field_rain_and_et(parcel, period)
+    by_field, rain_on_record = _field_rain_and_et(parcel, period)
     if by_field is None:
-        precip_mm, _ = recorded_mm(parcel, period, "precip", "GRIDMET")
+        precip_mm, found = recorded_mm(parcel, period, "precip", "GRIDMET")
+        rain_on_record = "all" if found else "none"
         p_in = precip_mm / mm_per_in
         et_in = et_mm / mm_per_in
 
@@ -510,6 +511,10 @@ def subtract_effective_precip(running_af, parcel, period, ctx, config):
         "et_mm": str(et_mm),
         "effective_precip_mm": str(pe_mm),
         "effective_precip_af": str(pe_af),
+        # Whether the month had rain on record: "all", "some" (OpenET fields only:
+        # some fields had none, so the month counted none) or "none". The month's
+        # page and the water year's page read it to say no rain was counted.
+        "rain_on_record": rain_on_record,
     }
     return new_running, _record(
         "subtract_effective_precip", running_af, new_running, detail
@@ -517,24 +522,26 @@ def subtract_effective_precip(running_af, parcel, period, ctx, config):
 
 
 def _field_rain_and_et(parcel, period):
-    """``[(rain mm, crop ET mm, acres inside the use area)]`` per OpenET field, or None.
+    """``([(rain mm, crop ET mm, acres inside the use area)], rain on record)`` per OpenET field.
 
-    From the month's record only (``datasync.crop_et.recorded_fields``). None when the
-    record holds no OpenET fields (the recorded rain path applies). An empty list when a
-    field's rain or crop ET in the record is missing: the month then counts no rain,
-    never a part of it.
+    From the month's record only (``datasync.crop_et.recorded_fields``). ``(None, None)``
+    when the record holds no OpenET fields (the recorded rain path applies). An empty list
+    when a field's rain or crop ET in the record is missing: the month then counts no rain,
+    never a part of it. Rain on record is "all", "some" or "none" of the fields.
     """
     from datasync.crop_et import recorded_fields
 
     fields = recorded_fields(parcel, period)
     if fields is None:
-        return None
+        return None, None
+    with_rain = sum(1 for *_rest, pr_mm in fields if pr_mm is not None)
+    on_record = "none" if not with_rain else ("all" if with_rain == len(fields) else "some")
     rows = []
     for _number, acres, et_mm, pr_mm in fields:
         if pr_mm is None or et_mm is None:
-            return []
+            return [], on_record
         rows.append((pr_mm, et_mm, acres))
-    return rows
+    return rows, on_record
 
 
 # Maps step_type -> primitive.

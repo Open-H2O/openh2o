@@ -115,6 +115,46 @@ def _calculation_card_context(period):
     return context
 
 
+def months_without_rain(period):
+    """The year's months calculated with no rain counted, oldest first, each with its use areas.
+
+    Read from each use area month's latest calculation, whose rain step records whether the
+    month had rain on record (``accounting.steps.subtract_effective_precip``). A month
+    calculated before that record existed is not listed. Same shape as
+    ``accounting.finalize.waiting``: ``[{"month", "period", "use_areas", "more"}]``.
+    """
+    from django.db.models import Subquery
+
+    from accounting.models import CalculationRun
+
+    in_year = CalculationRun.objects.filter(
+        period_start__gte=period.start_date, period_start__lte=period.end_date
+    )
+    latest = in_year.order_by("parcel_id", "period", "-created_at", "-pk").distinct("parcel_id", "period")
+    step = "subtract_effective_precip"
+    runs = (
+        CalculationRun.objects.filter(pk__in=Subquery(latest.values("pk")))
+        .filter(
+            Q(breakdown__contains=[{"step_type": step, "detail": {"rain_on_record": "none"}}])
+            | Q(breakdown__contains=[{"step_type": step, "detail": {"rain_on_record": "some"}}])
+        )
+        .select_related("parcel")
+    )
+    by_month = {}
+    for run in runs:
+        by_month.setdefault((run.period_start, run.period), []).append(run.parcel)
+    months = []
+    for (first, text), parcels in sorted(by_month.items()):
+        parcels.sort(key=lambda p: p.parcel_number)
+        months.append({
+            "month": first,
+            "period": text,
+            "use_areas": [{"pk": p.pk, "number": p.parcel_number} for p in parcels[:finalize.NAMED]],
+            "more": max(len(parcels) - finalize.NAMED, 0),
+        })
+    return months
+
+
 def _period_detail_context(period, finalize_form=None, comparison=None, fingerprint_answer=None,
                            finalize_waiting=None, finalize_refused=False):
     """The period page's context, shared by ``period_detail`` and by
@@ -157,6 +197,7 @@ def _period_detail_context(period, finalize_form=None, comparison=None, fingerpr
         "fingerprint_line": fingerprints.line_context(period),
         "fingerprint_answer": fingerprint_answer,
         **_calculation_card_context(period),
+        "months_without_rain": months_without_rain(period),
         "finalizing": finalize.state(period),
         "finalize_waiting": finalize_waiting if not period.is_finalized else None,
         "finalize_refused": finalize_refused,

@@ -157,6 +157,7 @@ def test_detail_dict_carries_the_audit_keys():
         "et_mm",
         "effective_precip_mm",
         "effective_precip_af",
+        "rain_on_record",
     }
     assert record["detail"]["method"] == "usda_scs"
     assert record["detail"]["precip_mm"] == "150.0"
