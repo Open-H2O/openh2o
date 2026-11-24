@@ -670,6 +670,72 @@ def test_the_route_records_each_use_areas_month_from_its_fields(openet_key, no_w
         assert crop_et.current_record(parcel, JULY) is not None
 
 
+def _run_on(service, day):
+    from datasync import crop_et
+
+    with mock.patch.object(crop_et, "today", return_value=day):
+        _run(service)
+
+
+def _changes(row):
+    """The change-history rows written for a field month after it was first written."""
+    return row.events.exclude(pgh_label="insert").count()
+
+
+def test_a_field_month_sent_again_unchanged_after_120_days_turns_the_record_final(
+        openet_key, no_wait, settings):
+    """July's 120 days end on 28 November. OpenET sending the same July after that makes it Final."""
+    from datasync import crop_et
+    from datasync.models import OpenETFieldMonth
+
+    settings.OPENET_MODE = "fields"
+    settings.OPENET_MONTHLY_BUDGET = 50
+    service = _two_groups()
+    first_day, second_day, third_day = dt.date(2025, 8, 10), dt.date(2025, 12, 15), dt.date(2026, 1, 12)
+
+    _run_on(service, first_day)
+    parcel = Parcel.objects.get(parcel_number="MADEUP-GROUP-NEAR")
+    record = crop_et.current_record(parcel, JULY)
+    assert crop_et.mark(record) == "Provisional"
+    rows = list(OpenETFieldMonth.objects.filter(month=JULY_1))
+    before = {row.pk: _changes(row) for row in rows}
+
+    _run_on(service, second_day)
+    record = crop_et.current_record(parcel, JULY)
+    assert crop_et.mark(record) == "Final"
+    assert crop_et.newest_fetched(parcel, JULY).fetched_on == second_day
+    assert record.fetched_on == first_day
+    # One update a field month, written once when it crossed the line: a before and an after row.
+    after = {row.pk: _changes(row) for row in OpenETFieldMonth.objects.filter(month=JULY_1)}
+    assert {pk: after[pk] - before[pk] for pk in after} == {row.pk: 2 for row in rows}
+
+    _run_on(service, third_day)
+    again = {row.pk: _changes(row) for row in OpenETFieldMonth.objects.filter(month=JULY_1)}
+    assert again == after
+    assert crop_et.newest_fetched(parcel, JULY).fetched_on == second_day
+
+
+def test_a_field_month_sent_again_unchanged_inside_120_days_keeps_its_day(openet_key, no_wait, settings):
+    """Inside the 120 days an unchanged field month is not written again."""
+    from datasync import crop_et
+    from datasync.models import OpenETFieldMonth
+
+    settings.OPENET_MODE = "fields"
+    settings.OPENET_MONTHLY_BUDGET = 50
+    service = _two_groups()
+    _run_on(service, dt.date(2025, 8, 10))
+    rows = list(OpenETFieldMonth.objects.filter(month=JULY_1))
+    before = {row.pk: _changes(row) for row in rows}
+
+    _run_on(service, dt.date(2025, 9, 10))
+    assert {row.pk: _changes(row) for row in OpenETFieldMonth.objects.filter(month=JULY_1)} == before
+    assert set(OpenETFieldMonth.objects.filter(month=JULY_1).values_list("received_on", flat=True)) == {
+        dt.date(2025, 8, 10)
+    }
+    parcel = Parcel.objects.get(parcel_number="MADEUP-GROUP-NEAR")
+    assert crop_et.newest_fetched(parcel, JULY).fetched_on == dt.date(2025, 8, 10)
+
+
 # ---------------------------------------------------------------- 8. the use areas' figures first
 
 
