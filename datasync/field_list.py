@@ -53,8 +53,10 @@ CENT = Decimal("0.01")
 MERGE_GAP_M = 250
 #: The largest rectangle a lookup may cover when the account does not say.
 DEFAULT_MAX_AREA_ACRES = 50000
-#: How far, in degrees of longitude and latitude (about 90 m), a whole-area lookup's outline may
-#: reach past the boundary's part of its strip, so that it holds that part with few corners.
+#: How far, in degrees (about 90 m east to west and 110 m north to south here), a whole-area
+#: lookup's outline is grown past the convex hull of the boundary's part of its strip before it is
+#: simplified, so the simplified outline still holds that hull. The hull itself reaches beyond the
+#: boundary wherever the boundary bends inward.
 LOOKUP_OUTLINE_MARGIN = 0.001
 #: Read and send timeouts for one request, in seconds.
 TIMEOUT = 120
@@ -375,7 +377,8 @@ def boundary_lookups(max_acres=None, answered=()):
     """The whole-area lookups a run still sends: ``[(rectangle, outline)]``, west to east.
 
     One for each strip of :func:`boundary_areas` that holds some of the boundary, asking for the
-    boundary's part of the strip (:func:`lookup_outline`), never the whole rectangle. A strip
+    fields inside a convex outline around the boundary's part of the strip (:func:`lookup_outline`),
+    never the whole rectangle; where the boundary bends inward that outline reaches beyond it. A strip
     whose part of the boundary lies inside the rectangles already ``answered`` is not looked up
     again, however the strips were cut then, so a changed area limit (or a status read that fell
     back to the default) does not send the boundary's lookups again.
@@ -442,14 +445,24 @@ def _cut(boxes, max_acres):
 
 
 def rectangle_covers(rectangles, parcel, tolerance=1.5e-6):
-    """Whether one of ``rectangles`` holds the use area's bounding box (to the rounding of 6 decimals)."""
+    """Whether ``rectangles`` together hold the use area's bounding box (to the rounding of 6
+    decimals): one rectangle, or the strips a larger rectangle was cut into."""
     if parcel.geometry is None:
         return False
     w, s, e, n = parcel.geometry.extent
-    return any(
+    if any(
         r[0] <= w + tolerance and r[1] <= s + tolerance and r[2] >= e - tolerance and r[3] >= n - tolerance
         for r in rectangles
-    )
+    ):
+        return True
+    box = _rectangle_polygon((w, s, e, n))
+    touching = [_rectangle_polygon(r) for r in rectangles if r[0] < e and r[2] > w and r[1] < n and r[3] > s]
+    if len(touching) < 2:
+        return False
+    joined = touching[0]
+    for polygon in touching[1:]:
+        joined = joined.union(polygon)
+    return joined.buffer(tolerance).covers(box)
 
 
 # -- What a use area takes from the fields ---------------------------------------------------------

@@ -58,7 +58,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--end-date",
             default=None,
-            help="YYYY-MM-DD. Required for api and gee. For fields: today.",
+            help="YYYY-MM-DD. Required for api and gee. For fields: the last day of last month.",
         )
         parser.add_argument(
             "--limit",
