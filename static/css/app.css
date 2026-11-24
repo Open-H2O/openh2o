@@ -1216,6 +1216,9 @@ html { color-scheme: dark; }
     font-size: 0.9375rem;
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
+    /* A long file name wraps inside its cell, as .field-value does, instead of
+       running under the next field (a report's file name beside its Methodology). */
+    overflow-wrap: anywhere;
 }
 
 .field-row {
