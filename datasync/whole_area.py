@@ -4,7 +4,7 @@
 Every stored OpenET field whose outline lies inside the site's boundary, whether or not it
 overlaps a use area. Depth is crop ET in inches (OpenET's millimetres / 25.4, to 0.01) for one
 month, or summed over a water year's months that have figures. A field with no figure for the
-month carries none, so the map leaves it unshaded.
+month carries none, so the map fills it in the no-figure grey.
 """
 from __future__ import annotations
 
