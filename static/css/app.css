@@ -1506,8 +1506,8 @@ html { color-scheme: dark; }
 
    1. A column is as wide as its content and no wider. A number column is
       held to it here (`width: 1px` in auto layout means "the content, no
-      spare"); its header stays on one line unless it is a `.th-stack`, and a
-      "?" sits under its word.
+      spare"); its header stays on one line unless it is a `.th-stack`, which
+      is stacked at every width, and a "?" sits under its word.
    2. Spare width becomes the gaps BETWEEN columns, and every gap is the same:
       the distance from one column's text to the next column's text, read
       along the body rows, is equal across the row. A header wider than its
@@ -1515,9 +1515,7 @@ html { color-scheme: dark; }
       the gap, that one gap is wider.
    3. The rule stands in the middle of its gap: the nearest figure on each
       side is the same distance from it, never under 12px.
-   4. A `.th-stack` header opens onto one line (`.is-open`) when its gap has
-      room for it.
-   5. A bracket's underline spans exactly the figures it brackets and its
+   4. A bracket's underline spans exactly the figures it brackets and its
       label is centred on that underline (`--bracket-l`, `--bracket-r`).
 
    CSS cannot know the spare width, how far a header overhangs its figures or
@@ -1536,10 +1534,6 @@ html { color-scheme: dark; }
 .data-table--grouped:has(.col-sep) th.th-right .explainer-popout {
     display: flex;
     justify-content: flex-end;
-}
-.data-table--grouped:has(.col-sep) .th-stack.is-open {
-    width: auto;
-    white-space: nowrap;
 }
 /* The bracket's underline spans exactly the figures it brackets, from the
    left edge of the leftmost to the right edge of the rightmost, and the label
