@@ -163,7 +163,7 @@ appears beside the real published records.
 and canals, points of diversion, use areas, wells, recharge sites and
 drinking-water facilities, each as its own layer. On the demo, anyone can open the map without signing in.
 
-![The OpenH2O map over aerial imagery of the demonstration basin, with a Layers panel listing administrative, surface water and land use layers and a legend of three management areas](docs/screenshots/map.jpg)
+![The OpenH2O map as first opened, crop ET off, over aerial imagery of farmland, showing the Merced Subbasin boundary in white, management areas as pale sand-coloured lines, blue rivers, gold wells, teal points of diversion and a right-hand Layers panel with Areas, Waterways, Crop ET and Records sections](docs/screenshots/map.jpg)
 
 **The drinking-water page** shows each public water system under its EPA PWSID
 and names the source of every figure.
