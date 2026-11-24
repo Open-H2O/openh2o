@@ -279,9 +279,15 @@ test-release: ## Run only the tests marked release (many minutes each; deploy-ch
 
 # The release test that compares every figure the demonstration prints, in write mode into a file
 # of its own; then scripts/figures_moved.py lists every value that differs from the stored file
-# (as it is in the working tree, or at BASE=<commit>). Loads the demonstration: about two minutes.
+# (as it is in the working tree, or at BASE=<commit>). Loads the demonstration: a few minutes.
+# guard-fresh first, as `test` does: without it the container could run code older than the tree.
 FIGURES_TEST = tests/test_year_reading_demonstration.py
-figures-moved: ## List every printed demonstration figure that differs from the stored figures file (BASE=<commit> to read that file as it was at a commit); loads the demonstration, about two minutes
+figures-moved: ## List every printed demonstration figure that differs from the stored figures file (BASE=<commit> to read that file as it was at a commit); loads the demonstration, a few minutes
+	@if [ "$(DEV_BIND)" = "bind" ]; then \
+		echo "guard-fresh skipped: docker-compose.dev.yml is in use, so the web container runs this folder's own source."; \
+	else \
+		$(MAKE) --no-print-directory guard-fresh; \
+	fi
 	python3 scripts/with_test_lock.py $(COMPOSE) exec -e OPENH2O_MODULES=all -e YEAR_FIGURES_OUT=/tmp/figures-now.json web \
 		python -m pytest $(FIGURES_TEST) --ds=config.settings.local -m release -p no:cacheprovider -q -rs
 	$(COMPOSE) cp web:/tmp/figures-now.json figures-now.json

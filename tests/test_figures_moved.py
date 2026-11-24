@@ -43,6 +43,7 @@ def run(before, now, tmp_path, *args):
 
 
 def test_a_changed_decimal_is_listed_with_its_change(tmp_path):
+    # not wording: the strings are the script's tab-separated output rows (path, before, now, change)
     before = {"WY 2024-2025": year(zone_pages={"Halvern Valley GSA": [{"used": "D:1.0000"}]})}
     now = {"WY 2024-2025": year(zone_pages={"Halvern Valley GSA": [{"used": "D:1.0950"}]})}
     text, _ = run(before, now, tmp_path)
@@ -65,6 +66,7 @@ def test_figure_rows_are_matched_by_their_key_not_their_place(tmp_path):
 
 
 def test_a_key_on_one_side_only_is_listed_as_absent_on_the_other(tmp_path):
+    # not wording: the strings are the script's tab-separated output rows (path, before, now, change)
     before = {"WY 2024-2025": year(dashboard={"grand_net": "D:5"})}
     now = {"WY 2024-2025": year(dashboard={"grand_net": "D:5", "unmet_demand_total": "D:3"})}
     text, _ = run(before, now, tmp_path)
@@ -98,6 +100,7 @@ def test_nothing_moved_says_so_and_exits_zero(tmp_path):
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="reads git, and the web image has none")
 def test_the_before_file_can_come_from_a_commit(tmp_path):
+    # not wording: the strings are the script's tab-separated output rows (path, before, now, change)
     repo = tmp_path / "repo"
     stored = repo / "tests" / "data" / "demonstration_figures_before.json"
     stored.parent.mkdir(parents=True)
