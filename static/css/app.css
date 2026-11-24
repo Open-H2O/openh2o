@@ -991,12 +991,16 @@ html { color-scheme: dark; }
 .field-notes {
     white-space: pre-line;
 }
-/* The breakdown table spreads its seven columns evenly instead of handing the
-   label column every pixel the numbers did not claim. */
-.page-grid-account-full .data-table--grouped th:first-child {
+/* A grouped table in a full-width card spreads its columns evenly instead of
+   handing the label column every pixel the numbers did not claim. A table
+   that carries a column rule is left out: its number columns take their width
+   from their figures and share the spare width as gutters (see "Number columns
+   around a column rule" below), and a fixed share here would put the spare
+   width on one side of the rule. */
+.page-grid-account-full .data-table--grouped:not(:has(.col-sep)) th:first-child {
     width: 16%;
 }
-.page-grid-account-full .data-table--grouped tr:last-child > th.th-right {
+.page-grid-account-full .data-table--grouped:not(:has(.col-sep)) tr:last-child > th.th-right {
     width: 14%;
 }
 .page-grid-account-balance {
@@ -1436,28 +1440,19 @@ html { color-scheme: dark; }
     display: inline-block;
     width: min-content;
     text-align: center;
+    /* The stack is the one place a number column's header breaks: the header
+       cell itself is `nowrap` on a table that carries a column rule. */
+    white-space: normal;
 }
-/* A canal's month-by-month table (where the water went): fixed layout so its
-   colgroup widths hold, and long headers wrap within their own column. */
-.data-table--canal-water {
-    table-layout: fixed;
-    /* Below this the fixed columns squeeze a figure across its divider; the
-       table scrolls inside its .table-scroll wrapper instead. 63.5rem,
-       not 64: at a 1,440 viewport the card holds 1,021px and 64rem is 1,024,
-       so the table scrolled by three pixels at that common width; the
-       sweep at 1,440 shows 0 crossings at 63.5rem with the 2px tighter cells. */
-    min-width: 63.5rem;
-}
+/* A canal's month-by-month table (where the water went). Its columns size the
+   way every table with a column rule does (below); the headers that are a
+   sentence wrap inside a measure of their own, so one does not set its column
+   as wide as the sentence. */
 .data-table--canal-water td {
     white-space: nowrap;
 }
-.data-table--canal-water th {
-    white-space: normal;
-}
-/* The returned and net lines under a month's figure wrap inside their cell:
-   on one line they crossed the column rule at 1,024 to 1,440. The figure
-   above them still never breaks. */
-.data-table--canal-water .canal-water-subline {
+.data-table--grouped.data-table--canal-water th[rowspan].th-right {
+    width: 9rem;
     white-space: normal;
 }
 /* Plus the 2px collapsed border that sits BETWEEN the rows, outside the cell
@@ -1499,6 +1494,75 @@ html { color-scheme: dark; }
 .data-table--grouped th.col-sep,
 .data-table--grouped td.col-sep {
     border-left: 2px solid var(--color-border-hover);
+}
+/* -- Number columns around a column rule ---------------------------------- */
+/* The rule is the left border of a right-aligned column, so the figure on its
+   left stood one cell padding from it and the figure on its right stood at
+   the far side of whatever width the browser gave that column. One sizing
+   model for every table that carries a rule, so the two sides match at every
+   width:
+
+   1. A number column is as wide as its widest figure or header and no wider
+      (`width: 1px` in auto layout means "the content, no spare"). Its header
+      stays on one line unless it is a `.th-stack`, and a "?" sits under its
+      word, so a header is the same shape at every width.
+   2. Spare width is shared by the columns as GUTTERS: `--col-gutter`, the
+      same on both sides of every number column, 6px when the table has
+      nothing to spare. A text column takes its share as width.
+   3. At the rule the nearest figure on each side stands the same distance
+      from it. `--rule-trail` is the padding right of the rule and
+      `--rule-lead` the padding left of it; the lead is longer by however far
+      the header right of the rule overhangs its own figures, because that
+      header pushes its figures away from the rule and nothing pushes the
+      figures on the other side.
+   4. A bracket label is centred over the figures it brackets
+      (`--bracket-l`, `--bracket-r`), as far as its cell has room.
+
+   CSS cannot know the spare width or a header's overhang, so
+   `static/js/table-rule.js` measures them and sets the five properties, and
+   marks the cells that end at the rule (`.col-sep-lead`) and at the table's
+   right edge (`.col-edge`). Without the script every value falls back to the
+   6px cell padding: the columns still take no spare width and the sides
+   differ only by the header's overhang. `scripts/table_balance.js` measures
+   the result. */
+.data-table--grouped:has(.col-sep) :is(th.th-right, td.td-num, td.td-num-bold, td.th-right) {
+    width: 1px;
+    padding-inline: var(--col-gutter, 6px);
+}
+.data-table--grouped:has(.col-sep) th.th-right {
+    white-space: nowrap;
+}
+.data-table--grouped:has(.col-sep) th.th-right .explainer-popout {
+    display: flex;
+    justify-content: flex-end;
+}
+.data-table--grouped:has(.col-sep) :is(th, td).col-edge {
+    padding-right: 6px;
+}
+.data-table--grouped:has(.col-sep) :is(th, td).col-sep {
+    padding-left: var(--rule-trail, 6px);
+}
+.data-table--grouped:has(.col-sep) :is(th, td).col-sep-lead {
+    padding-right: var(--rule-lead, 6px);
+}
+/* The bracket's underline runs from the first header it brackets to the last,
+   2px inside them as it always was; its label sits over the figures. */
+.data-table--grouped:has(.col-sep) th.th-group-label {
+    padding-left: var(--bracket-l, 6px);
+    padding-right: var(--bracket-r, 6px);
+}
+.data-table--grouped:has(.col-sep) th.th-group-label::after {
+    left: calc(var(--col-gutter, 6px) + 2px);
+    right: calc(var(--col-gutter, 6px) + 2px);
+}
+.data-table--grouped:has(.col-sep) th.th-group-label.col-edge::after {
+    right: var(--space-sm);
+}
+.data-table--grouped:has(.col-sep) th.th-group-label.col-sep::after {
+    left: calc(var(--rule-trail, 6px) + 2px);
+}
+.data-table--grouped:has(.col-sep) th.th-group-label.col-sep-lead::after {
+    right: calc(var(--rule-lead, 6px) + 2px);
 }
 /* A figure never breaks across two lines; fit is the wrapper's problem. */
 .td-num,
@@ -5670,13 +5734,6 @@ details[open] > summary .disclosure-mark {
 .table-scroll[data-overflow="true"] .data-table tfoot td:first-child,
 .table-scroll[data-overflow="true"] .data-table tr.row-group td:first-child {
     background-color: color-mix(in srgb, var(--color-elevated) 85%, var(--color-card));
-}
-/* The canal tables need 1,024px and had 1,021 at a 1,440 viewport: a pixel of
-   padding each side is the difference between fitting and scrolling there. */
-.data-table--canal-water td,
-.data-table--canal-water th {
-    padding-left: calc(var(--space-md) - 2px);
-    padding-right: calc(var(--space-md) - 2px);
 }
 
 /* C3. A cases table whose other columns are sentences shares the width left by

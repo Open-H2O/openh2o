@@ -296,19 +296,6 @@
         </summary>
         <div class="table-scroll mt-sm">
         <table class="data-table text-sm data-table--grouped data-table--canal-water">
-          {% comment %}Fixed widths: the three long headers get room to wrap to two or
-             three lines instead of one word per line beside a wide Month column.{% endcomment %}
-          <colgroup>
-            {% if pod.division_method == "crop_need" %}
-            <col style="width: 9%"><col style="width: 12%">
-            <col style="width: 11%"><col style="width: 9%"><col style="width: 8%">
-            {% if group.totals.own or group.totals.divided or not group.totals.unserved %}<col style="width: 13%"><col style="width: 19%">{% endif %}<col style="width: 19%">{% if group.totals.unserved %}<col style="width: 32%">{% endif %}
-            {% else %}
-            <col style="width: 12%"><col style="width: 20%">
-            <col style="width: 14%"><col style="width: 12%"><col style="width: 10%">
-            {% if group.totals.own or group.totals.divided or not group.totals.unserved %}<col style="width: 16%"><col style="width: 16%">{% endif %}{% if group.totals.unserved %}<col style="width: 32%">{% endif %}
-            {% endif %}
-          </colgroup>
           <thead>
             <tr class="th-group">
               <th rowspan="2">Month</th>
