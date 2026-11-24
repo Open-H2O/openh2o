@@ -766,6 +766,50 @@ def test_the_dry_run_counts_the_figures_requests_a_run_sends_in_its_two_steps(op
     assert "2 request(s) for the figures of 3 fields" in out.getvalue()
 
 
+def test_a_use_area_added_after_a_stopped_whole_area_lookup_gets_its_own_lookup_and_every_fields_share(
+        openet_key, no_wait, settings):
+    """A boundary lookup listed the use area's fields and the allowance stopped the run before
+    their outlines. A plain run must not take shares from the outlines it happens to hold: the use
+    area gets its own lookup, its fields' outlines, and a share in each."""
+    from datasync.models import OpenETField
+    from geography.models import Boundary
+
+    settings.OPENET_MODE = "fields"
+    Boundary.objects.create(name="Made-up basin", geometry=MultiPolygon(
+        Polygon.from_bbox((-120.32, 37.30, -120.26, 37.32)), srid=4326))
+    service = MadeUpOpenET(
+        fields={MADE_UP_A: (-120.3002, 37.3098), MADE_UP_B: (-120.2995, 37.3102), MADE_UP_C: (-120.2702, 37.3098)},
+        lookups={-120.32: [MADE_UP_A, MADE_UP_B, MADE_UP_C], -120.30: [MADE_UP_A, MADE_UP_B], -120.27: [MADE_UP_C]},
+    )
+    # A run needs a use area; this one lies east of the boundary, on no OpenET field.
+    bare = MultiPolygon(Polygon(((-120.240, 37.310), (-120.239, 37.310), (-120.239, 37.311),
+                                 (-120.240, 37.311), (-120.240, 37.310))), srid=4326)
+    _use_area(number="MADEUP-ON-NO-FIELD", geometry=bare)
+    settings.OPENET_MONTHLY_BUDGET = 2
+    _run(service, whole_area=True)
+    assert [c["path"] for c in service.paid()] == ["/geodatabase/metadata/ids"] * 2
+    _two_groups()  # the two made-up use areas, added after the boundary lookup
+    settings.OPENET_MONTHLY_BUDGET = 50
+    _run(service)
+    assert not OpenETField.objects.filter(geometry__isnull=True).exists()
+    from datasync.models import OpenETFieldShare
+
+    for number, fields in (("MADEUP-GROUP-NEAR", {MADE_UP_A, MADE_UP_B}), ("MADEUP-GROUP-FAR", {MADE_UP_C})):
+        parcel = Parcel.objects.get(parcel_number=number)
+        assert set(OpenETFieldShare.objects.filter(parcel=parcel).values_list("field__field_id", flat=True)) == fields
+
+
+def test_a_field_that_takes_a_share_is_no_longer_whole_area_only():
+    from datasync import field_list
+    from datasync.models import OpenETField
+
+    parcel = _use_area()
+    field = _field(MADE_UP_A, _albers_rect(0, 0, SIDE, SIDE))
+    OpenETField.objects.filter(pk=field.pk).update(whole_area_only=True)
+    field_list.compute_shares(parcel)
+    assert OpenETField.objects.get(pk=field.pk).whole_area_only is False
+
+
 def test_a_whole_area_run_asks_the_use_areas_figures_before_any_outline(openet_key, no_wait, settings):
     from geography.models import Boundary
 
