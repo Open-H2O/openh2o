@@ -37,6 +37,8 @@
 //   overflow: whether the table is wider than the box that holds it.
 //   sticky_gap: on a two-row header, the space between the pinned group row
 //            and the pinned leaf row (0 is right; held to 0.5 px).
+//   header_rules: for each header cell that carries the rule, its line's
+//            centre against the body rule's (0 is right; held to 0.5 px).
 //   sticky_borders: pinned header cells that carry a border of their own in a
 //            collapsed table (0 is right: the strip shows the rows beneath).
 // Every distance is in CSS pixels of the viewport, as getBoundingClientRect
@@ -332,15 +334,39 @@
       }
     }
 
+    // The header's piece of each rule against the body's: the same line, so
+    // the same centre (Brent saw a one-pixel step at the header's foot).
+    // The body rule's centre is the cells' shared edge (a collapsed border);
+    // the header's is its own border there, or its ::before drawn as one.
+    const headerRules = [];
+    for (const th of table.querySelectorAll(":scope > thead th.col-sep")) {
+      if (!shown(th)) continue;
+      const span = (() => { const r = th.getBoundingClientRect(); return cols.findIndex((c) => Math.abs(c.l - r.left) < 2); })();
+      const body = ruleAt.get(span - 1);
+      if (!body) continue;
+      const cs = getComputedStyle(th), before = getComputedStyle(th, "::before");
+      const z = th.currentCSSZoom || 1, left = th.getBoundingClientRect().left;
+      let centre = null;
+      const bw = parseFloat(before.borderLeftWidth) || 0;
+      if (before.content && before.content !== "none" && before.position === "absolute" && (bw > 0 || parseFloat(before.width) > 0)) {
+        centre = left + (th.clientLeft + parseFloat(before.left) + (bw || parseFloat(before.width)) / 2) * z;
+      } else if (parseFloat(cs.borderLeftWidth) > 0 && cs.borderLeftStyle !== "none") {
+        centre = left;
+      }
+      const off = centre === null ? null : round(centre - body.x);
+      headerRules.push({ header: headerText(th), offset: off, pass: off !== null && Math.abs(off) <= 0.5 });
+    }
+
     const pass = rules.every((r) => r.pass) && headers.every((h) => h.pass) && groups.every((g) => g.pass)
-      && (stickyGap === null || Math.abs(stickyGap) <= 0.5) && stickyBorders === 0;
+      && (stickyGap === null || Math.abs(stickyGap) <= 0.5) && stickyBorders === 0
+      && headerRules.every((h) => h.pass);
     results.push({
       index, name: nameOf(table), classes: table.className,
       layout: tcs.tableLayout, colgroup, inline_widths: inlineWidths,
       width: round(box.width), columns: cols.length,
       widths: cols.map((c) => round(c.r - c.l)),
       overflow, scrolls: holder.classList.contains("table-scroll") ? holder.dataset.overflow || "" : "",
-      rules, headers, groups, sticky_gap: stickyGap, sticky_borders: stickyBorders, pass,
+      rules, headers, groups, sticky_gap: stickyGap, sticky_borders: stickyBorders, header_rules: headerRules, pass,
     });
   });
 

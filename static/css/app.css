@@ -1501,16 +1501,26 @@ html { color-scheme: dark; }
 .data-table--grouped td.col-sep {
     border-left: 2px solid var(--color-border-hover);
 }
-/* In the pinned header the rule is drawn inside the cell, for the reason the
-   header's accent rule is (`.data-table thead th`): a collapsed border stays
-   put while the cell sticks, so the header's piece of the rule flickered as
-   rows scrolled beneath it. */
+/* In the pinned header the rule is the cell's own pseudo-element, for the
+   reason the header's accent rule is drawn inside the cell
+   (`.data-table thead th`): a collapsed border stays put while the cell
+   sticks, so the header's piece of the rule flickered as rows scrolled
+   beneath it. A collapsed border sits centred on the cells' shared edge, so
+   the header's piece straddles the edge the same way (1px out, 1px in); an
+   inset line drawn wholly inside the cell stood a pixel right of the rule
+   below it. Drawn as a border, it snaps to the same device pixels. */
 .data-table--grouped thead th.col-sep {
     border-left: 0;
-    box-shadow: inset 2px 0 0 var(--color-border-hover), inset 0 -2px 0 var(--color-accent-muted), var(--th-depth);
 }
-.data-table--grouped thead th.th-group-label.col-sep {
-    box-shadow: inset 2px 0 0 var(--color-border-hover);
+.data-table--grouped thead th.col-sep::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -1px;
+    width: 0;
+    border-left: 2px solid var(--color-border-hover);
+    z-index: 1;
 }
 /* -- Columns around a column rule ------------------------------------------ */
 /* The rule is the left border of a right-aligned column, so the figure on its
