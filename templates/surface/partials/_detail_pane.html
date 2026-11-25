@@ -320,7 +320,7 @@
                 {% if not r.calculated %}<span class="text-tertiary text-xs">Not yet calculated</span>{% endif %}
                 {% if not r.adds_up %}<span class="badge badge-amber" title="Canal losses plus the columns after them differ from the net diversion for direct use.">Does not add up</span>{% endif %}
               </td>
-              <td class="td-num">{{ r.taken|floatformat:2|intcomma }}{% if r.returned %}<div class="text-tertiary text-xs canal-water-subline">{{ r.returned|floatformat:2|intcomma }} returned<br>{{ r.headgate|floatformat:2|intcomma }} net diversion for direct use</div>{% endif %}</td>
+              <td class="td-num">{{ r.taken|floatformat:2|intcomma }}{% if r.returned %}<div class="text-tertiary text-xs">{{ r.returned|floatformat:2|intcomma }} returned<br>{{ r.headgate|floatformat:2|intcomma }} net diversion for direct use</div>{% endif %}</td>
               {% if r.calculated %}
               <td class="td-num text-secondary col-sep">{{ r.evaporation|floatformat:2|intcomma }}</td>
               <td class="td-num text-secondary">{{ r.seepage|floatformat:2|intcomma }}</td>
@@ -342,7 +342,7 @@
             {% endfor %}
             <tr class="row-subtotal">
               <td class="tfoot-total">All {{ group.totals.count }} month{{ group.totals.count|pluralize }}</td>
-              <td class="td-num-bold td-total">{{ group.totals.taken|floatformat:2|intcomma }}{% if group.totals.returned %}<div class="text-tertiary text-xs canal-water-subline">{{ group.totals.returned|floatformat:2|intcomma }} returned<br>{{ group.totals.headgate|floatformat:2|intcomma }} net diversion for direct use</div>{% endif %}</td>
+              <td class="td-num-bold td-total">{{ group.totals.taken|floatformat:2|intcomma }}{% if group.totals.returned %}<div class="text-tertiary text-xs">{{ group.totals.returned|floatformat:2|intcomma }} returned<br>{{ group.totals.headgate|floatformat:2|intcomma }} net diversion for direct use</div>{% endif %}</td>
               <td class="td-num-bold td-total col-sep">{{ group.totals.evaporation|floatformat:2|intcomma }}</td>
               <td class="td-num-bold td-total">{{ group.totals.seepage|floatformat:2|intcomma }}</td>
               <td class="td-num-bold td-total">{{ group.totals.spill|floatformat:2|intcomma }}</td>

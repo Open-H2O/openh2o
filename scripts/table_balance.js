@@ -345,7 +345,7 @@
     }
 
     // The header's piece of each rule against the body's: the same line, so
-    // the same centre (Brent saw a one-pixel step at the header's foot).
+    // the same centre (a one-pixel step at the header's foot is visible).
     // The body rule's centre is the cells' shared edge (a collapsed border);
     // the header's is its own border there, or its ::before drawn as one.
     const headerRules = [];

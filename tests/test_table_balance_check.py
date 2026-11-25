@@ -52,7 +52,7 @@ def test_a_pinned_header_draws_its_lines_inside_its_cells():
     # not wording: a collapsed border on a sticky header cell leaves a strip the
     # rows scrolling beneath show through; the lines are inset or a pseudo-element
     css = CSS.read_text()
-    pinned = re.search(r"\.data-table thead th \{(.*?)\}", css, re.S).group(1)
+    pinned = re.search(r"^\.data-table thead th \{(.*?)^\}", css, re.S | re.M).group(1)
     assert "border-bottom: 0" in pinned and "inset 0 -2px 0" in pinned
     assert re.search(r"\.data-table--grouped thead th\.col-sep::before \{[^}]*left: -1px", css, re.S)
     assert re.search(r"\.data-table--grouped thead tr\.th-group ~ tr th \{\s*top: var\(--th-group-h, 36px\);", css)
