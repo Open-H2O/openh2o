@@ -29,6 +29,7 @@ from unittest import mock
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import DatabaseError, connection, transaction
+from django.db.models import ProtectedError
 from django.test import Client
 from django.urls import reverse
 
@@ -627,3 +628,14 @@ def test_a_year_with_no_statement_shows_no_card_and_the_route_is_not_found(d1, y
     page = client.get(reverse("accounting:period_detail", args=[year.pk])).content.decode()
     assert "Figures as filed" not in page
     assert client.get(reverse("accounting:period_figures", args=[year.pk])).status_code == 404
+
+
+def test_the_user_who_recorded_figures_cannot_be_deleted_by_accident(d1, year, administrator):
+    _finalize(_client(administrator), year)
+    statement = PeriodStatement.objects.get(period=year)
+
+    with pytest.raises(ProtectedError):
+        administrator.delete()
+
+    statement.refresh_from_db()
+    assert statement.taken_by == administrator

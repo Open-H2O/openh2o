@@ -229,3 +229,36 @@ def test_two_approved_buttons_side_by_side_pass_and_an_unapproved_one_does_not()
     both = {"file": T, "kind": "sentence", "today": "", "text": "Import the file + Add a row"}
     other = {"file": T, "kind": "sentence", "today": "", "text": "Import the file + Delete a row"}
     assert texts(nw.not_in_rows([both, other], words)) == {"Import the file + Delete a row"}
+
+
+def test_an_untracked_new_template_is_read(tmp_path, monkeypatch):
+    # The web image carries no git, so the repository is played by a stand-in that answers ls-files as git
+    # does: the committed file always, the new file only when untracked files are asked for.
+    (tmp_path / "templates").mkdir()
+    (tmp_path / "templates" / "kept.html").write_text("<p>This page was here before the plan began.</p>")
+    (tmp_path / "templates" / "new.html").write_text("<p>This page is new and not yet committed.</p>")
+
+    def git(*args, stdin=None):
+        assert args[0] == "ls-files", args
+        files = ["templates/kept.html"] + (["templates/new.html"] if "--others" in args else [])
+        return subprocess.CompletedProcess(args, 0, stdout="\n".join(files).encode())
+
+    monkeypatch.setattr(nw, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(nw, "_git", git)
+
+    assert "templates/new.html" in nw.read_tree(None)
+
+
+def test_a_placeholder_glued_to_a_word_passes_its_row():
+    rows = "| # | Where | Now | Fixed |\n|---|---|---|---|\n| 1 | A | | 3 records saved on this page. |\n"
+    head = "def f(n):\n    return f'{n} record{plural(n)} saved on this page.'\n"
+    lines = listed({PY: ""}, {PY: head})
+    assert len(lines) == 1
+    assert nw.not_in_rows(lines, nw.approved_words([rows])) == []
+
+
+def test_a_header_named_x_dash_is_not_a_placeholder():
+    words = "Set OPENH2O_FORWARDED_PROTO so Caddy sends the X-Forwarded-Proto header."
+    rows = f"| # | Where | Now | Fixed |\n|---|---|---|---|\n| 1 | A | | {words} |\n"
+    line = {"file": "DEPLOY.md", "kind": "guide", "today": "", "text": words}
+    assert nw.not_in_rows([line], nw.approved_words([rows])) == []
