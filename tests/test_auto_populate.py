@@ -1518,7 +1518,7 @@ class TestAutoPopulateResumeFrom:
         self, mock_post, boundary
     ):
         """An OBJECTID belongs to one layer; spanning steps would SKIP rows."""
-        with pytest.raises(CommandError, match="exactly one resumable step"):
+        with pytest.raises(CommandError, match="--steps flowlines"):
             call_command(
                 "auto_populate",
                 boundary=str(boundary.pk),

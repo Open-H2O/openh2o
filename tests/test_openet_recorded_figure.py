@@ -120,6 +120,8 @@ def _fetch(parcel, months_mm, on, start="2025-07-01", end="2025-09-30"):
         mock.patch.object(OpenETAdapter, "fetch_polygon", return_value=answer),
         mock.patch.object(OpenETAdapter, "_rate_limit"),
         mock.patch("django.utils.timezone.localdate", return_value=on),
+        # The command stops in one line without a key; this one is invented.
+        mock.patch.dict("os.environ", {"OPENET_API_KEY": "invented-key"}),
     ):
         call_command(
             "sync_openet_parcels", "--start-date", start, "--end-date", end,

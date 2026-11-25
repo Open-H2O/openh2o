@@ -367,6 +367,7 @@ def test_the_monthly_request_asks_through_the_end_of_last_month(world, monkeypat
     calls = []
     monkeypatch.setattr(field_list, "figures", _fake_figures(calls))
     monkeypatch.setattr(field_list, "lookup", lambda rectangle: [])
+    monkeypatch.setenv("OPENET_API_KEY", "invented-key")  # without a key the command stops in one line
     call_command("sync_openet_parcels", stdout=io.StringIO(), stderr=io.StringIO())
 
     assert calls
@@ -379,6 +380,7 @@ def test_a_run_the_allowance_stops_records_the_months_it_received_first(world, m
     calls = []
     monkeypatch.setattr(field_list, "figures", _fake_figures(calls, stop_after=1))
     monkeypatch.setattr(field_list, "lookup", lambda rectangle: [])
+    monkeypatch.setenv("OPENET_API_KEY", "invented-key")  # without a key the command stops in one line
     call_command("sync_openet_parcels", stdout=io.StringIO(), stderr=io.StringIO())
 
     # The first request (WAIT-1's field) was answered; the second ran out of the allowance.
