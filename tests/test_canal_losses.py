@@ -543,7 +543,7 @@ def test_the_split_row_says_the_canal_losses_came_off_first():
         "Share of 95.00 AF delivered from Plain Canal Headgate, after 5.00 AF "
         "of the 100.00 AF diverted was returned to the stream, after canal "
         "losses of 15%, divided up from the canal total in proportion to each "
-        "field's ETAW"
+        "use area's ETAW"
     )
 
 
@@ -555,6 +555,6 @@ def test_the_clause_is_absent_when_there_are_no_losses():
     row = _split_rows().get(parcel=a)
     assert row.description == (
         "Share of 100.00 AF delivered from Plain Canal Headgate, divided up "
-        "from the canal total in proportion to each field's ETAW"
+        "from the canal total in proportion to each use area's ETAW"
     )
     assert "canal losses" not in row.description

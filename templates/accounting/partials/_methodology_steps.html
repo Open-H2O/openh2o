@@ -98,7 +98,7 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
 
       {% elif step.step_type == 'clamp_floor' %}
         <div class="field-group">
-          <label class="form-label">Floor (AF)</label>
+          <label class="form-label">Lowest remainder (AF)</label>
           <input type="number" step="0.01" name="floor"
                  value="{{ step.config.floor|default:'0' }}" class="form-input" style="width: 7rem;">
         </div>

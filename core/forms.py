@@ -524,11 +524,14 @@ class DeliverySettingsForm(forms.Form):
         required=False,
         max_length=200,
         label="Where your record addresses are published",
-        help_text="Each record's page shows its permanent address, which "
-        "ends in /id/<kind>/<number>/. Leave this blank to use this "
-        "site's own address. Set it before you register this site with "
-        "Geoconnex, the Internet of Water's public index of water "
-        "records, so that the addresses never change.",
+        help_text="Leave this blank to use the address this site was reached at. "
+        "With this setting blank, a site reached at two addresses shows each record "
+        "under both. Changing this setting changes the start of every record's "
+        "address. The /id/<kind>/<number>/ ending stays the same. OpenH2O does not "
+        "warn you or lock the setting. Set it before you register this site with "
+        "Geoconnex, the Internet of Water's public index of water records. The data "
+        "standards guide's Geoconnex steps set it to geoconnex.us/<your-namespace> so "
+        "that every record's address begins with geoconnex.us.",
         widget=forms.TextInput(
             attrs={"class": "form-input", "placeholder": "water.example.org"}
         ),

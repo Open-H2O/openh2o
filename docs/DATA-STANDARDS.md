@@ -308,7 +308,11 @@ Geoconnex addresses are built. The other three standards in the table are planne
 | WaDE 2.0 | The Western States Water Council's Water Data Exchange format | Planned |
 | Geoconnex | Permanent web addresses for water features, listed in a national index | Built, as the next paragraphs describe |
 
-Each record on a site has a permanent address, `/id/<kind>/<number>/`. The kinds are
+Records of eleven kinds each have a record address. The address is the setting
+"Where your record addresses are published" on Delivery Settings followed by
+`/id/<kind>/<number>/`. When the setting is blank, the address the site was reached
+at takes its place. Changing the setting changes the start of every record's address,
+and the `/id/<kind>/<number>/` ending stays the same. The kinds are
 `boundary`, `zone`, `use-area`, `well`, `point-of-diversion`, `recharge-site`,
 `station`, `water-system`, `facility`, `sampling-point` and `water-right`, and the
 number is the record's number on the site. A browser that opens the address goes to

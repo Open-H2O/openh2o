@@ -247,7 +247,7 @@ def test_surface_step_summary_writes_delivery_times_efficiency():
     )
     assert _step_detail_summary(step, delivery_split="use") == (
         "123.1769 AF delivered, divided up from the canal total in proportion "
-        "to each field's ETAW, × irrigation efficiency 0.75 "
+        "to each use area's ETAW, × irrigation efficiency 0.75 "
         "(the Delivery Settings default) = 92.3827 AF"
     )
     assert _step_detail_summary(step, delivery_split="fixed") == (

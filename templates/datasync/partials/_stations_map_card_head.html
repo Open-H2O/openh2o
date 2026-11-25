@@ -25,6 +25,9 @@ Words, from the including page/partial:
   head_id  the element id; the same id in the page and the results partial
   line     the finished count sentence
   oob      True inside the results partial only
+  hand_key True when the map draws a station entered by hand: a fourth key,
+           the station's plain grey triangle under the source's own name (a
+           hand station has no cadence, so the map gives it no freshness)
 {% endcomment %}<div id="{{ head_id }}" class="map-card-head"{% if oob %} hx-swap-oob="true"{% endif %}>
   <h2 class="section-header-flush">Monitoring stations</h2>
   <p class="text-base text-secondary">
@@ -33,6 +36,7 @@ Words, from the including page/partial:
       <span class="map-card-head-key"><span class="swatch-mark swatch-mark-station state-fresh"></span>Up to date</span>
       <span class="map-card-head-key"><span class="swatch-mark swatch-mark-station state-stale"></span>Slightly behind</span>
       <span class="map-card-head-key"><span class="swatch-mark swatch-mark-station state-dead"></span>Dormant</span>
+      {% if hand_key %}<span class="map-card-head-key"><span class="swatch-mark swatch-mark-station"></span>Entered by hand</span>{% endif %}
     </span>
   </p>
 </div>

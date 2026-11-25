@@ -46,6 +46,8 @@ from accounting.locks import override, override_open
 from accounting.ledger_words import (
     NO_PUMPING_DERIVED_WORDS,
     PUMPING_ESTIMATE_WORDS,
+    WELL_METER_SHARE_WORDS,
+    well_share_words,
 )
 from accounting.models import (
     CalculationPlan,
@@ -321,10 +323,6 @@ def _clear_engine_rows_of_voided_parcels(period: str, eff_date: dt.date) -> None
             ).delete()
 
 
-#: What a field's ledger row for its share of a well's meter reading starts
-#: with. The month's calculation writes these rows and keeps them up to date
-#: every time it runs; a meter row a person typed on the field never starts this way.
-WELL_METER_SHARE_WORDS = "From the well's meter:"
 
 #: The run's closing-line clause when the plan's crop ET step is turned off: ``{n}`` use areas
 #: skipped, ``{step}`` the step's name as Methodology Settings shows it.
@@ -448,8 +446,7 @@ def _well_meter_shares(year: int, month: int, parcel_ids: set[int]) -> dict[int,
                 pct = format(link.fraction / total_share, ".0%")
                 out[link.parcel_id] = (
                     amount,
-                    f"{WELL_METER_SHARE_WORDS} {wells[well_id].name} pumped {volume} AF "
-                    f"this month, this field's share is {pct}",
+                    well_share_words(wells[well_id].name, volume, pct),
                 )
     return out
 

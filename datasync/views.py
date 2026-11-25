@@ -402,6 +402,10 @@ def station_list(request):
             location__isnull=False
         ).count(),
         "result_pks": [s.pk for s in stations_ordered],
+        # The map keys the hand station's plain mark only when it draws one.
+        "hand_key": any(
+            s.data_source.is_manual and s.location is not None for s in stations_ordered
+        ),
         "line": _station_list_head_line(
             total_count=paginator.count, q=q, source=source_phrase,
             active=active, reporting=reporting,
@@ -1175,6 +1179,10 @@ def monitoring_dashboard(request):
         "total_active": total_active,
         "shown": shown,
         "freshness_line": freshness_line,
+        # The dashboard's map draws every located station, a hand one in its plain mark.
+        "hand_key": MonitoredStation.objects.filter(
+            location__isnull=False, data_source__code=MANUAL_SOURCE_CODE
+        ).exists(),
         "station_list": station_list,
         **_openet_allowance_context(),
         "boundary_name": boundary.name if boundary else None,
@@ -1406,7 +1414,13 @@ def stations_freshness_geojson(request):
 
     features = []
     for s in stations:
-        fresh_class = freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
+        # A hand station has no cadence to be behind on (the list, the station
+        # page and the dashboard give it no freshness), so the map draws it in
+        # the station's plain mark under its source's name.
+        fresh_class = (
+            "manual" if s.data_source.is_manual
+            else freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
+        )
         hours_since = (
             (now - s.last_data_at).total_seconds() / 3600
             if s.last_data_at else None

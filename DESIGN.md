@@ -718,9 +718,9 @@ say what the row is in words the reader would use.
 The four sentences are kept in ONE module,
 `accounting/ledger_words.py`, beside the Water column's words, so every word the ledger shows lives in one
 file: a share of a headgate's delivery split by estimated use ("Share of 214.58 AF delivered from Stevinson
-Diversion Canal Headgate, divided up from the canal total in proportion to each field's crop water use after
-rain" (every description of a demand-weighted split says it in those words, and the weight is each
-field's net consumptive use));
+Diversion Canal Headgate, divided up from the canal total in proportion to each use area's ETAW" (every
+description of a demand-weighted split says it in those words, and the weight is each use area's net
+consumptive use));
 the same split by each use area's share of the canal on file ("…, divided up from the canal total by this use
 area's share of the canal on file, 20%, because no use area the canal serves has an estimated use for the
 month" (worded this way because "fixed share" was not a phrase a reader knew)); the pumping estimate ("Estimated pumping: the month's estimated use, less

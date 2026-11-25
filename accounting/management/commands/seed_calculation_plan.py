@@ -59,7 +59,7 @@ DEFAULT_STEPS = [
         "config": {
             "floor": 0,
         },
-        "label": "Clamp at floor",
+        "label": "Lowest remainder",
     },
 ]
 

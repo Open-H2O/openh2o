@@ -50,7 +50,9 @@ results partial's own pks, which honour all four of the list's filters
   var FRESH_META = {
     fresh: { label: 'Up to date',      color: freshToken('--color-fresh') },
     stale: { label: 'Slightly behind', color: freshToken('--color-stale') },
-    dead:  { label: 'Dormant',         color: freshToken('--color-dormant') }
+    dead:  { label: 'Dormant',         color: freshToken('--color-dormant') },
+    // A station entered by hand has no cadence: its plain mark, under its source's name.
+    manual: { label: 'Entered by hand' }
   };
 
   var map = new maplibregl.Map({
@@ -76,11 +78,12 @@ results partial's own pks, which honour all four of the list's filters
         map.addSource(SRC, { type: 'geojson', data: data });
 
         // The station's own mark, the triangle every map draws, in its
-        // freshness colour: the three states the card head keys.
+        // freshness colour: the three states the card head keys, and a station
+        // entered by hand in the plain station grey.
         OH2O.addMarkLayer(map, '{{ map_id }}-dots', SRC, 'station', {
           colorBy: {
             prop: 'freshness',
-            values: { fresh: FRESH_META.fresh.color, stale: FRESH_META.stale.color },
+            values: { fresh: FRESH_META.fresh.color, stale: FRESH_META.stale.color, manual: OH2O.colors.station },
             other: FRESH_META.dead.color
           }
         });
@@ -131,7 +134,8 @@ results partial's own pks, which honour all four of the list's filters
           var stateSwatch = {
             fresh: '<span class="swatch-mark swatch-mark-station state-fresh"></span>',
             stale: '<span class="swatch-mark swatch-mark-station state-stale"></span>',
-            dead: dead
+            dead: dead,
+            manual: '<span class="swatch-mark swatch-mark-station"></span>'
           }[p.freshness] || dead;
           var stateLabel = FRESH_META[p.freshness] ? FRESH_META[p.freshness].label : p.freshness;
           var esc = OH2O.escapeHtml;
@@ -151,7 +155,8 @@ results partial's own pks, which honour all four of the list's filters
             .setHTML(OH2O.popupHtml({
               title: p.label || p.station_name,
               lines: [
-                { text: (p.data_source_code || '').toUpperCase() + ' · ' + p.external_station_id, muted: true },
+                // A hand station's source is named on the freshness line below, so this line gives only its ID.
+                { text: (p.freshness === 'manual' ? '' : (p.data_source_code || '').toUpperCase() + ' · ') + p.external_station_id, muted: true },
                 reading,
                 { html: stateSwatch + esc(stateLabel + ' · ' + age) }
               ],

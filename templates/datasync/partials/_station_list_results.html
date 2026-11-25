@@ -6,7 +6,7 @@ the map being torn down. On a full page render the page includes the head once
 itself, so it is included here only on an htmx request (hx_request, from the
 view). The pks below are the WHOLE filtered queryset's, before pagination:
 OH2O.followResults reads them after every swap and filters the map to them.
-{% endcomment %}{% if hx_request %}{% include "datasync/partials/_stations_map_card_head.html" with head_id="stations-overview-map-head" line=line oob=True %}{% endif %}
+{% endcomment %}{% if hx_request %}{% include "datasync/partials/_stations_map_card_head.html" with head_id="stations-overview-map-head" line=line hand_key=hand_key oob=True %}{% endif %}
 {{ result_pks|json_script:"results-map-pks" }}
 
 {% if enriched_stations %}

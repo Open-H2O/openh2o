@@ -338,7 +338,7 @@ class CalculationStep(models.Model):
         ("et_gross", "Gross ET"),
         ("subtract_effective_precip", "Subtract effective precipitation"),
         ("subtract_surface_water", "Subtract delivery × irrigation efficiency"),
-        ("clamp_floor", "Clamp at floor"),
+        ("clamp_floor", "Lowest remainder"),
     ]
 
     plan = models.ForeignKey(

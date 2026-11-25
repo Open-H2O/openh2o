@@ -179,17 +179,19 @@ def ledger_row_words(entry):
 # --------------------------------------------------------------------------
 
 #: The tail of a demand-weighted delivery-share sentence, in the settled words:
-#: the field's figure was
-#: divided up from the canal total in proportion to each field's crop water
+#: the use area's figure was
+#: divided up from the canal total in proportion to each use area's crop water
 #: use after rain (the weight is ``CalculationRun.net_consumptive_use_af``,
 #: read by ``surface.services._month_demand``). Composed by
 #: ``delivery_share_words`` below, and printed again, in the same words, on
 #: the calculation page's canal line (``accounting/views/calculation_runs.py``).
 #:
 #: "Crop water use after rain" is ETAW. Rows written before the wording
-#: changed are reworded by parcels/migrations/0012.
+#: changed are reworded by parcels/migrations/0012. Rows that said "each
+#: field's ETAW" are rewritten at their month's next calculation in an open
+#: year; a finalized year's rows stay as written (they are in its code).
 DELIVERY_SHARE_BY_USE = (
-    "divided up from the canal total in proportion to each field's ETAW"
+    "divided up from the canal total in proportion to each use area's ETAW"
 )
 
 #: The tail of a static-fraction delivery-share sentence: no served use area
@@ -320,3 +322,23 @@ def delivery_share_words(record, pod, *, fixed_share=None, loss_fraction=None):
         sentence += ", " + DELIVERY_SHARE_BY_USE
 
     return sentence
+
+
+#: What a use area's ledger row for its share of a well's meter reading starts
+#: with. The month's calculation writes these rows and keeps them up to date
+#: every time it runs; a meter row a person typed on the use area never starts
+#: this way. The engine and the GEARS file find the rows by it.
+WELL_METER_SHARE_WORDS = "From the well's meter:"
+
+
+def well_share_words(well_name, volume, share):
+    """The Description of a use area's share of a well's metered pumping for a month.
+
+    ``volume`` is the acre-feet the well's readings add up to that month and
+    ``share`` the use area's share as printed ("25%"). Starts with
+    ``WELL_METER_SHARE_WORDS``, the prefix the engine finds these rows by.
+    """
+    return (
+        f"{WELL_METER_SHARE_WORDS} {well_name} pumped {volume} AF this month, "
+        f"this use area's share is {share}"
+    )

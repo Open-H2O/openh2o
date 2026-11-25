@@ -44,10 +44,10 @@ These parts of OpenH2O are built and tested. Each one ends with a link to its co
   OpenH2O does not credit it to any account. The code is in
   [`accounting/allocation_math.py`](../accounting/allocation_math.py) and
   [`surface/services.py`](../surface/services.py).
-- **A permanent web address for each record.** Each boundary, zone, use area, well,
+- **A web address for each record.** Each boundary, zone, use area, well,
   point of diversion, recharge site, monitoring station, water system, facility,
-  sampling point and water right has a permanent web address on its OpenH2O
-  site, such as `/id/well/12/`. A browser that opens the address shows the record's
+  sampling point and water right has a web address on its OpenH2O site ending in
+  `/id/<kind>/<number>/`, such as `/id/well/12/`. A browser that opens the address shows the record's
   page. Another program that requests the same address receives the record's
   details as JSON-LD, a machine-readable format. Geoconnex, the Internet of Water's
   national index of water features, can list these addresses once an organization

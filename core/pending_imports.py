@@ -57,8 +57,22 @@ UNEXPECTED = (
     "An unexpected error stopped the import, and OpenH2O saved nothing from this file."
 )
 
+def stopped_sentence(file_name):
+    """The failure words of a data import still running STOPPED_AFTER its start."""
+    return (
+        f"The import of {file_name} had not finished ten minutes after it started, for example "
+        "because the site restarted during it, so OpenH2O marked it as failed and deleted the "
+        "upload. OpenH2O saved nothing from this file and keeps nothing from it, even if the "
+        "import was still running and finishes after this message. Upload the file again."
+    )
+
 #: How long an upload waits for Import before cleanup removes it.
 EXPIRY = timedelta(hours=24)
+
+#: A data import still running this long after it started is taken as stopped:
+#: its worker is a child of the web container, which a deploy or a server out of
+#: memory ends. The Setup Wizard's ten minutes of silence (setup/services.py).
+STOPPED_AFTER = timedelta(minutes=10)
 
 #: A preview lists at most this many of the file's rows, and every row with an
 #: error up to ERROR_ROW_LIMIT, with a count of the rest.
@@ -180,6 +194,19 @@ KINDS = {
         extensions=(".csv", ".txt"),
     ),
 }
+
+#: The kinds whose commit runs in one transaction, so a failure, or a worker
+#: taken as stopped, saves nothing from the file. The parcel download, the
+#: stream and station steps and Finalize keep partial progress on purpose and
+#: have their own stopped-process rules.
+DATA_KINDS = frozenset({
+    "water_rights", "diversions", "lab_results", "production", "schedule",
+    "infrastructure", "water_levels", "use_areas", "zones", "accounts",
+})
+
+
+class _Stopped(Exception):
+    """The status route took this import as stopped while it ran: keep nothing."""
 
 
 # ---------------------------------------------------------------------------
@@ -398,14 +425,39 @@ def run(token):
     pending = PendingImport.objects.get(token=token)
     kind = KINDS[pending.kind]
     url = (pending.settings or {}).get("url") or reverse(kind.commit_url_name)
+    commit = import_string(kind.commit.replace(":", "."))
+    if pending.kind not in DATA_KINDS:
+        try:
+            with pghistory.context(user=pending.user_id, url=url):
+                result = commit(pending)
+            outcome = ("finished", to_jsonable(result))
+        except Exception:
+            logger.exception("import of %s (%s) failed", pending.original_name, pending.kind)
+            outcome = ("failed", {"error": UNEXPECTED})
+        _finish(pending, *outcome)
+        return
+    # A data import: its rows and its finished row are saved together, or nothing is.
     try:
-        with pghistory.context(user=pending.user_id, url=url):
-            result = import_string(kind.commit.replace(":", "."))(pending)
-        outcome = ("finished", to_jsonable(result))
+        with transaction.atomic(), pghistory.context(user=pending.user_id, url=url):
+            result = to_jsonable(commit(pending))
+            # The status route may have taken it as stopped meanwhile and told
+            # the person nothing was saved. This UPDATE holds the row until the
+            # transaction ends, so the route's own conditional UPDATE waits for it.
+            still = PendingImport.objects.filter(pk=pending.pk, status="running").update(
+                status="finished", result=result, finished_at=timezone.now()
+            )
+            if not still:
+                raise _Stopped
+    except _Stopped:
+        logger.warning("import of %s (%s) finished after it was taken as stopped; nothing kept",
+                       pending.original_name, pending.kind)
+        delete_file(pending)
+        return
     except Exception:
         logger.exception("import of %s (%s) failed", pending.original_name, pending.kind)
-        outcome = ("failed", {"error": UNEXPECTED})
-    _finish(pending, *outcome)
+        _finish(pending, "failed", {"error": UNEXPECTED})
+        return
+    delete_file(pending)
 
 
 def _waiting(request, pending):
@@ -421,13 +473,27 @@ def status_response(request, token):
 
     Still running: the same polling block. Finished or failed: the page's own
     result block, rendered from the stored result, and the row is deleted so
-    the result is shown once.
+    the result is shown once. A data import still running STOPPED_AFTER its
+    start is failed here with stopped_sentence; its worker, if alive, then keeps nothing.
     """
     pending = lookup(request.user, token)
     if pending is None:
         return render(
             request, "core/partials/_pending_import_notice.html", {"error": REFUSED}
         )
+    if (
+        pending.kind in DATA_KINDS
+        and pending.status == "running"
+        and pending.started_at is not None
+        and pending.started_at < timezone.now() - STOPPED_AFTER
+    ):
+        # Conditional, so an import that finished in the meantime keeps its result.
+        if PendingImport.objects.filter(pk=pending.pk, status="running").update(
+            status="failed", result={"error": stopped_sentence(pending.original_name)},
+            finished_at=timezone.now(),
+        ):
+            delete_file(pending)
+        pending.refresh_from_db()
     if pending.status in ("finished", "failed"):
         response = render(
             request, KINDS[pending.kind].result_template, pending.result

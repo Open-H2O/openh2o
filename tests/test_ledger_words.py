@@ -143,6 +143,7 @@ def _public_word_constants():
         "DELIVERY_SHARE_SOURCE",
         "NO_PUMPING_DERIVED_WORDS",
         "PUMPING_ESTIMATE_WORDS",
+        "WELL_METER_SHARE_WORDS",
     }, names  # a constant added later must be taught to this guard, not skip it
     return names
 

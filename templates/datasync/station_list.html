@@ -40,7 +40,7 @@
        reporting) the list itself honours. The in-map legend box is gone: the
        head is the key now, one place instead of two. {% endcomment %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
-    {% include "datasync/partials/_stations_map_card_head.html" with head_id="stations-overview-map-head" line=line %}
+    {% include "datasync/partials/_stations_map_card_head.html" with head_id="stations-overview-map-head" line=line hand_key=hand_key %}
     {% if located_count %}
     <div id="stations-overview-map" style="height: 380px; width: 100%;"></div>
     {% endif %}

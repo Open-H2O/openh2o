@@ -546,7 +546,10 @@ How to check
    names the parts to look at where changes have no correction on record. An
    unrecorded change in the corrected record's own part, or in a part a
    recalculation writes, shows only as the correction. "Can no longer read"
-   means a later version removed what a part was computed from.
+   means a later version removed what a part was computed from. When the
+   answer names a section that is switched off, Check for changes cannot
+   compare that section's parts, or the change history, while the section is
+   switched off.
 
 "No changes found" means what the code covers is the same as when it was
 issued. It does not show that the records were right. Check for changes runs
@@ -586,8 +589,8 @@ def test_the_download_reads_word_for_word_as_the_approved_page():
     )
     text = fingerprints.file_text(period).rstrip() + "\n"
     assert text == APPROVED_PAGE
-    # One page: 57 lines, none wider than 76, and the old word nowhere.
-    assert len(text.splitlines()) == 57
+    # One page: 60 lines, none wider than 76, and the old word nowhere.
+    assert len(text.splitlines()) == 60
     assert max(len(line) for line in text.splitlines()) == 76
     assert "fingerprint" not in text.lower()
     assert fingerprints.file_name(period) == "changes-code-wy-2024-2025.txt"

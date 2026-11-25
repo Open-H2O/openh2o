@@ -148,6 +148,10 @@ class Answer:
     #: Every part that differs, in words (lower case), in the year's order.
     differing: list = field(default_factory=list)
     unreadable: list = field(default_factory=list)
+    #: The unreadable parts the sections switched off on this site explain:
+    #: ``([section labels], [part words])`` in the registry's order, or None. The
+    #: change history is among the parts when nothing else keeps it from being read.
+    switched_off: tuple = None
     #: ``[{"text": ..., "linked": bool}, ...]``, oldest first.
     corrections: list = field(default_factory=list)
     #: The differing parts the corrections since do not explain, in words.
@@ -166,17 +170,63 @@ class Answer:
 
     @property
     def unreadable_sentence(self):
-        if not self.unreadable:
-            return ""
-        if len(self.unreadable) == 1:
-            return (
-                f"OpenH2O can no longer read the {self.unreadable[0]}, because a later "
+        sentences = []
+        if self.switched_off:
+            labels, parts = self.switched_off
+            sentences.append(switched_off_sentence(labels, parts))
+        explained = set(self.switched_off[1]) if self.switched_off else set()
+        removed = [part for part in self.unreadable if part not in explained]
+        if len(removed) == 1:
+            sentences.append(
+                f"OpenH2O can no longer read the {removed[0]}, because a later "
                 "version removed what it was computed from."
             )
-        return (
-            f"OpenH2O can no longer read these parts: {', '.join(self.unreadable)}, because a "
-            "later version removed what they were computed from."
-        )
+        elif removed:
+            sentences.append(
+                f"OpenH2O can no longer read these parts: {', '.join(removed)}, because a "
+                "later version removed what they were computed from."
+            )
+        return " ".join(sentences)
+
+
+def _and(words):
+    return words[0] if len(words) == 1 else ", ".join(words[:-1]) + " and " + words[-1]
+
+
+def switched_off_sentence(labels, parts):
+    """The answer's sentence for the parts the sections switched off on this site keep from being read."""
+    return (
+        "Check for changes cannot compare these parts while this site has the "
+        f"{_and(labels)} section{'s' if len(labels) > 1 else ''} switched off: {', '.join(parts)}."
+    )
+
+
+def _sections_off(keys):
+    """``([section labels], [part keys])`` for the unreadable ``keys`` whose section is switched off.
+
+    A part's section is the module that owns its app (``core.modules``). The change
+    history holds the changes to those parts' rows, so it goes with them when it is
+    the only other part that cannot be read. ``None`` when no section explains any.
+    """
+    from core.modules import MODULE_REGISTRY, is_enabled
+
+    owner = {app: spec for spec in MODULE_REGISTRY.values() for app in spec.apps}
+    found = {}
+    rest = []
+    for key in keys:
+        spec = owner.get(key.split(".")[0])
+        if spec is not None and not is_enabled(spec.name):
+            found.setdefault(spec.name, (spec.label, []))[1].append(key)
+        else:
+            rest.append(key)
+    names = [name for name in MODULE_REGISTRY if name in found]
+    if not names:
+        return None
+    labels = [found[name][0] for name in names]
+    parts = [key for name in names for key in found[name][1]]
+    if rest == [fingerprint.HISTORY]:
+        parts.append(fingerprint.HISTORY)
+    return labels, parts
 
 
 def _lower(key):
@@ -201,18 +251,20 @@ def check_fingerprint(period):
         if key in computed.parts and computed.parts[key]["digest"] != stored["parts"][key]["digest"]
     ]
     unreadable = [_lower(key) for key in computed.unreadable]
+    off = _sections_off(computed.unreadable)
+    off = (off[0], [_lower(key) for key in off[1]]) if off else None
     agrees = fingerprint.whole_digest(stored["parts"]) == period.fingerprint
     if differing:
         found, kinds = _corrections(period)
         unexplained = _unexplained(differing, kinds, bool(found), stored, computed)
         return Answer(
-            "differs", taken, [_lower(key) for key in differing], unreadable, found,
+            "differs", taken, [_lower(key) for key in differing], unreadable, off, found,
             [_lower(key) for key in unexplained], _count_href(period, found),
         )
     if not agrees:
-        return Answer("disagrees", taken, [], unreadable)
+        return Answer("disagrees", taken, [], unreadable, off)
     if unreadable:
-        return Answer("unreadable", taken, [], unreadable)
+        return Answer("unreadable", taken, [], unreadable, off)
     return Answer("matches", taken)
 
 
@@ -314,7 +366,9 @@ _STEPS = (
     "parts to look at where changes have no correction on record. An unrecorded change "
     "in the corrected record's own part, or in a part a recalculation writes, "
     "shows only as the correction. \"Can no longer "
-    "read\" means a later version removed what a part was computed from.",
+    "read\" means a later version removed what a part was computed from. When the answer "
+    "names a section that is switched off, Check for changes cannot compare that section's "
+    "parts, or the change history, while the section is switched off.",
 )
 
 _MEANING = (

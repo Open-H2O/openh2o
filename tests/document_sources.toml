@@ -2794,7 +2794,7 @@ labels = [
   { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
   { text = "Fraction", where = "templates/accounting/partials/_methodology_steps.html" },
   { text = "Soil storage (in)", where = "templates/accounting/partials/_methodology_steps.html" },
-  { text = "Floor (AF)", where = "templates/accounting/partials/_methodology_steps.html" },
+  { text = "Lowest remainder (AF)", where = "templates/accounting/partials/_methodology_steps.html" },
 ]
 checked_at = "6419a322"
 

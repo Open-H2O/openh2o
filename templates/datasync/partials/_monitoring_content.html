@@ -9,7 +9,7 @@
     tiles). freshness_line is built in the view (datasync/views.py).
   {% endcomment %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
-    {% include "datasync/partials/_stations_map_card_head.html" with head_id="monitoring-map-head" line=freshness_line %}
+    {% include "datasync/partials/_stations_map_card_head.html" with head_id="monitoring-map-head" line=freshness_line hand_key=hand_key %}
     <div id="monitoring-freshness-map" style="height: 320px; width: 100%;"></div>
   </div>
 
