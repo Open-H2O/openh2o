@@ -37,6 +37,8 @@
 //   overflow: whether the table is wider than the box that holds it.
 //   sticky_gap: on a two-row header, the space between the pinned group row
 //            and the pinned leaf row (0 is right; held to 0.5 px).
+//   sticky_borders: pinned header cells that carry a border of their own in a
+//            collapsed table (0 is right: the strip shows the rows beneath).
 // Every distance is in CSS pixels of the viewport, as getBoundingClientRect
 // reports them, so the page's own zoom is already applied.
 (opts = {}) => {
@@ -317,15 +319,28 @@
       }
     }
 
+    // A pinned header cell with a border of its own: in a collapsed table the
+    // border stays where the table put it while the cell sticks, so the strip
+    // it sat in shows the rows scrolling beneath. Lines in a pinned header are
+    // drawn inside the cell (an inset shadow) instead.
+    let stickyBorders = 0;
+    if (tcs.borderCollapse === "collapse") {
+      for (const th of table.querySelectorAll(":scope > thead > tr > th")) {
+        const cs = getComputedStyle(th);
+        if (cs.position !== "sticky") continue;
+        if (["Top", "Right", "Bottom", "Left"].some((s) => parseFloat(cs[`border${s}Width`]) > 0 && cs[`border${s}Style`] !== "none")) stickyBorders += 1;
+      }
+    }
+
     const pass = rules.every((r) => r.pass) && headers.every((h) => h.pass) && groups.every((g) => g.pass)
-      && (stickyGap === null || Math.abs(stickyGap) <= 0.5);
+      && (stickyGap === null || Math.abs(stickyGap) <= 0.5) && stickyBorders === 0;
     results.push({
       index, name: nameOf(table), classes: table.className,
       layout: tcs.tableLayout, colgroup, inline_widths: inlineWidths,
       width: round(box.width), columns: cols.length,
       widths: cols.map((c) => round(c.r - c.l)),
       overflow, scrolls: holder.classList.contains("table-scroll") ? holder.dataset.overflow || "" : "",
-      rules, headers, groups, sticky_gap: stickyGap, pass,
+      rules, headers, groups, sticky_gap: stickyGap, sticky_borders: stickyBorders, pass,
     });
   });
 

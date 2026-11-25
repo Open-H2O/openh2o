@@ -1245,6 +1245,8 @@ html { color-scheme: dark; }
 /* -- Tables -------------------------------------------------------------- */
 
 .data-table {
+    /* The depth under a pinned header, shared by every header cell's shadow. */
+    --th-depth: 0 2px 4px rgba(5, 8, 12, 0.45);
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
@@ -1397,9 +1399,14 @@ html { color-scheme: dark; }
     position: sticky;
     top: 0;
     z-index: 10;
-    /* th already carries an opaque background so rows can't bleed through;
-       add depth on the stuck header. */
-    box-shadow: 0 2px 4px rgba(5, 8, 12, 0.45);
+    /* The header's accent rule is drawn INSIDE the cell, not as its border.
+       `.data-table` collapses its borders, and a collapsed border stays where
+       the table put it while the cell sticks: the strip under each pinned
+       header row was left unpainted and the rows scrolling beneath showed
+       through it. An inset shadow moves with the cell; the outer one adds
+       depth on the stuck header. */
+    border-bottom: 0;
+    box-shadow: inset 0 -2px 0 var(--color-accent-muted), var(--th-depth);
 }
 
 /* -- Grouped headers, the column separator and the footer ------ */
@@ -1473,14 +1480,9 @@ html { color-scheme: dark; }
        bracket is the group's extent, and the word balances it from the
        middle. */
     text-align: center;
-    /* NOT `transparent`. `.data-table` is `border-collapse: collapse`, and a
-       collapsed border is not painted over by the cell's own background -- so a
-       transparent 2px border here showed the CARD behind it as a dark band
-       under the teal bracket, and wider than the bracket, because the `::after`
-       rule is inset by `--space-sm` on both sides while the border spans the
-       whole cell. Matching the header's own
-       background hides the border and leaves only the bracket visible. */
-    border-bottom-color: color-mix(in srgb, var(--color-accent) 7%, var(--color-card));
+    /* No accent rule under a bracket label: the bracket (`::after`) is its
+       rule, and the leaf row below it carries the header's own. */
+    box-shadow: none;
 }
 .data-table--grouped th.th-group-label::after {
     content: "";
@@ -1498,6 +1500,17 @@ html { color-scheme: dark; }
 .data-table--grouped th.col-sep,
 .data-table--grouped td.col-sep {
     border-left: 2px solid var(--color-border-hover);
+}
+/* In the pinned header the rule is drawn inside the cell, for the reason the
+   header's accent rule is (`.data-table thead th`): a collapsed border stays
+   put while the cell sticks, so the header's piece of the rule flickered as
+   rows scrolled beneath it. */
+.data-table--grouped thead th.col-sep {
+    border-left: 0;
+    box-shadow: inset 2px 0 0 var(--color-border-hover), inset 0 -2px 0 var(--color-accent-muted), var(--th-depth);
+}
+.data-table--grouped thead th.th-group-label.col-sep {
+    box-shadow: inset 2px 0 0 var(--color-border-hover);
 }
 /* -- Columns around a column rule ------------------------------------------ */
 /* The rule is the left border of a right-aligned column, so the figure on its
@@ -6199,7 +6212,6 @@ details[open] > summary .disclosure-mark {
 .prefill-link:hover { color: var(--color-accent-hover); }
 .prefill-table th, .prefill-table td { padding-left: 3px; padding-right: 3px; }
 .prefill-table th:first-child, .prefill-table td:first-child { padding-left: var(--space-sm); }
-.prefill-table thead th { box-shadow: inset 0 -1px 0 var(--color-border-hover), 0 2px 4px rgba(5, 8, 12, 0.45); }
 .prefill-table td.prefill-entity {
     font-weight: 600;
     white-space: nowrap;
