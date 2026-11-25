@@ -164,14 +164,24 @@ state, and neither system can currently accept a file that OpenH2O produces.
   water that this use area receives."
 
   The by-well file has one line for each well and month, with Measurement Method
-  "Metered". A well's own meters are the meters on file for that well. OpenH2O keeps
-  their readings per meter and adds them up per well, and a well's line holds what
-  its own meters read. A meter on file for two wells has its full reading on each
-  well's line. A reading can also be typed on a use area. A reading typed on a use
-  area is written once, on the line of the use area's well with the largest share.
-  In that month, a well linked to that use area does not write a line from its own
-  meters. A reading typed on a use area that is not linked to a well goes on a line
-  of its own, whose Well Name begins "[INCOMPLETE] [No well link]".
+  "Metered". A meter link is OpenH2O's record that a meter is on a well. A meter is
+  one of a well's own meters on a given day when its link to that well has an
+  installed date that is blank or on or before that day, and a removed date that is
+  blank or after it. OpenH2O keeps their readings per meter and adds them up per well,
+  and a well's line holds what its own meters read. To record a meter moved from one
+  well to another, go to the site's admin pages and give the old well's link a removed
+  date and the new well's link the same day as its installed date; with a later
+  installed date, readings on the days between would count under neither well, and
+  with an earlier one, under both. The old link stays on file so the meter's readings
+  from before the move day keep counting under the old well; untick "Is current" on
+  the old link and tick it on the new one, because the box decides which meter a
+  reading entered on a well's page goes to and which meters the well's page lists,
+  though not which well a reading counts under. A reading can also be typed on a use
+  area. A reading typed on a use area is written once, on the line of the use area's
+  well with the largest share. In that month, a well linked to that use area does not
+  write a line from its own meters. A reading typed on a use area that is not linked
+  to a well goes on a line of its own, whose Well Name begins "[INCOMPLETE] [No well
+  link]".
 
   Two kinds of reading cover a use area's month: a reading typed on the use area
   that month, and a meter reading that states a volume that month on a well linked

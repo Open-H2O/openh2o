@@ -373,11 +373,31 @@ def test_turning_the_crop_et_step_off_is_named_by_the_next_run():
         parcel=d1["F4"], source_type="calculated", effective_date=ld.AUG
     ).exists()
 
-    CalculationStep.objects.filter(step_type="et_gross").update(enabled=False)
+    CalculationStep.objects.filter(step_type="et_gross").update(enabled=False, label="Crop ET, renamed")
     command = Command()
-    call_command(command, period="2025-08", stdout=io.StringIO())
+    out = io.StringIO()
+    call_command(command, period="2025-08", stdout=out)
 
     assert not ParcelLedger.objects.filter(
         source_type="calculated", effective_date=ld.AUG
     ).exists()
     assert command.skipped == {"crop_et_step_off": 4, "no_crop_et": 0}
+    # not wording: the closing line names the step as the page shows it, and not missing ET data.
+    assert "Crop ET, renamed" in out.getvalue()
+    assert "no ET data" not in out.getvalue()
+
+
+@pytest.mark.django_db
+def test_a_plan_with_no_crop_et_step_keeps_the_no_et_data_count():
+    """Deleting the step (possible in the admin pages) is not counted as the step turned off."""
+    from accounting.management.commands.run_calculations import Command
+    from accounting.models import CalculationStep
+    from tests import ledger_districts as ld
+
+    ld.seed_reference()
+    ld.build_d1()
+    CalculationStep.objects.filter(step_type="et_gross").delete()
+    command = Command()
+    call_command(command, period="2025-08", stdout=__import__("io").StringIO())
+
+    assert command.skipped == {"crop_et_step_off": 0, "no_crop_et": 4}

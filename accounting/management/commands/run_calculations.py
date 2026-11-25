@@ -326,6 +326,10 @@ def _clear_engine_rows_of_voided_parcels(period: str, eff_date: dt.date) -> None
 #: every time it runs; a meter row a person typed on the field never starts this way.
 WELL_METER_SHARE_WORDS = "From the well's meter:"
 
+#: The run's closing-line clause when the plan's crop ET step is turned off: ``{n}`` use areas
+#: skipped, ``{step}`` the step's name as Methodology Settings shows it.
+STEP_OFF_CLAUSE = '{n} parcel(s) skipped ("{step}" step Disabled in Methodology Settings)'
+
 _GALLONS_PER_ACRE_FOOT = Decimal("325851")
 _CUBIC_FEET_PER_ACRE_FOOT = Decimal("43560")
 
@@ -912,7 +916,17 @@ class Command(BaseCommand):
             _clear_engine_rows_of_voided_parcels(period, eff_date)
 
         counts = {"written": 0, "unmet": 0, "metered": 0}
-        skipped_no_et = 0
+        # A use area with no crop ET step result is skipped for one of two reasons:
+        # the plan's crop ET step is turned off (every use area, every month), or
+        # the month has no crop ET on record for it. The run counts them apart.
+        # The step-off reason is named only when the plan holds the crop ET step and it is off,
+        # so the clause can name it as Methodology Settings shows it.
+        crop_et_steps = active_plan.steps.filter(step_type="et_gross") if active_plan else None
+        crop_et_step = crop_et_steps.first() if crop_et_steps is not None else None
+        step_off = crop_et_step is not None and not crop_et_steps.filter(enabled=True).exists()
+        skip_reason = "crop_et_step_off" if step_off else "no_crop_et"
+        self._crop_et_step_name = crop_et_step.label if crop_et_step else ""
+        self.skipped = {"crop_et_step_off": 0, "no_crop_et": 0}
         over_delivered = 0
         for parcel in parcels:
             outcome, was_over_delivered = self._process_parcel(
@@ -925,14 +939,14 @@ class Command(BaseCommand):
                 site_config=site_config,
             )
             if outcome is None:
-                skipped_no_et += 1
+                self.skipped[skip_reason] += 1
                 continue
             counts[outcome] += 1
             if was_over_delivered:
                 over_delivered += 1
 
         self._write_summary(
-            period, dry_run, counts, skipped_no_et, over_delivered
+            period, dry_run, counts, self.skipped, over_delivered
         )
 
     def _warn_unmetered_only_deprecated(self, options: dict[str, Any]) -> None:
@@ -1086,7 +1100,7 @@ class Command(BaseCommand):
         period: str,
         dry_run: bool,
         counts: dict[str, int],
-        skipped_no_et: int,
+        skipped: dict[str, int],
         over_delivered: int,
     ) -> None:
         """Print the one-paragraph run summary."""
@@ -1094,13 +1108,19 @@ class Command(BaseCommand):
         unmet = counts["unmet"]
         metered = counts["metered"]
         verb = "Would write" if dry_run else "Wrote"
+        if skipped["crop_et_step_off"]:
+            skipped_words = STEP_OFF_CLAUSE.format(
+                n=skipped["crop_et_step_off"], step=self._crop_et_step_name
+            )
+        else:
+            skipped_words = f"{skipped['no_crop_et']} parcel(s) skipped (no ET data)"
         self.stdout.write(
             self.style.SUCCESS(
                 f"{verb} {written} calculated GW row(s) for {period}; "
                 f"{unmet} no-well parcel(s) recorded as unmet demand; "
                 f"{metered} metered parcel(s) given an ET reference run "
                 f"(meter authoritative, no GW row); "
-                f"{skipped_no_et} parcel(s) skipped (no ET data); "
+                f"{skipped_words}; "
                 f"{over_delivered} field(s) with canal water beyond the "
                 f"month's use."
             )
