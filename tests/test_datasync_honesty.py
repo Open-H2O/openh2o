@@ -334,3 +334,38 @@ def test_the_reporting_column_is_headed_and_worded():
         "the first column of the stations table is no longer headed Reporting"
     )
     assert "Up to date" in table
+
+
+@pytest.mark.django_db
+def test_the_freshness_map_gives_a_hand_station_no_freshness():
+    """A station whose readings a person enters has no cadence to be behind on:
+    the list, the station page and the data dashboard give it no freshness, so
+    the map may not call it slightly behind or dormant either."""
+    import datetime as dt
+    import json as json_module
+
+    from django.test import Client
+    from django.urls import reverse
+    from django.utils import timezone
+
+    from core.models import User
+    from datasync.models import MANUAL_SOURCE_CODE
+
+    hand, _ = DataSource.objects.get_or_create(
+        code=MANUAL_SOURCE_CODE, defaults={"name": "Entered by hand", "is_active": True}
+    )
+    gauge = MonitoredStation.objects.create(
+        data_source=hand, external_station_id="STAFF-1", station_name="Staff gauge 1",
+        location=Point(-119.5, 36.5), is_active=True,
+        last_data_at=timezone.now() - dt.timedelta(days=4),
+    )
+    user = User.objects.create(
+        username="hand-geojson", email="hand-geojson@example.com", is_active=True
+    )
+    client = Client()
+    client.force_login(user)
+    data = json_module.loads(
+        client.get(reverse("datasync:stations_freshness_geojson")).content
+    )
+    props = {f["properties"]["pk"]: f["properties"] for f in data["features"]}[gauge.pk]
+    assert props["freshness"] not in ("fresh", "stale", "dead")

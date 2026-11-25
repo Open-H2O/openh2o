@@ -179,3 +179,16 @@ def test_every_sentence_constant_carries_no_gated_phrase(name):
 
 def test_pumping_words_constants_are_distinct():
     assert PUMPING_ESTIMATE_WORDS != NO_PUMPING_DERIVED_WORDS
+
+
+def test_the_share_sentences_say_use_area():
+    """The site's name for the land a row is charged to is the use area; the
+    divided entry and the well-share entry say so (rows already written in a
+    finalized year are left as written)."""
+    from accounting import ledger_words
+
+    divided = delivery_share_words(_record("214.58", "0"), _pod("Stevinson Headgate"))
+    well = ledger_words.well_share_words("Well 7", Decimal("80"), "25%")
+    for sentence in (divided, well):
+        assert "use area" in sentence, sentence
+        assert "field" not in sentence, sentence

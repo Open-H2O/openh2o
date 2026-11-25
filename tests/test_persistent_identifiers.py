@@ -373,3 +373,38 @@ def test_identifier_host_saves_without_its_scheme(admin_client):
     assert resp.status_code == 302
     config.refresh_from_db()
     assert config.identifier_host == "water.example.org"
+
+
+# ---------------------------------------------------------------------------
+# No passage promises an address that cannot move
+# ---------------------------------------------------------------------------
+
+
+def test_no_passage_calls_the_address_permanent():
+    """The address is built from the setting on every read, so a change to the
+    setting moves every address. The setting's help, the Settings explained
+    row and the two guide paragraphs may say it stays the same while the
+    setting is left unchanged, never that it is permanent or never changes."""
+    import re
+    from pathlib import Path
+
+    from core.forms import DeliverySettingsForm
+
+    root = Path(__file__).resolve().parent.parent
+    claim = re.compile(r"\bpermanent|\bnever change", re.I)
+    passages = {
+        "the setting's help": str(DeliverySettingsForm.base_fields["identifier_host"].help_text),
+    }
+    explained = (root / "templates/help/settings_explained.html").read_text()
+    row = re.search(r'<td class="col-name">Record addresses</td>(.*?)</tr>', explained, re.S)
+    passages["the Settings explained row"] = row.group(1)
+    standards = (root / "docs/DATA-STANDARDS.md").read_text()
+    passages["the data standards paragraph"] = next(
+        p for p in standards.split("\n\n") if "`/id/<kind>/<number>/`" in p
+    )
+    roadmap = (root / "docs/ROADMAP.md").read_text()
+    passages["the roadmap paragraph"] = next(
+        p for p in roadmap.split("\n- ") if "/id/well/12/" in p
+    )
+    claims = {where: text for where, text in passages.items() if claim.search(text)}
+    assert not claims, claims

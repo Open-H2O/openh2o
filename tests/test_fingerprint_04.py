@@ -938,3 +938,34 @@ def test_no_forbidden_word_is_on_the_page_the_answers_or_the_file(d1, filed, adm
         for word in FORBIDDEN:
             assert word not in low, word
         assert "court" not in low
+
+
+# -- (m) a section switched off after the code was taken ----------------------------------------------------------
+
+
+def _switched_off(settings, *sections):
+    """The site as it reads with ``sections`` left out: their modules off and their apps' tables gone."""
+    from core import fingerprint as module
+    from core.modules import ALL_MODULE_NAMES, MODULE_REGISTRY
+
+    settings.OPENH2O_MODULES = tuple(n for n in ALL_MODULE_NAMES if n not in sections)
+    gone = {app for name in sections for app in MODULE_REGISTRY[name].apps}
+    real = module._model
+
+    def model(label):
+        return None if label.split(".")[0] in gone else real(label)
+
+    return mock.patch.object(module, "_model", model)
+
+
+@pytest.mark.parametrize(
+    "sections, named",
+    [(("surface", "recharge"), ("Surface Water", "Recharge")), (("drinking",), ("Drinking Water",))],
+    ids=["surface", "drinking"],
+)
+def test_a_part_of_a_switched_off_section_names_the_section(filed, administrator, settings, sections, named):
+    with _switched_off(settings, *sections):
+        answer = _answer(_client(administrator), filed)
+    for section in named:
+        assert section in answer, answer
+    assert "later version" not in answer

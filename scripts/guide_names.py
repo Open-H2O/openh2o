@@ -124,7 +124,6 @@ SETTINGS_EXPLAINED_WORDS: dict = {
     "Effective precipitation method": "Subtract effective precipitation",
     "Fixed percentage": "Fraction",
     "Soil moisture storage": "Soil storage (in)",
-    "Lowest remainder": "Floor (AF)",
 }
 
 #: (document, name, reason). A name here is not reported for that document.
