@@ -268,6 +268,14 @@
       const hk = ink(th);
       if (!fig || !hk) continue;
       const a = colAlign[i];
+      // Names set deliberately under a band (every cell of the column padded
+      // further in than its header, as `tr.row-listed` and the calculation
+      // notes' points are) are an indent, not a header out of place.
+      if (a === "left") {
+        const pad = (c) => parseFloat(getComputedStyle(c).paddingLeft) * (c.currentCSSZoom || 1);
+        const thPad = pad(th);
+        if (byCol[i].length && byCol[i].every((e) => pad(e.cell) >= thPad + 6)) continue;
+      }
       const thAlign = (() => { const v = getComputedStyle(th).textAlign; return v === "end" || v === "right" ? "right" : v === "center" ? "center" : "left"; })();
       let off;
       if (a === "right") off = hk.r - fig.r;
