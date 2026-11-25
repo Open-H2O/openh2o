@@ -164,24 +164,22 @@ state, and neither system can currently accept a file that OpenH2O produces.
   water that this use area receives."
 
   The by-well file has one line for each well and month, with Measurement Method
-  "Metered". A meter link is OpenH2O's record that a meter is on a well. A meter is
-  one of a well's own meters on a given day when its link to that well has an
-  installed date that is blank or on or before that day, and a removed date that is
-  blank or after it. OpenH2O keeps their readings per meter and adds them up per well,
-  and a well's line holds what its own meters read. To record a meter moved from one
-  well to another, go to the site's admin pages and give the old well's link a removed
-  date and the new well's link the same day as its installed date; with a later
-  installed date, readings on the days between would count under neither well, and
-  with an earlier one, under both. The old link stays on file so the meter's readings
-  from before the move day keep counting under the old well; untick "Is current" on
-  the old link and tick it on the new one, because the box decides which meter a
-  reading entered on a well's page goes to and which meters the well's page lists,
-  though not which well a reading counts under. A reading can also be typed on a use
-  area. A reading typed on a use area is written once, on the line of the use area's
-  well with the largest share. In that month, a well linked to that use area does not
-  write a line from its own meters. A reading typed on a use area that is not linked
-  to a well goes on a line of its own, whose Well Name begins "[INCOMPLETE] [No well
-  link]".
+  "Metered". A well's own meters are the meters linked to it, and each link carries
+  an Installed date and a Removed date. A reading counts under a well from the link's
+  Installed date up to the day before its Removed date. A blank Installed date counts
+  every earlier day, and a blank Removed date counts every later day. To record a
+  meter moved from one well to another, set the Removed date on its link to the old
+  well and the Installed date on a new link to the new well, both to the day of the
+  move. Readings taken before that day count under the old well, and readings from
+  that day on count under the new one. Unchecking Is current does not move any
+  readings; only the two dates do. OpenH2O keeps readings per meter and adds
+  them up per well, and a well's line holds what its own meters read. A meter linked
+  to two wells over the same days, as when neither link has dates, has its full
+  reading on each well's line. A reading can also be typed on a use area. A reading
+  typed on a use area is written once, on the line of the use area's well with the
+  largest share. In that month, a well linked to that use area does not write a line
+  from its own meters. A reading typed on a use area that is not linked to a well
+  goes on a line of its own, whose Well Name begins "[INCOMPLETE] [No well link]".
 
   Two kinds of reading cover a use area's month: a reading typed on the use area
   that month, and a meter reading that states a volume that month on a well linked
