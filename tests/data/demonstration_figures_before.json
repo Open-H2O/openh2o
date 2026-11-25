@@ -21869,7 +21869,7 @@
     "MER-APN-051",
     "2024-10-01",
     "groundwater_extraction",
-    "D:5.3100",
+    "D:5.5300",
     "",
     ""
    ],
@@ -21905,7 +21905,7 @@
     "MER-APN-051",
     "2024-11-01",
     "groundwater_extraction",
-    "D:0.0000",
+    "D:0.0500",
     "",
     ""
    ],
@@ -21977,7 +21977,7 @@
     "MER-APN-051",
     "2025-01-01",
     "groundwater_extraction",
-    "D:0.0000",
+    "D:0.3600",
     "",
     ""
    ],
@@ -22013,7 +22013,7 @@
     "MER-APN-051",
     "2025-02-01",
     "groundwater_extraction",
-    "D:0.0000",
+    "D:0.3700",
     "",
     ""
    ],
@@ -22049,7 +22049,7 @@
     "MER-APN-051",
     "2025-03-01",
     "groundwater_extraction",
-    "D:3.8300",
+    "D:5.1800",
     "",
     ""
    ],
@@ -22085,7 +22085,7 @@
     "MER-APN-051",
     "2025-04-01",
     "groundwater_extraction",
-    "D:12.6400",
+    "D:17.5700",
     "",
     ""
    ],
@@ -22121,7 +22121,7 @@
     "MER-APN-051",
     "2025-05-01",
     "groundwater_extraction",
-    "D:19.5000",
+    "D:27.4700",
     "",
     ""
    ],
@@ -22157,7 +22157,7 @@
     "MER-APN-051",
     "2025-06-01",
     "groundwater_extraction",
-    "D:13.7300",
+    "D:28.8600",
     "",
     ""
    ],
@@ -22193,7 +22193,7 @@
     "MER-APN-051",
     "2025-07-01",
     "groundwater_extraction",
-    "D:37.1100",
+    "D:28.0900",
     "",
     ""
    ],
@@ -22229,7 +22229,7 @@
     "MER-APN-051",
     "2025-08-01",
     "groundwater_extraction",
-    "D:52.8900",
+    "D:28.9500",
     "",
     ""
    ],
@@ -22265,7 +22265,7 @@
     "MER-APN-051",
     "2025-09-01",
     "groundwater_extraction",
-    "D:24.1500",
+    "D:14.3200",
     "",
     ""
    ],
@@ -22301,7 +22301,7 @@
     "MER-APN-051",
     null,
     "groundwater_extraction",
-    "D:169.6300",
+    "D:157.2200",
     "",
     ""
    ],
@@ -22319,7 +22319,7 @@
     "MER-APN-051",
     null,
     "supplies",
-    "D:202.4670",
+    "D:190.0552",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -22328,7 +22328,7 @@
     "MER-APN-051",
     null,
     "uses",
-    "D:202.4670",
+    "D:219.2979",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -22337,7 +22337,7 @@
     "MER-APN-051",
     null,
     "water_not_consumed",
-    "D:20.5473",
+    "D:37.3782",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -22346,7 +22346,7 @@
     "MER-APN-051",
     null,
     "balance",
-    "D:0.0000",
+    "D:-29.2427",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -22373,7 +22373,7 @@
     "MER-APN-052",
     "2024-10-01",
     "groundwater_extraction",
-    "D:4.7600",
+    "D:5.5300",
     "",
     ""
    ],
@@ -22409,7 +22409,7 @@
     "MER-APN-052",
     "2024-11-01",
     "groundwater_extraction",
-    "D:0.0000",
+    "D:0.0500",
     "",
     ""
    ],
@@ -22481,7 +22481,7 @@
     "MER-APN-052",
     "2025-01-01",
     "groundwater_extraction",
-    "D:0.7700",
+    "D:0.3600",
     "",
     ""
    ],
@@ -22517,7 +22517,7 @@
     "MER-APN-052",
     "2025-02-01",
     "groundwater_extraction",
-    "D:0.8100",
+    "D:0.3700",
     "",
     ""
    ],
@@ -22553,7 +22553,7 @@
     "MER-APN-052",
     "2025-03-01",
     "groundwater_extraction",
-    "D:8.6900",
+    "D:5.1800",
     "",
     ""
    ],
@@ -22589,7 +22589,7 @@
     "MER-APN-052",
     "2025-04-01",
     "groundwater_extraction",
-    "D:26.8500",
+    "D:17.5700",
     "",
     ""
    ],
@@ -22625,7 +22625,7 @@
     "MER-APN-052",
     "2025-05-01",
     "groundwater_extraction",
-    "D:44.7500",
+    "D:27.4700",
     "",
     ""
    ],
@@ -22661,7 +22661,7 @@
     "MER-APN-052",
     "2025-06-01",
     "groundwater_extraction",
-    "D:45.2400",
+    "D:28.8600",
     "",
     ""
    ],
@@ -22697,7 +22697,7 @@
     "MER-APN-052",
     "2025-07-01",
     "groundwater_extraction",
-    "D:26.0400",
+    "D:28.0900",
     "",
     ""
    ],
@@ -22733,7 +22733,7 @@
     "MER-APN-052",
     "2025-08-01",
     "groundwater_extraction",
-    "D:20.4700",
+    "D:28.9500",
     "",
     ""
    ],
@@ -22769,7 +22769,7 @@
     "MER-APN-052",
     "2025-09-01",
     "groundwater_extraction",
-    "D:12.0400",
+    "D:14.3200",
     "",
     ""
    ],
@@ -22805,7 +22805,7 @@
     "MER-APN-052",
     null,
     "groundwater_extraction",
-    "D:190.8900",
+    "D:157.2200",
     "",
     ""
    ],
@@ -22823,7 +22823,7 @@
     "MER-APN-052",
     null,
     "supplies",
-    "D:211.3638",
+    "D:177.6890",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -22832,7 +22832,7 @@
     "MER-APN-052",
     null,
     "uses",
-    "D:211.3638",
+    "D:178.5682",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -22841,7 +22841,7 @@
     "MER-APN-052",
     null,
     "water_not_consumed",
-    "D:72.3244",
+    "D:39.5288",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -22850,7 +22850,7 @@
     "MER-APN-052",
     null,
     "balance",
-    "D:0.0000",
+    "D:-0.8792",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -22877,7 +22877,7 @@
     "MER-APN-053",
     "2024-10-01",
     "groundwater_extraction",
-    "D:3.4900",
+    "D:5.5300",
     "",
     ""
    ],
@@ -22913,7 +22913,7 @@
     "MER-APN-053",
     "2024-11-01",
     "groundwater_extraction",
-    "D:0.0000",
+    "D:0.0500",
     "",
     ""
    ],
@@ -22985,7 +22985,7 @@
     "MER-APN-053",
     "2025-01-01",
     "groundwater_extraction",
-    "D:0.6600",
+    "D:0.3600",
     "",
     ""
    ],
@@ -23021,7 +23021,7 @@
     "MER-APN-053",
     "2025-02-01",
     "groundwater_extraction",
-    "D:0.6700",
+    "D:0.3700",
     "",
     ""
    ],
@@ -23057,7 +23057,7 @@
     "MER-APN-053",
     "2025-03-01",
     "groundwater_extraction",
-    "D:6.7000",
+    "D:5.1800",
     "",
     ""
    ],
@@ -23093,7 +23093,7 @@
     "MER-APN-053",
     "2025-04-01",
     "groundwater_extraction",
-    "D:20.9500",
+    "D:17.5700",
     "",
     ""
    ],
@@ -23129,7 +23129,7 @@
     "MER-APN-053",
     "2025-05-01",
     "groundwater_extraction",
-    "D:34.4000",
+    "D:27.4700",
     "",
     ""
    ],
@@ -23165,7 +23165,7 @@
     "MER-APN-053",
     "2025-06-01",
     "groundwater_extraction",
-    "D:36.7300",
+    "D:28.8600",
     "",
     ""
    ],
@@ -23201,7 +23201,7 @@
     "MER-APN-053",
     "2025-07-01",
     "groundwater_extraction",
-    "D:20.6100",
+    "D:28.0900",
     "",
     ""
    ],
@@ -23237,7 +23237,7 @@
     "MER-APN-053",
     "2025-08-01",
     "groundwater_extraction",
-    "D:14.8500",
+    "D:28.9500",
     "",
     ""
    ],
@@ -23273,7 +23273,7 @@
     "MER-APN-053",
     "2025-09-01",
     "groundwater_extraction",
-    "D:8.4100",
+    "D:14.3200",
     "",
     ""
    ],
@@ -23309,7 +23309,7 @@
     "MER-APN-053",
     null,
     "groundwater_extraction",
-    "D:147.9400",
+    "D:157.2200",
     "",
     ""
    ],
@@ -23327,7 +23327,7 @@
     "MER-APN-053",
     null,
     "supplies",
-    "D:166.1613",
+    "D:175.4388",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -23336,7 +23336,7 @@
     "MER-APN-053",
     null,
     "uses",
-    "D:166.1613",
+    "D:175.6656",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -23345,7 +23345,7 @@
     "MER-APN-053",
     null,
     "water_not_consumed",
-    "D:42.2173",
+    "D:51.7216",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -23354,7 +23354,7 @@
     "MER-APN-053",
     null,
     "balance",
-    "D:0.0000",
+    "D:-0.2268",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -23381,7 +23381,7 @@
     "MER-APN-054",
     "2024-10-01",
     "groundwater_extraction",
-    "D:8.5300",
+    "D:5.5300",
     "",
     ""
    ],
@@ -23417,7 +23417,7 @@
     "MER-APN-054",
     "2024-11-01",
     "groundwater_extraction",
-    "D:0.1800",
+    "D:0.0500",
     "",
     ""
    ],
@@ -23453,7 +23453,7 @@
     "MER-APN-054",
     "2024-12-01",
     "groundwater_extraction",
-    "D:0.4800",
+    "D:0.4700",
     "",
     ""
    ],
@@ -23489,7 +23489,7 @@
     "MER-APN-054",
     "2025-01-01",
     "groundwater_extraction",
-    "D:0.0000",
+    "D:0.3600",
     "",
     ""
    ],
@@ -23525,7 +23525,7 @@
     "MER-APN-054",
     "2025-02-01",
     "groundwater_extraction",
-    "D:0.0000",
+    "D:0.3700",
     "",
     ""
    ],
@@ -23561,7 +23561,7 @@
     "MER-APN-054",
     "2025-03-01",
     "groundwater_extraction",
-    "D:1.5100",
+    "D:5.1800",
     "",
     ""
    ],
@@ -23597,7 +23597,7 @@
     "MER-APN-054",
     "2025-04-01",
     "groundwater_extraction",
-    "D:9.8600",
+    "D:17.5700",
     "",
     ""
    ],
@@ -23633,7 +23633,7 @@
     "MER-APN-054",
     "2025-05-01",
     "groundwater_extraction",
-    "D:11.2300",
+    "D:27.4700",
     "",
     ""
    ],
@@ -23669,7 +23669,7 @@
     "MER-APN-054",
     "2025-06-01",
     "groundwater_extraction",
-    "D:19.7400",
+    "D:28.8600",
     "",
     ""
    ],
@@ -23705,7 +23705,7 @@
     "MER-APN-054",
     "2025-07-01",
     "groundwater_extraction",
-    "D:28.6000",
+    "D:28.0900",
     "",
     ""
    ],
@@ -23741,7 +23741,7 @@
     "MER-APN-054",
     "2025-08-01",
     "groundwater_extraction",
-    "D:27.6000",
+    "D:28.9500",
     "",
     ""
    ],
@@ -23777,7 +23777,7 @@
     "MER-APN-054",
     "2025-09-01",
     "groundwater_extraction",
-    "D:12.6800",
+    "D:14.3200",
     "",
     ""
    ],
@@ -23813,7 +23813,7 @@
     "MER-APN-054",
     null,
     "groundwater_extraction",
-    "D:120.4100",
+    "D:157.2200",
     "",
     ""
    ],
@@ -23831,7 +23831,7 @@
     "MER-APN-054",
     null,
     "supplies",
-    "D:138.6725",
+    "D:175.4816",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -23840,7 +23840,7 @@
     "MER-APN-054",
     null,
     "uses",
-    "D:138.6725",
+    "D:177.2240",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -23849,7 +23849,7 @@
     "MER-APN-054",
     null,
     "water_not_consumed",
-    "D:19.7581",
+    "D:58.3096",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -23858,7 +23858,7 @@
     "MER-APN-054",
     null,
     "balance",
-    "D:0.0000",
+    "D:-1.7424",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34136,7 +34136,7 @@
     "MER-ACCT-010 \u00b7 Verdano Island Farms LLC",
     null,
     "uses",
-    "D:718.6646",
+    "D:750.7557",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34145,7 +34145,7 @@
     "MER-ACCT-010 \u00b7 Verdano Island Farms LLC",
     null,
     "water_not_consumed",
-    "D:154.8471",
+    "D:186.9382",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34154,7 +34154,7 @@
     "MER-ACCT-010 \u00b7 Verdano Island Farms LLC",
     null,
     "balance",
-    "D:0.0000",
+    "D:-32.0911",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34883,7 +34883,7 @@
     "Verdano Island Water District GSA",
     null,
     "water_not_consumed",
-    "D:275.6592",
+    "D:307.7503",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -34892,7 +34892,7 @@
     "Verdano Island Water District GSA",
     null,
     "balance",
-    "D:0.0002",
+    "D:-32.0909",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35351,7 +35351,7 @@
     "",
     null,
     "uses",
-    "D:16581.4239",
+    "D:16613.5150",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35360,7 +35360,7 @@
     "",
     null,
     "water_not_consumed",
-    "D:1108.9832",
+    "D:1141.0743",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -35369,7 +35369,7 @@
     "",
     null,
     "balance",
-    "D:-305.8051",
+    "D:-337.8962",
     "Default Methodology 721bc1ae69a9",
     ""
    ]
@@ -35408,14 +35408,14 @@
      "amount": "D:1873.48"
     }
    ],
-   "grand_not_consumed": "D:1108.9832",
-   "grand_uses_total": "D:16581.4239",
-   "grand_net": "D:-305.8051",
+   "grand_not_consumed": "D:1141.0743",
+   "grand_uses_total": "D:16613.5150",
+   "grand_net": "D:-337.8962",
    "accounts_with_estimates": 11,
    "grand_calculation_runs": 912,
    "accounts_in_surplus": 4,
-   "accounts_in_deficit": 2,
-   "accounts_balanced": 5,
+   "accounts_in_deficit": 3,
+   "accounts_balanced": 4,
    "has_allocations": true,
    "engine_has_never_run": false,
    "accounts_over_budget": 5,
@@ -35819,8 +35819,8 @@
       "groundwater": "D:628.8665",
       "precip": "D:89.7981",
       "supply_total": "D:718.6646",
-      "water_not_consumed": "D:154.8471",
-      "net_vs_supply": "D:0.0000",
+      "water_not_consumed": "D:186.9382",
+      "net_vs_supply": "D:-32.0911",
       "allocation": "D:598.7920",
       "remaining": "D:-30.0745",
       "calculation_runs": 48
@@ -35908,8 +35908,8 @@
       "groundwater": "D:1112.1148",
       "precip": "D:156.2096",
       "supply_total": "D:1268.3244",
-      "water_not_consumed": "D:275.6592",
-      "net_vs_supply": "D:0.0002",
+      "water_not_consumed": "D:307.7503",
+      "net_vs_supply": "D:-32.0909",
       "allocation": "D:1061.0230",
       "carryover": "D:0",
       "remaining": "D:-51.0918",
@@ -36014,8 +36014,8 @@
    "grand_supply_surface": "D:8846.0734",
    "grand_supply_groundwater": "D:4470.9724",
    "grand_supply_precip": "D:2958.5730",
-   "grand_not_consumed": "D:1108.9832",
-   "grand_net": "D:-305.8051",
+   "grand_not_consumed": "D:1141.0743",
+   "grand_net": "D:-337.8962",
    "has_allocations": true,
    "engine_has_never_run": false,
    "total_count": 12,
@@ -36184,8 +36184,8 @@
       "groundwater": "D:628.8665",
       "precip": "D:89.7981",
       "supply_total": "D:718.6646",
-      "water_not_consumed": "D:154.8471",
-      "net_vs_supply": "D:0.0000",
+      "water_not_consumed": "D:186.9382",
+      "net_vs_supply": "D:-32.0911",
       "allocation": "D:598.7920",
       "remaining": "D:-30.0745",
       "calculation_runs": 48
@@ -57709,7 +57709,7 @@
     "MER-APN-051",
     "2025-10-01",
     "groundwater_extraction",
-    "D:1.4900",
+    "D:1.5900",
     "",
     ""
    ],
@@ -57781,7 +57781,7 @@
     "MER-APN-051",
     "2025-12-01",
     "groundwater_extraction",
-    "D:0.1700",
+    "D:0.1000",
     "",
     ""
    ],
@@ -57817,7 +57817,7 @@
     "MER-APN-051",
     "2026-01-01",
     "groundwater_extraction",
-    "D:4.6300",
+    "D:4.0800",
     "",
     ""
    ],
@@ -57853,7 +57853,7 @@
     "MER-APN-051",
     "2026-02-01",
     "groundwater_extraction",
-    "D:0.0000",
+    "D:0.4300",
     "",
     ""
    ],
@@ -57889,7 +57889,7 @@
     "MER-APN-051",
     "2026-03-01",
     "groundwater_extraction",
-    "D:7.7900",
+    "D:7.1700",
     "",
     ""
    ],
@@ -57925,7 +57925,7 @@
     "MER-APN-051",
     "2026-04-01",
     "groundwater_extraction",
-    "D:3.0600",
+    "D:3.2300",
     "",
     ""
    ],
@@ -57961,7 +57961,7 @@
     "MER-APN-051",
     "2026-05-01",
     "groundwater_extraction",
-    "D:13.9000",
+    "D:13.3900",
     "",
     ""
    ],
@@ -57997,7 +57997,7 @@
     "MER-APN-051",
     "2026-06-01",
     "groundwater_extraction",
-    "D:41.2900",
+    "D:26.0200",
     "",
     ""
    ],
@@ -58033,7 +58033,7 @@
     "MER-APN-051",
     "2026-07-01",
     "groundwater_extraction",
-    "D:58.1700",
+    "D:41.7100",
     "",
     ""
    ],
@@ -58069,7 +58069,7 @@
     "MER-APN-051",
     "2026-08-01",
     "groundwater_extraction",
-    "D:51.8800",
+    "D:39.3700",
     "",
     ""
    ],
@@ -58105,7 +58105,7 @@
     "MER-APN-051",
     "2026-09-01",
     "groundwater_extraction",
-    "D:30.7000",
+    "D:23.6100",
     "",
     ""
    ],
@@ -58141,7 +58141,7 @@
     "MER-APN-051",
     null,
     "groundwater_extraction",
-    "D:213.7900",
+    "D:161.4100",
     "",
     ""
    ],
@@ -58159,7 +58159,7 @@
     "MER-APN-051",
     null,
     "supplies",
-    "D:245.7063",
+    "D:193.3338",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -58168,7 +58168,7 @@
     "MER-APN-051",
     null,
     "uses",
-    "D:245.7063",
+    "D:223.1018",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -58177,7 +58177,7 @@
     "MER-APN-051",
     null,
     "water_not_consumed",
-    "D:25.9962",
+    "D:3.3917",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -58186,7 +58186,7 @@
     "MER-APN-051",
     null,
     "balance",
-    "D:0.0000",
+    "D:-29.7680",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -58213,7 +58213,7 @@
     "MER-APN-052",
     "2025-10-01",
     "groundwater_extraction",
-    "D:2.4700",
+    "D:1.5900",
     "",
     ""
    ],
@@ -58285,7 +58285,7 @@
     "MER-APN-052",
     "2025-12-01",
     "groundwater_extraction",
-    "D:0.0000",
+    "D:0.1000",
     "",
     ""
    ],
@@ -58321,7 +58321,7 @@
     "MER-APN-052",
     "2026-01-01",
     "groundwater_extraction",
-    "D:4.3800",
+    "D:4.0800",
     "",
     ""
    ],
@@ -58357,7 +58357,7 @@
     "MER-APN-052",
     "2026-02-01",
     "groundwater_extraction",
-    "D:1.0100",
+    "D:0.4300",
     "",
     ""
    ],
@@ -58393,7 +58393,7 @@
     "MER-APN-052",
     "2026-03-01",
     "groundwater_extraction",
-    "D:9.2900",
+    "D:7.1700",
     "",
     ""
    ],
@@ -58429,7 +58429,7 @@
     "MER-APN-052",
     "2026-04-01",
     "groundwater_extraction",
-    "D:4.3900",
+    "D:3.2300",
     "",
     ""
    ],
@@ -58465,7 +58465,7 @@
     "MER-APN-052",
     "2026-05-01",
     "groundwater_extraction",
-    "D:17.4600",
+    "D:13.3900",
     "",
     ""
    ],
@@ -58501,7 +58501,7 @@
     "MER-APN-052",
     "2026-06-01",
     "groundwater_extraction",
-    "D:23.2200",
+    "D:26.0200",
     "",
     ""
    ],
@@ -58537,7 +58537,7 @@
     "MER-APN-052",
     "2026-07-01",
     "groundwater_extraction",
-    "D:43.5200",
+    "D:41.7100",
     "",
     ""
    ],
@@ -58573,7 +58573,7 @@
     "MER-APN-052",
     "2026-08-01",
     "groundwater_extraction",
-    "D:43.5300",
+    "D:39.3700",
     "",
     ""
    ],
@@ -58609,7 +58609,7 @@
     "MER-APN-052",
     "2026-09-01",
     "groundwater_extraction",
-    "D:26.3600",
+    "D:23.6100",
     "",
     ""
    ],
@@ -58645,7 +58645,7 @@
     "MER-APN-052",
     null,
     "groundwater_extraction",
-    "D:176.3400",
+    "D:161.4100",
     "",
     ""
    ],
@@ -58663,7 +58663,7 @@
     "MER-APN-052",
     null,
     "supplies",
-    "D:197.5767",
+    "D:182.6533",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -58672,7 +58672,7 @@
     "MER-APN-052",
     null,
     "uses",
-    "D:197.5767",
+    "D:182.8536",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -58681,7 +58681,7 @@
     "MER-APN-052",
     null,
     "water_not_consumed",
-    "D:66.9805",
+    "D:52.2574",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -58690,7 +58690,7 @@
     "MER-APN-052",
     null,
     "balance",
-    "D:0.0000",
+    "D:-0.2003",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -58717,7 +58717,7 @@
     "MER-APN-053",
     "2025-10-01",
     "groundwater_extraction",
-    "D:1.6900",
+    "D:1.5900",
     "",
     ""
    ],
@@ -58789,7 +58789,7 @@
     "MER-APN-053",
     "2025-12-01",
     "groundwater_extraction",
-    "D:0.2300",
+    "D:0.1000",
     "",
     ""
    ],
@@ -58825,7 +58825,7 @@
     "MER-APN-053",
     "2026-01-01",
     "groundwater_extraction",
-    "D:3.8600",
+    "D:4.0800",
     "",
     ""
    ],
@@ -58861,7 +58861,7 @@
     "MER-APN-053",
     "2026-02-01",
     "groundwater_extraction",
-    "D:0.7000",
+    "D:0.4300",
     "",
     ""
    ],
@@ -58897,7 +58897,7 @@
     "MER-APN-053",
     "2026-03-01",
     "groundwater_extraction",
-    "D:7.1800",
+    "D:7.1700",
     "",
     ""
    ],
@@ -58933,7 +58933,7 @@
     "MER-APN-053",
     "2026-04-01",
     "groundwater_extraction",
-    "D:3.2100",
+    "D:3.2300",
     "",
     ""
    ],
@@ -58969,7 +58969,7 @@
     "MER-APN-053",
     "2026-05-01",
     "groundwater_extraction",
-    "D:13.8500",
+    "D:13.3900",
     "",
     ""
    ],
@@ -59005,7 +59005,7 @@
     "MER-APN-053",
     "2026-06-01",
     "groundwater_extraction",
-    "D:16.7400",
+    "D:26.0200",
     "",
     ""
    ],
@@ -59041,7 +59041,7 @@
     "MER-APN-053",
     "2026-07-01",
     "groundwater_extraction",
-    "D:32.4000",
+    "D:41.7100",
     "",
     ""
    ],
@@ -59077,7 +59077,7 @@
     "MER-APN-053",
     "2026-08-01",
     "groundwater_extraction",
-    "D:32.9500",
+    "D:39.3700",
     "",
     ""
    ],
@@ -59113,7 +59113,7 @@
     "MER-APN-053",
     "2026-09-01",
     "groundwater_extraction",
-    "D:20.2100",
+    "D:23.6100",
     "",
     ""
    ],
@@ -59149,7 +59149,7 @@
     "MER-APN-053",
     null,
     "groundwater_extraction",
-    "D:133.7300",
+    "D:161.4100",
     "",
     ""
    ],
@@ -59167,7 +59167,7 @@
     "MER-APN-053",
     null,
     "supplies",
-    "D:153.2265",
+    "D:180.9118",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -59176,7 +59176,7 @@
     "MER-APN-053",
     null,
     "uses",
-    "D:153.2265",
+    "D:181.0516",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -59185,7 +59185,7 @@
     "MER-APN-053",
     null,
     "water_not_consumed",
-    "D:38.3646",
+    "D:66.1897",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -59194,7 +59194,7 @@
     "MER-APN-053",
     null,
     "balance",
-    "D:0.0000",
+    "D:-0.1398",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -59221,7 +59221,7 @@
     "MER-APN-054",
     "2025-10-01",
     "groundwater_extraction",
-    "D:0.7000",
+    "D:1.5900",
     "",
     ""
    ],
@@ -59293,7 +59293,7 @@
     "MER-APN-054",
     "2025-12-01",
     "groundwater_extraction",
-    "D:0.0000",
+    "D:0.1000",
     "",
     ""
    ],
@@ -59329,7 +59329,7 @@
     "MER-APN-054",
     "2026-01-01",
     "groundwater_extraction",
-    "D:3.4400",
+    "D:4.0800",
     "",
     ""
    ],
@@ -59365,7 +59365,7 @@
     "MER-APN-054",
     "2026-02-01",
     "groundwater_extraction",
-    "D:0.0000",
+    "D:0.4300",
     "",
     ""
    ],
@@ -59401,7 +59401,7 @@
     "MER-APN-054",
     "2026-03-01",
     "groundwater_extraction",
-    "D:4.4400",
+    "D:7.1700",
     "",
     ""
    ],
@@ -59437,7 +59437,7 @@
     "MER-APN-054",
     "2026-04-01",
     "groundwater_extraction",
-    "D:2.2800",
+    "D:3.2300",
     "",
     ""
    ],
@@ -59473,7 +59473,7 @@
     "MER-APN-054",
     "2026-05-01",
     "groundwater_extraction",
-    "D:8.3400",
+    "D:13.3900",
     "",
     ""
    ],
@@ -59509,7 +59509,7 @@
     "MER-APN-054",
     "2026-06-01",
     "groundwater_extraction",
-    "D:22.8200",
+    "D:26.0200",
     "",
     ""
    ],
@@ -59545,7 +59545,7 @@
     "MER-APN-054",
     "2026-07-01",
     "groundwater_extraction",
-    "D:32.7500",
+    "D:41.7100",
     "",
     ""
    ],
@@ -59581,7 +59581,7 @@
     "MER-APN-054",
     "2026-08-01",
     "groundwater_extraction",
-    "D:29.1400",
+    "D:39.3700",
     "",
     ""
    ],
@@ -59617,7 +59617,7 @@
     "MER-APN-054",
     "2026-09-01",
     "groundwater_extraction",
-    "D:17.1800",
+    "D:23.6100",
     "",
     ""
    ],
@@ -59653,7 +59653,7 @@
     "MER-APN-054",
     null,
     "groundwater_extraction",
-    "D:121.8000",
+    "D:161.4100",
     "",
     ""
    ],
@@ -59671,7 +59671,7 @@
     "MER-APN-054",
     null,
     "supplies",
-    "D:138.6827",
+    "D:178.2933",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -59680,7 +59680,7 @@
     "MER-APN-054",
     null,
     "uses",
-    "D:138.6827",
+    "D:178.2933",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -59689,7 +59689,7 @@
     "MER-APN-054",
     null,
     "water_not_consumed",
-    "D:20.1813",
+    "D:59.7919",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -69976,7 +69976,7 @@
     "MER-ACCT-010 \u00b7 Verdano Island Farms LLC",
     null,
     "uses",
-    "D:735.1922",
+    "D:765.3003",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -69985,7 +69985,7 @@
     "MER-ACCT-010 \u00b7 Verdano Island Farms LLC",
     null,
     "water_not_consumed",
-    "D:151.5226",
+    "D:181.6307",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -69994,7 +69994,7 @@
     "MER-ACCT-010 \u00b7 Verdano Island Farms LLC",
     null,
     "balance",
-    "D:0.0000",
+    "D:-30.1081",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70597,7 +70597,7 @@
     "Verdano Island Water District GSA",
     null,
     "water_not_consumed",
-    "D:259.4644",
+    "D:289.5725",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -70606,7 +70606,7 @@
     "Verdano Island Water District GSA",
     null,
     "balance",
-    "D:-0.0001",
+    "D:-30.1082",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -71065,7 +71065,7 @@
     "",
     null,
     "uses",
-    "D:16333.8188",
+    "D:16363.9269",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -71074,7 +71074,7 @@
     "",
     null,
     "water_not_consumed",
-    "D:1118.9477",
+    "D:1149.0558",
     "Default Methodology 721bc1ae69a9",
     ""
    ],
@@ -71083,7 +71083,7 @@
     "",
     null,
     "balance",
-    "D:-1347.4974",
+    "D:-1377.6055",
     "Default Methodology 721bc1ae69a9",
     ""
    ]
@@ -71122,14 +71122,14 @@
      "amount": "D:1878.37"
     }
    ],
-   "grand_not_consumed": "D:1118.9477",
-   "grand_uses_total": "D:16333.8188",
-   "grand_net": "D:-1347.4974",
+   "grand_not_consumed": "D:1149.0558",
+   "grand_uses_total": "D:16363.9269",
+   "grand_net": "D:-1377.6055",
    "accounts_with_estimates": 11,
    "grand_calculation_runs": 912,
    "accounts_in_surplus": 4,
-   "accounts_in_deficit": 2,
-   "accounts_balanced": 5,
+   "accounts_in_deficit": 3,
+   "accounts_balanced": 4,
    "has_allocations": true,
    "engine_has_never_run": false,
    "accounts_over_budget": 4,
@@ -71538,8 +71538,8 @@
       "groundwater": "D:645.6582",
       "precip": "D:89.5340",
       "supply_total": "D:735.1922",
-      "water_not_consumed": "D:151.5226",
-      "net_vs_supply": "D:0.0000",
+      "water_not_consumed": "D:181.6307",
+      "net_vs_supply": "D:-30.1081",
       "allocation": "D:598.7920",
       "remaining": "D:-46.8662",
       "calculation_runs": 48
@@ -71627,8 +71627,8 @@
       "groundwater": "D:1077.4251",
       "precip": "D:157.4538",
       "supply_total": "D:1234.8789",
-      "water_not_consumed": "D:259.4644",
-      "net_vs_supply": "D:-0.0001",
+      "water_not_consumed": "D:289.5725",
+      "net_vs_supply": "D:-30.1082",
       "allocation": "D:1061.0230",
       "carryover": "D:0",
       "remaining": "D:-16.4021",
@@ -71733,8 +71733,8 @@
    "grand_supply_surface": "D:7932.0197",
    "grand_supply_groundwater": "D:4380.1292",
    "grand_supply_precip": "D:2674.1725",
-   "grand_not_consumed": "D:1118.9477",
-   "grand_net": "D:-1347.4974",
+   "grand_not_consumed": "D:1149.0558",
+   "grand_net": "D:-1377.6055",
    "has_allocations": true,
    "engine_has_never_run": false,
    "total_count": 12,
@@ -71903,8 +71903,8 @@
       "groundwater": "D:645.6582",
       "precip": "D:89.5340",
       "supply_total": "D:735.1922",
-      "water_not_consumed": "D:151.5226",
-      "net_vs_supply": "D:0.0000",
+      "water_not_consumed": "D:181.6307",
+      "net_vs_supply": "D:-30.1081",
       "allocation": "D:598.7920",
       "remaining": "D:-46.8662",
       "calculation_runs": 48
