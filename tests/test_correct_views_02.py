@@ -508,3 +508,21 @@ def _finalized_record():
     record = DiversionRecordFactory(month=dt.date(2024, 3, 1), reporting_period=closed)
     ReportingPeriod.objects.filter(pk=closed.pk).update(is_finalized=True)
     return record
+
+
+# ------------------------------------------------------------------ the message while the run waits
+def test_the_message_does_not_say_recalculated_before_the_run_ends(ref, operator):
+    """The launch is stubbed (the fixture above), so each month's request is still waiting."""
+    from accounting.engine_run import recalculating_months_sentence
+    from tests.test_void_01 import post_void
+
+    _field, rows = three_reads("VW")
+    corrected = text(post(_client(operator), rows[1], **read_form(rows[1], "1142")))
+    ReportingPeriodFactory(start_date=dt.date(2023, 10, 1), end_date=dt.date(2024, 9, 30))
+    record = DiversionRecordFactory(month=dt.date(2024, 1, 1))
+    voided = text(post_void(_client(operator), "diversion_record", record))
+
+    assert set(CalculationRequest.objects.values_list("status", flat=True)) == {"queued"}
+    assert recalculating_months_sentence(["2025-07", "2025-08"]).rstrip(".") in corrected
+    assert recalculating_months_sentence(["2024-01"]) in voided
+    assert "OpenH2O recalculated" not in corrected + voided

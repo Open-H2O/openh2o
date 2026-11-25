@@ -143,6 +143,23 @@ def test_a_month_the_wells_meter_covers_stays_in_the_by_well_file_only():
     assert _volumes(_by_et(period)) == {("REG-MET", "2024-02"): D("4")}
 
 
+def test_a_moved_meters_reading_is_on_the_line_of_the_well_it_was_on_that_day():
+    period = ReportingPeriodFactory()
+    old = WellFactory(well_registration_id="REG-OLD")
+    new = WellFactory(well_registration_id="REG-NEW")
+    meter = Meter.objects.create(serial_number="BYWELL-MOVED", unit="acre_feet")
+    WellMeter.objects.create(well=old, meter=meter, removed_date=date(2024, 1, 1), is_current=False)
+    WellMeter.objects.create(well=new, meter=meter, installed_date=date(2024, 1, 1), is_current=True)
+    for day, af in ((datetime(2023, 12, 20, 20, tzinfo=timezone.utc), "10"),
+                    (datetime(2024, 1, 20, 20, tzinfo=timezone.utc), "30")):
+        MeterReading.objects.create(
+            meter=meter, reading_date=day, current_value=D(af), calculated_volume=D(af),
+        )
+
+    lines = {(r[0], r[4]): D(r[5]) for r in _lines("by_well", period)[1:]}
+    assert lines == {("REG-OLD", "2023-12"): D("10"), ("REG-NEW", "2024-01"): D("30")}
+
+
 def test_a_month_with_crop_et_and_no_calculation_puts_no_line_in_the_file():
     period = ReportingPeriodFactory()
     field = ParcelFactory()

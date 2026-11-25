@@ -350,3 +350,34 @@ def test_settings_page_is_200_empty_state_when_no_active_plan():
     resp = c.get(reverse("accounting:methodology_settings"))
     assert resp.status_code == 200  # friendly empty state, never a 500
     assert b"No active methodology" in resp.content
+
+
+# --------------------------------------------------------------------------
+# The crop ET step turned off
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_turning_the_crop_et_step_off_is_named_by_the_next_run():
+    """Crop ET is on record for all four use areas; the step that reads it is off."""
+    import io
+
+    from accounting.management.commands.run_calculations import Command
+    from accounting.models import CalculationStep
+    from tests import ledger_districts as ld
+
+    ld.seed_reference()
+    d1 = ld.build_d1()
+    ld.run_months(["2025-08"])
+    assert ParcelLedger.objects.filter(
+        parcel=d1["F4"], source_type="calculated", effective_date=ld.AUG
+    ).exists()
+
+    CalculationStep.objects.filter(step_type="et_gross").update(enabled=False)
+    command = Command()
+    call_command(command, period="2025-08", stdout=io.StringIO())
+
+    assert not ParcelLedger.objects.filter(
+        source_type="calculated", effective_date=ld.AUG
+    ).exists()
+    assert command.skipped == {"crop_et_step_off": 4, "no_crop_et": 0}

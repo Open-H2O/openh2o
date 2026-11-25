@@ -154,6 +154,32 @@ def test_a_field_with_its_own_meter_row_keeps_it_and_takes_no_share_of_the_well(
     assert meter_af(d1["F2"], ld.AUG) == D("0.0000")
 
 
+def _move_the_meter_to_w2(d1, day):
+    """W1's meter taken off on ``day`` and put on W2 the same day: both links stay on file."""
+    from wells.models import Well, WellMeter
+
+    w2 = Well.objects.get(name="W2")
+    WellMeter.objects.filter(well=d1["W1"]).update(removed_date=day, is_current=False)
+    WellMeter.objects.create(well=w2, meter=d1["meter"], installed_date=day, is_current=True)
+
+
+def test_a_moved_meter_counts_each_reading_under_the_well_it_was_on(d1):
+    _move_the_meter_to_w2(d1, dt.date(2025, 7, 1))
+    read_well(d1, dt.date(2025, 8, 31), 1000, 1036, volume=36)
+    ld.run_months(["2025-08"])
+    assert meter_af(d1["F3"], ld.AUG) == D("36.0000")
+    assert meter_af(d1["F1"], ld.AUG) == D("0.0000")
+    assert meter_af(d1["F2"], ld.AUG) == D("0.0000")
+
+
+def test_a_moved_meters_correction_reaches_only_the_use_areas_of_the_well_it_was_on(d1):
+    from core.corrections import KINDS
+
+    _move_the_meter_to_w2(d1, dt.date(2025, 7, 1))
+    reading = read_well(d1, dt.date(2025, 8, 31), 1000, 1036, volume=36)
+    assert KINDS["meter_reading"]["use_areas"](reading) == {d1["F3"].id}
+
+
 def test_the_well_page_takes_a_reading_and_lists_it(d1):
     user = get_user_model().objects.create_user(username="reader-eb", password="pw-eb-12345")
     client = Client()
