@@ -117,12 +117,17 @@ def test_a_second_run_after_a_stop_saves_only_what_is_missing(boundary):
     assert "1,000 other parcels were already use areas on this site." in out
 
 
-def test_resume_from_skips_the_ids_at_or_below_it(boundary):
-    out = run(boundary, FakeLightBox(count=2500), "--resume-from", "1000")
-    assert Parcel.objects.count() == 1500
-    assert not Parcel.objects.filter(parcel_number=apn_of(1000)).exists()
-    assert Parcel.objects.filter(parcel_number=apn_of(1001)).exists()
-    assert "OpenH2O saved 1,500 new use areas." in out
+def test_resume_from_is_refused_for_the_parcel_step(boundary):
+    # The option's help says flowlines only; a list run resumed this way also
+    # reported parcels below the key as not found.
+    fake = FakeLightBox(count=2500)
+    with patch("geography.services.arcgis.requests.post", side_effect=fake.post):
+        with pytest.raises(CommandError) as err:
+            call_command("auto_populate", "--boundary", str(boundary.pk), "--steps", "parcels",
+                         "--resume-from", "1000", stdout=StringIO())
+    assert Parcel.objects.count() == 0
+    assert "--steps flowlines" in str(err.value)
+    assert "--steps parcels" not in str(err.value)
 
 
 def test_a_run_that_finds_nothing_new_says_so(boundary):
@@ -305,3 +310,26 @@ def test_reading_a_list_refuses_a_spreadsheet_and_an_empty_file(tmp_path):
     assert str(refused.value) == (
         "OpenH2O did not find any parcel numbers in parcels.csv. Put the numbers in a column "
         "headed APN or Parcel number and choose the file again.")
+
+
+# -- A listed parcel whose outline cannot be read ------------------------------------
+
+
+def test_a_listed_parcel_whose_outline_cannot_be_read_is_counted(boundary, tmp_path):
+    # Listed = saved + already on file + no outline + not found: 4 = 2 + 0 + 1 + 1.
+    path = list_file(tmp_path, "APN\n000000000001\n000000000002\n000000000009\n900-000-001-000\n")
+    out = run(boundary, FakeLightBox(count=1200, no_outline={9}), "--parcel-list", path)
+    assert Parcel.objects.count() == 2
+    assert "Your list holds 4 different parcel numbers. OpenH2O saved 2 of them" in out
+    assert "1 parcel number on your list does not match any parcel" in out
+    outline = [line for line in out.splitlines() if "outline" in line]
+    assert len(outline) == 1 and " 1 parcel " in outline[0] and " 0 " not in outline[0], out
+
+
+def test_a_bad_first_record_does_not_hide_a_good_repeat(boundary):
+    # OBJECTID 1,100 repeats the number of OBJECTID 9, whose outline cannot be read.
+    fake = FakeLightBox(count=1200, apns={1100: apn_of(9)}, no_outline={9})
+    out = run(boundary, fake)
+    assert Parcel.objects.filter(parcel_number=apn_of(9)).exists()
+    assert Parcel.objects.count() == 1199
+    assert "whose outline it cannot read" not in out

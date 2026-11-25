@@ -330,3 +330,76 @@ def test_a_caddyfile_carrying_a_domain_is_reported():
         "a Caddyfile whose first site address is a hostname still read as "
         f"{seam.caddyfile_first_address!r}, so the assertion cannot fail"
     )
+
+
+# -- No guide offers an http:// site address -----------------------------------
+#
+# With OPENH2O_SITE_ADDRESS=http://water.example.org, Caddy matches only that name
+# and answers any other name with an empty page and no error. Left unset, every
+# name reaches Django, which refuses a name not in ALLOWED_HOSTS with a 400. So
+# the guides offer only "leave it unset" for a site behind a service that handles
+# the encryption.
+
+#: An http:// address with a host, other than the computer itself.
+_HTTP_HOST = re.compile(r"http://(?!localhost|127\.0\.0\.1)[A-Za-z0-9-]+\.[A-Za-z]")
+
+
+def _paragraphs_offering_an_http_address(text: str) -> list:
+    """Paragraphs that name the site address setting and give it an http:// host."""
+    offenders = []
+    for paragraph in re.split(r"\n\s*\n", text):
+        names_the_setting = "OPENH2O_SITE_ADDRESS" in paragraph or "site address" in paragraph.lower()
+        if names_the_setting and _HTTP_HOST.search(paragraph):
+            offenders.append(paragraph.strip()[:160])
+    return offenders
+
+
+def _http_site_blocks(text: str) -> list:
+    """Caddy site addresses written as http://<host> { inside any fenced block."""
+    found, inside = [], False
+    for line in text.splitlines():
+        if FENCE.match(line):
+            inside = not inside
+            continue
+        if inside:
+            match = SITE_ADDRESS.match(line)
+            if match and _HTTP_HOST.match(match.group(1)):
+                found.append(line.strip())
+    return found
+
+
+def _tracked_guides() -> list:
+    """Every Markdown file in the repository outside hidden folders, and the Caddyfile.
+
+    The test container has no git, so the files are walked rather than listed by git.
+    """
+    guides = [
+        path for path in REPO_ROOT.rglob("*.md")
+        if not any(part.startswith(".") or part in ("node_modules", "staticfiles")
+                   for part in path.relative_to(REPO_ROOT).parts)
+    ]
+    return guides + [REPO_ROOT / "Caddyfile"]
+
+
+def test_no_guide_offers_an_http_site_address():
+    offenders = {}
+    for path in _tracked_guides():
+        if not path.exists():
+            continue
+        text = path.read_text()
+        found = _paragraphs_offering_an_http_address(text) + _http_site_blocks(text)
+        if found:
+            offenders[str(path.relative_to(REPO_ROOT))] = found
+    assert not offenders, (
+        "a guide offers OPENH2O_SITE_ADDRESS an http:// address, and Caddy then "
+        f"answers every other name with an empty page: {offenders}"
+    )
+
+
+def test_the_http_address_scan_sees_a_planted_offer():
+    planted = "Set `OPENH2O_SITE_ADDRESS` to `http://water.example.org`."
+    assert _paragraphs_offering_an_http_address(planted)
+    assert _http_site_blocks("```caddy\nhttp://your-domain.com {\n}\n```\n")
+    assert not _paragraphs_offering_an_http_address(
+        "Leave `OPENH2O_SITE_ADDRESS` unset. Run `curl http://localhost`."
+    )

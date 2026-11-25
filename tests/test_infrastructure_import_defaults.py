@@ -64,3 +64,36 @@ def test_location_fields_say_what_makes_them_optional():
     assert notes["longitude"] == "Unless the file has a geometry"
     assert notes["geometry"] == "Unless the file has latitude and longitude"
     assert "name" not in notes
+
+
+SIX_TYPES = ("spreading_basin", "injection_well", "streambed", "asr_well", "storage_pond", "storage_tank")
+
+
+@pytest.mark.parametrize("infra_type", ["recharge_site", "storage"])
+def test_a_site_type_off_the_list_is_not_saved_and_is_noted(infra_type):
+    result = _validate(infra_type, {"kind": "basin"}, {**MAPPING, "site_type": "kind"})[0]
+    assert result["errors"] == []
+    assert result["data"].get("site_type") != "basin"
+    assert result["data"].get("site_type") in (None, "storage_pond")
+    notes = " ".join(result["warnings"])
+    assert "'basin'" in notes
+    # The note names the six types, as the page shows them.
+    from recharge.models import RechargeSite
+    for _, label in RechargeSite.SITE_TYPE_CHOICES:
+        assert label.lower() in notes.lower(), label
+
+
+@pytest.mark.parametrize("given", ["Spreading Basin", "SPREADING BASIN", "spreading_basin"])
+def test_a_site_type_is_read_by_its_label_or_value_in_any_case(given):
+    result = _validate("recharge_site", {"kind": given}, {**MAPPING, "site_type": "kind"})[0]
+    assert result["data"]["site_type"] == "spreading_basin"
+    assert result["warnings"] == []
+
+
+def test_the_importers_site_types_are_the_models():
+    from recharge.models import RechargeSite
+
+    assert [value for value, _ in RechargeSite.SITE_TYPE_CHOICES] == list(SIX_TYPES)
+    assert importer._CHOICE_LOOKUP["site_type"] == {
+        key.lower(): value for value, label in RechargeSite.SITE_TYPE_CHOICES for key in (value, label)
+    }
