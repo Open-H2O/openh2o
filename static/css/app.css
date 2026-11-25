@@ -1457,10 +1457,12 @@ html { color-scheme: dark; }
     width: 9rem;
     white-space: normal;
 }
-/* Plus the 2px collapsed border that sits BETWEEN the rows, outside the cell
-   box: measured 2026-09-08, a 36px border-box row lands the next row at 38.25. */
+/* The leaf row pins exactly at the group row's height. The 38.25 measured on
+   2026-09-08 was the 36px row under `.app-content`'s 1.0625 zoom, not a 2px
+   border between the rows: the extra 2px left a gap under the stuck group row
+   that the rows scrolling beneath showed through. */
 .data-table--grouped thead tr.th-group ~ tr th {
-    top: calc(var(--th-group-h, 36px) + 2px);
+    top: var(--th-group-h, 36px);
 }
 /* The group label is centred over its columns and its underline spans only
    its own cell, so it reads as a bracket rather than as one more column.
@@ -6066,12 +6068,12 @@ details[open] > summary .disclosure-mark {
 .as-of-reading .data-table thead th { top: var(--as-of-band-h); }
 /* The grouped two-row header keeps its own stacking (the "Grouped headers" rules above), moved down by the band. */
 .as-of-reading .data-table--grouped thead tr.th-group th { top: var(--as-of-band-h); }
-.as-of-reading .data-table--grouped thead tr.th-group ~ tr th { top: calc(var(--as-of-band-h) + var(--th-group-h, 36px) + 2px); }
+.as-of-reading .data-table--grouped thead tr.th-group ~ tr th { top: calc(var(--as-of-band-h) + var(--th-group-h, 36px)); }
 /* A table scrolling inside its own wrapper pins to the wrapper, not under the line: the offset there
    would push the header down over the table's first rows. */
 .as-of-reading .table-scroll:not([data-overflow="false"]) .data-table thead th { top: 0; }
 .as-of-reading .table-scroll:not([data-overflow="false"]) .data-table--grouped thead tr.th-group th { top: 0; }
-.as-of-reading .table-scroll:not([data-overflow="false"]) .data-table--grouped thead tr.th-group ~ tr th { top: calc(var(--th-group-h, 36px) + 2px); }
+.as-of-reading .table-scroll:not([data-overflow="false"]) .data-table--grouped thead tr.th-group ~ tr th { top: var(--th-group-h, 36px); }
 /* The ledger's table card has no padding of its own: its head becomes a row with the box at its end. */
 .ledger-card-head.as-of-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-md); }
 .ledger-card-head.as-of-head > :first-child { flex: 1 1 60ch; min-width: 0; }

@@ -35,6 +35,8 @@
 //            it spans (`offset`), and to the centre of its own underline
 //            (`underline`), the bracket DESIGN.md table rule 18 centres it on.
 //   overflow: whether the table is wider than the box that holds it.
+//   sticky_gap: on a two-row header, the space between the pinned group row
+//            and the pinned leaf row (0 is right; held to 0.5 px).
 // Every distance is in CSS pixels of the viewport, as getBoundingClientRect
 // reports them, so the page's own zoom is already applied.
 (opts = {}) => {
@@ -299,14 +301,31 @@
     const holder = table.closest(".table-scroll") || table.parentElement;
     const overflow = table.scrollWidth > holder.clientWidth + 1 || box.right > holder.getBoundingClientRect().right + 1;
 
-    const pass = rules.every((r) => r.pass) && headers.every((h) => h.pass) && groups.every((g) => g.pass);
+    // A two-row header pins both rows on scroll; the second must pin exactly
+    // where the first ends, or the rows scrolling beneath show through the
+    // gap. Read from the computed `top`s (unzoomed CSS px) and the group row's
+    // drawn height (zoomed), so no scrolling is needed to measure it.
+    let stickyGap = null;
+    const groupRow = table.querySelector(":scope > thead > tr.th-group");
+    const leafRow = groupRow && groupRow.nextElementSibling;
+    if (groupRow && leafRow && leafRow.cells.length) {
+      const g = groupRow.cells[0], l = leafRow.cells[0];
+      if (getComputedStyle(l).position === "sticky") {
+        const z = l.currentCSSZoom || 1;
+        const pinned = (parseFloat(getComputedStyle(l).top) - parseFloat(getComputedStyle(g).top)) * z;
+        stickyGap = round(pinned - groupRow.getBoundingClientRect().height);
+      }
+    }
+
+    const pass = rules.every((r) => r.pass) && headers.every((h) => h.pass) && groups.every((g) => g.pass)
+      && (stickyGap === null || Math.abs(stickyGap) <= 0.5);
     results.push({
       index, name: nameOf(table), classes: table.className,
       layout: tcs.tableLayout, colgroup, inline_widths: inlineWidths,
       width: round(box.width), columns: cols.length,
       widths: cols.map((c) => round(c.r - c.l)),
       overflow, scrolls: holder.classList.contains("table-scroll") ? holder.dataset.overflow || "" : "",
-      rules, headers, groups, pass,
+      rules, headers, groups, sticky_gap: stickyGap, pass,
     });
   });
 
