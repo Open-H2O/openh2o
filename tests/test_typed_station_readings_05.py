@@ -440,7 +440,8 @@ def test_the_monitoring_dashboard_has_no_card_for_the_manual_source(hand_station
     body = html.unescape(
         _client(operator).get(reverse("datasync:monitoring_dashboard")).content.decode()
     )
-    assert "Entered by hand" not in body
+    # No source card; the map above may key a hand station's plain mark by the source's name.
+    assert '<h3 class="section-header-flush">Entered by hand</h3>' not in body
 
 
 def test_a_hand_station_is_not_counted_as_a_syncing_station(hand_station, operator):
