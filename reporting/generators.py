@@ -473,22 +473,22 @@ def _well_reading_volumes(reporting_period: ReportingPeriod) -> dict[tuple[int, 
     end = timezone.make_aware(
         dt.datetime.combine(reporting_period.end_date + dt.timedelta(days=1), dt.time.min)
     )
-    by_meter: dict[tuple[int, str], Decimal] = {}
+    on_meter: dict[int, list[tuple[dt.date, Decimal]]] = {}
     for reading in MeterReading.objects.current().filter(
         reading_date__gte=start, reading_date__lt=end
     ).select_related("meter"):
         volume = _reading_acre_feet(reading)
         if volume is None:
             continue
-        key = (reading.meter_id, timezone.localtime(reading.reading_date).strftime("%Y-%m"))
-        by_meter[key] = by_meter.get(key, Decimal("0")) + volume
+        day = timezone.localtime(reading.reading_date).date()
+        on_meter.setdefault(reading.meter_id, []).append((day, volume))
 
-    meter_ids = {meter_id for meter_id, _ in by_meter}
+    # A reading counts under the well its meter was on that day, as the calculation counts it.
     out: dict[tuple[int, str], Decimal] = {}
-    for link in WellMeter.objects.filter(meter_id__in=meter_ids):
-        for (meter_id, month_str), volume in by_meter.items():
-            if meter_id == link.meter_id:
-                key = (link.well_id, month_str)
+    for link in WellMeter.objects.filter(meter_id__in=on_meter):
+        for day, volume in on_meter[link.meter_id]:
+            if link.counts_on(day):
+                key = (link.well_id, day.strftime("%Y-%m"))
                 out[key] = out.get(key, Decimal("0")) + volume
     return out
 

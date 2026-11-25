@@ -306,10 +306,17 @@ def _no_use_areas(row):
 
 
 def _meter_reading_use_areas(row):
-    """The use areas the reading's well irrigates, through the meter's well link."""
+    """The use areas the reading's well irrigates: the well the meter was on that day."""
+    from django.utils import timezone
+
     from wells.models import WellIrrigatedParcel, WellMeter
 
-    wells = WellMeter.objects.filter(meter_id=row.meter_id).values_list("well_id", flat=True)
+    day = timezone.localtime(row.reading_date).date()
+    wells = [
+        link.well_id
+        for link in WellMeter.objects.filter(meter_id=row.meter_id)
+        if link.counts_on(day)
+    ]
     return set(
         WellIrrigatedParcel.objects.filter(well_id__in=wells).values_list("parcel_id", flat=True)
     )

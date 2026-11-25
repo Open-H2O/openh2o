@@ -375,8 +375,8 @@ def _reading_acre_feet(reading) -> Decimal | None:
 def _well_meter_shares(year: int, month: int, parcel_ids: set[int]) -> dict[int, tuple[Decimal, str]]:
     """``{parcel id: (acre-feet, description)}`` for the fields a well's meter covers this month.
 
-    A well's readings dated in the month are added up and divided among the
-    fields the well waters by each field's share of the well (the shares
+    A well's readings dated in the month (each under the well its meter was on
+    that day) are added up and divided among the fields the well waters by each field's share of the well (the shares
     scaled to add to one, so shares left at their default divide it evenly).
     A well whose fields include one that carries its own meter row for the
     month is left out: that row already holds the meter's water.
@@ -395,11 +395,12 @@ def _well_meter_shares(year: int, month: int, parcel_ids: set[int]) -> dict[int,
     readings = MeterReading.objects.current().filter(
         reading_date__gte=start, reading_date__lt=end
     ).select_related("meter")
-    by_meter: dict[int, Decimal] = {}
+    on_meter: dict[int, list[tuple[dt.date, Decimal]]] = {}
     for reading in readings:
         volume = _reading_acre_feet(reading)
         if volume is not None:
-            by_meter[reading.meter_id] = by_meter.get(reading.meter_id, Decimal("0")) + volume
+            day = timezone.localtime(reading.reading_date).date()
+            on_meter.setdefault(reading.meter_id, []).append((day, volume))
 
     typed_rows = set(
         ParcelLedger.objects.current().filter(
@@ -414,11 +415,14 @@ def _well_meter_shares(year: int, month: int, parcel_ids: set[int]) -> dict[int,
     out: dict[int, tuple[Decimal, str]] = {}
     well_volumes: dict[int, Decimal] = {}
     wells: dict[int, Any] = {}
-    for link in WellMeter.objects.filter(meter_id__in=by_meter).select_related("well"):
-        wells[link.well_id] = link.well
-        well_volumes[link.well_id] = (
-            well_volumes.get(link.well_id, Decimal("0")) + by_meter[link.meter_id]
-        )
+    # A reading counts under the well its meter was on that day (WellMeter.counts_on).
+    for link in WellMeter.objects.filter(meter_id__in=on_meter).select_related("well"):
+        for day, volume in on_meter[link.meter_id]:
+            if link.counts_on(day):
+                wells[link.well_id] = link.well
+                well_volumes[link.well_id] = (
+                    well_volumes.get(link.well_id, Decimal("0")) + volume
+                )
     for well_id, volume in well_volumes.items():
         links = list(
             WellIrrigatedParcel.objects.filter(well_id=well_id).order_by("parcel_id")

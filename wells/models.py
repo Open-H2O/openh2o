@@ -224,6 +224,19 @@ class WellMeter(models.Model):
     def __str__(self):
         return f"{self.well} - {self.meter}"
 
+    def counts_on(self, day):
+        """Whether a reading the meter took on ``day`` counts under this link's well.
+
+        A link counts from its installed date (any day when none is set) up to
+        the day before its removed date (every day after, when none is set), so
+        a meter moved from one well to another on a day counts under the new
+        well from that day on. Every place that turns a meter's reading into a
+        well's water asks this, never ``is_current``.
+        """
+        return (self.installed_date is None or self.installed_date <= day) and (
+            self.removed_date is None or day < self.removed_date
+        )
+
 
 @track_changes()
 class WellIrrigatedParcel(models.Model):
