@@ -35,6 +35,7 @@ from tests.test_merced_ledgers import (
     OPEN_WY,
     PRIOR_WY,
     _build_physical_merced,
+    _charge_metered_wells,
 )
 
 
@@ -43,6 +44,8 @@ def seeded_site(db):
     """Physical slice + ledger seed + a logged-in client."""
     _build_physical_merced()
     call_command("seed_merced_ledgers")
+    # The metered wells' readings, divided among their fields by the calculation's share writer.
+    _charge_metered_wells()
     from core.models import User
 
     user = User.objects.create(

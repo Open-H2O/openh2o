@@ -256,6 +256,46 @@ def _metered_by_field():
     return out
 
 
+def _charge_metered_wells():
+    """Write each metered well's monthly readings as the seed sizes them, then each field's share
+    through the calculation's own share writer, as a demonstration build does.
+
+    For tests that read a metered field's groundwater off the ledger without running the whole
+    calculation over a slice with no crop ET.
+    """
+    import datetime as dt
+
+    from django.utils import timezone
+
+    from accounting.management.commands.run_calculations import (
+        _well_meter_shares,
+        _write_well_meter_shares,
+    )
+    from core.management.commands.seed_merced_ledgers import Command as LedgerSeed
+    from measurements.models import Meter, MeterReading
+    from wells.models import WellMeter
+
+    months = LedgerSeed().metered_well_months()
+    for well_id in {well_id for well_id, _ in months}:
+        meter = Meter.objects.create(serial_number=f"MTR-TEST-{well_id}", meter_type="totalizer", unit="acre_feet")
+        WellMeter.objects.create(well_id=well_id, meter=meter, installed_date=dt.date(2000, 1, 1), is_current=True)
+        running = Decimal("1000.0000")
+        for (wid, first), af in sorted((k, v) for k, v in months.items() if k[0] == well_id):
+            nxt = (first.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
+            previous, running = running, running + af
+            MeterReading.objects.create(
+                meter=meter, reading_date=timezone.make_aware(dt.datetime.combine(nxt - dt.timedelta(days=1), dt.time(14))),
+                previous_value=previous, current_value=running, calculated_volume=af,
+            )
+    parcel_ids = set(Parcel.objects.values_list("id", flat=True))
+    for period in ReportingPeriod.objects.all():
+        first = period.start_date.replace(day=1)
+        while first <= period.end_date:
+            shares = _well_meter_shares(first.year, first.month, parcel_ids)
+            _write_well_meter_shares(first.year, first.month, first, shares, parcel_ids, period)
+            first = (first.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
+
+
 def _has_metered_groundwater(parcel, by_field):
     return any(af > 0 for (pid, _y, _m), af in by_field.items() if pid == parcel.id)
 
