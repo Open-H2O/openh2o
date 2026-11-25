@@ -16,11 +16,11 @@ DESIGN — reproducible, non-destructive, accounting-safe:
     rebuild reproduces the exact same demo. No wall-clock, no global RNG.
   * Fill-only-when-blank: a field that already carries a value is never
     overwritten, so an operator's real entry survives and re-runs are idempotent.
-  * Display-only meters: the ``Meter``/``WellMeter`` rows this mints are purely
-    presentational. The accounting engine reads metered volumes from ledger
-    ``meter_reading`` rows, NOT from ``Meter`` objects, so creating them does not
-    touch the metered-disposition calibration. Meters are keyed on a
-    deterministic serial, so update_or_create never duplicates them.
+  * The meters: a ``Meter``/``WellMeter`` behind every certified-meter well.
+    ``seed_merced_measurements`` writes their monthly readings, and the
+    calculation divides each well's readings among its fields, as on a real
+    site. Meters are keyed on a deterministic serial, so update_or_create never
+    duplicates them.
 
 Runs LAST in the seed_merced sequence: it enriches records the structural seeds
 already created, and ``seed_merced_ledgers`` rebuilds accounts (rotating their

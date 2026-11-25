@@ -1754,7 +1754,7 @@ def split_surface_kinds(
     ``own`` is the sum of the deliveries no headgate's point divided (unknown);
     ``groups`` the divided deliveries summed per (point, first of month); ``methods``
     the volumes of that point's direct-use records in that month by kind. Each
-    group is split by those volumes, the last kind taking what is left, so the
+    group is split by those volumes, the last kind by name taking what is left, so the
     parts add exactly to the group. ``surface_kind_terms`` and
     ``accounting.year_reading`` both add up through here.
     """
@@ -1770,7 +1770,9 @@ def split_surface_kinds(
         if not total:
             add("unknown", amount)
             continue
-        kinds = list(by_kind.items())
+        # In the kinds' own order, not the order the database returned them in: the last kind
+        # takes what is left, and that can differ at the last digit.
+        kinds = sorted(by_kind.items())
         left = amount
         for kind, volume in kinds[:-1]:
             share = amount * volume / total

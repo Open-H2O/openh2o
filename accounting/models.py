@@ -900,9 +900,11 @@ class PeriodStatement(models.Model):
     )
     kind = models.CharField("kind of record", max_length=24, choices=KIND_CHOICES)
     taken_at = models.DateTimeField("recorded", default=timezone.now)
+    # PROTECT: the record is never edited, so the person cannot be blanked out of it. Deleting
+    # their login is refused with the records that keep it; Deactivate retires a login.
     taken_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="+",

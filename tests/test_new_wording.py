@@ -165,12 +165,12 @@ def test_a_short_string_that_reads_as_words_is_listed():
         "e = f'Showing all {n}'\n"
     )
     assert texts(listed({PY: ""}, {PY: head})) == {
-        "Revised (station reading)", "Record voided.", "a former user", "Void", "Showing all X"}
+        "Revised (station reading)", "Record voided.", "a former user", "Void", f"Showing all {nw.HOLE}"}
 
 
 def test_a_sentence_built_with_an_f_string_is_read_whole():
     head = "def f(n):\n    return f'USGS sent {n} new readings.'\n"
-    assert texts(listed({PY: ""}, {PY: head})) == {"USGS sent X new readings."}
+    assert texts(listed({PY: ""}, {PY: head})) == {f"USGS sent {nw.HOLE} new readings."}
 
 
 def test_a_replaced_sentence_carries_its_today_words():

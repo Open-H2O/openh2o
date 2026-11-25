@@ -192,8 +192,10 @@ jobs:
           cp "$RUNNER_TEMP/ci.env" .env
           export APP_VERSION=deploy-checks
           trap 'dc down -v --rmi local >/dev/null 2>&1' EXIT
-          dc build -q web || exit 3
-          dc up -d --wait db web || { dc logs web --tail 100; exit 3; }
+          # A stack that does not build or start exits 10, a code pytest never uses, so the
+          # record tells it from a pytest crash (3); regress.py runs it once more either way.
+          dc build -q web || exit 10
+          dc up -d --wait db web || { dc logs web --tail 100; exit 10; }
           mapfile -t leave < "$RUNNER_TEMP/release-deselect.txt"
           # Side by side when this tree's conftest.py deals tests to workers (pytest_xdist_make_scheduler,
           # 357f0d8d, 2026-11-15, after the fixes that made the suite safe in parallel), as tests.yml does;
@@ -236,6 +238,7 @@ jobs:
           name: deploy-checks-old-tests-attempt-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/deploy-checks/deploy-checks.json
+            ${{ runner.temp }}/deploy-checks/deploy-checks.json.setup-error.log
             ${{ runner.temp }}/deploy-checks/log.txt
           retention-days: 90
           if-no-files-found: warn
@@ -272,8 +275,10 @@ jobs:
           cp "$RUNNER_TEMP/ci.env" .env
           export APP_VERSION=deploy-checks
           trap 'dc down -v --rmi local >/dev/null 2>&1' EXIT
-          dc build -q web || exit 3
-          dc up -d --wait db web || { dc logs web --tail 100; exit 3; }
+          # A stack that does not build or start exits 10, a code pytest never uses, so the
+          # record tells it from a pytest crash (3); regress.py runs it once more either way.
+          dc build -q web || exit 10
+          dc up -d --wait db web || { dc logs web --tail 100; exit 10; }
           # Side by side when this tree's conftest.py deals tests to workers (pytest_xdist_make_scheduler,
           # 357f0d8d, 2026-11-15, after the fixes that made the suite safe in parallel), as tests.yml does;
           # a tree from before it (v3.0) runs one test at a time as before. Serial, the old tests took 30
@@ -318,6 +323,7 @@ jobs:
           name: deploy-checks-fix-${{ matrix.fix }}-attempt-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/deploy-checks/deploy-checks.json
+            ${{ runner.temp }}/deploy-checks/deploy-checks.json.setup-error.log
             ${{ runner.temp }}/deploy-checks/log.txt
           retention-days: 90
           if-no-files-found: warn

@@ -139,12 +139,11 @@ def _surface_water_stamps(
         (s for s in breakdown if s["step_type"] == "subtract_surface_water"), None
     )
 
-    # surface_water_af keeps its name and holds the CONSUMED part
-    # (delivered x efficiency, when the apply_efficiency knob is on; the
-    # delivered magnitude itself when it is off). surface_delivered_af and
-    # surface_efficiency are only present in the step detail when the knob is
-    # on ("delivered_af" / "efficiency" keys). An old breakdown, or the knob
-    # off, stores null for both, exactly as it always has for the one column.
+    # surface_water_af keeps its name and holds the CONSUMED part (delivered x
+    # the field's efficiency; the multiplication is not a setting, see
+    # accounting/steps.py). surface_delivered_af and surface_efficiency come from
+    # the step detail's "delivered_af" / "efficiency" keys; a breakdown written
+    # before those keys existed stores null for both.
     surface_water_af = None
     surface_delivered_af = None
     surface_efficiency = None
@@ -531,10 +530,9 @@ def _dry_run_extra(
         extra += f"; {credit_note}"
     # A canal-served field's line also names what was
     # delivered, the field's own efficiency (and where it came
-    # from), and what that leaves the crop to use. "delivered_af"
-    # is only in the detail when apply_efficiency is on; delivered
-    # 0 never reaches this line because subtract_surface_water
-    # itself skips the efficiency lookup at 0.
+    # from), and what that leaves the crop to use. The step always
+    # writes "delivered_af"; at a delivery of 0 it looks up no
+    # efficiency, so this line is never written for one.
     surface_step = next(
         (s for s in breakdown if s["step_type"] == "subtract_surface_water"),
         None,

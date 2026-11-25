@@ -561,12 +561,11 @@ class Command(BaseCommand):
 
         A domain expert reading a well's meter against its parcel's metered
         groundwater WILL compare the two, and disagreement is a worse defect than
-        emptiness. So the monthly delta is not invented: it is read straight off
-        the ``ParcelLedger`` rows of source type ``meter_reading`` for the
-        parcels that well irrigates, summed for the month. Where a well serves
-        several parcels (MER-W-019 serves four), the well's total is the sum of
-        its parcels' rows, which is the same demand-weighted split
-        ``seed_merced_ledgers`` already applied when it wrote them.
+        emptiness. So the monthly delta is not invented: it is the well's month
+        as ``seed_merced_ledgers.metered_well_months`` sizes it, the sum of its
+        fields' groundwater needs (MER-W-019 serves four). The calculation then
+        divides each reading among the well's fields by their shares, as on a
+        real site, so a corrected or voided reading moves the fields' accounts.
 
         The totalizer itself runs the way a totalizer runs: monotonically
         increasing, never reset, ``calculated_volume`` exactly the difference.
@@ -575,19 +574,15 @@ class Command(BaseCommand):
 
         ⛔ ``read_by`` stays NULL. See the module docstring.
         """
-        from parcels.models import ParcelLedger
-        from django.db.models import Sum
+        from core.management.commands.seed_merced_ledgers import Command as LedgerSeed
 
+        sizes = LedgerSeed().metered_well_months()
         created = 0
         for meter in meters:
             link = WellMeter.objects.filter(meter=meter).select_related("well").first()
             if link is None:
                 continue
             well = link.well
-            parcel_ids = list(
-                WellIrrigatedParcel.objects.filter(well=well).values_list(
-                    "parcel_id", flat=True)
-            )
             rng = random.Random(f"totalizer:{meter.serial_number}")
             # Lifetime accumulation before this water year opened — a well
             # pumping a few hundred acre-feet a year since the 1990s.
@@ -604,15 +599,7 @@ class Command(BaseCommand):
             for m_idx, (year, month) in enumerate(WY_MONTHS):
                 first = datetime.date(year, month, 1)
                 last = _month_end(year, month)
-                delta = ParcelLedger.objects.filter(
-                    parcel_id__in=parcel_ids,
-                    source_type="meter_reading",
-                    effective_date__gte=first,
-                    effective_date__lte=last,
-                ).aggregate(total=Sum("amount_acre_feet"))["total"] or Decimal("0")
-                # Ledger extraction rows are negative (water leaving the parcel);
-                # a totalizer counts what came out, so take the magnitude.
-                delta = _q4(abs(delta))
+                delta = _q4(sizes.get((well.id, first), Decimal("0")))
                 previous = running
                 running = _q4(previous + delta)
 

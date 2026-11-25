@@ -33,7 +33,6 @@ from decimal import Decimal
 
 import pytest
 from django.core.management import call_command
-from django.db.models import Sum
 
 from measurements.models import (
     Meter, MeterReading, Sensor, SensorMeasurement, WaterMeasurement,
@@ -42,7 +41,7 @@ from parcels.models import ParcelLedger
 from recharge.models import RechargeMeasurement
 from standards.models import ObservedProperty
 from surface.models import DiversionRecord
-from wells.models import MonitoringWell, WellIrrigatedParcel, WellMeter
+from wells.models import MonitoringWell, WellMeter
 
 from tests.factories import (
     DiversionRecordFactory,
@@ -206,19 +205,20 @@ def test_the_accounting_spine_does_not_move(demo):
 
 
 @pytest.mark.django_db
-def test_the_totalizer_reconciles_to_the_ledger(demo):
-    """Each month's delta equals that well's metered groundwater for the month.
+def test_the_totalizer_reconciles_to_the_ledger(demo, monkeypatch):
+    """Each month's delta is the well's metered groundwater for the month.
 
     A water master will read the well's meter against its parcel's metered
-    groundwater. Disagreement there is a worse defect than an empty table.
+    groundwater. Disagreement there is a worse defect than an empty table. The
+    ledger seed sizes each metered well's month and writes no ledger row; the
+    readings carry it, and the calculation divides them among the well's fields.
     """
+    from core.management.commands.seed_merced_ledgers import Command as LedgerSeed
+
+    sized = {(demo["well"].pk, when.replace(day=1)): amount for when, amount in LEDGER_MONTHS.items()}
+    monkeypatch.setattr(LedgerSeed, "metered_well_months", lambda self: sized)
     call_command("seed_merced_measurements")
 
-    parcel_ids = list(
-        WellIrrigatedParcel.objects.filter(well=demo["well"]).values_list(
-            "parcel_id", flat=True
-        )
-    )
     readings = list(
         MeterReading.objects.filter(meter=demo["meter"]).order_by("reading_date")
     )
@@ -228,17 +228,11 @@ def test_the_totalizer_reconciles_to_the_ledger(demo):
     )
 
     for reading in readings:
-        read_on = reading.reading_date.date()
-        first = read_on.replace(day=1)
-        ledger = ParcelLedger.objects.filter(
-            parcel_id__in=parcel_ids,
-            source_type="meter_reading",
-            effective_date__gte=first,
-            effective_date__lte=read_on,
-        ).aggregate(total=Sum("amount_acre_feet"))["total"] or Decimal("0")
-        assert reading.calculated_volume == abs(ledger), (
-            f"{read_on:%B %Y}: the meter read {reading.calculated_volume} AF and "
-            f"the ledger holds {abs(ledger)} AF for the same well-month"
+        first = reading.reading_date.date().replace(day=1)
+        expected = sized.get((demo["well"].pk, first), Decimal("0"))
+        assert reading.calculated_volume == expected, (
+            f"{first:%B %Y}: the meter read {reading.calculated_volume} AF and "
+            f"the well's metered groundwater is {expected} AF for the same month"
         )
         # A totalizer counts up and is never reset.
         assert reading.current_value - reading.previous_value == reading.calculated_volume

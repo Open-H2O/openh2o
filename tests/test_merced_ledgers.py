@@ -238,21 +238,43 @@ def _parcel_has_metered_well(parcel):
     ).exists()
 
 
+def _metered_by_field():
+    """``{(parcel id, year, month): AF}``: each metered well's monthly reading as the seed sizes
+    it, divided among the well's fields by their shares, as the calculation divides it.
+
+    The seed writes no ledger row for a metered field: the readings are the authority, and the
+    calculation writes each field's share of them (``run_calculations._well_meter_shares``).
+    """
+    from core.management.commands.seed_merced_ledgers import Command as LedgerSeed
+
+    out = defaultdict(Decimal)
+    for (well_id, month), af in LedgerSeed().metered_well_months().items():
+        links = list(WellIrrigatedParcel.objects.filter(well_id=well_id))
+        total = sum((ln.fraction for ln in links), Decimal("0"))
+        for ln in links:
+            out[(ln.parcel_id, month.year, month.month)] += af * ln.fraction / total
+    return out
+
+
+def _has_metered_groundwater(parcel, by_field):
+    return any(af > 0 for (pid, _y, _m), af in by_field.items() if pid == parcel.id)
+
+
 # --------------------------------------------------------------------------
 # Group 1 — water_source keying / two-authority separation
 # --------------------------------------------------------------------------
 @pytest.mark.django_db
 def test_groundwater_parcel_has_no_surface_delivery(seeded):
+    by_field = _metered_by_field()
     for p in Parcel.objects.filter(parcel_number__startswith="MER-APN-"):
         if _source_of(p) != "groundwater":
             continue
         assert not ParcelLedger.objects.filter(
             parcel=p, source_type="surface_diversion").exists(), (
             f"{p.parcel_number} is groundwater-only but has a surface delivery")
-        # Seed extraction now exists ONLY for metered-well parcels (52.5-01); an
-        # unmetered-well parcel is engine-owned and carries no seed extraction.
-        has_extraction = ParcelLedger.objects.filter(
-            parcel=p, source_type__in=GW_EXTRACTION_SOURCES).exists()
+        # Metered groundwater exists ONLY for metered-well parcels (52.5-01); an
+        # unmetered-well parcel is engine-owned and carries none.
+        has_extraction = _has_metered_groundwater(p, by_field)
         if _parcel_has_metered_well(p):
             assert has_extraction, (
                 f"{p.parcel_number} is on a metered well but has no extraction row")
@@ -293,14 +315,14 @@ def test_conjunctive_parcel_has_both_surface_and_groundwater(seeded):
     extraction is seeded only when its well is metered (an unmetered conjunctive
     parcel's groundwater is engine-owned — Plan 02)."""
     seen_metered = 0
+    by_field = _metered_by_field()
     for p in Parcel.objects.filter(parcel_number__startswith="MER-APN-"):
         if _source_of(p) != "conjunctive":
             continue
         assert ParcelLedger.objects.filter(
             parcel=p, source_type="surface_diversion").exists(), (
             f"{p.parcel_number} is conjunctive but has no surface delivery")
-        has_extraction = ParcelLedger.objects.filter(
-            parcel=p, source_type__in=GW_EXTRACTION_SOURCES).exists()
+        has_extraction = _has_metered_groundwater(p, by_field)
         if _parcel_has_metered_well(p):
             seen_metered += 1
             assert has_extraction, (
@@ -334,14 +356,14 @@ def test_unmetered_wells_write_no_seed_groundwater_rows(seeded):
                 f"{w.well_registration_id} is unmetered but its parcel "
                 f"{ln.parcel_id} has a seed extraction row")
 
-    # Each metered well's parcels carry meter_reading rows (authoritative, kept).
+    # Each metered well carries monthly readings (authoritative); the calculation
+    # divides them among its parcels, so the seed writes no row for them either.
+    months = _metered_by_field()
     for w in metered:
         for ln in WellIrrigatedParcel.objects.filter(well=w):
-            assert ParcelLedger.objects.filter(
-                parcel_id=ln.parcel_id, source_type="meter_reading"
-            ).exists(), (
+            assert any(af > 0 for (pid, _y, _m), af in months.items() if pid == ln.parcel_id), (
                 f"{w.well_registration_id} is metered but its parcel "
-                f"{ln.parcel_id} has no meter_reading row")
+                f"{ln.parcel_id} gets none of its readings")
 
 
 def test_seed_fills_the_three_dwr_fields_beside_the_method(seeded):
@@ -485,13 +507,14 @@ def test_el_nido_conjunctive_parcels_substitute_groundwater(seeded):
     months than equivalent conjunctive growers on a canal that kept delivering."""
     el_nido_ids = {p.id for p in _el_nido_parcels()}
 
+    by_field = _metered_by_field()
+
     def dry_month_gw(parcels):
         total = Decimal("0")
         for p in parcels:
-            for r in ParcelLedger.objects.filter(
-                    parcel=p, source_type__in=GW_EXTRACTION_SOURCES):
-                if r.effective_date.month in SUBSTITUTION_MONTHS and r.effective_date.year == 2025:
-                    total += abs(r.amount_acre_feet)
+            for (pid, year, month), af in by_field.items():
+                if pid == p.id and month in SUBSTITUTION_MONTHS and year == 2025:
+                    total += af
         # Per acre, so unequal group acreage can't skew the comparison.
         acres = sum(Decimal(str(p.area_acres or 0)) for p in parcels) or Decimal("1")
         return total / acres
@@ -517,51 +540,26 @@ def test_el_nido_conjunctive_parcels_substitute_groundwater(seeded):
 # --------------------------------------------------------------------------
 @pytest.mark.django_db
 def test_shared_well_extraction_splits_by_fraction_and_sums_to_total(seeded):
-    # Shared groups that ALSO write seed extraction are the METERED multi-parcel
-    # wells (52.5-01: unmetered wells write no seed rows, so apportionment is only
-    # observable for the metered ones).
-    shared = []
-    for well in Well.objects.filter(
-        well_registration_id__startswith="MER-W-",
-        measurement_method="certified_meter",
-    ):
-        links = list(WellIrrigatedParcel.objects.filter(well=well))
-        if len(links) > 1:
-            shared.append((well, links))
-    assert shared, "fixture should contain a metered shared well"
+    # A metered well's reading is one figure a month for all its fields; the
+    # calculation divides it by the stored fractions (run_calculations), so the seed
+    # writes no per-field row. Here: a shared metered well has a reading every month
+    # of both water years, sized from all its fields, and no field carries a row.
+    from core.management.commands.seed_merced_ledgers import Command as LedgerSeed
 
-    for well, links in shared:
-        # month -> {parcel_id: summed |extraction|}
-        by_month = defaultdict(dict)
-        frac_of = {ln.parcel_id: ln.fraction for ln in links}
-        for ln in links:
-            for r in ParcelLedger.objects.filter(
-                    parcel_id=ln.parcel_id, source_type__in=GW_EXTRACTION_SOURCES):
-                key = (r.effective_date.year, r.effective_date.month)
-                by_month[key][ln.parcel_id] = (
-                    by_month[key].get(ln.parcel_id, Decimal("0")) + abs(r.amount_acre_feet))
-        assert by_month, f"{well.well_registration_id} produced no extraction rows"
-        frac_sum = sum(frac_of.values())  # 1/N rounded to 4dp may sum to 0.9999
-        for key, shares in by_month.items():
-            # Every member is represented — none dropped.
-            assert set(shares.keys()) == set(frac_of.keys()), (
-                f"{well.well_registration_id} {key}: a member parcel was dropped")
-            group_total = sum(shares.values())
-            # Reconstruct the well's true monthly total from the stored fractions,
-            # so the check is robust to the 1/N rounding residual (3 x 0.3333 != 1).
-            implied_well_total = group_total / frac_sum
-            for pid, frac in frac_of.items():
-                share = shares[pid]
-                expected = implied_well_total * frac
-                assert abs(share - expected) <= Decimal("0.0002"), (
-                    f"{well.well_registration_id} {key}: parcel {pid} got {share}, "
-                    f"expected its stored fraction {frac} of the well total "
-                    f"({implied_well_total:.4f}) = {expected:.4f}")
-                # No single parcel double-counts the whole well.
-                if len(frac_of) > 1:
-                    assert share < group_total, (
-                        f"{well.well_registration_id} {key}: parcel {pid} took the "
-                        "whole well total")
+    months = LedgerSeed().metered_well_months()
+    shared = [
+        well for well in Well.objects.filter(
+            well_registration_id__startswith="MER-W-", measurement_method="certified_meter")
+        if WellIrrigatedParcel.objects.filter(well=well).count() > 1
+    ]
+    assert shared, "fixture should contain a metered shared well"
+    for well in shared:
+        mine = {month: af for (well_id, month), af in months.items() if well_id == well.pk}
+        assert len(mine) == 24, f"{well.well_registration_id} lacks a month's reading"
+        assert sum(mine.values()) > 0, f"{well.well_registration_id} produced no extraction"
+        parcel_ids = WellIrrigatedParcel.objects.filter(well=well).values_list("parcel_id", flat=True)
+        assert not ParcelLedger.objects.filter(
+            parcel_id__in=parcel_ids, source_type__in=GW_EXTRACTION_SOURCES).exists()
 
 
 # --------------------------------------------------------------------------
@@ -810,8 +808,14 @@ def test_both_periods_carry_supply_on_the_same_parcels(seeded):
     prior = ReportingPeriod.objects.get(name=PRIOR_WY)
     open_wy = ReportingPeriod.objects.get(name=OPEN_WY)
 
+    by_field = _metered_by_field()
     for source_type in ("surface_diversion", "meter_reading"):
         def parcels_with(period):
+            if source_type == "meter_reading":
+                return {
+                    pid for (pid, year, month), af in by_field.items()
+                    if af > 0 and period.start_date <= date(year, month, 1) <= period.end_date
+                }
             return set(
                 ParcelLedger.objects.filter(
                     reporting_period=period, source_type=source_type

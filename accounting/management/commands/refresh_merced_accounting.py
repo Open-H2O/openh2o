@@ -174,11 +174,10 @@ class Command(BaseCommand):
         ))
         call_command("seed_merced_ledgers", stdout=self.stdout)
 
-        # The well meters' readings are seeded as the sum of the field rows, and
-        # the engine divides a well's reading among its fields where none carries
-        # its own row. Pass 2 just rewrote those rows, so the readings are seeded
-        # again from them before pass 3 reads them; otherwise pass 3 divides
-        # readings sized from the first, flat ledger.
+        # The well meters' readings are sized from each field's crop ET demand less
+        # the surface pass 2 just delivered, and pass 3 divides each reading among
+        # the well's fields. They are seeded again here so pass 3 divides readings
+        # sized from this pass's deliveries, not from the first, flat ones.
         if all(is_enabled(m) for m in ("wells", "measurements", "recharge")):
             call_command("seed_merced_measurements", stdout=self.stdout)
 

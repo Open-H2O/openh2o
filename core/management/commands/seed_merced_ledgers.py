@@ -536,7 +536,6 @@ class Command(BaseCommand):
         # meters against the demand surface left unmet. Across periods the ledger
         # keys are month-scoped, so neither year can see the other's rows. ---
         surface_rows = []
-        gw_rows = []
         for rp in periods:
             # Surface deliveries FIRST: synthesize the recorded district total per
             # POD, then let the PLATFORM service split it across served parcels by
@@ -551,12 +550,14 @@ class Command(BaseCommand):
             # actually delivered, within the over-pump band. The lookup is keyed
             # (parcel, "YYYY-MM"), so re-reading it inside the loop returns this
             # period's months and the other year's rows are simply never asked for.
+            # Only the wells' methods are written here: a metered well's monthly
+            # readings are sized by ``metered_well_months`` (seed_merced_measurements
+            # writes them), and the calculation divides them among the well's fields,
+            # as on a real site. A ledger row written here would read as a field's own
+            # typed reading, and the calculation would never divide the well's.
             surface_by_pm = self._surface_by_parcel_month(parcels)
-            period_gw_rows = self._groundwater_rows(
-                parcels, dry_parcel_ids, gw, rp, net_cu, surface_by_pm,
-                eff_by_parcel)
-            ParcelLedger.objects.bulk_create(period_gw_rows, batch_size=500)
-            gw_rows.extend(period_gw_rows)
+            self._metered_sizes(
+                parcels, dry_parcel_ids, rp, net_cu, surface_by_pm, eff_by_parcel)
 
             # The visible water journey (non-consumptive passthrough +
             # downstream re-diversion). Parcel-less PODs -> zero ledger supply ->
@@ -581,7 +582,6 @@ class Command(BaseCommand):
         # Surface allocations last: they are sized from the deliveries above.
         self._size_surface_allocations(district_zones, periods, open_wy)
 
-        entries = entries + gw_rows  # combined ledger count for the summary
 
         self._summary(parcels, district_zones, surface_parcel_ids,
                       dry_parcel_ids, entries, surface_rows)
@@ -1053,9 +1053,42 @@ class Command(BaseCommand):
         )
         return written
 
-    def _groundwater_rows(self, parcels, dry_parcel_ids, gw, period, net_cu,
-                          surface_by_pm, eff_by_parcel):
-        """Monthly groundwater extraction (NEGATIVE) for METERED wells ONLY.
+    def metered_well_months(self):
+        """``{(well id, first of month): acre-feet}``: each metered MER well's monthly reading.
+
+        Sized from what the database holds now, the same way ``_seed`` sizes it: each
+        served field's crop ET demand (from the calculation runs) less the surface it was
+        delivered, divided by its crop's irrigation efficiency, summed over the well's
+        fields; a month with no run takes the flat seasonal fallback. Both water years.
+        ``seed_merced_measurements`` writes these as the meters' readings.
+        """
+        from surface.models import PointOfDiversionParcel
+
+        parcels = list(Parcel.objects.filter(
+            parcel_number__startswith=MER_PARCEL_PREFIX).order_by("parcel_number"))
+        periods = list(ReportingPeriod.objects.filter(
+            name__in=["WY 2024-2025", "WY 2025-2026"]).order_by("start_date"))
+        dry_parcel_ids = set(
+            PointOfDiversionParcel.objects.filter(
+                parcel__in=parcels,
+                point_of_diversion__name__startswith=EL_NIDO_POD_PREFIX,
+            ).values_list("parcel_id", flat=True)
+        )
+        net_cu = self._net_cu_by_parcel_month(parcels, periods)
+        eff_by_parcel = self._efficiency_by_parcel(parcels)
+        surface_by_pm = self._surface_by_parcel_month(parcels)
+        sizes = {}
+        for rp in periods:
+            sizes.update(self._metered_sizes(
+                parcels, dry_parcel_ids, rp, net_cu, surface_by_pm, eff_by_parcel))
+        return sizes
+
+    def _metered_sizes(self, parcels, dry_parcel_ids, period, net_cu,
+                       surface_by_pm, eff_by_parcel):
+        """Each MER well's method, and each METERED well's monthly reading in ``period``.
+
+        Returns ``{(well id, first of month): acre-feet}``. Writes no ledger row: the
+        calculation divides a well's readings among its fields (see ``_seed``).
 
         The metering split is a dual-source invariant: wells alternate
         metered / unmetered. The two halves are handled differently:
@@ -1073,13 +1106,13 @@ class Command(BaseCommand):
           meter and a surface delivery is never double-supplied: its meter reads ~0
           when surface covered its ET, and rises (the substitution story) when
           the El Nido canal runs dry. A groundwater-only metered parcel (no surface) reads
-          its full demand × the band. Readings are stored NEGATIVE (production
-          convention). NO synthetic substitution bump is applied on the ET path —
+          its full demand × the band. The well's reading is the sum of its
+          fields' sizes. NO synthetic substitution bump is applied on the ET path —
           the dry canal lifts the residual on its own. The bump + the
           fraction-split well total survive ONLY on the fallback path (a parcel-month
           with no run), to preserve the hermetic demo story.
 
-        - An UNMETERED well writes NO synthetic groundwater rows. Its parcels'
+        - An UNMETERED well gets NO reading. Its parcels'
           groundwater is computed by the REAL calc engine (``calculated`` rows); a
           synthetic row here would double-count. The well still gets
           ``measurement_method='unmetered_estimate'`` so the metered/unmetered story
@@ -1102,7 +1135,7 @@ class Command(BaseCommand):
             links_by_well.setdefault(ln.well_id, []).append(ln)
 
         schedule = self._month_schedule(period)
-        rows = []
+        sizes = {}
         for wseq, well in enumerate(wells):
             links = links_by_well.get(well.id)
             if not links:
@@ -1180,19 +1213,10 @@ class Command(BaseCommand):
                     shares = {
                         ln.parcel_id: _q(well_monthly * ln.fraction) for ln in links
                     }
-                for ln in links:
-                    share = shares[ln.parcel_id]
-                    if share <= 0:
-                        continue
-                    p = parcel_by_id[ln.parcel_id]
-                    rows.append(ParcelLedger(
-                        parcel=p, transaction_date=month_date, effective_date=month_date,
-                        amount_acre_feet=-share, water_type=gw,
-                        source_type="meter_reading",
-                        description="Monthly metered groundwater extraction",
-                        reporting_period=period,
-                    ))
-        return rows
+                month_first = month_date.replace(day=1)
+                sizes[(well.id, month_first)] = sum(
+                    (max(share, Decimal("0")) for share in shares.values()), Decimal("0"))
+        return sizes
 
     # ------------------------------------------------------------------
     # Diversion-reach journey records
@@ -1459,7 +1483,7 @@ class Command(BaseCommand):
             "water accounts (one per owner)\n"
             f"  {AllocationPlan.objects.filter(name__startswith='MER Surface Service Area').count()} "
             "surface allocations + GSA groundwater allocations, both periods\n"
-            f"  {total_rows} ledger rows ({len(entries)} allocations + groundwater, "
+            f"  {total_rows} ledger rows ({len(entries)} allocations, "
             f"{len(surface_rows)} surface deliveries via allocate_district_delivery)\n"
             "  2 reporting periods (WY 2024-2025, WY 2025-2026)"
         ))

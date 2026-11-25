@@ -44,11 +44,17 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 import writing_shapes as ws  # noqa: E402
 
 #: The rule for a sentence's end, as the guard's own surfaces split it.
-SPLIT = re.compile(r"(?<=[.!?:])\s+(?=[A-Z<\"'(])")
+SPLIT = re.compile(r"(?<=[.!?:])\s+(?=[A-Z<\"'(¤])")
 #: A Python string carrying any of these is code, not a sentence.
 CODEY = re.compile(r"\b(?:SELECT|INSERT|CREATE|UPDATE|DELETE|DROP|ALTER|RAISE|BEGIN|END IF|EXECUTE|WHERE|TRIGGER|pg_temp)\b"
                    r"|[=<>{}]|\w+_\w+")
 PLACEHOLDER = re.compile(r"%\(\w+\)[sdrf]|%[sdrf]|\{\w*(?:![rs])?(?::[^{}]*)?\}")
+#: What a placeholder becomes: a character no word contains, so a placeholder glued to a word
+#: ("record{s}") still splits from it, and a word that starts with X ("X-Forwarded-Proto") is not one.
+HOLE = "¤"
+#: A placeholder in a line: the character above, or a lone X as the template reader writes one
+#: ({{ value }} becomes " X ") and as rows and older lists spell it.
+HOLES = re.compile(HOLE + r"|(?<![\w-])X(?![\w-])")
 #: Keyword arguments whose words a reader sees, however short.
 LABEL_ARGS = frozenset({"label", "help_text", "verbose_name", "verbose_name_plural", "empty_label", "title", "message"})
 MODEL_ARGS = frozenset({"help_text", "verbose_name", "verbose_name_plural"})
@@ -63,7 +69,7 @@ FIGURE = re.compile(r"^(?:[-+−]?[\d,.]+(?:\s+\S+)?|(?:Jan|Feb|Mar|Apr|May|Jun|
 def norm(text: str) -> str:
     """One spelling of a line, for comparing: entities, curly quotes, Markdown marks and placeholders."""
     text = html.unescape(text).replace("’", "'").replace("‘", "'").replace("“", '"').replace("”", '"')
-    text = PLACEHOLDER.sub("X", text.replace("*", "").replace("`", ""))
+    text = PLACEHOLDER.sub(HOLE, text.replace("*", "").replace("`", ""))
     return " ".join(text.split())
 
 
@@ -83,7 +89,7 @@ def _reads_as_words(text: str) -> bool:
     """A short Python string a reader could see: words with a space, or one capitalized word. 'notice' is code."""
     if CODEY.search(text) or re.search(r"[/:&?#\\|]|^[-(.]|\.\w", text):
         return False
-    bare = re.sub(r"\bX\b", "", text).strip()
+    bare = HOLES.sub("", text).strip()
     if not _has_words(bare) or bare.isupper():
         return False
     return " " in text or bare[0].isupper()
@@ -132,7 +138,7 @@ def _python_lines(rel: str, source: str) -> tuple:
         if id(node) in skip:
             continue
         if isinstance(node, ast.JoinedStr):
-            text = "".join(v.value if isinstance(v, ast.Constant) else "X" for v in node.values)
+            text = "".join(v.value if isinstance(v, ast.Constant) else HOLE for v in node.values)
         elif isinstance(node, ast.Constant) and isinstance(node.value, str):
             text = node.value
         else:
@@ -152,7 +158,8 @@ def _python_lines(rel: str, source: str) -> tuple:
                 left_out.add(text)
         elif not CODEY.search(text):
             for s in _sentences(text):
-                if s[0].isupper() and s.rstrip().endswith((".", "?", ":")) and len(s.split()) >= 2:
+                # A placeholder may open a sentence ("{n} records saved."), as a capital letter does.
+                if (s[0].isupper() or s[0] == HOLE) and s.rstrip().endswith((".", "?", ":")) and len(s.split()) >= 2:
                     lines.append((_kind(s), s))
     return lines, left_out
 
@@ -283,17 +290,24 @@ def _in_rows(text: str, corpus: str) -> bool:
 
 
 def _one_line_in_rows(text: str, corpus: str) -> bool:
-    if len(text.split()) < 4 and not re.search(r"\bX\b", text):
+    if len(text.split()) < 4 and not HOLES.search(text):
         bare = text.strip(" .,:;()'")
         # A cell that is the whole label passes too: a split on "/" would cut a path such as /drinking/import/.
         if bare in (row.strip(" .,:;()'") for row in corpus.splitlines()):
             return True
         cells = (part.strip(" .,:;()'") for row in corpus.splitlines() for part in re.split(r'[,;/:"]', row))
         return bare in cells
-    # A quote around a placeholder ('X') is part of the placeholder, not a word.
-    pieces = [p.strip(" .,:;()'") for p in re.split(r"\bX\b", norm(text))]
-    for piece in pieces:
-        if piece and not re.search(r"(?<!\w)" + re.escape(piece) + r"(?!\w)", corpus):
+    # A quote around a placeholder ('X') is part of the placeholder, not a word. A piece glued to a
+    # placeholder ("record" in "record¤") may run on into the letters the placeholder printed.
+    pieces = HOLES.split(norm(text))
+    for at, raw in enumerate(pieces):
+        piece = raw.strip(" .,:;()'")
+        if not piece:
+            continue
+        glued_before = at > 0 and raw[:1].isalnum()
+        glued_after = at < len(pieces) - 1 and raw[-1:].isalnum()
+        pattern = ("" if glued_before else r"(?<!\w)") + re.escape(piece) + ("" if glued_after else r"(?!\w)")
+        if not re.search(pattern, corpus):
             return False
     return True
 
@@ -341,7 +355,8 @@ def _pick(paths: list) -> list:
 def read_tree(rev: str | None) -> dict:
     """``{path: source}`` of every surface at a commit, or in the working tree when ``rev`` is None."""
     if rev is None:
-        paths = _pick(_git("ls-files").stdout.decode().splitlines())
+        # A plan's new files are not committed yet: read the untracked ones too (not the ignored ones).
+        paths = _pick(_git("ls-files", "--cached", "--others", "--exclude-standard").stdout.decode().splitlines())
         return {p: (REPO_ROOT / p).read_text() for p in paths if (REPO_ROOT / p).is_file()}
     paths = _pick(_git("ls-tree", "-r", "--name-only", rev).stdout.decode().splitlines())
     wanted = "".join(f"{rev}:{p}\n" for p in paths).encode()

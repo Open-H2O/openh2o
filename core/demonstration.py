@@ -101,8 +101,8 @@ STEPS = [
         "refresh_merced_accounting",
         ["--period", "WY 2024-2025", "--period", "WY 2025-2026"],
     ),
-    # Re-seeded after the refresh on purpose: the meter reads are the sum of the
-    # ledger rows, and the refresh rewrites the ledger.
+    # Re-seeded after the refresh on purpose, from the same crop ET and deliveries
+    # the refresh's last calculation divided the meter readings by.
     ("seed_merced_measurements", []),
 ]
 
@@ -331,6 +331,69 @@ def content_models():
         except LookupError:
             continue
     return found
+
+
+def switched_off_counts():
+    """``{section label: {content label: rows}}`` for each switched-off section whose tables still hold rows.
+
+    A section that is switched off leaves the app list, so :func:`content_models` skips its tables;
+    the tables and their rows stay in the database, and the rows can point at records a removal
+    deletes. Read with plain SQL, since Django has no model for them.
+    """
+    from core.modules import MODULE_REGISTRY
+
+    listed = {label for label, _ in content_models()}
+    connection = connections[DEFAULT_DB_ALIAS]
+    tables = set(connection.introspection.table_names())
+    found = {}
+    for label in CONTENT_LABELS:
+        if label in listed:
+            continue
+        app_label, model_name = label.split(".")
+        table = f"{app_label}_{model_name.lower()}"
+        if table not in tables:
+            continue
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT COUNT(*) FROM {connection.ops.quote_name(table)}")
+            rows = cursor.fetchone()[0]
+        if rows:
+            section = next(
+                (spec.label for spec in MODULE_REGISTRY.values() if app_label in spec.apps), app_label
+            )
+            found.setdefault(section, {})[label] = rows
+    return found
+
+
+def switched_off_refusal(found):
+    """The sentence for a removal refused because switched-off sections still hold records."""
+    sections = _join(list(found))
+    switch_on = (
+        "Sections are switched on in the server’s settings, with OPENH2O_MODULES, as section 12 of "
+        "DEPLOY.md describes."
+    )
+    all_or_nothing = (
+        "Nothing was removed. The removal saves all or nothing in one run, so the records in the "
+        "sections that are switched on are still in place too."
+    )
+    if len(found) == 1:
+        (counts,) = found.values()
+        held = describe(counts)
+        return (
+            f"The demonstration data was not removed, because the {sections} section is switched off on "
+            f"this site and still holds {held}, which the removal cannot delete while {sections} is off. "
+            f"{all_or_nothing} Once {sections} is switched on, remove the demonstration data again, and "
+            f"the removal deletes the {held} along with the other records in the site's own tables. "
+            f"{switch_on}"
+        )
+    each = _join([f"{describe(counts)} in {section}" for section, counts in found.items()])
+    held = _join([describe(counts) for counts in found.values()])
+    return (
+        f"The demonstration data was not removed, because the {sections} sections are switched off on "
+        f"this site and still hold {each}, which the removal cannot delete while {sections} are off. "
+        f"{all_or_nothing} The removal refuses while any switched-off section still holds records, so it "
+        f"goes ahead only with {sections} each switched on. Then remove the demonstration data again, and "
+        f"the removal deletes the {held} along with the other records in the site's own tables. {switch_on}"
+    )
 
 
 def content_counts():
@@ -850,6 +913,9 @@ def remove(stdout=None):
 
     if not is_loaded():
         raise Refused(NOT_LOADED_SENTENCE)
+    held = switched_off_counts()
+    if held:
+        raise Refused(switched_off_refusal(held))
 
     with pghistory.context(action="remove_demonstration") as context:
         with transaction.atomic():

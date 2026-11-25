@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copied verbatim from vanderoffice/testing-program regress/regress.py at 617f9acf50b0390ea4c28a98fce2e1bf15039aa6; change it there.
+# Copied verbatim from vanderoffice/testing-program regress/regress.py at 01f6996ae178dff2c7f6e5156e46e216035cfb6b; change it there.
 """regress.py: the testing program's checks for rules 6 and 8, run before a deploy and weekly.
 
   old tests   the deployed commit's (base's) tests, run against the candidate's (head's) code.
@@ -23,7 +23,9 @@ it is listed in the log and the record.
 
 Exit codes: 0 pass; 1 a rule broken (every failure printed, with the line that would excuse it);
 2 setup error (bad argument, a commit that is not one, base not an ancestor of head, no JUnit
-report, an exit code that is neither 0 nor in --fail-exits, a timeout): never a pass;
+report, an exit code that is neither 0 nor in --fail-exits, a timeout): never a pass. A run that
+ends with an exit code that is neither is run once more first, and decided by the second run; a
+setup error keeps that run's whole log beside --out (<out>.setup-error.log);
 4 git could not read the repository.
 
 Standard library only (Python 3.9 and up). It never commits, never pushes, never moves a ref, runs
@@ -313,11 +315,34 @@ class Engine:
                 rc = self.proc.wait(timeout=self.a.timeout)
             except subprocess.TimeoutExpired:
                 kill(self.proc)
-                self.tail(log)
-                raise SetupError(f"{what} timed out after {self.a.timeout} s")
+                raise self.setup_error(log, f"{what} timed out after {self.a.timeout} s")
             finally:
                 self.proc = None
         return rc, round(time.time() - t0, 1), log
+
+    def once_more(self, cmd, cwd, what, rc):
+        """Run a command again after an exit that is neither 0 nor in --fail-exits.
+
+        A setup error that comes and goes (a stack that did not start in time) must not decide
+        anything on its own. Returns the second run's (exit, seconds, log)."""
+        say(f"  {what} ended with exit {rc}, which is neither 0 nor in --fail-exits; ran it once more")
+        rc2, secs, log = self.run(cmd, cwd, what)
+        say(f"  the second run ended with exit {rc2}")
+        return rc2, secs, log
+
+    def keep(self, log):
+        """Copy a setup error's whole log beside --out, so the record can say why."""
+        if not self.a.out or not os.path.exists(log):
+            return
+        kept = f"{self.a.out}.setup-error.log"
+        shutil.copyfile(log, kept)
+        self.record["setup_error_log"] = kept
+        say(f"  the run's whole log is kept at {kept}")
+
+    def setup_error(self, log, message):
+        self.tail(log)
+        self.keep(log)
+        return SetupError(message)
 
     def tail(self, log, n=25):
         try:
@@ -331,28 +356,29 @@ class Engine:
     def suite(self, cmd, cwd, what):
         """Run a command that writes JUnit to {junit}; returns (exit, seconds, [(id, file, failed)])."""
         junit = os.path.join(self.tmp, f"junit-{next(self.seq)}.xml")
-        rc, secs, log = self.run(cmd.replace("{junit}", shlex.quote(junit)), cwd, what)
+        run = cmd.replace("{junit}", shlex.quote(junit))
+        rc, secs, log = self.run(run, cwd, what)
         if rc != 0 and rc not in self.fail_exits:
-            self.tail(log)
-            raise SetupError(f"{what} ended with exit {rc}, which is neither 0 nor in --fail-exits {sorted(self.fail_exits)}")
+            rc, secs, log = self.once_more(run, cwd, what, rc)
+        if rc != 0 and rc not in self.fail_exits:
+            raise self.setup_error(log, f"{what} ended with exit {rc} twice, which is neither 0 nor in --fail-exits {sorted(self.fail_exits)}")
         if not os.path.exists(junit):
-            self.tail(log)
-            raise SetupError(f"{what}: no JUnit report where the command was told to write it ({{junit}}), exit {rc}")
+            raise self.setup_error(log, f"{what}: no JUnit report where the command was told to write it ({{junit}}), exit {rc}")
         try:
             cases = junit_cases(junit, cwd)
         except ET.ParseError as e:
-            raise SetupError(f"{what}: the JUnit report does not parse ({e})")
+            raise self.setup_error(log, f"{what}: the JUnit report does not parse ({e})")
         if rc != 0 and not any(f for _, _, f in cases):
-            self.tail(log)
-            raise SetupError(f"{what} ended with exit {rc} but its JUnit report names no failing test")
+            raise self.setup_error(log, f"{what} ended with exit {rc} but its JUnit report names no failing test")
         return rc, secs, cases
 
     def per_file_run(self, path, cwd, what):
         cmd = self.a.per_file.replace("{file}", shlex.quote(path)).replace("{module}", shlex.quote(module_of(path)))
         rc, secs, log = self.run(cmd, cwd, what)
         if rc != 0 and rc not in self.fail_exits:
-            self.tail(log)
-            raise SetupError(f"{what} ended with exit {rc}, which is neither 0 nor in --fail-exits {sorted(self.fail_exits)}")
+            rc, secs, log = self.once_more(cmd, cwd, what, rc)
+        if rc != 0 and rc not in self.fail_exits:
+            raise self.setup_error(log, f"{what} ended with exit {rc} twice, which is neither 0 nor in --fail-exits {sorted(self.fail_exits)}")
         return rc, secs, log
 
     # ---- the two checks
@@ -435,15 +461,18 @@ class Engine:
             files = " ".join(shlex.quote(p) for p in runnable)
             junit = os.path.join(self.tmp, f"junit-fix-{sha[:12]}.xml")
             cmd = self.a.subset.replace("{files}", files).replace("{junit}", shlex.quote(junit))
-            rc, secs, log = self.run(cmd, wt, f"fix {sha[:12]}'s tests on its parent")
+            what = f"fix {sha[:12]}'s tests on its parent"
+            rc, secs, log = self.run(cmd, wt, what)
+            if rc != 0 and rc not in self.fail_exits:
+                out["setup_error_first_exit"] = rc
+                rc, secs, log = self.once_more(cmd, wt, what, rc)
             out.update(mode="subset", ran=runnable, exit=rc)
             if rc in self.fail_exits:
                 out["verdict"] = "failed-before-fix"
             elif rc == 0:
                 out["verdict"] = "passed-before-fix"
             else:
-                self.tail(log)
-                raise SetupError(f"fix {sha[:12]}'s tests on its parent ended with exit {rc}, which is neither 0 nor in --fail-exits {sorted(self.fail_exits)}")
+                raise self.setup_error(log, f"{what} ended with exit {rc} twice, which is neither 0 nor in --fail-exits {sorted(self.fail_exits)}")
         else:
             rc, _, laid = self.suite(self.a.command, wt, f"fix {sha[:12]}: the whole suite on its parent with its tests")
             own = self.worktree(fx["parent"], f"parent-{sha[:12]}")
