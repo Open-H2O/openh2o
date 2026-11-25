@@ -214,7 +214,7 @@ class TestSamplingPointsListNamesItsCount:
         html = client_in.get(reverse("drinking:sampling_points")).content.decode()
         row = _row_containing(html, "Wellhead Tap")
         assert "1,234" in row
-        assert '<span class="th-stack">Sample results</span>' in html, (
+        assert '<th>Sample results</th>' in html, (
             "the count column's header was not renamed from Results"
         )
 

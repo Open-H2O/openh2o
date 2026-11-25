@@ -6139,8 +6139,18 @@ details[open] > summary .disclosure-mark {
    content-sized tracks at the house gap: the field, its acres inside the use area, its crop
    ET. A header line names the columns in tertiary text; figures bold, right-aligned, in
    tabular figures. Sizes are in em so the group scales with the panel's container range. */
+/* The name track gives way down to its longest word (an OpenET field id), so "Outside the
+   OpenET fields" wraps inside the cell: at 1,153 and 1,265 on the full receipt its one line
+   pushed the AF column across the divider into Effective precipitation (sweep, 2026-11-25).
+   The two figure tracks keep their one line. */
 .budget-seg > .budget-breakdown-group.budget-breakdown-group--fields {
-    grid-template-columns: max-content max-content max-content;
+    grid-template-columns: minmax(min-content, max-content) max-content max-content;
+}
+/* On the receipt a narrow cell's parts filled it to the divider: the field list's AF figures
+   and Rainfall's figures stood flush against the rule beside them at 1,265. The parts keep
+   one --space-md clear of it; where they are narrower than the cell this changes nothing. */
+.receipt-panel .budget-panel-body .budget-seg > .budget-breakdown-group {
+    margin-inline-end: var(--space-md);
 }
 .budget-breakdown-group--fields > .budget-breakdown-head > span {
     padding: 0;
