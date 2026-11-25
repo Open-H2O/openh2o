@@ -198,7 +198,7 @@ site. Leave the `Caddyfile` as shipped: Caddy takes its address from the setting
 |---|---|---|
 | Only this computer, or the office network | Leave `OPENH2O_SITE_ADDRESS` unset | **Branch A** |
 | The public internet, and this server obtains its own certificate | Set `OPENH2O_SITE_ADDRESS` to your bare domain | **Branch B** |
-| The public internet, and something in front of the server handles the encryption | Leave `OPENH2O_SITE_ADDRESS` unset, or set it to `http://your-domain.com` | **Branch C** |
+| The public internet, and something in front of the server handles the encryption | Leave `OPENH2O_SITE_ADDRESS` unset | **Branch C** |
 
 Phase 2 of the [AI operator guide](docs/AI-OPERATOR-GUIDE.md) asks the same question.
 Take `OPENH2O_SITE_ADDRESS` from this section and the other `.env` settings from
@@ -310,36 +310,16 @@ This branch is for a tunnel service, the organization's own proxy or a load
 balancer: anything that receives the encrypted traffic, decrypts it and sends plain
 traffic on to this server.
 
-Leave `OPENH2O_SITE_ADDRESS` unset. To have Caddy answer only at your domain, set
-`OPENH2O_SITE_ADDRESS` to the domain with the `http://` prefix. Do not set a bare domain
-on this branch.
+Leave `OPENH2O_SITE_ADDRESS` unset. Caddy then uses `:80`. It answers at any address
+over plain HTTP, serves the site's styling and images itself, and passes every other
+request to OpenH2O. OpenH2O's production settings accept a request only for a name in
+`ALLOWED_HOSTS` in `.env`, or for `localhost` or `127.0.0.1`, which they add. A request
+for the site's own name reaches the site when that name is in `ALLOWED_HOSTS`. Django
+refuses a request for any other name with a 400 error (Bad Request).
 
-```bash
-OPENH2O_SITE_ADDRESS=http://your-domain.com
-```
-
-Caddy then serves a site like this one:
-
-```caddy
-http://your-domain.com {
-    encode gzip
-
-    handle /static/* {
-        root * /srv
-        file_server
-    }
-
-    handle {
-        reverse_proxy web:8000 {
-            header_up X-Forwarded-Proto https
-        }
-    }
-}
-```
-
-With the `http://` prefix, Caddy serves that name over plain HTTP and does not request a
-certificate. With a bare domain, it requests one. The service in front of the server
-still sends plain traffic, so the requests loop until they fail.
+Do not set a bare domain on this branch. Caddy would request a certificate for the bare
+domain. The service in front of the server still sends plain traffic, so the requests
+loop until they fail.
 
 <!-- defines: x_forwarded_proto -->
 Keep the `header_up X-Forwarded-Proto` line in the `Caddyfile` that comes with
@@ -611,12 +591,10 @@ curl -s -o /dev/null -w '%{http_code}' http://localhost
 # Expected: 200 or 302
 ```
 
-This check works on Branch A, and on Branch C with `OPENH2O_SITE_ADDRESS` unset: in
-both, Caddy answers on port 80 at any address. On Branch B, `OPENH2O_SITE_ADDRESS` names
-one domain, so Caddy refuses a request made to `localhost`. On Branch C with
-`OPENH2O_SITE_ADDRESS` set to `http://your-domain.com`, Caddy answers only at that name.
-Run this check and the health API check below against the domain instead, over
-`https://` on Branch B and over `http://` on Branch C.
+This check works on Branch A and Branch C: in both, Caddy answers on port 80 at any
+address. On Branch B, `OPENH2O_SITE_ADDRESS` names one domain, so Caddy refuses a
+request made to `localhost`. On Branch B, run this check and the health API check below
+against the domain instead, over `https://`.
 
 <!-- defines: postgis -->
 **PostGIS:** PostgreSQL is the database that stores every record the site
@@ -853,22 +831,26 @@ health. The jobs are in `crontab.txt`:
 | `run_accounting --open-periods --trigger schedule` | Every day at 3:30 | Calculates every reporting period that is not finalized, after the 2:00 sync. It never changes a finalized period. Only an administrator's correction or void does, in the months each covers. Each run's record shows on the period's page and on Site health |
 | `run_health_checks` | Every 6 hours | Checks the database, the disk, the certificate, the migrations and the data sources |
 | `sync_openet_parcels` | The 8th of each month at 4:15 | Asks OpenET for the monthly crop ET and rain of every OpenET field that overlaps a use area. It asks for every month up to the end of last month, in each water year that is not finalized |
-| `prune_old_data --confirm` | The 1st of each month at 3:00 | Deletes sync logs and health-check results older than a year, published readings OpenH2O received more than a year ago whatever date they describe, and unfinished import uploads older than a day. It keeps readings at Entered by hand stations, and deletes a revised reading with its earlier values once OpenH2O received the newest of them more than a year ago |
+| `prune_old_data --confirm` | The 1st of each month at 3:00 | Deletes sync logs and health-check results older than a year, published readings OpenH2O received more than a year ago whatever date they describe, and every record more than a day old that OpenH2O keeps while work waits for a person or runs in the background: an import upload nobody finished, a finalize run, and a Setup Wizard step, finished or not. It keeps readings at Entered by hand stations, and deletes a revised reading with its earlier values once OpenH2O received the newest of them more than a year ago |
 
 The times are in the server's own time zone. A station's page shows when OpenH2O next
 reads that station's data. The page gives that time in the site's time zone. Set the
 site's time zone with `set_organization --time-zone`. A site whose organization's name
 was never set uses the `TIME_ZONE` setting in `.env`. Set the server's clock to the same
 zone. Until its key is set, the schedule skips CIMIS or NOAA with one line in the log.
-The OpenET job works only on the default setting, `OPENET_MODE=fields`. On the other two
-settings in section 12 the job stops with an error each month. Run `sync_openet_parcels`
-and `sync_precip_parcels` by hand on those settings, with `--start-date` and
-`--end-date` (Phase 4 of the AI operator guide). The OpenET job writes its errors to
-`openet.log` and does not send an alert. On those two settings OpenET does not send
-rain. A use area not matched to OpenET's fields gets a month's rainfall only from
-`sync_precip_parcels`. <!-- defines: google_earth_engine -->Google Earth Engine is
-Google's service for analysing satellite imagery. `sync_precip_parcels` reads gridMET
-rainfall through Earth Engine. It stops with an error when Earth Engine is not set up in
+<!-- defines: google_earth_engine -->Google Earth Engine is Google's service for
+analysing satellite imagery. The OpenET job runs each month on all three settings in
+section 12: `fields`, `api` and `gee`. The job does not pass dates, so it asks for every
+month from the first day of the earliest water year not finalized to the end of last
+month. On `fields` and `api`, the job skips with one line in its log and does not send a
+request until `OPENET_API_KEY` is set. The OpenET job does not run
+`sync_precip_parcels`, and `sync_precip_parcels` is not on the schedule. Run
+`sync_precip_parcels` by hand for each new period on `api` and `gee`, with
+`--start-date` and `--end-date` (Phase 4 of the AI operator guide). The OpenET job
+writes its errors to `openet.log` and does not send an alert. On those two settings
+OpenET does not send rain. A use area not matched to OpenET's fields gets a month's
+rainfall only from `sync_precip_parcels`. `sync_precip_parcels` reads gridMET rainfall
+through Earth Engine. It stops with an error when Earth Engine is not set up in
 `GEE_PROJECT`, `GEE_SERVICE_ACCOUNT_EMAIL` and `GEE_SERVICE_ACCOUNT_KEY_FILE`.
 `docs/earth-engine-tier-setup.md` explains that setup. OpenH2O still calculates a month
 without rain on record. That month's effective precipitation is 0. Its ETAW equals its
@@ -1279,7 +1261,7 @@ Two terms in the tables need explaining:
 | `SESSION_COOKIE_SECURE` | No | `True` | Sends the sign-in cookie only over HTTPS. Set `False` on Branch A |
 | `CSRF_COOKIE_SECURE` | No | `True` | Sends the form-check cookie only over HTTPS. Set `False` on Branch A |
 | `ACCESS_CONTROL_ENFORCED` | No | `True` | Closes sign-up and keeps the administrator pages for administrators. Set `False` only on an open demonstration site, where anyone may sign up. A viewer stays read-only either way |
-| `OPENH2O_SITE_ADDRESS` | No | `:80` | The address Caddy answers at. With a bare domain such as `water.example.org`, Caddy obtains a certificate (section 4, Branch B). With `http://water.example.org`, it answers only at that name over plain HTTP (Branch C). Caddy reads the setting when its container starts, so run `docker compose up -d` after a change |
+| `OPENH2O_SITE_ADDRESS` | No | `:80` | The address Caddy answers at. With a bare domain such as `water.example.org`, Caddy obtains a certificate (section 4, Branch B). Caddy reads the setting when its container starts, so run `docker compose up -d` after a change |
 | `OPENH2O_FORWARDED_PROTO` | No | `https` | Caddy passes each request to OpenH2O as HTTPS unless this setting is `http`. Set it to `http` for Branch A in section 4. Leave it unset for Branches B and C. Caddy reads the setting when its container starts. Run `docker compose up -d` after changing it |
 | `OPENH2O_MODULES` | No | every module except `reporting` | The modules of OpenH2O the site runs, separated by commas, or `all`. The list must include `core`, `geography`, `measurements` and `standards`. A list that leaves out a module another module needs stops the site at start with an error that names the missing module. The demonstration needs every module in the default |
 | `SOURCE_CODE_URL` | No | `https://github.com/Open-H2O/openh2o` | The address the Source code link at the foot of every page points at. An organization that runs a changed copy of OpenH2O for its users sets this to where it publishes its changes (the AGPL, section 13). The site ignores a value that does not start with `http://` or `https://`, logs a warning at start and keeps the default link |

@@ -422,7 +422,8 @@ class OpenETCache(models.Model):
 class OpenETField(models.Model):
     """One of OpenET's own fields, the outline and number OpenET keeps for a piece of land.
 
-    A site keeps the outline OpenET sent; the demonstration does not carry outlines.
+    A site keeps the outline OpenET sent; the demonstration loads the outlines held in
+    ``data/merced/openet_fields.json`` (``load_openet_fields_fixture``).
     """
 
     field_id = models.BigIntegerField("OpenET field number", unique=True,

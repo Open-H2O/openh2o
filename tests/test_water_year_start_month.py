@@ -169,3 +169,14 @@ def test_editing_an_older_year_that_disagrees_is_not_refused_for_its_month():
         instance=year,
     )
     assert form.is_valid(), form.errors
+
+
+def test_the_admin_page_refuses_a_year_in_another_month():
+    from accounting.forms import ReportingPeriodAdminForm
+
+    _site(10)
+    form = ReportingPeriodAdminForm(
+        {"name": "April Year", "start_date": "2024-04-01", "end_date": "2025-03-31", "notes": ""}
+    )
+    assert not form.is_valid()
+    assert form.errors.get("start_date")

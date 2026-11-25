@@ -61,8 +61,8 @@ services:
       # Earth Engine service-account key dir (OPENET_MODE=gee only). Read-only.
       # Mount the directory, not the file: a single-file bind to a path that
       # does not exist yet would make Docker create a stray directory and break
-      # the default api-mode deploy. The key (./secrets/gee-key.json) is
-      # gitignored and must never be committed; api mode never reads it.
+      # every deploy on the default fields route. The key (./secrets/gee-key.json)
+      # is gitignored and must never be committed; only the gee route reads it.
       # See docs/earth-engine-tier-setup.md.
       - ./secrets:/run/secrets:ro
       # The nightly backups (scripts/backup.sh), read-only. The Site health card

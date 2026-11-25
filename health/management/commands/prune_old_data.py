@@ -4,9 +4,10 @@
 An operator runs it (typically on a schedule) to delete aged published staging
 records, health-check results, and sync logs past their day thresholds
 (--staging-days/--health-days/--sync-days, each default 365); it defaults to a
-dry-run preview and only deletes when passed --confirm. It also removes bulk
-import uploads that nobody finished (older than 24 hours, file and row), the
-same cleanup each new import preview runs.
+dry-run preview and only deletes when passed --confirm. It also removes every
+waiting row older than 24 hours, file and row, the same cleanup each new import
+preview runs: an import upload nobody finished, a finalize run and a Setup
+Wizard step each wait in one. Each kind is counted under its own name.
 """
 from datetime import timedelta
 
@@ -83,11 +84,9 @@ class Command(BaseCommand):
         staging_count = staging_qs.count()
         health_count = health_qs.count()
         sync_count = sync_qs.count()
-        pending_count = PendingImport.objects.filter(
-            created_at__lt=now - EXPIRY
-        ).count()
+        pending = waiting_rows_by_kind(now)
 
-        total = staging_count + health_count + sync_count + pending_count
+        total = staging_count + health_count + sync_count + sum(pending.values())
 
         if not confirm:
             self.stdout.write(self.style.WARNING("DRY RUN (use --confirm to delete)"))
@@ -104,10 +103,8 @@ class Command(BaseCommand):
         self.stdout.write(
             f"{'Sync logs':<30} {sync_count:<10} {sync_cutoff.date()}"
         )
-        self.stdout.write(
-            f"{'Unfinished import uploads':<30} {pending_count:<10} "
-            f"{(now - EXPIRY).date()}"
-        )
+        for label, count in pending.items():
+            self.stdout.write(f"{label:<30} {count:<10} {(now - EXPIRY).date()}")
         self.stdout.write("-" * 60)
         self.stdout.write(f"{'Total':<30} {total}")
         self.stdout.write("")
@@ -120,12 +117,13 @@ class Command(BaseCommand):
             staging_deleted, _ = staging_qs.delete()
             health_deleted, _ = health_qs.delete()
             sync_deleted, _ = sync_qs.delete()
-            pending_deleted = purge_expired(now)
+            purge_expired(now)
 
+            waiting = ", ".join(f"{count} {DELETED_NOUNS[label]}" for label, count in pending.items())
             self.stdout.write(
                 self.style.SUCCESS(
                     f"Deleted: {staging_deleted} staging, {health_deleted} health, {sync_deleted} sync log records, "
-                    f"{pending_deleted} unfinished import uploads"
+                    f"{waiting}"
                 )
             )
         else:
@@ -133,3 +131,28 @@ class Command(BaseCommand):
                 self.stdout.write("Run with --confirm to delete these records.")
             else:
                 self.stdout.write(self.style.SUCCESS("Nothing to prune."))
+
+
+#: The waiting rows prune_old_data deletes, by kind, each under its own label.
+UPLOADS = "Unfinished import uploads"
+FINALIZE_RUNS = "Finalize runs"
+SETUP_STEPS = "Setup Wizard steps"
+#: Each label as the closing line names it.
+DELETED_NOUNS = {UPLOADS: "unfinished import uploads", FINALIZE_RUNS: "finalize runs",
+                 SETUP_STEPS: "Setup Wizard steps"}
+
+
+def _label(kind):
+    if kind == "finalize":
+        return FINALIZE_RUNS
+    if kind.startswith("setup_"):
+        return SETUP_STEPS
+    return UPLOADS
+
+
+def waiting_rows_by_kind(now):
+    """How many waiting rows older than a day there are, under each label, in a fixed order."""
+    counts = {UPLOADS: 0, FINALIZE_RUNS: 0, SETUP_STEPS: 0}
+    for kind in PendingImport.objects.filter(created_at__lt=now - EXPIRY).values_list("kind", flat=True):
+        counts[_label(kind)] += 1
+    return counts

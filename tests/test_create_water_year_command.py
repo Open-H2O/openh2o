@@ -50,6 +50,17 @@ class _UserFactory(factory.django.DjangoModelFactory):
     is_active = True
 
 
+@pytest.fixture(autouse=True)
+def calendar_water_year(db):
+    """The invented water years here are calendar years, so the site's water year starts in
+    January: a water year must start in the site's month (Delivery Settings)."""
+    from core.models import SiteConfig
+
+    config = SiteConfig.objects.first() or SiteConfig.objects.create(agency_name="Test Agency")
+    config.water_year_start_month = 1
+    config.save()
+
+
 @pytest.fixture
 def auth_client(db):
     c = Client()

@@ -2,6 +2,7 @@
 """Django admin registrations for the water accounting models."""
 from django.contrib import admin
 
+from .forms import ReportingPeriodAdminForm
 from .models import (
     AllocationCarryover,
     AllocationPlan,
@@ -23,6 +24,8 @@ class WaterTypeAdmin(admin.ModelAdmin):
 
 @admin.register(ReportingPeriod)
 class ReportingPeriodAdmin(admin.ModelAdmin):
+    # A water year starts in the site's month here too (accounting.forms.start_month_error).
+    form = ReportingPeriodAdminForm
     list_display = ["name", "start_date", "end_date", "is_finalized", "finalized_at"]
     list_filter = ["is_finalized"]
     search_fields = ["name"]

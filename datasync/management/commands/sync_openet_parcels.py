@@ -20,6 +20,7 @@ Usage:
 """
 
 import logging
+import os
 from datetime import date, datetime, timedelta
 
 from django.conf import settings
@@ -41,6 +42,10 @@ WHOLE_AREA_STOPPED_WORDS = (
 )
 
 
+#: The words sync_source prints for a source whose key is not set.
+NO_KEY_LINE = "OpenET is skipped because its key is not set: OPENET_API_KEY."
+
+
 class Command(BaseCommand):
     help = (
         "Sync OpenET crop ET into use areas, via the route selected by OPENET_MODE "
@@ -52,13 +57,13 @@ class Command(BaseCommand):
         parser.add_argument(
             "--start-date",
             default=None,
-            help="YYYY-MM-DD. Required for api and gee. For fields: the first day of the "
-            "earliest water year not finalized (else this water year).",
+            help="YYYY-MM-DD. Default: the first day of the earliest water year not "
+            "finalized (else of this water year).",
         )
         parser.add_argument(
             "--end-date",
             default=None,
-            help="YYYY-MM-DD. Required for api and gee. For fields: the last day of last month.",
+            help="YYYY-MM-DD. Default: the last day of last month.",
         )
         parser.add_argument(
             "--limit",
@@ -89,8 +94,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         mode = getattr(settings, "OPENET_MODE", "fields")
         fields = mode not in ("api", "gee")
-        if not fields and not (options["start_date"] and options["end_date"]):
-            raise CommandError("--start-date and --end-date are required unless OPENET_MODE is fields.")
+        # With no key every request would fail; the monthly line ends in one line
+        # instead, as CIMIS and NOAA do. Earth Engine signs in with its own key file.
+        if mode != "gee" and not os.environ.get("OPENET_API_KEY", "") and not options["dry_run"]:
+            self.stdout.write(self.style.WARNING(NO_KEY_LINE))
+            return
+        # With no dates, every route asks for the same window: every month up to the
+        # end of last month, in each water year that is not finalized.
         try:
             start_date = (
                 datetime.strptime(options["start_date"], "%Y-%m-%d").date()
@@ -170,14 +180,16 @@ class Command(BaseCommand):
 
     @staticmethod
     def _default_start():
-        """The first day of the earliest water year not finalized; else this water year's Oct 1."""
+        """The first day of the earliest water year not finalized; else of this water year."""
         from accounting.models import ReportingPeriod
+        from core.water_year import water_year_start_month
 
         period = ReportingPeriod.objects.filter(is_finalized=False).order_by("start_date").first()
         if period is not None:
             return period.start_date
         today = crop_et.today()
-        return date(today.year if today.month >= 10 else today.year - 1, 10, 1)
+        month = water_year_start_month()
+        return date(today.year if today.month >= month else today.year - 1, month, 1)
 
     @staticmethod
     def _default_end():

@@ -21,3 +21,12 @@ class SiteConfigAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return not SiteConfig.objects.exists()
+
+    def get_readonly_fields(self, request, obj=None):
+        """The water year's first month, as Delivery Settings refuses to change it."""
+        from core.water_year import start_month_is_locked
+
+        fields = list(super().get_readonly_fields(request, obj))
+        if obj is not None and start_month_is_locked():
+            fields.append("water_year_start_month")
+        return fields

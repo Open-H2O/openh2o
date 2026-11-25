@@ -332,4 +332,4 @@ def test_a_bad_first_record_does_not_hide_a_good_repeat(boundary):
     out = run(boundary, fake)
     assert Parcel.objects.filter(parcel_number=apn_of(9)).exists()
     assert Parcel.objects.count() == 1199
-    assert "whose outline it cannot read" not in out
+    assert "cannot read" not in out

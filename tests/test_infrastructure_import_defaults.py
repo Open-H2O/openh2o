@@ -54,8 +54,8 @@ def test_recharge_import_saves_the_row_as_a_spreading_basin():
 
 def test_site_type_sentence_names_the_default_for_each_type():
     holds = importer.FIELD_HOLDS["site_type"]
-    assert "storage_pond for a storage pond file" in holds
-    assert "spreading_basin for a recharge site file" in holds
+    assert "storage pond from a storage pond file" in holds
+    assert "spreading basin from a recharge site file" in holds
 
 
 def test_location_fields_say_what_makes_them_optional():

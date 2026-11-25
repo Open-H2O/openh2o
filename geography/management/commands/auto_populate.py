@@ -79,14 +79,18 @@ STATION_SOURCE_CODES = [
     "cnrfc",                                 # fixture-only; live discovery returns []
 ]
 
-# The steps a failed traversal can be resumed into. Both page through an ArcGIS
-# FeatureServer one OBJECTID-ordered page at a time, so "carry on after N" is
-# meaningful for them and for nothing else here:
+# The steps a failed traversal can be resumed into. Flowlines page through an
+# ArcGIS FeatureServer one OBJECTID-ordered page at a time, so "carry on after N"
+# is meaningful for them and for nothing else here:
+#   - parcels  asks for every ID first and saves only parcels not yet on file, so a
+#              second run carries on by itself; it never prints a --resume-from
+#              hint, and a list run resumed after N reported the listed parcels at
+#              or below N as not found.
 #   - basins   uses query_by_boundary, which accumulates one flat list; there is
 #              no page to resume from.
 #   - stations does not page at all — it loops providers, and each provider's
 #              discovery is a single call.
-RESUMABLE_STEPS = ("parcels", "flowlines")
+RESUMABLE_STEPS = ("flowlines",)
 
 
 class Command(BaseCommand):
@@ -241,11 +245,11 @@ class Command(BaseCommand):
             resumable = [n for n in step_registry if n in RESUMABLE_STEPS]
             if len(step_registry) != 1 or len(resumable) != 1:
                 raise CommandError(
-                    "--resume-from needs exactly one resumable step. An "
-                    "OBJECTID belongs to one layer, so applying it to several "
-                    "steps would skip rows in the others. Re-run with "
-                    "--steps parcels or --steps flowlines "
-                    f"(you asked for: {', '.join(step_registry) or 'all steps'})."
+                    "--resume-from works only with --steps flowlines, the one "
+                    "download that prints an OBJECTID to resume from "
+                    f"(you asked for: {', '.join(step_registry) or 'all steps'}). "
+                    "To finish a parcel download, run the same command again: "
+                    "OpenH2O saves only the parcels that are not yet on file."
                 )
 
     def _run_steps(
@@ -262,7 +266,7 @@ class Command(BaseCommand):
             self.stdout.write(f"\n--- Step: {step_name} ---")
             try:
                 if step_name == "parcels":
-                    count = step_fn(boundary, dry_run, resume_from=resume_from,
+                    count = step_fn(boundary, dry_run,
                                     parcel_list=getattr(self, "parcel_list", None))
                 elif step_name in RESUMABLE_STEPS:
                     count = step_fn(boundary, dry_run, resume_from=resume_from)
@@ -391,8 +395,7 @@ class Command(BaseCommand):
 
         return created_count
 
-    def _step_parcels(self, boundary, dry_run, resume_from=None, parcel_list=None,
-                      progress=None):
+    def _step_parcels(self, boundary, dry_run, parcel_list=None, progress=None):
         """Download the parcels that overlap the boundary from DWR's LightBox layer.
 
         Asks for the parcel IDs inside the boundary first, then the parcels 1,000 at
@@ -429,18 +432,19 @@ class Command(BaseCommand):
         seen = set()
         repeated = set()
         in_download = set()
+        no_outline = set()
         self.stdout.write("  Asking DWR's LightBox parcel layer for the parcel IDs...")
         try:
             batches = query_by_object_ids(
                 LIGHTBOX_PARCELS_URL,
                 geos_to_esri_geometry(boundary.geometry),
                 out_fields="PARCEL_APN,SITE_ADDR,SITE_CITY,SITE_STATE,SITE_ZIP",
-                resume_from=resume_from,
                 on_ids=on_ids,
             )
             for batch, count, features in batches:
                 new, already = self._parcels_of_batch(
-                    features, outcome, parcel_list, on_file, seen, repeated, in_download)
+                    features, outcome, parcel_list, on_file, seen, repeated, in_download,
+                    no_outline)
                 saved = self._store_parcels(new, dry_run)
                 outcome.saved += saved
                 outcome.already += already
@@ -459,6 +463,8 @@ class Command(BaseCommand):
             outcome.got, outcome.asked = exc.got, exc.asked
             raise
         outcome.repeat_numbers = len(repeated)
+        # A number counts once, and only when none of its records had an outline.
+        outcome.no_outline = len(no_outline)
         if parcel_list is not None:
             outcome.not_found = [w for key, w in parcel_list.items() if key not in in_download]
         for line in saved_lines(outcome):
@@ -466,8 +472,13 @@ class Command(BaseCommand):
         return 0 if dry_run else outcome.saved
 
     def _parcels_of_batch(self, features, outcome, parcel_list, on_file, seen, repeated,
-                          in_download):
-        """Unsaved Parcels for one batch, and how many were already on file."""
+                          in_download, no_outline):
+        """Unsaved Parcels for one batch, and how many were already on file.
+
+        A number joins ``seen`` only once one of its records is saved or found on file,
+        so a first record whose outline cannot be read does not hide a good repeat;
+        ``no_outline`` holds the numbers with no readable outline so far.
+        """
         from parcels.parcel_list import normalize
 
         new = []
@@ -486,8 +497,9 @@ class Command(BaseCommand):
                 outcome.repeat_records += 1
                 repeated.add(key)
                 continue
-            seen.add(key)
             if key in on_file:
+                seen.add(key)
+                no_outline.discard(key)
                 already += 1
                 continue
             geom = None
@@ -497,8 +509,14 @@ class Command(BaseCommand):
                 except Exception as exc:
                     logger.warning("Bad geometry for %s: %s", apn, exc)
             if geom is None:
-                outcome.no_outline += 1
+                no_outline.add(key)
                 continue
+            seen.add(key)
+            if key in no_outline:
+                # An earlier record of this number had no readable outline.
+                no_outline.discard(key)
+                outcome.repeat_records += 1
+                repeated.add(key)
             address = ", ".join(
                 p for p in (str(attrs.get(f) or "").strip()
                             for f in ("SITE_ADDR", "SITE_CITY", "SITE_STATE", "SITE_ZIP")) if p

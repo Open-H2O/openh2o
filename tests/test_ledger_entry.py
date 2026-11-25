@@ -167,7 +167,9 @@ def test_1_october_to_30_september_saves():
 
 
 def test_a_period_ending_on_a_february_last_day_saves():
-    assert _period_form("2027-02-01", "2028-02-29").is_valid()
+    # It starts in October, the site's month (a water year must start in it).
+    form = _period_form("2027-10-01", "2028-02-29")
+    assert form.is_valid(), form.errors
 
 
 # -- F-26: the download carries the screen's filters -----------------------------

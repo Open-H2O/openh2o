@@ -572,14 +572,15 @@ docker compose exec web python manage.py sync_openet_parcels --dry-run
 docker compose exec web python manage.py sync_openet_parcels
 ```
 
-On the default `fields` setting, `--start-date` and `--end-date` are optional. Without
-them, a run asks for every month from the start of the earliest water year not yet
-finalized. On the other two settings in section 12 of DEPLOY.md, the dates are required.
-With `--dry-run`, the command prints what it would ask OpenET for and sends nothing. The
-first run also looks up the OpenET fields around the use areas and asks for the fields'
-outlines, so it sends more requests than later runs. `--parcel-prefix` limits the run to
-use areas whose number starts with the letters you give, and `--limit` caps the number
-of use areas for a small first test.
+For `sync_openet_parcels`, `--start-date` and `--end-date` are optional on all three
+settings in section 12 of DEPLOY.md. `sync_precip_parcels` still requires both dates. A
+run of `sync_openet_parcels` without the dates asks for the months the monthly job asks
+for: every month from the first day of the earliest water year not finalized to the end
+of last month. With `--dry-run`, the command prints what it would ask OpenET for and
+sends nothing. The first run also looks up the OpenET fields around the use areas and
+asks for the fields' outlines, so it sends more requests than later runs.
+`--parcel-prefix` limits the run to use areas whose number starts with the letters you
+give, and `--limit` caps the number of use areas for a small first test.
 
 The first run to receive a month's figures records each use area's crop ET for that
 month. A later run leaves the recorded figure as it is and lists any month where OpenET
@@ -643,24 +644,28 @@ reads that station's data. The page gives that time in the site's time zone. Set
 site's time zone with `set_organization --time-zone`. A site whose organization's name
 was never set uses the `TIME_ZONE` setting in `.env`. Set the computer's clock to the
 same zone. Until its key is set, the schedule skips CIMIS or NOAA with one line in the
-log. The OpenET job works only on the default setting, `OPENET_MODE=fields`. On the
-other two settings in section 12 of DEPLOY.md the job stops with an error each month.
-Run `sync_openet_parcels` and `sync_precip_parcels` by hand on those settings, with
-`--start-date` and `--end-date`. On those two settings OpenET does not send rain. A use
-area not matched to OpenET's fields gets a month's rainfall only from
-`sync_precip_parcels`. <!-- defines: google_earth_engine -->Google Earth Engine is
-Google's service for analysing satellite imagery. `sync_precip_parcels` reads gridMET
-rainfall through Earth Engine. It stops with an error when Earth Engine is not set up in
-`GEE_PROJECT`, `GEE_SERVICE_ACCOUNT_EMAIL` and `GEE_SERVICE_ACCOUNT_KEY_FILE`.
-`docs/earth-engine-tier-setup.md` explains that setup. OpenH2O still calculates a month
-without rain on record. That month's effective precipitation is 0. Its ETAW equals its
-crop ET. On a use area with a well and no meter reading, the month's calculation page
-says that rain was not counted. The water year's page lists these months for every use
-area. It also lists months with rain for only some fields. The OpenET job writes its
-errors to `openet.log` and does not send an alert. The ntfy service sends notifications
-to a phone or a browser. For an alert when a sync fails, put `OPENH2O_NTFY_URL=` in
-`.env`, followed by the address of an ntfy topic, then run `make install-cron` again to
-copy the address into the schedule.
+log. <!-- defines: google_earth_engine -->Google Earth Engine is Google's service for
+analysing satellite imagery. The OpenET job runs each month on the default setting,
+`OPENET_MODE=fields`, and on the other two settings in section 12 of DEPLOY.md, `api`
+and `gee`. The job does not pass dates, so it asks for every month from the first day of
+the earliest water year not finalized to the end of last month. On `fields` and `api`,
+the job skips with one line in its log and does not send a request until
+`OPENET_API_KEY` is set. The OpenET job does not run `sync_precip_parcels`, and
+`sync_precip_parcels` is not on the schedule. Run `sync_precip_parcels` by hand for each
+new period on `api` and `gee`, with `--start-date` and `--end-date` (Phase 4 of this
+guide). On those two settings OpenET does not send rain. A use area not matched to
+OpenET's fields gets a month's rainfall only from `sync_precip_parcels`.
+`sync_precip_parcels` reads gridMET rainfall through Earth Engine. It stops with an
+error when Earth Engine is not set up in `GEE_PROJECT`, `GEE_SERVICE_ACCOUNT_EMAIL` and
+`GEE_SERVICE_ACCOUNT_KEY_FILE`. `docs/earth-engine-tier-setup.md` explains that setup.
+OpenH2O still calculates a month without rain on record. That month's effective
+precipitation is 0. Its ETAW equals its crop ET. On a use area with a well and no meter
+reading, the month's calculation page says that rain was not counted. The water year's
+page lists these months for every use area. It also lists months with rain for only some
+fields. The OpenET job writes its errors to `openet.log` and does not send an alert. The
+ntfy service sends notifications to a phone or a browser. For an alert when a sync
+fails, put `OPENH2O_NTFY_URL=` in `.env`, followed by the address of an ntfy topic, then
+run `make install-cron` again to copy the address into the schedule.
 
 On Windows, Task Scheduler runs the schedule. The jobs run in Git
 Bash, which comes with Git for Windows (https://git-scm.com/download/win), so install

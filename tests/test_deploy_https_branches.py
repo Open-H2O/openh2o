@@ -259,7 +259,7 @@ your-domain.com {
 ### Branch C
 
 ```caddy
-http://your-domain.com {
+:80 {
     handle {
         reverse_proxy web:8000
     }
@@ -285,7 +285,7 @@ _DEPLOY_MISSING_A_BRANCH = _GOOD_DEPLOY.replace(
 )
 
 _DEPLOY_WITH_A_BARE_DOMAIN_ON_THE_WRONG_BRANCH = _GOOD_DEPLOY.replace(
-    "http://your-domain.com {", "example.com {"
+    ":80 {", "example.com {"
 )
 
 _CADDYFILE_WITH_A_DOMAIN = _GOOD_CADDYFILE.replace("{$OPENH2O_SITE_ADDRESS::80} {", "example.com {")

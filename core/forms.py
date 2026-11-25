@@ -351,6 +351,13 @@ class UserEmailForm(forms.Form):
         return user
 
 
+#: Delivery Settings' refusal of a new water year first month (core.water_year.start_month_is_locked).
+START_MONTH_LOCKED = (
+    "OpenH2O did not change the month your water year starts in, because a water year is "
+    "already finalized or a recharge event is already on file."
+)
+
+
 class DeliverySettingsForm(forms.Form):
     """Agency-wide delivery accounting policy, in plain language.
 
@@ -709,6 +716,16 @@ class DeliverySettingsForm(forms.Form):
             return (Decimal(percent) / Decimal("100")).quantize(Decimal("0.001"))
         except InvalidOperation:
             raise forms.ValidationError("Enter a whole number between 1 and 100.")
+
+    def clean_water_year_start_month(self):
+        month = self.cleaned_data.get("water_year_start_month")
+        current = getattr(self.instance, "water_year_start_month", None)
+        if month and current and month != current:
+            from core.water_year import start_month_is_locked
+
+            if start_month_is_locked():
+                raise forms.ValidationError(START_MONTH_LOCKED)
+        return month
 
     def clean(self):
         cleaned = super().clean()

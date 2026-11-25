@@ -15,6 +15,41 @@ from parcels.models import ParcelLedger
 REOPEN_NOTE_MIN_LENGTH = 10
 
 
+def start_month_refusal(month):
+    """The refusal of a water year that does not start in the site's month."""
+    name = calendar.month_name[month]
+    return (
+        f"A water year starts in {name}, the month set on Delivery Settings. Give a start "
+        f"date in {name}, or, if no water year is finalized and no recharge event is on "
+        "file, change the month on Delivery Settings first."
+    )
+
+
+def start_month_error(start, instance):
+    """The refusal for a new year, or a new start date, outside the site's month; else None."""
+    if start is None or (instance.pk is not None and start == instance.start_date):
+        return None
+    from core.water_year import water_year_start_month
+
+    month = water_year_start_month()
+    return None if start.month == month else start_month_refusal(month)
+
+
+class ReportingPeriodAdminForm(forms.ModelForm):
+    """The administrator page's form: the same start-month rule as the Water Years page."""
+
+    class Meta:
+        model = ReportingPeriod
+        fields = "__all__"
+
+    def clean(self):
+        cleaned = super().clean()
+        refusal = start_month_error(cleaned.get("start_date"), self.instance)
+        if refusal:
+            self.add_error("start_date", refusal)
+        return cleaned
+
+
 class ReportingPeriodForm(forms.ModelForm):
     class Meta:
         model = ReportingPeriod
@@ -46,6 +81,13 @@ class ReportingPeriodForm(forms.ModelForm):
             self.add_error("start_date", "A water year starts on the first day of a month.")
         if end and end.day != calendar.monthrange(end.year, end.month)[1]:
             self.add_error("end_date", "A water year ends on the last day of a month.")
+        # Every water year starts in the site's month (Delivery Settings), which the
+        # finalized-year lock and the carry-over read. A year made before this rule
+        # keeps its dates: only a new year, or a new start date, is checked.
+        if start and start.day == 1:
+            refusal = start_month_error(start, self.instance)
+            if refusal:
+                self.add_error("start_date", refusal)
         # The database refuses two overlapping water years with a constraint
         # whose name is an internal one; say which year is in the way instead.
         # The error sits on a date field, which also keeps the model's own

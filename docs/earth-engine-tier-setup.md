@@ -171,8 +171,10 @@ to the default field list, set `OPENET_MODE=fields` and restart the web containe
 
 ### 5. Get ET for every parcel
 
-On the Earth Engine tier, `sync_openet_parcels` needs the first and last day of the
-period you want:
+On the Earth Engine tier, `--start-date` and `--end-date` are optional for
+`sync_openet_parcels`. Without them, the command asks for every month from the first day
+of the earliest water year not finalized to the end of last month. To ask for one
+period, give its first and last day:
 
 ```bash
 docker compose exec web python manage.py sync_openet_parcels --start-date 2024-10-01 --end-date 2025-09-30
@@ -184,8 +186,10 @@ Then ask Earth Engine for the rain over the same period:
 docker compose exec web python manage.py sync_precip_parcels --start-date 2024-10-01 --end-date 2025-09-30
 ```
 
-The monthly scheduled job stops with an error on this tier, because the job does not
-pass dates. Run the two commands above by hand for each new period.
+The monthly scheduled job runs `sync_openet_parcels` on this tier and asks for the same
+months as a run without dates. On this tier the job signs in to Google Earth Engine with
+its own key file. The job does not run `sync_precip_parcels`, so run
+`sync_precip_parcels` by hand for each new period, with `--start-date` and `--end-date`.
 
 ---
 

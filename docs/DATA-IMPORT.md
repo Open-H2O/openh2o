@@ -355,11 +355,15 @@ administrator uses Correct this record on the record's page.
 
 In the mapping step you also choose the measurement method and the data state for every
 record in the file. By default the method is left blank and the data state is
-provisional. Choose a different data state when the file holds figures that have
-already been published. Before OpenH2O saves anything, the preview shows each error
-message with its rows. It also lists the first 200 conversions and combined months and
-the first 500 rows without a point, and counts the rest. The import reports the same
-counts and assigns each record to the water year that holds its month.
+provisional. Choose a different data state when the file holds figures that have already
+been published. Before OpenH2O saves anything, the preview shows each error message with
+its rows. It also lists the first 200 conversions and combined months and the first 500
+rows without a point, and counts the rest. A record whose month is not in any water year
+is saved without a water year. On the page, the import's result lists those records
+under "No water year assigned" with their count. `import_diversion_records` prints how
+many are not in a water year yet and names `create_water_year`. A dry run does not
+report them. Creating the water year, on the Water Years page or with
+`create_water_year`, attaches the records dated inside it.
 
 The command takes `--point` for the whole-file point, `--method` and `--data-state`
 for the method and data state, and `--use-rule` with `drop`, `returned` or

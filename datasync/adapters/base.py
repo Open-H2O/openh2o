@@ -101,7 +101,8 @@ class BaseAdapter(ABC):
     changed_within_days: int | None = None
 
     # Station discovery runs inside the setup wizard's web request, behind a
-    # gunicorn worker that SIGKILLs anything past its ~30s timeout. A single slow
+    # gunicorn worker that SIGKILLs anything past its timeout (GUNICORN_TIMEOUT,
+    # 60 s by default, entrypoint.sh). A single slow
     # or erroring provider must therefore fail fast — a tight read timeout and a
     # single attempt with no retry-backoff — so it can never consume the worker
     # budget and hang the whole first-run flow. The generous data-fetch

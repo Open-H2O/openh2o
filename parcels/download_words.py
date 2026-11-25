@@ -7,7 +7,7 @@ forms change. The wizard's result row and
 
 How the counts fit. Every parcel: the parcels that overlap the boundary = saved +
 already on file + no number + no outline + repeats of a number. A list: the
-different numbers on it = saved + already on file + not found.
+different numbers on it = saved + already on file + no outline + not found.
 """
 from dataclasses import asdict, dataclass, field
 
@@ -80,12 +80,16 @@ def saved_lines(o):
         lines.append(f"OpenH2O saved {_n(o.saved)} new use {_s(o.saved, 'area', 'areas')}.")
         if o.already:
             lines.append(_already(o.already))
-    if o.mode == "every" and (o.no_number or o.no_outline):
-        text = (f"OpenH2O left out {_n(o.no_number)} {_s(o.no_number, 'parcel', 'parcels')} "
+    # A record with no number cannot be on a list, so a list counts only outlines.
+    no_number = o.no_number if o.mode == "every" else 0
+    if no_number:
+        text = (f"OpenH2O left out {_n(no_number)} {_s(no_number, 'parcel', 'parcels')} "
                 "without a parcel number")
         if o.no_outline:
             text += f" and {_n(o.no_outline)} whose outline it cannot read"
         lines.append(text + ".")
+    elif o.no_outline:
+        lines.append(no_outline_line(o.no_outline))
     if o.repeat_records and o.saved:
         # Only when this run saved use areas: a run that saved none would say it
         # saved one for each repeated number.
@@ -101,6 +105,12 @@ def saved_lines(o):
             f"{_s(count, 'does', 'do')} not match any parcel that overlaps the boundary:",
             numbers=list(o.not_found)))
     return [_line(t) if isinstance(t, str) else t for t in lines]
+
+
+def no_outline_line(count):
+    """The parcels left out only because their outline cannot be read."""
+    return (f"OpenH2O left out {_n(count)} {_s(count, 'parcel whose outline', 'parcels whose outlines')} "
+            "it cannot read.")
 
 
 def _already(count):

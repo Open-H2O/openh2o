@@ -328,12 +328,15 @@ set -a && source .env && set +a
 ```
 
 This turns each line of `.env` into an *environment variable*, a named value the
-computer hands to every program the terminal starts. `manage.py` reads `.env` by
-itself and chooses the production settings when nothing else is set. Other programs
-read only the environment. If you start the web server by hand without loading
-`.env`, it runs with the development settings, because the file it starts from
-defaults to them. Load `.env` once in each new terminal, so every command runs on
-the same settings.
+computer hands to every program the terminal starts. Every OpenH2O program reads `.env`
+when the file exists. The file a program starts from chooses its settings before that.
+`manage.py` defaults to the production settings. A `DJANGO_SETTINGS_MODULE` line in
+`.env` does not choose the settings by itself. It takes effect for a command you type
+when you load `.env` into the terminal first, as above. It also takes effect for the web
+server run as a service through `EnvironmentFile=` (section 8). If you start the web
+server by hand without loading `.env`, it runs with the development settings, because
+the file it starts from defaults to them. Load `.env` once in each new terminal, so
+every command runs on the same settings.
 
 ---
 

@@ -342,7 +342,7 @@ FIELD_HOLDS = {
     "max_rate_cfs": "Maximum rate in cubic feet per second.",
     "water_right": "The application number of a water right on file. OpenH2O refuses a row whose number is not on file, so import the water right first.",
     "parcel_number": "The parcel number of a use area on file. When it matches, OpenH2O links the point of diversion to that use area. When it does not, OpenH2O imports the point of diversion without a use area.",
-    "site_type": "One of spreading_basin, injection_well, streambed, asr_well, storage_pond or storage_tank. OpenH2O saves the value as written. When the file has no site type column, OpenH2O uses storage_pond for a storage pond file and spreading_basin for a recharge site file.",
+    "site_type": "Spreading basin, injection well, streambed, ASR well, storage pond or storage tank, written as the name or with underscores (spreading_basin), in any capitalization. When the file has no site type column, OpenH2O imports each site as a spreading basin from a recharge site file and as a storage pond from a storage pond file.",
     "capacity_acre_feet": "The volume the site holds per fill, in acre-feet.",
     "operator": "OpenH2O copies the operator's name unchanged.",
 }
@@ -417,11 +417,25 @@ _DECIMAL_FIELDS = {
     "storage": ["capacity_acre_feet"],
 }
 
+#: recharge.models.RechargeSite.SITE_TYPE_CHOICES, copied because ``recharge`` is a
+#: removable module this file may not import at load time;
+#: tests/test_infrastructure_import_defaults.py holds the two lists equal.
+SITE_TYPE_CHOICES = [
+    ("spreading_basin", "Spreading Basin"),
+    ("injection_well", "Injection Well"),
+    ("streambed", "Streambed"),
+    ("asr_well", "ASR Well"),
+    ("storage_pond", "Storage Pond"),
+    ("storage_tank", "Storage Tank"),
+]
+
 _CHOICE_FIELDS = {
     "well": {
         "measurement_method": {c[0] for c in MEASUREMENT_METHOD_CHOICES},
         "pump_type": {c[0] for c in PUMP_TYPE_CHOICES},
     },
+    "recharge_site": {"site_type": {c[0] for c in SITE_TYPE_CHOICES}},
+    "storage": {"site_type": {c[0] for c in SITE_TYPE_CHOICES}},
 }
 
 #: A choice read in any case, by its stored value or its label ("Turbine",
@@ -437,6 +451,7 @@ _CHOICE_LOOKUP = {
     for field, choices in (
         ("measurement_method", MEASUREMENT_METHOD_CHOICES),
         ("pump_type", PUMP_TYPE_CHOICES),
+        ("site_type", SITE_TYPE_CHOICES),
     )
 }
 _CHOICE_NOTES = {
@@ -449,14 +464,22 @@ _CHOICE_NOTES = {
         "'{val}'; the methods OpenH2O accepts are certified meter, unmetered "
         "estimate, power conversion and ET method."
     ),
+    "site_type": (
+        "OpenH2O imported this site as a {default}. The file gives "
+        "'{val}'; the site types OpenH2O accepts are spreading basin, injection well, "
+        "streambed, ASR well, storage pond and storage tank."
+    ),
 }
+
+#: The site type an off-list row is saved with, as the site type note names it.
+_SITE_TYPE_DEFAULT_WORDS = {"recharge_site": "spreading basin", "storage": "storage pond"}
 
 # Free-text fields copied straight through when mapped + present.
 _STRING_FIELDS = {
     "well": ["wcr_number", "state_well_number", "casing_material", "owner_name"],
     "diversion": ["stream_name", "local_name"],
-    "recharge_site": ["site_type", "operator"],
-    "storage": ["site_type", "operator"],
+    "recharge_site": ["operator"],
+    "storage": ["operator"],
 }
 
 # A box around the United States, Alaska, Hawaii and Puerto Rico included
@@ -626,9 +649,10 @@ def _read_choices_and_strings(
     for field in _CHOICE_FIELDS.get(infra_type, {}):
         val = src(field)
         if val:
-            code = _CHOICE_LOOKUP[field].get(val.lower())
+            code = _CHOICE_LOOKUP[field].get(val.lower().strip())
             if code is None:
-                warnings.append(_CHOICE_NOTES[field].format(val=val))
+                warnings.append(_CHOICE_NOTES[field].format(
+                    val=val, default=_SITE_TYPE_DEFAULT_WORDS.get(infra_type, "")))
             else:
                 data[field] = code
 

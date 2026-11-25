@@ -68,7 +68,7 @@ class Command(BaseCommand):
 
         if dirty or list(demo_agency):
             self.stderr.write(
-                self.style.ERROR("CLEAN-INSTALL CHECK FAILED — demo/agency content present:")
+                self.style.ERROR("CLEAN-INSTALL CHECK FAILED: demonstration or agency content is present:")
             )
             for label, count in dirty:
                 self.stderr.write(self.style.ERROR(f"  - {label}: {count}"))
@@ -80,8 +80,8 @@ class Command(BaseCommand):
                 )
             raise CommandError(
                 "A public install must ship with reference data only. "
-                "Run `make seed` (reference data) — never `make demo` "
-                "— for a clean install."
+                "For a clean install, run `make seed` (reference data), "
+                "never `make demo`."
             )
 
         # Positive signal: every module that is on must have its reference table
@@ -100,7 +100,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Clean-install check PASSED — reference data loaded in {len(tables)} "
-                "table(s), no demo/agency content."
+                f"Clean-install check PASSED: reference data is loaded in {len(tables)} "
+                "table(s), and there is no demonstration or agency content."
             )
         )

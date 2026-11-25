@@ -49,21 +49,22 @@ def check_development_settings_in_use(app_configs, **kwargs):
 
     return [
         CheckWarning(
-            "Development settings are running (DEBUG=True). This is "
-            "config.settings.local, which is for working on the code — not for "
-            "holding real water records.",
+            "The development settings (config.settings.local, DEBUG=True) are "
+            "running, so any error page shows the site's internals (stack traces, "
+            "settings and SQL queries) to whoever is looking at it.",
             hint=(
-                "DEBUG=True prints the site's internals — stack traces, "
-                "settings, SQL queries — onto any error page, to whoever is "
-                "looking at it. The supported posture for a real deployment, "
-                "including one that only ever serves a single computer, is "
-                "DJANGO_SETTINGS_MODULE=config.settings.production with "
-                "SECURE_SSL_REDIRECT, SESSION_COOKIE_SECURE and "
-                "CSRF_COOKIE_SECURE set to False in .env when there is no "
-                "HTTPS to redirect to. Production settings keep DEBUG off, "
-                "require a real ALLOWED_HOSTS and a strong database password, "
-                "and still work on one computer. See docs/AI-OPERATOR-GUIDE.md, "
-                "Phase 2 ('Secure it'), step 3."
+                "A real deployment runs DJANGO_SETTINGS_MODULE=config.settings.production, "
+                "and so does a deployment that serves only a single computer. The "
+                "production settings keep DEBUG off. They refuse to start while "
+                "ALLOWED_HOSTS is empty. They also refuse to start while the database "
+                "password is empty or is one of openh2o, postgres, password or changeme. "
+                "Where the site does not have HTTPS (only this computer or the office "
+                "network), turn off SECURE_SSL_REDIRECT, SESSION_COOKIE_SECURE and "
+                "CSRF_COOKIE_SECURE in .env and add OPENH2O_FORWARDED_PROTO=http. Each "
+                "change is in docs/AI-OPERATOR-GUIDE.md, Phase 2 (\"Secure it\"). Step 1 "
+                "covers the database password and the secret key. Step 2 covers "
+                "ALLOWED_HOSTS and CSRF_TRUSTED_ORIGINS. Step 3 covers HTTPS and the three "
+                "settings that depend on HTTPS, and gives the lines for a site without HTTPS."
             ),
             id=DEBUG_WARNING_ID,
         )
@@ -98,10 +99,10 @@ def check_site_identity_is_set(app_configs, **kwargs):
 
     return [
         CheckWarning(
-            "This deployment is still introducing itself as 'example.com'. "
-            "Every email it sends — including every password reset — goes out "
-            f"with '[{PLACEHOLDER}]' at the front of the subject line, to "
-            "whoever asked for it.",
+            "This deployment is still introducing itself as 'example.com'. Every email "
+            "the site sends starts its subject line with the site's name in brackets, "
+            f"so while the name is '{PLACEHOLDER}', every email starts with "
+            f"'[{PLACEHOLDER}]', password resets included.",
             hint=(
                 "The site's name comes from the organization's name. Set the "
                 "organization's name with 'docker compose exec web python "

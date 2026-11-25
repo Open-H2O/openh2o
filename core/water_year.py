@@ -19,3 +19,23 @@ def water_year_start_month():
         .first()
     )
     return value or DEFAULT_START_MONTH
+
+
+def start_month_is_locked():
+    """True once moving the start month would make OpenH2O read the wrong year.
+
+    The finalized-year lock names a closed year's carry-over and account credit
+    rows from today's start month, and voiding a recharge event works out its
+    pool's year the same way. So the month stays as it is once any water year is
+    finalized or any recharge event is on file.
+    """
+    from accounting.models import ReportingPeriod
+    from core.modules import is_enabled
+
+    if ReportingPeriod.objects.filter(is_finalized=True).exists():
+        return True
+    if is_enabled("recharge"):
+        from recharge.models import RechargeEvent
+
+        return RechargeEvent.objects.exists()
+    return False
