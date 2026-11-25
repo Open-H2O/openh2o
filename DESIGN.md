@@ -471,9 +471,7 @@ code comments are not copy and are left alone.
 ### 4. One name per thing, module-wide
 
 If two screens in the same flow name one object two ways, one of them is wrong.
-Plain-English *teaching* prose may still use a friendlier word where a phase
-deliberately chose one — but a **control that navigates to a named page carries
-that page's name**, so a button reading "View all sampling places" may not land
+A **control that navigates to a named page carries that page's name**, so a button reading "View all sampling places" may not land
 on a page titled "Sampling points".
 
 ### 5. Expand an acronym at its first appearance in prose on each page
@@ -744,7 +742,7 @@ project history flagged 43 of the 77 page descriptions for it the same hour, and
 names it, so none of the checks caught it.
 
 **The rule, in one sentence: a page description, a card intro, a help line, an instruction or an
-empty-state line is one or more short, complete sentences, each with a subject and a finite verb.**
+empty-state line is one or more complete sentences, each with a subject and a finite verb.**
 
 The About page once shipped the heading "What it owes to the Groundwater Accounting Platform, and what is
 its own". A heading is held to this rule too, and so is wording approved before 2026-10-09.
