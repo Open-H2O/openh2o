@@ -219,9 +219,9 @@ def _voided_sentence(request, kind_key, row, months, reason=""):
     parts = ["Record voided."]
     covered = _recalculate(request, months, "record_voided", reason)
     if covered:
-        from accounting.engine_run import recalculated_months_sentence
+        from accounting.engine_run import recalculating_months_sentence
 
-        parts.append(recalculated_months_sentence(covered))
+        parts.append(recalculating_months_sentence(covered))
     if (
         kind_key == "meter_reading"
         and row.meter.meter_type == "totalizer"
@@ -412,10 +412,13 @@ def _nbsp(text):
 
 
 def _corrected_sentence(request, covered, moved):
+    """The message after a correction: the months' run has only been asked for, so it is still under way."""
+    from accounting.engine_run import recalculating_months_sentence
+
     sentence = "Record corrected."
     parts = []
     if covered:
-        parts.append(f"OpenH2O recalculated {_where(covered)}")
+        parts.append(recalculating_months_sentence(covered).removesuffix("."))
     parts.extend(moved)
     if parts:
         sentence += " " + "; ".join(parts) + "."

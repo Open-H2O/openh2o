@@ -355,7 +355,7 @@ def test_an_operator_accepts_the_newer_figure_and_the_month_recalculates_at_once
 
     response = _accept(operator, field)
 
-    assert "Record corrected. OpenH2O recalculated Jul 2025." in _words(response)
+    assert "Record corrected. OpenH2O is recalculating July 2025." in _words(response)
     old, new = _figures(field)
     assert old.replaced_at is not None and old.depth_mm == D("91.44") and old.fetched_on == AUG_6
     assert (new.depth_mm, new.fetched_on, new.change_reason) == (D("121.92"), SEP_28, REASON)

@@ -911,17 +911,10 @@ def recalculation_sentence(months):
     return f"OpenH2O is recalculating the use areas this water serves for {_months_where(months)}."
 
 
-def recalculated_months_sentence(months):
-    """The line a page shows after a void has started the months again.
-
-    Months in the short form the record tables print ("Sep 2026"), a list
-    reading "A, B and C".
-    """
-    labels = [f"{month_date(m):%b %Y}" for m in sorted({month_text(month_date(m)) for m in months})]
-    where = labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + f" and {labels[-1]}"
-    return f"OpenH2O recalculated {where}."
-
-
 def recalculating_months_sentence(months):
-    """The line a page about one use area shows after a save that recalculates months."""
+    """The line a page shows after a save, correction or void that recalculates months.
+
+    Present tense: the save has only asked for the months' run, which starts
+    after the page answers.
+    """
     return f"OpenH2O is recalculating {_months_where(months)}."

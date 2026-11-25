@@ -356,7 +356,7 @@ def test_voiding_a_diversion_record_asks_for_its_month_to_be_calculated_again(st
     request = CalculationRequest.objects.get(trigger="record_voided")
     assert request.months == ["2024-01"]
     assert started.called
-    assert "Record voided. OpenH2O recalculated Jan 2024." in response.content.decode()
+    assert "Record voided. OpenH2O is recalculating January 2024." in response.content.decode()
     record.refresh_from_db()
     assert (record.voided_by, record.void_reason) == (User.objects.get(username="operator"), REASON)
 

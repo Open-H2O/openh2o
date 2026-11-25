@@ -153,7 +153,7 @@ def test_an_operator_corrects_an_open_year_read_and_the_month_reads_the_new_valu
         f"Replaced {day:%b} {day.day}, {day.year} by J. Lopez, now 1,142.00: {REASON}." in body
     )
     assert (
-        "Record corrected. OpenH2O recalculated Jul 2025 and Aug 2025; Aug 31 pumped is now 300.00." in body
+        "Record corrected. OpenH2O is recalculating July 2025 through August 2025; Aug 31 pumped is now 300.00." in body
     )
     # The new row sits directly above the struck one, and the year still counts 3 reads.
     assert body.index(f"record-meter_reading-{new.pk}") < body.index(f"record-meter_reading-{old.pk}")
@@ -290,7 +290,7 @@ def test_an_administrator_corrects_through_the_door_with_their_own_reason(ref, b
     body = text(post(client, old, **read_form(old, "1142")))
 
     new = MeterReading.objects.get(replaces=old)
-    assert "Record corrected. OpenH2O recalculated Jul 2025 and Aug 2025" in body
+    assert "Record corrected. OpenH2O is recalculating July 2025 through August 2025" in body
     events = apps.get_model("measurements.MeterReadingEvent")
     for pk, label in ((new.pk, "insert"), (old.pk, "update")):
         found = events.objects.filter(pgh_obj_id=pk, pgh_label=label)

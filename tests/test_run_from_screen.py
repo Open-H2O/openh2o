@@ -410,7 +410,7 @@ def test_voiding_a_diversion_record_clears_the_months_divided_up_rows(world, ful
     assert _split(JAN) == {}
     own = ParcelLedger.objects.get(pk=world.own.pk)
     assert own.amount_acre_feet == Decimal("-4.0000")
-    assert "Record voided. OpenH2O recalculated Jan 2024." in response.content.decode()
+    assert "Record voided. OpenH2O is recalculating January 2024." in response.content.decode()
 
 
 def test_a_diversion_save_into_a_finalized_period_is_refused_and_starts_nothing(world, operator):  # noqa: F811
