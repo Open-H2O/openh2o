@@ -560,6 +560,7 @@ choice.
 """
 
 
+# Default wording, approved by the maintainer on 2026-11-25. To change the wording, update this test in the same commit.
 def test_the_download_reads_word_for_word_as_the_approved_page():
     from accounting import fingerprints
     from core.models import SiteConfig

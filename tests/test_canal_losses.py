@@ -547,6 +547,7 @@ def test_the_split_row_says_the_canal_losses_came_off_first():
     )
 
 
+# Default wording, approved by the maintainer on 2026-11-25. To change the wording, update this test in the same commit.
 def test_the_clause_is_absent_when_there_are_no_losses():
     rp, pod, (a, b, c) = _canal(returned="0", fractions=("0", "0", "0"), demands=(50, 0, 0))
 

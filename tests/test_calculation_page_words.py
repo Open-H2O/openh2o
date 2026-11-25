@@ -223,6 +223,7 @@ class TestOneListOfMethodNames:
             assert f">{label}<" in body
 
 
+# Default wording, approved by the maintainer on 2026-11-25. To change the wording, update this test in the same commit.
 def test_surface_step_summary_writes_delivery_times_efficiency():
     """148-02: the subtracted figure is the crop's part, so the line says both.
 
