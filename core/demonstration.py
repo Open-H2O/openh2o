@@ -368,31 +368,24 @@ def switched_off_refusal(found):
     """The sentence for a removal refused because switched-off sections still hold records."""
     sections = _join(list(found))
     switch_on = (
-        "Sections are switched on in the server’s settings, with OPENH2O_MODULES, as section 12 of "
+        "Sections are switched on in the server\u2019s settings, with OPENH2O_MODULES, as section 12 of "
         "DEPLOY.md describes."
-    )
-    all_or_nothing = (
-        "Nothing was removed. The removal saves all or nothing in one run, so the records in the "
-        "sections that are switched on are still in place too."
     )
     if len(found) == 1:
         (counts,) = found.values()
-        held = describe(counts)
+        held = describe(counts, limit=6)
         return (
             f"The demonstration data was not removed, because the {sections} section is switched off on "
             f"this site and still holds {held}, which the removal cannot delete while {sections} is off. "
-            f"{all_or_nothing} Once {sections} is switched on, remove the demonstration data again, and "
-            f"the removal deletes the {held} along with the other records in the site's own tables. "
+            f"Nothing was removed. Once {sections} is switched on, remove the demonstration data again, "
+            f"and the removal deletes the {held} along with the other records in the site's own tables. "
             f"{switch_on}"
         )
-    each = _join([f"{describe(counts)} in {section}" for section, counts in found.items()])
-    held = _join([describe(counts) for counts in found.values()])
+    each = _join([f"{describe(counts, limit=6)} in {section}" for section, counts in found.items()])
     return (
         f"The demonstration data was not removed, because the {sections} sections are switched off on "
         f"this site and still hold {each}, which the removal cannot delete while {sections} are off. "
-        f"{all_or_nothing} The removal refuses while any switched-off section still holds records, so it "
-        f"goes ahead only with {sections} each switched on. Then remove the demonstration data again, and "
-        f"the removal deletes the {held} along with the other records in the site's own tables. {switch_on}"
+        f"Nothing was removed. {switch_on}"
     )
 
 
