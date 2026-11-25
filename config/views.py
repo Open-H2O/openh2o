@@ -148,7 +148,7 @@ def index(request):
 SETTINGS_SENTENCES = {
     "accounting:methodology_settings": (
         "Methodology sets the steps of the monthly calculation, their order, "
-        "the rain method and the floor."
+        "the rain method and the lowest remainder."
     ),
     "core:users_list": "Users lists who can sign in and each person's role.",
     "health:dashboard": (

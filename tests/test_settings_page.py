@@ -32,7 +32,7 @@ ROWS = [
         "Methodology Settings",
         "/accounting/methodology/",
         "Methodology sets the steps of the monthly calculation, their order, "
-        "the rain method and the floor.",
+        "the rain method and the lowest remainder.",
     ),
     (
         "Delivery Settings",
