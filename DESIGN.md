@@ -416,6 +416,16 @@ re-learned, and each holds on every page that copies these shapes:
     own geometry filter). A typed coordinate is never rewritten under the cursor. Ruled 2026-09-13
     14:10 (A, the card) and 18:24 (the round on staging); guards `tests/test_overview_map_card.py`.
 20. **A line listed under a row is `tr.row-listed`**: its first cell is indented one `--space-xl` and its name is secondary text, and it takes its month's stripe (the stripe counts month rows only). The production year table lists a facility's record under a month whose source holds several.
+21. **A table with a column rule is one even grid, and the rule stands in the middle of its gap.** Every column
+    hugs its content; the width left over becomes equal gaps between neighbouring columns; the nearest figure on
+    each side of the rule is the same distance from it (never under 12 px); a bracket's underline spans exactly the
+    figures it brackets and its label is centred on it; a `.th-stack` header stays stacked at every width. Set no
+    column widths on such a table: `static/js/table-rule.js` measures what CSS cannot (the spare width, how far a
+    header overhangs its figures, where a bracket's figures start and end) and writes each cell's padding. A pinned
+    header draws its lines inside its cells (an inset shadow, and the rule as a `::before` that straddles the column
+    edge like the collapsed border below it), because a collapsed border stays put while a sticky cell moves.
+    Approved on three drawn tables 2026-11-24. Measured by `scripts/table_balance.js`; `make table-check` runs it on
+    every page at 1,024, 1,440 and 1,730 px, and `tests/test_table_balance_check.py` keeps it wired.
 
 ## Copy rules
 

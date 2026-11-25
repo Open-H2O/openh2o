@@ -61,3 +61,12 @@ git and the standard library, so it runs on the host.
 ## Listing the printed figures a change moved
 
 `scripts/figures_moved.py [--before FILE | --base-commit COMMIT [--repo DIR]] NOW [--tsv OUT]` compares `NOW`, the figures file the demonstration release test wrote, with one of three files: `FILE`, `tests/data/demonstration_figures_before.json` at `COMMIT`, or by default that file in the working tree. It prints one tab-separated line per moved value: path (water year, section, then keys), before, now and change (now minus before for two decimals, else empty). A summary then gives how many moved, per water year and section, and the ten largest moves by absolute change, or says "No printed figure moved." `--tsv` writes the per-value lines to `OUT` under a header, and the summary still prints. It exits 0 whether or not figures moved, so it is not a gate; the release test is. Whether a move is intended is for the person who made the change to say. It runs on the host with `python3`, standard library only; `--base-commit` needs git. `make figures-moved` runs it, taking `BASE=<commit>` and `TSV=<file>`.
+
+## Checking table balance
+
+`scripts/table_check.py` signs in to a running site, visits every page it can reach by GET, and evaluates
+`scripts/table_balance.js` on each at 1,024, 1,440 and 1,730 px. It exits 1 and names each table whose column
+rule has unequal sides, whose headers sit off their figures, whose bracket labels sit off their figures or
+underlines, or whose pinned header lets the rows beneath show through. `make table-check BASE=https://localhost
+LOGIN=you@example.org` runs it with the password in `TABLE_CHECK_PASSWORD`. Like `walk.py` it runs on the host
+and needs `playwright` there; it uses the headless Chrome on :9222 when one is running.

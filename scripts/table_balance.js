@@ -86,9 +86,17 @@
         t = Math.min(t, rect.top); b = Math.max(b, rect.bottom);
       }
     }
-    // A "?" is drawn as a round button: its edge is what the eye lines up,
-    // not the glyph inside it.
-    for (const icon of el.querySelectorAll(".help-icon")) {
+    // A "?" is drawn as a round button, and a status dot has no text at all:
+    // their edges are what the eye lines up, not a glyph inside them.
+    // A switch (a filled button holding a filled knob) is seen as the button.
+    let marks = [...el.querySelectorAll(".help-icon")];
+    for (const e of el.querySelectorAll("span, i, button")) {
+      if (e.textContent.trim() || e.closest(SKIP) || !shown(e)) continue;
+      const cs = getComputedStyle(e), bg = cs.backgroundColor;
+      if (bg && bg !== "transparent" && !/rgba\(.*,\s*0\)$/.test(bg)) marks.push(e);
+    }
+    marks = marks.filter((m) => !marks.some((o) => o !== m && o.contains(m)));
+    for (const icon of marks) {
       if (!shown(icon)) continue;
       const rect = icon.getBoundingClientRect();
       l = Math.min(l, rect.left); r = Math.max(r, rect.right);
@@ -273,7 +281,9 @@
     // Group headers (one label over several columns): the label's centre
     // against the centre of the figures it spans.
     const groups = [];
-    for (const th of table.querySelectorAll("thead th")) {
+    // Only a bracket label (`.th-group-label`) is centred over what it spans;
+    // a plain header over a name and its figure is not a bracket.
+    for (const th of table.querySelectorAll("thead th.th-group-label")) {
       if (th.colSpan < 2 || !shown(th)) continue;
       const idx = span(th);
       const exts = idx.map(extent).filter(Boolean);

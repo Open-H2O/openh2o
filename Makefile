@@ -15,7 +15,7 @@ export APP_VERSION = $(VERSION)
         createsuperuser collectstatic seed seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo remove-demo \
-        check test test-release figures-moved test-droppable golden-update dev-up dev-css guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod guard-demo-host deploy rebuild-golden \
+        check test test-release table-check figures-moved test-droppable golden-update dev-up dev-css guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod guard-demo-host deploy rebuild-golden \
         verify-candidate promote-golden ci-gate release upgrade guard-demo-target
 
 help: ## Show this help message
@@ -273,6 +273,10 @@ test: ## Run the tests in T (a path or node id; all of tests/ when T is not give
 		$(MAKE) --no-print-directory guard-fresh; \
 	fi
 	python3 scripts/with_test_lock.py $(COMPOSE) exec -e OPENH2O_MODULES=all web python -m pytest $(T) -v --ds=config.settings.local -n $(TEST_WORKERS) --dist loadfile -m "$(MARK)"
+
+table-check: ## Measure every data table on a running site at 1,024, 1,440 and 1,730 px and fail on one off balance (BASE=https://... LOGIN=email; the password from TABLE_CHECK_PASSWORD); runs on the host with playwright, see scripts/table_check.py
+	@test -n "$(BASE)" -a -n "$(LOGIN)" || { echo "make table-check needs BASE=<site> LOGIN=<email>, and TABLE_CHECK_PASSWORD in the environment"; exit 2; }
+	python3 scripts/table_check.py --base $(BASE) --login $(LOGIN)
 
 test-release: ## Run only the tests marked release (many minutes each; deploy-checks.yml runs them before a release)
 	@$(MAKE) --no-print-directory test MARK=release
