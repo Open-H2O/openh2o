@@ -1319,6 +1319,13 @@ html { color-scheme: dark; }
 .data-table tbody tr.row-group:nth-child(even) td {
     background-color: color-mix(in srgb, var(--color-elevated) 85%, transparent);
 }
+/* A divider after other rows starts a new group, so it sits a small gap below
+   them: a 12px band of the card's own colour above its rule, so the header
+   does not read as one more row. The first divider in a table needs none. */
+.data-table tbody tr.row-group:not(:first-child) td {
+    border-top: 12px solid var(--color-card);
+    box-shadow: inset 0 1px 0 var(--color-border-hover);
+}
 
 /* The onboarding sampling-points table: the facility is the first column, one
    cell spanning that facility's points, with its codes line under its name.
