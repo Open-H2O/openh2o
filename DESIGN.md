@@ -212,7 +212,7 @@ the same idea always looks the same. All live in `static/css/app.css`.
   (`.budget-seg--carried`, smaller and quieter); every cell's content starts at its cell's left
   edge; labels, figures and captions share one line each across a row, with every cell's parts
   starting on one line below them; the result (`.budget-seg--result`) is the panel's only band.
-  Chosen by Brent on 2026-11-25 over a receipt read as lines.
+  The rows keep the equation's left-to-right shape, so each line reads as one step of the sum.
 - `.crop-et-band`: the month's calculation page, when OpenET now reports a different crop ET
   figure: the newer figure (label, value, received day and a
   `.kind-pill--provisional` or `--final` pill) beside the sentences that say which figure the

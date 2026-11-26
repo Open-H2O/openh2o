@@ -5861,8 +5861,8 @@ details[open] > summary .disclosure-mark {
     border-top: 1px solid var(--color-border);
 }
 
-/* The receipt's three equation rows (Brent, 2026-11-25, the tightened equation over a
-   receipt read as lines): the first track is narrower and holds the figure carried down
+/* The receipt's three equation rows, each read left to right as one step of the sum:
+   the first track is narrower and holds the figure carried down
    from the row above, every cell's content starts at its cell's left edge (centred blocks
    stepped the first column in by 16 to 23 px below the Crop ET row, which fills its cell),
    labels, figures and captions sit on shared lines across a row with every part below
