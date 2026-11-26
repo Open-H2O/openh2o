@@ -215,6 +215,30 @@ def test_a_second_run_does_not_say_it_saved_the_repeated_numbers(boundary):
     assert "duplicate record" not in out
 
 
+def _on_file(oid):
+    from django.contrib.gis.geos import MultiPolygon, Polygon
+    Parcel.objects.create(parcel_number=apn_of(oid), geometry=MultiPolygon(Polygon(ring_of(oid))))
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_a_repeat_of_a_number_already_on_file_is_not_counted_as_saved(boundary, dry_run):
+    # A number already a use area that comes back on a second record: the run saves
+    # other parcels, but nothing for this number, so no repeat line may say it did.
+    _on_file(10)
+    out = run(boundary, FakeLightBox(count=1500, apns={1400: apn_of(10)}), dry_run=dry_run)
+    assert Parcel.objects.filter(parcel_number=apn_of(10)).count() == 1
+    assert "duplicate record" not in out
+    assert "1 other parcel was already a use area on this site." in out
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_a_repeat_of_a_new_number_is_still_counted_beside_one_on_file(boundary, dry_run):
+    _on_file(10)
+    out = run(boundary, FakeLightBox(count=1500, apns={1400: apn_of(10), 1450: apn_of(20)}),
+              dry_run=dry_run)
+    assert "duplicate record of 1 parcel number." in out
+
+
 def test_a_use_area_on_file_with_dashes_counts_as_already_on_file(boundary):
     from django.contrib.gis.geos import MultiPolygon, Polygon
     for oid in (3, 4):
