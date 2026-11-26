@@ -6159,6 +6159,11 @@ details[open] > summary .disclosure-mark {
 .receipt-panel .budget-panel-body .budget-seg > .budget-breakdown-group {
     margin-inline-end: var(--space-md);
 }
+/* The Crop ET caption's Final or Provisional pill keeps the same space: on one line the pill
+   stood flush against the divider just before the caption wrapped (about 1,560 to 1,600). */
+.receipt-panel .budget-panel-body .budget-seg > .crop-et-figure > .crop-et-caption {
+    margin-inline-end: var(--space-md);
+}
 .budget-breakdown-group--fields > .budget-breakdown-head > span {
     padding: 0;
     font-size: 0.893em;
