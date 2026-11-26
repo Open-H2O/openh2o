@@ -169,9 +169,10 @@ class Command(BaseCommand):
             # re-run can skip the pages it already read instead of starting over.
             self.stdout.write(
                 self.style.ERROR(
-                    f"\nINCOMPLETE: one or more steps failed (see errors above). "
-                    f"{total_created} record(s) created before the failure(s). "
-                    "Re-running is safe — imports are idempotent, so nothing is "
+                    "\nINCOMPLETE: one or more steps failed (see errors above). "
+                    + (self._dry_run_incomplete(total_created) if dry_run
+                       else f"{total_created} record(s) created before the failure(s). ")
+                    + "Re-running is safe — imports are idempotent, so nothing is "
                     "duplicated. If a failure above printed a --resume-from "
                     "hint, re-run that one step with it to carry on from where "
                     "it stopped instead of from the beginning."
@@ -179,9 +180,20 @@ class Command(BaseCommand):
             )
             raise CommandError("auto_populate did not complete: a step failed.")
 
-        self.stdout.write(
-            self.style.SUCCESS(f"\nDone. {total_created} total record(s) created.")
-        )
+        if dry_run:
+            closing = (f"\nDone. Without --dry-run, OpenH2O would create {total_created} "
+                       "total record(s).")
+        else:
+            closing = f"\nDone. {total_created} total record(s) created."
+        self.stdout.write(self.style.SUCCESS(closing))
+
+    @staticmethod
+    def _dry_run_incomplete(total):
+        """The count sentences of a dry run that had a step fail."""
+        return (f"This dry run counted {total} record(s) that a run without --dry-run would "
+                "create in the steps that finished, before or after the failure(s). If the "
+                f"parcel step stopped partway, {total} also includes the use areas that step "
+                "counted before it stopped, though the step did not finish. ")
 
     @staticmethod
     def _read_parcel_list(path):
@@ -273,9 +285,11 @@ class Command(BaseCommand):
                 else:
                     count = step_fn(boundary, dry_run)
                 total_created += count
-                self.stdout.write(
-                    self.style.SUCCESS(f"  {step_name}: {count} record(s) created.")
-                )
+                if dry_run:
+                    line = f"  {step_name}: without --dry-run, OpenH2O would create {count} record(s)."
+                else:
+                    line = f"  {step_name}: {count} record(s) created."
+                self.stdout.write(self.style.SUCCESS(line))
             except Exception as exc:
                 had_failure = True
                 if step_name == "parcels" and getattr(self, "parcel_download", None):

@@ -1550,8 +1550,7 @@ def test_a_dry_run_never_says_records_were_created(mock_post, boundary):
 def _count_line(out, step):
     import re
 
-    found = re.findall(rf"{step}: (\d+) record\(s\)", out) or re.findall(
-        rf"{step}: [^\d]*?(\d+) record\(s\)", out)
+    found = re.findall(rf"^  {step}: .*?(\d+) record\(s\)", out, re.M)
     return int(found[-1])
 
 

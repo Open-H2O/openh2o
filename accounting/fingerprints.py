@@ -362,10 +362,14 @@ _STEPS = (
     "the records could also change the code on the page; this file catches that. For "
     "a dispute, download this page again and compare the full code.",
     "Press Check for changes. OpenH2O recomputes the code from the records now.",
-    "Read the answer. It gives the number of corrections recorded since, and names the "
-    "parts to look at where changes have no correction on record. An unrecorded change "
-    "in the corrected record's own part, or in a part a recalculation writes, "
-    "shows only as the correction. \"Can no longer "
+    "Read the answer. When Check for changes finds a change, the answer begins with the "
+    "number of corrections to the year's records recorded since, if any are recorded, and "
+    "goes on to name the parts to look at where changes have no correction on record. The "
+    "parts the answer names leave out the parts a correction explains, so an unrecorded "
+    "change there shows only as the correction: each correction explains its own part and "
+    "the change history, and correcting or voiding a meter reading, a ledger entry, a "
+    "fallow period or a diversion record, or voiding a use area, also explains the parts a "
+    "recalculation writes, because it recalculates the months it moves. \"Can no longer "
     "read\" means a later version removed what a part was computed from. When the answer "
     "names a section that is switched off, Check for changes cannot compare that section's "
     "parts, or the change history, while the section is switched off.",

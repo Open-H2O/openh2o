@@ -266,7 +266,8 @@ def test_floor_step_summary_says_banked_only_on_an_old_banking_run():
     """148-02: a new run's below-floor figure is information, not a credit."""
     new = {"step_type": "clamp_floor", "detail": {"floor": "0", "surplus_af": "1.5"}}
     assert _step_detail_summary(new) == (
-        "floor 0.00; 1.5000 AF below the floor, not carried forward"
+        "Lowest remainder 0.00; the month's figure was 1.5000 AF below the Lowest remainder, "
+        "and those 1.5000 AF are not carried forward"
     )
 
 

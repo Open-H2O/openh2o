@@ -542,14 +542,19 @@ How to check
    full code.
 3. Press Check for changes. OpenH2O recomputes the code from the records
    now.
-4. Read the answer. It gives the number of corrections recorded since, and
-   names the parts to look at where changes have no correction on record. An
-   unrecorded change in the corrected record's own part, or in a part a
-   recalculation writes, shows only as the correction. "Can no longer read"
-   means a later version removed what a part was computed from. When the
-   answer names a section that is switched off, Check for changes cannot
-   compare that section's parts, or the change history, while the section is
-   switched off.
+4. Read the answer. When Check for changes finds a change, the answer begins
+   with the number of corrections to the year's records recorded since, if
+   any are recorded, and goes on to name the parts to look at where changes
+   have no correction on record. The parts the answer names leave out the
+   parts a correction explains, so an unrecorded change there shows only as
+   the correction: each correction explains its own part and the change
+   history, and correcting or voiding a meter reading, a ledger entry, a
+   fallow period or a diversion record, or voiding a use area, also explains
+   the parts a recalculation writes, because it recalculates the months it
+   moves. "Can no longer read" means a later version removed what a part was
+   computed from. When the answer names a section that is switched off,
+   Check for changes cannot compare that section's parts, or the change
+   history, while the section is switched off.
 
 "No changes found" means what the code covers is the same as when it was
 issued. It does not show that the records were right. Check for changes runs
@@ -590,8 +595,8 @@ def test_the_download_reads_word_for_word_as_the_approved_page():
     )
     text = fingerprints.file_text(period).rstrip() + "\n"
     assert text == APPROVED_PAGE
-    # One page: 60 lines, none wider than 76, and the old word nowhere.
-    assert len(text.splitlines()) == 60
+    # 65 lines, none wider than 76, and the old word nowhere.
+    assert len(text.splitlines()) == 65
     assert max(len(line) for line in text.splitlines()) == 76
     assert "fingerprint" not in text.lower()
     assert fingerprints.file_name(period) == "changes-code-wy-2024-2025.txt"

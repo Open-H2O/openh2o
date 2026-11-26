@@ -336,7 +336,7 @@ class TestTheReceipt:
             breakdown=breakdown,
         )
         html = _page(parcel, "2026-06")
-        assert "<span>Floor<span class=\"budget-breakdown-note\">Methodology Settings</span></span><b>0.50</b>" in html
+        assert "<span>Lowest remainder<span class=\"budget-breakdown-note\">Methodology Settings</span></span><b>0.50</b>" in html
         _well_run(parcel, "2026-07", breakdown=breakdown)
         html = _page(parcel, "2026-07")
         assert "<span>Floor" not in html

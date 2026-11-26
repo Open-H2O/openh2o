@@ -141,9 +141,10 @@ def _step_detail_summary(step, *, delivery_split=None):
         return f"{_fmt(detail.get('surface_water_af'))} AF delivered and subtracted in full"
     if step_type == "clamp_floor":
         surplus = Decimal(str(detail.get("surplus_af", "0") or "0"))
-        base = f"floor {_fmt(detail.get('floor'), 2)}"
+        base = f"Lowest remainder {_fmt(detail.get('floor'), 2)}"
         if surplus > 0:
-            return f"{base}; {_fmt(surplus)} AF below the floor, not carried forward"
+            return (f"{base}; the month's figure was {_fmt(surplus)} AF below the Lowest remainder, "
+                    f"and those {_fmt(surplus)} AF are not carried forward")
         return base
     return ""
 

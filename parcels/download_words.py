@@ -60,9 +60,13 @@ def _s(count, one, many):
     return one if count == 1 else many
 
 
-def _saved(o):
-    """The verb for what the download saved; a dry run's saves nothing."""
-    return "would save" if o.dry_run else "saved"
+#: How a dry run's lines open: it saves nothing and counts what a real run would save.
+DRY_RUN_WOULD = "Without --dry-run, OpenH2O would"
+
+
+def _opening(o, verb="saved"):
+    """"OpenH2O saved" in a real run; in a dry run, what a run without --dry-run would do."""
+    return f"{DRY_RUN_WOULD} save" if o.dry_run else f"OpenH2O {verb}"
 
 
 def saved_lines(o):
@@ -71,7 +75,7 @@ def saved_lines(o):
     if o.mode == "list":
         lines.append(
             f"Your list holds {_n(o.listed)} different parcel {_s(o.listed, 'number', 'numbers')}. "
-            f"OpenH2O {_saved(o)} {_n(o.saved)} of them as new use areas.")
+            f"{_opening(o)} {_n(o.saved)} of them as new use areas.")
         if o.already:
             lines.append(_already(o.already))
     elif o.found == 0:
@@ -81,11 +85,11 @@ def saved_lines(o):
             "Import use areas on the Use Areas page.", link=IMPORT_USE_AREAS)]
     elif o.saved == 0:
         lines.append(
-            f"OpenH2O {'would not save' if o.dry_run else 'did not save'} any new use areas. {_n(o.already)} "
+            f"{DRY_RUN_WOULD + ' not save' if o.dry_run else 'OpenH2O did not save'} any new use areas. {_n(o.already)} "
             f"{_s(o.already, 'parcel was already a use area', 'parcels were already use areas')} "
             "on this site.")
     else:
-        lines.append(f"OpenH2O {_saved(o)} {_n(o.saved)} new use {_s(o.saved, 'area', 'areas')}.")
+        lines.append(f"{_opening(o)} {_n(o.saved)} new use {_s(o.saved, 'area', 'areas')}.")
         if o.already:
             lines.append(_already(o.already))
     # A record with no number cannot be on a list, so a list counts only outlines.
@@ -104,7 +108,7 @@ def saved_lines(o):
         lines.append(
             f"DWR's map has {_n(o.repeat_records)} duplicate "
             f"{_s(o.repeat_records, 'record', 'records')} of {_n(o.repeat_numbers)} parcel "
-            f"{_s(o.repeat_numbers, 'number', 'numbers')}. OpenH2O {_saved(o)} one use area for each "
+            f"{_s(o.repeat_numbers, 'number', 'numbers')}. {_opening(o)} one use area for each "
             "number.")
     if o.mode == "list" and o.not_found:
         count = len(o.not_found)
@@ -126,20 +130,15 @@ def _already(count):
             " on this site.")
 
 
-def _saved_past(o):
-    """After a stop: what the download had saved, or in a dry run had counted to save."""
-    return "had counted, to save," if o.dry_run else "saved"
-
-
 def stopped_lines(o):
     """Rows 23 to 26: the cause of a stop, then how to add the rest."""
     if o.stopped == "refused":
         return [_line(f"DWR's parcel map returned this error: {_sentence(o.detail)} Running the "
                       "step again will return the same error.")]
     if o.stopped == "process":
-        first = f"The parcel download stopped after OpenH2O {_saved_past(o)} {_n(o.saved)} new use areas."
+        first = f"The parcel download stopped after OpenH2O saved {_n(o.saved)} new use areas."
     else:
-        first = f"DWR's parcel map stopped responding after OpenH2O {_saved_past(o)} {_n(o.saved)} new use areas."
+        first = f"DWR's parcel map stopped responding after OpenH2O saved {_n(o.saved)} new use areas."
     return [_line(first), _line(
         "To add the rest, open the Setup Wizard and choose this boundary under Select an "
         "existing boundary. On Populate, check only Parcel Boundaries and choose your list "
@@ -152,7 +151,10 @@ def command_stop_reason(o):
         return stopped_lines(o)[0]["text"]
     if o.batch == 0 or (o.kind != "short" and o.code is None):
         # The IDs request, or a batch whose requests themselves failed (no code).
-        return f"DWR's parcel map stopped responding after OpenH2O {_saved_past(o)} {_n(o.saved)} new use areas."
+        if o.dry_run:
+            return ("DWR's parcel map stopped responding partway through the count. Up to that point, "
+                    f"a run without --dry-run would have saved {_n(o.saved)} new use areas.")
+        return f"DWR's parcel map stopped responding after OpenH2O saved {_n(o.saved)} new use areas."
     if o.kind == "short":
         return (f"After 6 attempts, DWR's parcel map had returned only {_n(o.got)} of the "
                 f"{_n(o.asked)} parcels OpenH2O asked for in batch {o.batch} of {o.batches}.")
@@ -162,6 +164,10 @@ def command_stop_reason(o):
 
 COMMAND_RERUN = ("Run the same command again to add the rest. OpenH2O saves only the parcels "
                  "that are not yet on file.")
+#: After a dry run that stopped.
+COMMAND_RERUN_DRY_RUN = ("This dry run did not save anything. Run the same command without --dry-run "
+                         "to save the new use areas; OpenH2O saves only the parcels that are not yet "
+                         "on file.")
 
 
 def batch_line(batch, batches, saved, already, dry_run):
