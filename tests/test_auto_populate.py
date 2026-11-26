@@ -1530,3 +1530,18 @@ class TestAutoPopulateResumeFrom:
             )
 
         mock_post.assert_not_called()
+
+
+@pytest.mark.django_db
+@patch("geography.services.arcgis.requests.post")
+def test_a_dry_run_never_says_records_were_created(mock_post, boundary):
+    """A dry run creates nothing, so no count line may say it created records."""
+    import re
+
+    mock_post.return_value = _make_mock_response(_3dhp_features())
+    out = StringIO()
+    call_command("auto_populate", boundary=str(boundary.pk), steps="flowlines",
+                 dry_run=True, stdout=out)
+    assert Flowline.objects.count() == 0
+    created = re.findall(r"[1-9][\d,]* (?:total )?record\(s\) created", out.getvalue())
+    assert created == []
