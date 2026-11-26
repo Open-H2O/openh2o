@@ -314,17 +314,18 @@ def test_the_accounts_table_reads_as_the_equation():
     assert 'colspan="2"' in table
 
 
-def test_the_zones_table_spans_three_budget_columns():
-    """Zones carry Added between Allocation and Remaining."""
+def test_the_zones_table_spans_the_accounts_two_budget_columns():
+    """Zones carry the same two budget columns as accounts; Remaining counts the carry-over."""
     period, _zone, _parcel, _account = _basin()
 
     table = _zones_table(_dashboard(period).content.decode())
 
     assert _header_rows(table) == [
         ["Zone", "Supplies", "Uses", "Balance", "Groundwater budget"],
-        ["Surface", "Groundwater", "Effective precipitation", "Total", "Crop ET", "Pumped water not consumed", "Allocation", "Added", "Remaining"],
+        ["Surface", "Groundwater", "Effective precipitation", "Total", "Crop ET", "Pumped water not consumed", "Allocation", "Remaining"],
     ]
-    assert 'colspan="3"' in table
+    assert 'colspan="2"' in table
+    assert 'colspan="3"' not in table
 
 
 def test_the_separator_starts_at_the_groundwater_budget():
@@ -415,7 +416,7 @@ def test_zone_rows_are_grouped_by_groundwater_budget():
     budgeted = "Zones with a groundwater budget for Water Year 2025-2026"
     unbudgeted = (
         "Zones without a groundwater budget for Water Year 2025-2026. "
-        "Allocation, Added and Remaining do not apply."
+        "Allocation and Remaining do not apply."
     )
     assert table.count(budgeted) == 1
     assert table.count(unbudgeted) == 1

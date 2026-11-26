@@ -210,7 +210,7 @@
   <table class="data-table data-table--grouped">
     <thead>
       <tr class="th-group">
-        <th rowspan="2" style="min-width: 190px;">Zone</th>
+        <th rowspan="2" style="min-width: 146px;">Zone</th>
         <th colspan="4" class="th-group-label">Supplies</th>
         <th colspan="2" class="th-group-label">Uses</th>
         <th rowspan="2" class="th-right">Balance</th>
@@ -223,7 +223,7 @@
              "Groundwater budget, spent by extraction" widens the two budget
              columns into dead space and wraps, so the group label stays
              the short one.{% endcomment %}
-        <th colspan="3" class="th-group-label col-sep">Groundwater budget</th>
+        <th colspan="2" class="th-group-label col-sep">Groundwater budget</th>
         {% endif %}
       </tr>
       <tr>
@@ -235,7 +235,6 @@
         <th class="th-right"><span class="th-stack">Pumped water not consumed</span></th>
         {% if has_allocations %}
         <th class="th-right col-sep">Allocation</th>
-        <th class="th-right">Added</th>
         <th class="th-right">Remaining</th>
         {% endif %}
       </tr>
@@ -253,22 +252,23 @@
       {% if has_allocations %}
       {% ifchanged row.has_groundwater_budget %}
       <tr class="row-group">
-        <td colspan="11">{% if row.has_groundwater_budget %}Zones with a groundwater budget for {{ selected_period.name }}{% else %}Zones without a groundwater budget for {{ selected_period.name }}. Allocation, Added and Remaining do not apply.{% endif %}</td>
+        <td colspan="10">{% if row.has_groundwater_budget %}Zones with a groundwater budget for {{ selected_period.name }}{% else %}Zones without a groundwater budget for {{ selected_period.name }}. Allocation and Remaining do not apply.{% endif %}</td>
       </tr>
       {% endifchanged %}
       {% endif %}
       <tr>
         <td><a href="{% url 'geography:zone_detail' row.zone.pk %}" class="data-table-link">{{ row.zone.name }}</a></td>
         {% comment %}
-          Same three demand-derived columns as the account table above.
-          Added is NOT dashed for that reason: it is stored credit (zone_carryover:
-          the groundwater year-end carry-over), already computed, and true whatever this
-          period's engine has or has not done.
+          Same columns as the account table above: Allocation and Remaining,
+          with no Added column. Remaining already counts the zone's carry-over
+          (zone_groundwater_budget: allocation + carry-over - use), and the
+          zone's own page shows Added beside it. With Added the table was wider
+          than its card below a 1,730 px window and scrolled sideways.
 
-          A second reason for a dash: the three budget cells are the
+          A second reason for a dash: the budget cells are the
           GROUNDWATER budget, and a zone with no groundwater plan (the surface
-          service areas carry surface plans only) has none. Its allocation,
-          added and remaining are absent, not zero, so all three dash.
+          service areas carry surface plans only) has none. Its allocation and
+          remaining are absent, not zero, so both dash.
           Remaining keeps the engine-never-ran dash as well: it subtracts groundwater
           use, which includes the `calculated` rows the engine writes, so with
           no engine run it would understate pumping on every unmetered field and
@@ -298,9 +298,6 @@
         {% if has_allocations %}
         <td class="td-num col-sep">
           {% if row.allocation is None %}&mdash;{% else %}{{ row.allocation|floatformat:2|intcomma }}{% endif %}
-        </td>
-        <td class="td-num {% if row.carryover is None %}text-tertiary{% elif row.carryover > 0 %}text-surplus{% elif row.carryover < 0 %}text-deficit{% else %}text-tertiary{% endif %}">
-          {% if row.carryover is None %}&mdash;{% else %}{% if row.carryover > 0 %}+{% endif %}{{ row.carryover|floatformat:2|intcomma }}{% endif %}
         </td>
         <td class="td-num-bold {% if not row.has_calculations or row.remaining is None %}text-tertiary{% elif row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
           {% if row.has_calculations and row.remaining is not None %}{{ row.remaining|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
@@ -412,4 +409,3 @@
 {% endcomment %}
 {% comment %}Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are approved sentences. A balance that prints 0.00 is "Balanced".{% endcomment %}
 {% comment %}"Effective precipitation" (CalculationRun.effective_precip_af).{% endcomment %}
-{% comment %}The zones table's "Added" column. The column is zone_carryover, the groundwater year-end carry-over alone; the zone page lists the recharge and seepage pools apart from it.{% endcomment %}

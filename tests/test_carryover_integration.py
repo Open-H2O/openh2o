@@ -365,8 +365,10 @@ class TestDashboardCarryover:
         # remaining = allocation 1000 + carryover (-400) - consumptive use 200 = 400
         assert row["carryover"] == Decimal("-400.0000")
         assert row["remaining"] == Decimal("400.0000")
-        # The Added column (was "Carried fwd") renders.
-        assert b'<th class="th-right">Added</th>' in resp.content
+        # The Dashboard's Zones table shows Allocation and Remaining, as the
+        # accounts table does; Remaining above already counts the carry-over,
+        # and the zone's own page shows it as Added.
+        assert b'<th class="th-right">Added</th>' not in resp.content
 
     def test_no_carryover_row_is_zero(self):
         zone, period = self._setup_dashboard(carryover_af=None)
