@@ -521,8 +521,11 @@ class Command(BaseCommand):
                 continue
             in_download.add(key)
             if key in seen:
-                outcome.repeat_records += 1
-                repeated.add(key)
+                # A repeat counts only for a number this run saves: the repeat line
+                # says OpenH2O saved one use area for each number.
+                if key not in on_file:
+                    outcome.repeat_records += 1
+                    repeated.add(key)
                 continue
             if key in on_file:
                 seen.add(key)
