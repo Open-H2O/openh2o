@@ -7,6 +7,16 @@ class CoreConfig(AppConfig):
     name = "core"
 
     def ready(self):
+        # Optional error reports: off unless SENTRY_DSN is set (core/error_reports.py).
+        from django.core.signals import got_request_exception
+
+        from . import error_reports
+
+        error_reports.init()
+        got_request_exception.connect(
+            error_reports.on_request_exception, dispatch_uid="core.error_reports"
+        )
+
         # Registered here rather than at import time so the check is bound once,
         # after the app registry is populated. Imported inside ready() because
         # core/checks.py reads settings.

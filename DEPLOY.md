@@ -1267,6 +1267,8 @@ Two terms in the tables need explaining:
 | `SOURCE_CODE_URL` | No | `https://github.com/Open-H2O/openh2o` | The address the Source code link at the foot of every page points at. An organization that runs a changed copy of OpenH2O for its users sets this to where it publishes its changes (the AGPL, section 13). The site ignores a value that does not start with `http://` or `https://`, logs a warning at start and keeps the default link |
 | `TIME_ZONE` | No | `America/Los_Angeles` | The site's time zone |
 | `LOG_DIR` | No | `/app/logs` | The folder for the error log, `openh2o.log`. The log rotates at 10 MB and keeps five older files beside the live one. Inside Docker it is on the `logs_data` volume |
+| `SENTRY_DSN` | No | empty | The address of a Sentry or GlitchTip server that receives a report when a page fails with a server error. Blank sends nothing. A report holds the error's type and the lines of code it passed through, not its message or anything a person typed. `python manage.py error_report_test_event` sends a test report |
+| `SENTRY_ENVIRONMENT` | No | `production` | The name the reports carry, such as `staging` for a test copy of the site |
 | `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD` | No | empty | Create the first host administrator when the site has none (section 7) |
 | `DJANGO_SUPERUSER_USERNAME` | No | the email address | The username for that account |
 | `GUNICORN_WORKERS`, `GUNICORN_THREADS`, `GUNICORN_TIMEOUT` | No | `3`, `4`, `60` | How many requests the web server handles at once, and how many seconds it gives each one |

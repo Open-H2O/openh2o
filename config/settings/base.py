@@ -103,7 +103,15 @@ INSTALLED_APPS = [
 
 SITE_ID = 1
 
+# Django's debug page hides settings and environment values whose names look secret; a
+# DSN carries a key, so it is hidden too (core/error_reports.py).
+DEFAULT_EXCEPTION_REPORTER_FILTER = "core.error_reports.HidingDsnFilter"
+
 MIDDLEWARE = [
+    # First, so it is the last to see a view's exception: reports a 500 to a
+    # Sentry-protocol server when SENTRY_DSN is set, and does nothing otherwise
+    # (core/error_reports.py).
+    "core.error_reports.ReportExceptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",

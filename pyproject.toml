@@ -32,6 +32,7 @@ dependencies = [
     "requests>=2.32.2",  # 2.32.2 fixed the cert-verification regression
     "earthengine-api>=1.0,<2.0",
     "django-pghistory>=3.9.2",  # change history by Postgres trigger, so bulk and raw SQL writes are recorded too
+    "sentry-sdk==2.75.0",  # optional error reports, off unless SENTRY_DSN is set (core/error_reports.py)
 ]
 
 [project.optional-dependencies]
