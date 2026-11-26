@@ -325,6 +325,7 @@ class TestTheReceipt:
         assert "Surface water in excess of ETAW" in html
         assert 'title="3.0000 acre-feet">3.00</b>' in html
 
+    # Default wording, approved by the maintainer on 2026-11-25. To change the wording, update this test in the same commit.
     def test_a_floor_above_zero_is_named(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-008")
         breakdown = [_canal_step(), {"step_type": "clamp_floor", "detail": {"floor": "0.5000"}}]

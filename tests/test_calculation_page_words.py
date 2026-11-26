@@ -262,6 +262,7 @@ def test_surface_step_summary_writes_delivery_times_efficiency():
     assert _step_detail_summary(old) == "5.0000 AF delivered and subtracted in full"
 
 
+# Default wording, approved by the maintainer on 2026-11-25. To change the wording, update this test in the same commit.
 def test_floor_step_summary_says_banked_only_on_an_old_banking_run():
     """148-02: a new run's below-floor figure is information, not a credit."""
     new = {"step_type": "clamp_floor", "detail": {"floor": "0", "surplus_af": "1.5"}}
