@@ -298,6 +298,19 @@ class TestTheReceipt:
             "the irrigation method on file</div>"
         ) in html
 
+    def test_a_carried_figure_is_marked_and_the_result_is_the_one_band(self):
+        """Rows two and three start with the figure carried down from the row above; the page
+        sets those two cells quieter and the result as its only band (the CSS keys on the
+        classes)."""
+        parcel = ParcelFactory(parcel_number="RCPT-APN-008")
+        _well_run(parcel)
+        html = _page(parcel, "2026-06")
+        assert html.count('class="budget-seg budget-seg--carried"') == 2
+        carried = html.split('class="budget-seg budget-seg--carried"')[1:]
+        assert carried[0].lstrip(">\n ").startswith('<div class="budget-seg-label">ETAW</div>')
+        assert carried[1].lstrip(">\n ").startswith('<div class="budget-seg-label">ETAW met by groundwater</div>')
+        assert html.count("budget-seg--result") == 1
+
     def test_a_run_from_before_extraction_was_stamped_stops_at_etaw_met_by_groundwater(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-006")
         _well_run(parcel, gw_extracted_af=None)

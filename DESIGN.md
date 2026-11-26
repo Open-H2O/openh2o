@@ -207,6 +207,12 @@ the same idea always looks the same. All live in `static/css/app.css`.
   the balance equation (supplies − use = balance) with a supply breakdown foot.
   It is one summary view among many data surfaces, not the product's centerpiece.
   Used on the dashboard, period detail and account detail.
+- `.receipt-panel`: the month's calculation page, three equation rows in one `.budget-panel`.
+  The first track is narrower and holds the figure carried down from the row above
+  (`.budget-seg--carried`, smaller and quieter); every cell's content starts at its cell's left
+  edge; labels, figures and captions share one line each across a row, with every cell's parts
+  starting on one line below them; the result (`.budget-seg--result`) is the panel's only band.
+  Chosen by Brent on 2026-11-25 over a receipt read as lines.
 - `.crop-et-band`: the month's calculation page, when OpenET now reports a different crop ET
   figure: the newer figure (label, value, received day and a
   `.kind-pill--provisional` or `--final` pill) beside the sentences that say which figure the

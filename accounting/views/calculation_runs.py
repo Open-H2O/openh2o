@@ -412,8 +412,6 @@ def calculation_run_detail(request, parcel_id, period):
     context["field_list"] = _field_list(run, printed, context.get("rainfall_af"))
     if not context["receipt"]:
         context["month_ledger"] = _month_ledger(parcel, _first_of(period))
-    # DRAWING ONLY (branch polish-160-3-calc-drawing): ?layout=a or ?layout=b; removed before merge.
-    context["receipt_layout"] = request.GET.get("layout", "")
     return render(request, "accounting/calculation_run_detail.html", context)
 
 

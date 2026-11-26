@@ -59,10 +59,8 @@
     {% endif %}
   </div>
 
-  {% if receipt and receipt_layout == "a" %}
-  {% include "accounting/partials/_receipt_lines.html" %}
-  {% elif receipt %}
-  <div class="budget-panel budget-panel--centered receipt-panel{% if receipt_layout == "b" %} receipt-panel--tight{% endif %}">
+  {% if receipt %}
+  <div class="budget-panel budget-panel--centered receipt-panel">
     <div class="budget-panel-head">
       <span class="budget-panel-title">{{ parcel.parcel_number }}{% if parcel.owner_name %} &middot; {{ parcel.owner_name }}{% endif %} &middot; {{ parcel.area_acres|floatformat:2 }} acres</span>
       <span class="budget-panel-period">{{ month_label }}</span>
