@@ -380,8 +380,11 @@ class Command(BaseCommand):
                 )
                 continue
 
+            # A dry run counts what a real run would create, so every step's count
+            # line and the closing total mean the same thing in both.
             if dry_run:
                 self.stdout.write(f"  Would create: {name} ({number})")
+                created_count += 1
             else:
                 Zone.objects.create(
                     name=name,
@@ -449,7 +452,7 @@ class Command(BaseCommand):
                 saved = self._store_parcels(new, dry_run)
                 outcome.saved += saved
                 outcome.already += already
-                self.partial_created = 0 if dry_run else outcome.saved
+                self.partial_created = outcome.saved
                 state["done"] += len(features)
                 self.stdout.write("  " + batch_line(batch, count, saved, already, dry_run))
                 if progress:
@@ -470,7 +473,7 @@ class Command(BaseCommand):
             outcome.not_found = [w for key, w in parcel_list.items() if key not in in_download]
         for line in saved_lines(outcome):
             self.stdout.write("  " + plain(line))
-        return 0 if dry_run else outcome.saved
+        return outcome.saved
 
     def _parcels_of_batch(self, features, outcome, parcel_list, on_file, seen, repeated,
                           in_download, no_outline):
