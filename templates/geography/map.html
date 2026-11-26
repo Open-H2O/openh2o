@@ -6,6 +6,10 @@
 
 {% block page_title %}Map{% endblock %}
 
+{% comment %}The map runs edge to edge: no standard content width on the pane or the head.{% endcomment %}
+{% block content_class %} page-full{% endblock %}
+{% block page_head_class %}page-head--full{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">

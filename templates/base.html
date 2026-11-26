@@ -120,8 +120,9 @@
               still carries become items of this column and take their place by
               CSS order: crumbs, title row, description, leftover actions.
 
-              page_head_class: a page whose body is a centred narrow form sets
-              "page-head--narrow" so the head sits on the same measure (640px under the pane zoom).
+              page_head_class: the head sits on the body's measure, the standard
+              width by default; a page whose body is narrower names the same width
+              ("page-head--narrow", "--medium", "--help"), and the map "page-head--full".
               page_meta: a status pill beside the title (record pages).
               page_actions: the page's buttons, on the title's line.
             {% endcomment %}
@@ -134,7 +135,11 @@
                 {% block breadcrumbs %}{% endblock %}
             </div>
 
-            <main class="app-content{% if as_of_line %} as-of-reading{% endif %}" id="main-content">
+            {% comment %}
+              content_class: "page-full" lifts the standard content width off the
+              pane, for the one page that runs edge to edge (the map).
+            {% endcomment %}
+            <main class="app-content{% if as_of_line %} as-of-reading{% endif %}{% block content_class %}{% endblock %}" id="main-content">
                 {% comment %}
                   Inside <main>, above the page content, so a full-page capture
                   of any screen carries it. Emits nothing when

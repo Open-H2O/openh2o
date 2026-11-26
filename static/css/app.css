@@ -5,6 +5,18 @@
 
 /* tokens.css loaded via separate <link> tag in base.html for cache control */
 
+/* -- Page width ------------------------------------------------------------
+   The content pane is enlarged by --content-zoom (see .app-content), and every
+   rule that has to undo or match that enlargement reads this one value.
+   --page-measure is the standard content width: 1,220 px inside the zoomed
+   pane, 1,296 px on screen, the default for every page that names no narrower
+   width (.page-narrow, .page-medium, .page-help); see "Utility: constrained
+   page widths" below. */
+:root {
+    --content-zoom: 1.0625;
+    --page-measure: 1220px;
+}
+
 /* -- Base ---------------------------------------------------------------- */
 
 body {
@@ -217,7 +229,7 @@ html { color-scheme: dark; }
        collateral on the nav/header. Must be `zoom`, NOT transform:scale —
        transform breaks MapLibre pointer coords and creates a containing block
        that would break the sticky ledger columns. */
-    zoom: 1.0625;
+    zoom: var(--content-zoom);
 }
 
 /* -- Sidebar ------------------------------------------------------------- */
@@ -1893,18 +1905,24 @@ html { color-scheme: dark; }
 .page-head .page-description { order: 3; margin: 0; }
 /* An action row a template has not yet moved into page_actions lands last. */
 .page-head .breadcrumb-bar > .row-end { order: 4; }
-/* A narrow page (a form at 640px, centred) gets a head on the same measure, so
-   the top of the page and its body share one axis. The body sits under
-   .app-content's zoom (1.0625) and this head does not, so the head's
-   measure is the body's measure times that zoom: 640 renders at 680, 800 at 850.
-   Measured 2026-09-11 at 1,730: the unzoomed 640 put the title 20px inside the
-   card's edge on every narrow page. Keep the factor in sync with .app-content. */
+/* The head sits on the body's measure, so the top of the page and its body
+   share one axis: the standard width by default, and a page with a narrower
+   body (a form at 640px, the report at 800, help at 1,100) names the same
+   modifier on its head. The body sits under .app-content's zoom and this head
+   does not, so the head's measure is the body's measure times that zoom: 640
+   renders at 680, 1,220 at 1,296. Measured 2026-09-11 at 1,730: the unzoomed
+   640 put the title 20px inside the card's edge on every narrow page. The map
+   page's head runs full width over its full-width map (page-head--full). */
+.page-head > *,
+.page-head .breadcrumb-bar > * { width: 100%; max-width: calc(var(--page-measure) * var(--content-zoom)); margin-inline: auto; }
 .page-head--narrow > *,
-.page-head--narrow .breadcrumb-bar > * { width: 100%; max-width: calc(640px * 1.0625); margin-inline: auto; }
+.page-head--narrow .breadcrumb-bar > * { max-width: calc(640px * var(--content-zoom)); }
 .page-head--medium > *,
-.page-head--medium .breadcrumb-bar > * { width: 100%; max-width: calc(800px * 1.0625); margin-inline: auto; }
+.page-head--medium .breadcrumb-bar > * { max-width: calc(800px * var(--content-zoom)); }
 .page-head--help > *,
-.page-head--help .breadcrumb-bar > * { width: 100%; max-width: calc(1100px * 1.0625); margin-inline: auto; }
+.page-head--help .breadcrumb-bar > * { max-width: calc(1100px * var(--content-zoom)); }
+.page-head--full > *,
+.page-head--full .breadcrumb-bar > * { max-width: none; }
 
 /* -- The feedback trigger in the sidebar ---------------- */
 /* A .sidebar-link that is a <button>: same row, same type, no button chrome.
@@ -2062,8 +2080,8 @@ html { color-scheme: dark; }
        at 257 * 1.0625, drifting the panel right by ~6% of its distance from the
        content origin (verified). Counter-zoom to effective scale 1 so the panel
        renders at exactly the coordinates the script intends and lands on its
-       trigger. Keep the denominator in sync with the .app-content zoom. */
-    zoom: calc(1 / 1.0625);
+       trigger. The denominator is the .app-content zoom. */
+    zoom: calc(1 / var(--content-zoom));
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
@@ -3564,8 +3582,8 @@ html { color-scheme: dark; }
 /* Render embedded maps at native scale inside the zoomed .app-content.
    CSS `zoom` COMPOUNDS through descendants (verified: a child at zoom:1 still
    renders at the parent's scale), so a map needs the RECIPROCAL of the content
-   zoom to cancel it — not zoom:1. Keep this denominator in sync with the
-   .app-content zoom above. Covers the .map-embed class plus the bare *-map
+   zoom to cancel it — not zoom:1, and the denominator is the .app-content
+   zoom above. Covers the .map-embed class plus the bare *-map
    div ids (well-map, parcel-map, zone-map, infra-map, …); div[...] excludes
    the #btn-parcel-map button. #map is the full-page main map — its id does NOT
    end in "-map", so it was the one map missing this counter-zoom: MapLibre sized
@@ -3575,7 +3593,7 @@ html { color-scheme: dark; }
 .map-embed,
 #map,
 div[id$="-map"] {
-    zoom: calc(1 / 1.0625);
+    zoom: calc(1 / var(--content-zoom));
 }
 
 /* -- Row start (left-aligned flex row) ----------------------------------- */
@@ -4170,6 +4188,17 @@ details[open] > summary .disclosure-mark {
 
 /* -- Utility: constrained page widths ----------------------------------- */
 
+/* The standard content width. Every direct child of the content pane (the
+   demonstration notice, the as-of line, messages and the page's own content)
+   stops at --page-measure and centres, so a page that names no width class
+   still stops there: on a wide screen the column holds at 1,296 px on screen
+   with even margins either side, instead of running to the window's edge.
+   The narrower classes below keep their own widths, and the map page opts out
+   (`page-full` on <main>, set by its template). */
+.app-content:not(.page-full) > :not(.page-narrow, .page-medium, .page-help) {
+    max-width: var(--page-measure);
+    margin-inline: auto;
+}
 .page-narrow { max-width: 640px; margin-inline: auto; }
 .page-medium { max-width: 800px; margin-inline: auto; }
 /* A help page whose content is tables and a diagram, not prose.
@@ -4178,11 +4207,15 @@ details[open] > summary .disclosure-mark {
    850px wide in a 1,450px content area, "a small panel lost in a large empty
    field". Prose inside it still runs at 75ch (`.help-page p`). */
 .page-help   { max-width: 1100px; margin-inline: auto; }
-/* The demonstration banner sits inside <main> above the content, full width
-   on every page. On the 1,100 px help column it followed none of the edges
-   below it, so there it takes the column. */
-.app-content:has(.page-help) > .demo-notice { max-width: 1100px; margin-inline: auto; }
-.page-wide   { max-width: 1400px; margin-inline: auto; }
+/* The demonstration notice and the as-of line sit inside <main> above the
+   content. On a page whose body is a narrower column they take that column,
+   so they follow the same edges as everything below them. */
+.app-content:has(> .page-narrow) > :is(.demo-notice, .as-of-line, .as-of-notice) { max-width: 640px; }
+.app-content:has(> .page-medium) > :is(.demo-notice, .as-of-line, .as-of-notice) { max-width: 800px; }
+.app-content:has(> .page-help) > :is(.demo-notice, .as-of-line, .as-of-notice) { max-width: 1100px; }
+/* The standard width under its old name, for a block that sits deeper than a
+   direct child of the pane. */
+.page-wide   { max-width: var(--page-measure); margin-inline: auto; }
 
 /* -- Utility: toolbar flex row ------------------------------------------ */
 

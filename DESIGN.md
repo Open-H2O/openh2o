@@ -187,12 +187,22 @@ hardcoded value.
   controls with a 16px gap. `.row-end` is the other one: it right-aligns a row of
   action buttons with an 8px gap. Same flex row, opposite jobs — filters pack to
   the start and line up on their baselines, actions pack to the end.
-- Layout: `.page-narrow` (max-width 640px), `.page-medium` (max-width 800px),
-  `.page-wide` (max-width 1400px). All three centre with `margin-inline: auto`.
-- Layout, full-bleed: the workspace pages (`/wells/`, `/accounting/accounts/`) are
-  a different population. Their `<main>` runs at `max-width: none` and the content
-  is a `.workspace-split` grid, so they take **no** page-width class at all —
-  giving one to a workspace page would cap a layout designed uncapped.
+- Layout, the standard width: every page stops at one content width, 1,296 px on
+  screen, centred with even margins on a wider window. In CSS it is
+  `--page-measure` (1,220px) inside `.app-content`, which is enlarged by
+  `--content-zoom`; any rule that matches or undoes that enlargement reads the
+  variable, never the number. The default needs no class: every direct child of
+  `.app-content` takes it. `.page-wide` is the same width, for a block that sits
+  deeper. The page head takes the same measure, and the demonstration notice and
+  the as-of line follow the column below them.
+- Layout, narrower: `.page-narrow` (640px, a form), `.page-medium` (800px, a
+  short reading page), `.page-help` (1,100px, a help page of tables). Each
+  centres with `margin-inline: auto`, and its head names the matching
+  `page-head--narrow`, `--medium` or `--help` so the title starts at the body's
+  edge.
+- Layout, full width: only the map. Its template sets `page-full` on the pane
+  (the `content_class` block) and `page-head--full` on the head. A page of wide
+  tables does not opt out; its tables scroll inside their `.table-scroll`.
 - Responsive: tablet 1023px, mobile 767px breakpoints
 - Empty states: SVG inline icons with secondary text
 - Toasts: HTMX-driven notifications
