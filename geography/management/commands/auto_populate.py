@@ -281,7 +281,11 @@ class Command(BaseCommand):
                 if step_name == "parcels" and getattr(self, "parcel_download", None):
                     # The rows a stopped download wrote count (the closing line
                     # once said 0 when 15 were), and the reason is said in its own words.
-                    from parcels.download_words import COMMAND_RERUN, command_stop_reason
+                    from parcels.download_words import (
+                        COMMAND_RERUN,
+                        COMMAND_RERUN_DRY_RUN,
+                        command_stop_reason,
+                    )
 
                     total_created += getattr(self, "partial_created", 0)
                     outcome = self.parcel_download
@@ -289,7 +293,8 @@ class Command(BaseCommand):
                         self.stdout.write(self.style.ERROR(
                             f"  {step_name} failed: {command_stop_reason(outcome)}"))
                         if outcome.stopped != "refused":
-                            self.stdout.write(f"  {COMMAND_RERUN}")
+                            rerun = COMMAND_RERUN_DRY_RUN if dry_run else COMMAND_RERUN
+                            self.stdout.write(f"  {rerun}")
                         logger.warning("Step parcels stopped: %s", exc)
                         continue
                 self.stdout.write(
@@ -341,6 +346,9 @@ class Command(BaseCommand):
         self.basins_existing = 0
 
         created_count = 0
+        # A dry run writes nothing, so it remembers the names it counted: a real run
+        # creates a repeated name once and finds it on file the second time.
+        counted = set()
         for feature in features:
             attrs = feature.get("attributes", {})
             name = (
@@ -351,7 +359,7 @@ class Command(BaseCommand):
             number = attrs.get("Basin_Subbasin_Number", "")
 
             # Check for existing zone (idempotent)
-            if Zone.objects.filter(name=name, boundary=boundary).exists():
+            if name in counted or Zone.objects.filter(name=name, boundary=boundary).exists():
                 self.stdout.write(f"  Skipping (exists): {name}")
                 self.basins_existing += 1
                 continue
@@ -384,6 +392,7 @@ class Command(BaseCommand):
             # line and the closing total mean the same thing in both.
             if dry_run:
                 self.stdout.write(f"  Would create: {name} ({number})")
+                counted.add(name)
                 created_count += 1
             else:
                 Zone.objects.create(
@@ -554,6 +563,7 @@ class Command(BaseCommand):
 
         out_fields = "id3dhp,gnisidlabel,featuretypelabel,lengthkm,streamorder"
         created_total = 0
+        counted_sids = set()
         downloaded = 0
         page_num = 0
 
@@ -587,12 +597,16 @@ class Command(BaseCommand):
                         boundary=boundary,
                     ).values_list("source_id", flat=True)
                 )
+                if dry_run:
+                    # Ids counted on an earlier page: a real run saved them there.
+                    existing_sids |= counted_sids & set(sid_map)
 
                 new_flowlines = self._build_flowlines(boundary, sid_map, existing_sids)
 
                 created_total += self._store_flowline_page(
                     page_num, new_flowlines, existing_sids, dry_run
                 )
+                counted_sids.update(f.source_id for f in new_flowlines)
                 if progress is not None:
                     progress(downloaded, created_total)
 
@@ -799,6 +813,7 @@ class Command(BaseCommand):
     ) -> int:
         """Create a MonitoredStation for each new discovered station; returns how many are new."""
         created_count = 0
+        counted = set()
         for stn in station_list:
             ext_id = str(stn.get("station_id", "")).strip()
             if not ext_id:
@@ -809,11 +824,15 @@ class Command(BaseCommand):
             if lat is None or lon is None:
                 continue
 
+            # Built first in both runs, so a location a real run cannot store stops a
+            # dry run the same way.
+            location = Point(float(lon), float(lat), srid=4326)
             if dry_run:
-                exists = MonitoredStation.objects.filter(
+                exists = ext_id in counted or MonitoredStation.objects.filter(
                     data_source=ds, external_station_id=ext_id
                 ).exists()
                 if not exists:
+                    counted.add(ext_id)
                     created_count += 1
                 continue
 
@@ -822,7 +841,7 @@ class Command(BaseCommand):
                 external_station_id=ext_id,
                 defaults={
                     "station_name": stn.get("name", ""),
-                    "location": Point(float(lon), float(lat), srid=4326),
+                    "location": location,
                     "parameters": stn.get("parameters", []),
                     "is_active": False,
                 },

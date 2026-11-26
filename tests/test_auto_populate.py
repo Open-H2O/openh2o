@@ -1587,3 +1587,22 @@ def test_a_dry_run_counts_a_flowline_on_two_pages_once(mock_post, boundary):
     call_command("auto_populate", boundary=str(boundary.pk), steps="flowlines", stdout=StringIO())
     assert Flowline.objects.filter(boundary=boundary).count() == 3
     assert _count_line(dry.getvalue(), "flowlines") == 3
+
+
+@pytest.mark.django_db
+def test_a_dry_run_counts_a_repeated_station_once_and_stops_on_a_bad_location(data_sources):
+    """A real run creates a repeated station id once and cannot store a bad location."""
+    from geography.management.commands.auto_populate import Command
+
+    ds = data_sources["cdec"]
+    stations = [
+        {"station_id": "AAA", "name": "A", "latitude": 37.1, "longitude": -120.1},
+        {"station_id": "AAA", "name": "A again", "latitude": 37.1, "longitude": -120.1},
+        {"station_id": "BBB", "name": "B", "latitude": 37.2, "longitude": -120.2},
+    ]
+    counted = Command._save_discovered_stations(ds, stations, dry_run=True)
+    created = Command._save_discovered_stations(ds, stations, dry_run=False)
+    assert counted == created == 2
+    bad = [{"station_id": "CCC", "name": "C", "latitude": "n/a", "longitude": -120.3}]
+    with pytest.raises(ValueError):
+        Command._save_discovered_stations(ds, bad, dry_run=True)
