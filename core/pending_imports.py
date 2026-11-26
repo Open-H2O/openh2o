@@ -368,7 +368,10 @@ def start_import(request, kind, page_settings):
     if pending.status == "previewed":
         pending.settings = page_settings
         pending.status = "waiting"
-        pending.save(update_fields=["settings", "status"])
+        # When Import was pressed; the worker's claim replaces it with its own start.
+        # A row no worker claims is failed on the same limit as a running one.
+        pending.started_at = timezone.now()
+        pending.save(update_fields=["settings", "status", "started_at"])
         start(str(pending.token))
     return _waiting(request, pending)
 
@@ -474,7 +477,8 @@ def status_response(request, token):
     Still running: the same polling block. Finished or failed: the page's own
     result block, rendered from the stored result, and the row is deleted so
     the result is shown once. A data import still running STOPPED_AFTER its
-    start is failed here with stopped_sentence; its worker, if alive, then keeps nothing.
+    start, or still waiting STOPPED_AFTER Import was pressed (no worker claimed
+    it), is failed here with stopped_sentence; its worker, if alive, then keeps nothing.
     """
     pending = lookup(request.user, token)
     if pending is None:
@@ -483,12 +487,15 @@ def status_response(request, token):
         )
     if (
         pending.kind in DATA_KINDS
-        and pending.status == "running"
+        and pending.status in ("waiting", "running")
         and pending.started_at is not None
         and pending.started_at < timezone.now() - STOPPED_AFTER
     ):
-        # Conditional, so an import that finished in the meantime keeps its result.
-        if PendingImport.objects.filter(pk=pending.pk, status="running").update(
+        # Conditional, so an import that finished or was claimed in the meantime
+        # keeps its result; a claim stamps a new start, which is not past the limit.
+        if PendingImport.objects.filter(
+            pk=pending.pk, status=pending.status, started_at=pending.started_at
+        ).update(
             status="failed", result={"error": stopped_sentence(pending.original_name)},
             finished_at=timezone.now(),
         ):

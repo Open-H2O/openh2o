@@ -415,7 +415,8 @@ class Command(BaseCommand):
         from parcels.download_words import ParcelDownload, batch_line, plain, saved_lines
         from parcels.parcel_list import normalize
 
-        outcome = ParcelDownload(mode="list" if parcel_list is not None else "every")
+        outcome = ParcelDownload(mode="list" if parcel_list is not None else "every",
+                                 dry_run=dry_run)
         if parcel_list is not None:
             outcome.listed = len(parcel_list)
         self.parcel_download = outcome
