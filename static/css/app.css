@@ -5861,6 +5861,125 @@ details[open] > summary .disclosure-mark {
     border-top: 1px solid var(--color-border);
 }
 
+/* DRAWING A (branch only): the receipt as lines. Four tracks on every line: the operator,
+   the step's name with its caption, its figure on one shared figure edge, its parts. */
+.receipt-panel--lines { max-width: 64rem; }
+.receipt-lines {
+    padding: var(--space-sm) var(--space-lg) var(--space-lg);
+}
+.receipt-line,
+.receipt-lines > .crop-et-band {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(14rem, 1fr) 8.5rem minmax(18rem, 22rem);
+    column-gap: var(--space-lg);
+    align-items: start;
+    padding: var(--space-md) 0;
+    border-top: 1px solid var(--color-border);
+}
+.receipt-lines > :first-child { border-top: 0; }
+.receipt-line-op {
+    grid-column: 1;
+    font-size: 1.2rem;
+    line-height: 1.5rem;
+    color: var(--color-text-tertiary);
+    text-align: center;
+}
+.receipt-line-name { grid-column: 2; min-width: 0; }
+.receipt-line-name > .budget-seg-label { font-size: 0.875rem; margin-bottom: 2px; line-height: 1.5rem; }
+.receipt-line-name > .budget-seg-caption { margin-top: 0; }
+.receipt-line-figure {
+    grid-column: 3;
+    text-align: right;
+    line-height: 1.5rem;
+    white-space: nowrap;
+}
+.receipt-unit-spacer { visibility: hidden; }
+.receipt-line-detail { grid-column: 4; min-width: 0; padding-left: var(--space-lg); }
+.receipt-line-detail:empty { display: none; }
+.receipt-line-detail > .budget-breakdown-group { margin-top: 0; }
+/* Every part's figure ends on the detail column's right edge, so the parts read as one column. */
+.receipt-lines .receipt-line-detail > .budget-breakdown-group:not(.budget-breakdown-group--kinds):not(.budget-breakdown-group--fields) { grid-template-columns: minmax(0, 1fr) max-content; }
+.receipt-lines .receipt-line-detail > .budget-breakdown-group.budget-breakdown-group--fields { grid-template-columns: minmax(0, 1fr) max-content max-content; }
+.receipt-line-detail > .budget-breakdown-group + .budget-breakdown-group { margin-top: var(--space-sm); }
+.receipt-line-detail:not(:empty) { border-left: 1px solid var(--color-border); }
+/* The result closes the panel: ruled off above at twice the weight, the only large figure. */
+.receipt-line--result {
+    border-top: 2px solid var(--color-border-hover);
+    margin-top: var(--space-xs);
+    padding-top: var(--space-lg);
+}
+.receipt-line--result > .receipt-line-name > .budget-seg-label { color: var(--color-text-primary); font-size: 1rem; }
+.receipt-line--result > .receipt-line-figure { font-size: 2rem; font-weight: 800; line-height: 2.25rem; }
+.receipt-line--result > .receipt-line-op { font-size: 1.5rem; line-height: 2.25rem; }
+/* The newer figure's band takes the same tracks: label under the name, figure on the figure
+   edge, the sentences and button where the parts go. */
+.receipt-lines > .crop-et-band { grid-template-rows: auto 1fr; }
+.receipt-lines > .crop-et-band > .crop-et-band-figure { display: contents; }
+.receipt-lines > .crop-et-band .budget-seg-label { grid-column: 2; grid-row: 1; font-size: 0.875rem; line-height: 1.5rem; margin-bottom: 2px; }
+.receipt-lines > .crop-et-band .budget-seg-value { grid-column: 3; grid-row: 1; text-align: right; line-height: 1.5rem; white-space: nowrap; }
+.receipt-lines > .crop-et-band .crop-et-caption { grid-column: 2; grid-row: 2; margin-top: 0; }
+.receipt-lines > .crop-et-band > .crop-et-band-op { display: none; }
+.receipt-lines > .crop-et-band > .crop-et-band-words { grid-column: 4; grid-row: 1 / span 2; margin-left: 0; padding-left: var(--space-lg); border-left: 1px solid var(--color-border); }
+/* Under about 760px of panel the parts go under the name, the figure stays on its edge. */
+@container (max-width: 760px) {
+    .receipt-line,
+    .receipt-lines > .crop-et-band {
+        grid-template-columns: 1.5rem minmax(0, 1fr) max-content;
+    }
+    .receipt-line-detail,
+    .receipt-lines > .crop-et-band > .crop-et-band-words {
+        grid-column: 2 / -1;
+        grid-row: auto;
+        padding-left: 0;
+        border-left: 0;
+        margin-top: var(--space-sm);
+    }
+    .receipt-line-detail:not(:empty) { border-left: 0; }
+}
+
+/* DRAWING B (branch only): the equation tightened. The first track is narrower and holds
+   the carried figure, every cell's content starts at its left edge, and the result is a band. */
+@container (min-width: 700px) {
+    .receipt-panel--tight .budget-panel-body .budget-panel-row {
+        grid-template-columns: minmax(15rem, 0.8fr) auto minmax(0, 1.2fr) auto minmax(0, 1fr);
+    }
+    .receipt-panel--tight.budget-panel--centered .budget-panel-body .budget-seg {
+        display: block;
+        padding-right: var(--space-lg);
+    }
+    .receipt-panel--tight .budget-panel-body .budget-op { padding-left: var(--space-lg); }
+    /* One line of labels, one of figures, one of captions across the row; every cell's
+       parts start on one line below them, in an inset band the width of the row. */
+    .receipt-panel--tight .budget-panel-body .budget-panel-row:not(.crop-et-band) {
+        grid-template-rows: auto auto auto auto;
+        row-gap: 0;
+    }
+    .receipt-panel--tight .budget-panel-body .budget-panel-row:not(.crop-et-band) > .budget-op { grid-row: 1 / -1; }
+    .receipt-panel--tight.budget-panel--centered .budget-panel-body .budget-panel-row:not(.crop-et-band) > .budget-seg {
+        display: grid;
+        grid-row: 1 / -1;
+        grid-template-rows: subgrid;
+        grid-template-columns: minmax(0, 1fr);
+        align-content: start;
+    }
+    .receipt-panel--tight .budget-panel-row > .budget-seg > .budget-seg-label { grid-row: 1; }
+    .receipt-panel--tight .budget-panel-row > .budget-seg > .budget-seg-value { grid-row: 2; }
+    .receipt-panel--tight .budget-panel-row > .budget-seg > .budget-seg-caption { grid-row: 3; }
+    .receipt-panel--tight .budget-panel-row > .budget-seg > .crop-et-figure { display: contents; }
+    .receipt-panel--tight .budget-panel-row > .budget-seg > .crop-et-figure > .budget-seg-label { grid-row: 1; }
+    .receipt-panel--tight .budget-panel-row > .budget-seg > .crop-et-figure > .budget-seg-value { grid-row: 2; }
+    .receipt-panel--tight .budget-panel-row > .budget-seg > .crop-et-figure > .budget-seg-caption { grid-row: 3; }
+    .receipt-panel--tight .budget-panel-row > .budget-seg > .budget-breakdown-group { grid-row: 4; align-self: start; margin-top: var(--space-md); margin-bottom: var(--space-sm); }
+}
+.receipt-panel--tight .budget-seg--carried .budget-seg-value { font-size: 1.1rem; color: var(--color-text-secondary); }
+.receipt-panel--tight .budget-seg--carried .budget-seg-label { color: var(--color-text-tertiary); }
+.receipt-panel--tight.budget-panel--centered .budget-panel-body .budget-seg.budget-seg--result {
+    background-color: var(--color-elevated);
+    border-radius: var(--radius-md);
+    padding: var(--space-md) var(--space-lg);
+    margin-top: calc(-1 * var(--space-sm));
+}
+
 /* The use area page's Water use card: the year's figures, the lines that say what is
    off, then one row for each month. The figure labels and values are the
    `.budget-seg-*` ones, which do not depend on a `.budget-panel` around them. */
