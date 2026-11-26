@@ -236,6 +236,9 @@ def test_a_repeat_of_a_new_number_is_still_counted_beside_one_on_file(boundary, 
     _on_file(10)
     out = run(boundary, FakeLightBox(count=1500, apns={1400: apn_of(10), 1450: apn_of(20)}),
               dry_run=dry_run)
+    # The new number is saved once (none in a dry run); the one on file is left alone.
+    assert Parcel.objects.filter(parcel_number=apn_of(20)).count() == (0 if dry_run else 1)
+    assert Parcel.objects.filter(parcel_number=apn_of(10)).count() == 1
     assert "duplicate record of 1 parcel number." in out
 
 
