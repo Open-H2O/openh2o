@@ -1545,3 +1545,45 @@ def test_a_dry_run_never_says_records_were_created(mock_post, boundary):
     assert Flowline.objects.count() == 0
     created = re.findall(r"[1-9][\d,]* (?:total )?record\(s\) created", out.getvalue())
     assert created == []
+
+
+def _count_line(out, step):
+    import re
+
+    found = re.findall(rf"{step}: (\d+) record\(s\)", out) or re.findall(
+        rf"{step}: [^\d]*?(\d+) record\(s\)", out)
+    return int(found[-1])
+
+
+@pytest.mark.django_db
+@patch("geography.services.arcgis.requests.post")
+def test_a_dry_run_counts_a_repeated_basin_name_once(mock_post, boundary):
+    """A real run creates a basin name once; a dry run counts it once."""
+    features = _b118_features()
+    features.append(dict(features[0]))
+    mock_post.return_value = _make_mock_response(features)
+    dry = StringIO()
+    call_command("auto_populate", boundary=str(boundary.pk), steps="basins", dry_run=True, stdout=dry)
+    mock_post.return_value = _make_mock_response(features)
+    call_command("auto_populate", boundary=str(boundary.pk), steps="basins", stdout=StringIO())
+    assert _count_line(dry.getvalue(), "basins") == Zone.objects.filter(boundary=boundary).count() == 2
+
+
+@pytest.mark.django_db
+@patch("geography.services.arcgis.requests.post")
+def test_a_dry_run_counts_a_flowline_on_two_pages_once(mock_post, boundary):
+    """A flowline id that comes back on two pages is created once and counted once."""
+    first, second = _3dhp_features()
+    third = {"attributes": dict(second["attributes"], id3dhp="FL00003"), "geometry": second["geometry"]}
+
+    def pages():
+        return [_make_mock_response([first, second], exceeded=True),
+                _make_mock_response([second, third])]
+
+    mock_post.side_effect = pages()
+    dry = StringIO()
+    call_command("auto_populate", boundary=str(boundary.pk), steps="flowlines", dry_run=True, stdout=dry)
+    mock_post.side_effect = pages()
+    call_command("auto_populate", boundary=str(boundary.pk), steps="flowlines", stdout=StringIO())
+    assert Flowline.objects.filter(boundary=boundary).count() == 3
+    assert _count_line(dry.getvalue(), "flowlines") == 3
