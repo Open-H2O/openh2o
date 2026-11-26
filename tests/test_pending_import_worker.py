@@ -99,3 +99,53 @@ def test_a_lab_import_that_fails_after_its_rows_saves_none(client, monkeypatch):
     body = unescape(_import(client, page, token))
     assert UNEXPECTED in body
     assert SampleResult.objects.count() == 0
+
+
+def _import_page():
+    return next(p for p in PAGES if p.kind == "lab_results")
+
+
+def _press(client, page, token):
+    response = client.post(
+        page.commit_url, {"token": token, **page.commit_fields}, HTTP_HX_REQUEST="true"
+    )
+    assert response.status_code == 200
+
+
+def _status_at(client, token, monkeypatch, minutes_later):
+    later = timezone.now() + dt.timedelta(minutes=minutes_later)
+    monkeypatch.setattr(pending_imports.timezone, "now", lambda: later)
+    try:
+        return client.get(
+            reverse("core:pending_import_status", args=[token]), HTTP_HX_REQUEST="true"
+        ).content.decode()
+    finally:
+        monkeypatch.undo()
+
+
+def test_an_import_whose_worker_never_started_shows_as_failed(client, settings, monkeypatch):
+    # Outside the inline setting the worker starts once the request commits; the
+    # test's transaction never commits, so no worker ever claims the row: the
+    # site restarted between Import and the worker starting.
+    settings.OPENH2O_IMPORT_INLINE = False
+    page = _import_page()
+    token = _upload_through_preview(client, page, 3)
+    _press(client, page, token)
+    assert PendingImport.objects.get(token=token).status == "waiting"
+    body = _status_at(client, token, monkeypatch, minutes_later=11)
+    assert 'hx-trigger="every 2s"' not in body
+    assert "var(--color-error)" in body
+    assert not PendingImport.objects.filter(token=token).exists()
+    assert _stored_files(settings) == []
+    # A worker that starts after the failure finds nothing to claim.
+    pending_imports.run(token)
+    assert SampleResult.objects.count() == 0
+
+
+def test_an_import_waiting_inside_the_limit_still_waits(client, settings, monkeypatch):
+    settings.OPENH2O_IMPORT_INLINE = False
+    page = _import_page()
+    token = _upload_through_preview(client, page, 3)
+    _press(client, page, token)
+    assert 'hx-trigger="every 2s"' in _status_at(client, token, monkeypatch, minutes_later=2)
+    assert PendingImport.objects.filter(token=token).exists()

@@ -333,3 +333,48 @@ def test_a_bad_first_record_does_not_hide_a_good_repeat(boundary):
     assert Parcel.objects.filter(parcel_number=apn_of(9)).exists()
     assert Parcel.objects.count() == 1199
     assert "cannot read" not in out
+
+
+# -- A dry run saves nothing, and none of its lines says it saved --------------------
+
+
+def _says_saved(out):
+    return [line for line in out.splitlines() if "OpenH2O saved" in line]
+
+
+def test_a_dry_run_of_every_parcel_says_nothing_was_saved(boundary):
+    out = run(boundary, FakeLightBox(count=1200, apns={1100: apn_of(10)}), dry_run=True)
+    assert Parcel.objects.count() == 0
+    assert _says_saved(out) == []
+    assert "1199" in out.replace(",", "")
+
+
+def test_a_dry_run_with_a_list_says_nothing_was_saved(boundary, tmp_path):
+    path = list_file(tmp_path, "APN\n0000-0000-0001\n000000000002\n900-000-001-000\n")
+    out = run(boundary, FakeLightBox(count=1200), "--parcel-list", path, dry_run=True)
+    assert Parcel.objects.count() == 0
+    assert _says_saved(out) == []
+    assert "3 different parcel numbers" in out
+
+
+def test_a_dry_run_that_stops_says_nothing_was_saved(boundary):
+    # The second batch's requests fail outright (no answer, so no code): the stop
+    # line counts the use areas before the stop.
+    import requests
+
+    out = StringIO()
+    fake = FakeLightBox(count=2500)
+    real = fake.post
+
+    def post(url, data=None, timeout=None):
+        if "objectIds" in (data or {}) and str(data["objectIds"]).startswith("1001"):
+            raise requests.ConnectionError("no answer")
+        return real(url, data=data, timeout=timeout)
+
+    fake.post = post
+    with patch("geography.services.arcgis.requests.post", side_effect=fake.post):
+        with pytest.raises(CommandError):
+            call_command("auto_populate", "--boundary", str(boundary.pk), "--steps", "parcels",
+                         "--dry-run", stdout=out)
+    assert Parcel.objects.count() == 0
+    assert _says_saved(out.getvalue()) == []
