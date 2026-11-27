@@ -1,7 +1,18 @@
 FROM python:3.12-slim
 
-# System dependencies for GeoDjango (GDAL, GEOS, PROJ)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Keep the system packages current. Docker reuses a cached apt-get step for as
+# long as the lines above it are unchanged, so without these two files every
+# rebuild kept the system packages of the first build, security fixes and all.
+# Docker fetches both release files on every build and reruns the apt-get step
+# only when one has changed: a Debian security release or point release.
+# python:3.12-slim is Debian 13 (trixie); change the name if the base image moves.
+ADD https://deb.debian.org/debian-security/dists/trixie-security/InRelease /var/lib/openh2o-apt/security-InRelease
+ADD https://deb.debian.org/debian/dists/trixie/InRelease /var/lib/openh2o-apt/main-InRelease
+
+# System dependencies for GeoDjango (GDAL, GEOS, PROJ), after upgrading what the
+# base image already carries.
+RUN apt-get update && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends \
     gdal-bin \
     libgdal-dev \
     libgeos-dev \
